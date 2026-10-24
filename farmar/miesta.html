@@ -4,12 +4,12 @@
 label{display:grid;gap:6px;color:#9aa3b8;font-size:.85rem}input{font:500 1rem system-ui;color:#fff;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.2);border-radius:14px;padding:12px;min-height:50px}
 button,a.b{display:flex;align-items:center;justify-content:center;font:700 1.1rem system-ui;min-height:62px;border-radius:16px;border:0;background:linear-gradient(135deg,#7c5cff,#22d3ee);color:#fff;text-decoration:none}
 button.ok{background:linear-gradient(135deg,#b6ff3b,#5eead4);color:#06110a}a.b{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.2)}ol,.n{color:#9aa3b8;margin:0}ol{padding-left:22px}</style></head>
-<body><div class="w"><h1 style="margin:0">Miesta – Slovnaft a Agro-Somotor</h1>
+<body><div class="w"><h1 style="margin:0">Upozornenie po státí</h1>
 <p class="n">Heslo Commandera už v databáze je – netreba ho zadávať znova.</p>
 <button id="c">1. Kopírovať SQL</button>
 <a class="b" href="https://supabase.com/dashboard/project/cflliscddsgleyeykzje/sql/new">2. Otvoriť SQL Editor</a>
 <ol><li>Ťukni do prázdneho poľa, podrž prst → <b>Vložiť</b> → <b>Run</b>.</li><li>Na konci má byť „ok“. Poloha sa potom obnovuje sama každé 2 minúty.</li></ol>
 <a class="b" href="index.html">3. Otvoriť aplikáciu</a></div>
-<script>let T="";fetch("supabase/places.sql?"+Date.now()).then(r=>r.text()).then(t=>T=t);
+<script>let T="";fetch("supabase/stops.sql?"+Date.now()).then(r=>r.text()).then(t=>T=t);
 const q=s=>"'"+String(s).replace(/'/g,"''")+"'";
 c.onclick=()=>{if(!T){alert("Ešte sa načítava, skús o sekundu.");return}const tp=[...crypto.getRandomValues(new Uint8Array(8))].map(b=>b.toString(16).padStart(2,"0")).join("");navigator.clipboard.writeText(T).then(()=>{c.textContent="Skopírované ✓";c.className="ok"}).catch(e=>alert("Nevyšlo: "+e.message))}</script></body></html>
