@@ -135,6 +135,17 @@ details.trips{border-top:1px solid var(--line);padding-top:8px}details.trips sum
 .mmap{overflow:hidden;border-radius:16px;border:1px solid var(--line2);margin-top:6px;display:flex;justify-content:center;background:#0b0f16}
 .mmin{position:relative;flex:none}.mmin img{position:absolute;width:256px;height:256px;max-width:none;border:0}
 .fpin i{background:#7cc4ff;box-shadow:0 0 0 4px rgba(124,196,255,.25),0 0 12px #7cc4ff}.fpin.mv i{background:#b6ff3b;box-shadow:0 0 0 4px rgba(182,255,59,.25),0 0 12px #b6ff3b}
+.seg2 button{flex:1;min-height:42px;padding:0 8px}.seg2 button[aria-pressed=true]{background:var(--grad);color:#06110a;border-color:transparent}
+.kgrid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}.kb{background:var(--glass);border:1px solid var(--line);border-radius:18px;padding:12px;display:grid;gap:2px;backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px)}
+.kb small{font-size:.68rem;color:var(--muted);letter-spacing:.04em}.kb b{font:600 1.05rem var(--f-num)}.kb b i{font-style:normal;font-size:.6rem;color:var(--muted)}.kb em{font-style:normal;font-size:.66rem;color:var(--muted)}
+.kb.hl{background:linear-gradient(135deg,rgba(182,255,59,.18),rgba(94,234,212,.08));border-color:rgba(182,255,59,.4)}
+.al{padding:9px 12px;border-radius:12px;font-size:.84rem;border-left:3px solid}.al.r{background:rgba(255,107,129,.08);border-color:var(--bad)}.al.w{background:rgba(255,207,90,.07);border-color:var(--warn)}.al.b{background:rgba(124,196,255,.07);border-color:var(--blue)}
+.veh .vh{all:unset;cursor:pointer;display:flex;justify-content:space-between;align-items:center;gap:10px}.veh .vh span{display:grid}.veh .vh small{font-size:.74rem;color:var(--muted)}
+.vk{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px}.vk span{background:rgba(255,255,255,.05);border-radius:12px;padding:6px 8px;display:grid}.vk small{font-size:.62rem;color:var(--muted)}.vk b{font:600 .9rem var(--f-num)}
+.bad{color:var(--bad)!important}.good{color:var(--lime)!important}
+.ride{padding:8px 0;border-top:1px solid var(--line)}.ride:first-child{border-top:0}.ride .r1{display:flex;justify-content:space-between;gap:8px;font-size:.82rem}.ride .r1 span{font-family:var(--f-num);font-size:.74rem;color:var(--cyan)}
+.dtab{display:grid;gap:0}.dh,.dr{display:grid;grid-template-columns:1fr 70px 60px 50px;gap:6px;padding:8px 0;border-top:1px solid var(--line);font-size:.82rem}.dh{border-top:0;color:var(--muted);font-size:.7rem}.dr span:not(:first-child),.dh span:not(:first-child){text-align:right;font-family:var(--f-num)}
+@media (max-width:420px){.kgrid{grid-template-columns:repeat(2,minmax(0,1fr))}.vk{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media (prefers-reduced-motion:reduce){.toast,button{transition:none}}
 </style>
 </head>
@@ -344,7 +355,7 @@ document.addEventListener("submit",async e=>{if(!FARMER)return;const f=e.target;
 
 // ================= ERNTE =================
 let TAB="req",DEALF=null,EDITF=null,FQ="";
-async function startStaff(){await loadStaff();renderStaff();setInterval(async()=>{if(document.hidden||TAB!=="trans")return;await loadStaff();renderStaff()},120000);
+async function startStaff(){await loadStaff();renderStaff();if(ROLE==="owner"||ROLE==="dispatch"){sb.channel("fleet-ev").on("postgres_changes",{event:"INSERT",schema:"public",table:"fleet_events"},p=>{const e=p.new,m=`${e.plate||"auto"} ${e.kind==="yard_in"?"prišlo na dvor":"odišlo z dvora"}${e.driver?" · "+e.driver:""}`;toast("🚛 "+m,7000);try{navigator.vibrate&&navigator.vibrate([200,100,200])}catch(x){}try{if(window.Notification&&Notification.permission==="granted")new Notification("VALKO dvor",{body:m,icon:"icon-192.png"})}catch(x){}if(TAB==="fleet"){STATE.fleet=null;renderStaff()}}).subscribe();try{if(window.Notification&&Notification.permission==="default")Notification.requestPermission()}catch(x){}}setInterval(async()=>{if(document.hidden||TAB!=="trans")return;await loadStaff();renderStaff()},120000);
   sb.channel("staff-req").on("postgres_changes",{event:"INSERT",schema:"public",table:"requests"},async p=>{await loadStaff();renderStaff();const fr=STATE.farmers.find(x=>x.id===p.new.farmer_id);toast("Nová požiadavka: "+(fr?fr.name:"")+" – "+RKIND[p.new.kind],6000);try{navigator.vibrate&&navigator.vibrate(200)}catch(x){}}).subscribe();
   document.addEventListener("visibilitychange",()=>{if(!document.hidden)loadStaff().then(renderStaff)})}
 async function loadStaff(){const [f,p,s,d,r]=await Promise.all([sb.from("farmers").select("*").order("name"),sb.from("prices").select("*"),sb.from("settings").select("key,value"),
@@ -353,9 +364,14 @@ async function loadStaff(){const [f,p,s,d,r]=await Promise.all([sb.from("farmers
   STATE.farmers=f.data||[];STATE.prices=p.data||[];STATE.settings=Object.fromEntries((s.data||[]).map(x=>[x.key,x.value]));STATE.deals=d.data||[];STATE.reqs=r.data||[]}
 const fName=id=>{const f=STATE.farmers.find(x=>x.id===id);return f?f.name:"?"};
 function renderStaff(){const nNew=STATE.reqs.filter(r=>r.status==="nova").length;
-  const tabs=[["req",`Požiadavky${nNew?` <span class="cnt">${nNew}</span>`:""}`],["price","Cenník"],["trans",`Doprava${(STATE.reqs||[]).filter(r=>r.kind==="transport"&&r.status==="nova").length?` <span class="cnt">${STATE.reqs.filter(r=>r.kind==="transport"&&r.status==="nova").length}</span>`:""}`],["deals","Obchody"],["farm","Farmári"],["wx","Počasie"]];
+  let tabs=[["req",`Požiadavky${nNew?` <span class="cnt">${nNew}</span>`:""}`],["price","Cenník"],["trans",`Doprava${(STATE.reqs||[]).filter(r=>r.kind==="transport"&&r.status==="nova").length?` <span class="cnt">${STATE.reqs.filter(r=>r.kind==="transport"&&r.status==="nova").length}</span>`:""}`],["deals","Obchody"],["farm","Farmári"],["wx","Počasie"]];
+  if(ROLE==="owner"||ROLE==="dispatch")tabs.splice(3,0,["fleet","Flotila"]);
+  if(ROLE==="owner")tabs.push(["team","Tím"]);
+  if(ROLE==="dispatch")tabs=tabs.filter(t=>["req","trans","fleet","wx"].includes(t[0]));
+  if(ROLE==="invoice")tabs=tabs.filter(t=>t[0]!=="fleet");
+  if(!tabs.some(t=>t[0]===TAB))TAB=tabs[0][0];
   let h=`<nav class="tabs">${tabs.map(t=>`<button type="button" data-tab="${t[0]}" aria-pressed="${TAB===t[0]}">${t[1]}</button>`).join("")}</nav>`;
-  if(TAB==="wx"&&!WXD)loadWx().then(renderStaff);h+=({req:vReq,price:vPrice,trans:vTrans,deals:vDeals,farm:vFarm,wx:wxCard})[TAB]();if(TAB==="req")h+=pwCard();$("app").innerHTML=h;mountR()}
+  if(TAB==="wx"&&!WXD)loadWx().then(renderStaff);if(TAB==="fleet"&&!STATE.fleet)loadFleet().then(renderStaff);if(TAB==="team"&&!STATE.staff)loadTeam().then(renderStaff);h+=({req:vReq,price:vPrice,trans:vTrans,deals:vDeals,farm:vFarm,wx:wxCard,fleet:vFleet,team:vTeam})[TAB]();if(TAB==="req")h+=pwCard();$("app").innerHTML=h;mountR()}
 function vReq(){const R=STATE.reqs;if(!R.length)return `<div class="card"><div class="s">Zatiaľ žiadne požiadavky od farmárov.</div></div>`;
   const ord=[...R.filter(r=>r.status==="nova"),...R.filter(r=>r.status!=="nova")];
   return ord.map(r=>{const fr=STATE.farmers.find(x=>x.id===r.farmer_id)||{},d=r.deal_id?STATE.deals.find(x=>x.id===r.deal_id):null;
@@ -375,6 +391,89 @@ function fleetMap(G){const W=340,H=300,lats=G.map(t=>+t.gps_lat),lons=G.map(t=>+
   for(let tx=Math.floor(x0/T);tx<=Math.floor((x0+W)/T);tx++)for(let ty=Math.floor(y0/T);ty<=Math.floor((y0+H)/T);ty++)t+=`<img src="https://a.basemaps.cartocdn.com/dark_all/${z}/${tx}/${ty}.png" style="left:${Math.round(tx*T-x0)}px;top:${Math.round(ty*T-y0)}px" alt="" onerror="this.style.visibility='hidden'">`;
   const pins=G.map(k=>{const q=px(+k.gps_lat,+k.gps_lon,z);return `<div class="rdpin fpin${k.gps_speed>3?" mv":""}" style="left:${q[0]-x0}px;top:${q[1]-y0}px"><i></i><span>${k.no}</span></div>`}).join("");
   return `<div class="mmap"><div class="mmin" style="width:${W}px;height:${H}px">${t}${pins}</div></div>`}
+
+// ================= FLOTILA (Commander) =================
+let FPER="7",FVEH=null;
+async function loadFleet(){const days=FPER==="1"?1:+FPER,since=new Date(Date.now()-days*864e5);if(FPER==="1")since.setHours(0,0,0,0);
+  if(FPER==="m"){since.setTime(new Date(new Date().getFullYear(),new Date().getMonth(),1).getTime())}
+  const [v,r]=await Promise.all([sb.from("cmd_vehicles").select("*"),sb.from("rides").select("*").gte("start_at",since.toISOString()).order("start_at",{ascending:false}).limit(5000)]);
+  const [c,ev]=await Promise.all([sb.from("fleet_cfg").select("*"),sb.from("fleet_events").select("*").order("at",{ascending:false}).limit(40)]);
+  const cfg=Object.fromEntries((c.data||[]).map(x=>[x.key,x.value]));
+  STATE.fleet={veh:v.data||[],rides:r.data||[],err:v.error||r.error,since,cfg,ev:ev.data||[]}}
+const n1=x=>Number.isFinite(+x)&&x!==null?(+x).toLocaleString("sk-SK",{maximumFractionDigits:1}):"–";
+const n0=x=>Number.isFinite(+x)&&x!==null?Math.round(+x).toLocaleString("sk-SK"):"–";
+const hm=sec=>{sec=+sec||0;const h=Math.floor(sec/3600),m=Math.round(sec%3600/60);return h?`${h} h ${m} min`:`${m} min`};
+function agg(R){const a={km:0,l:0,lkm:0,sec:0,n:0,max:0,ref:0,refe:0,priv:0,over:0};
+  for(const r of R){const d=+r.distance||0;a.km+=d;a.sec+=+r.duration||0;a.n++;a.max=Math.max(a.max,+r.max_speed||0);a.ref+=+r.refuel_l||0;a.refe+=+r.refuel_eur||0;
+    if(r.fuel_consumed&&d>0){a.l+=+r.fuel_consumed;a.lkm+=d}if(/PRIVAT/.test(r.ride_type||""))a.priv++;if((+r.max_speed||0)>90)a.over++}
+  a.cons=a.lkm>20?a.l/a.lkm*100:null;return a}
+function fleetAlerts(F){const out=[],now=Date.now(),avg=agg(F.rides).cons;
+  for(const v of F.veh){const nm=v.plate||v.name||v.id;
+    if(v.gps_at&&now-new Date(v.gps_at)>24*3600e3)out.push(["w",`${nm}: bez signálu ${ago(v.gps_at)}`]);
+    const R=F.rides.filter(r=>r.vehicle_id===v.id),a=agg(R);
+    if(avg&&a.cons&&a.lkm>100&&a.cons>avg*1.2)out.push(["r",`${nm}: vysoká spotreba ${n1(a.cons)} l/100 km (priemer flotily ${n1(avg)})`]);
+    if(a.over)out.push(["w",`${nm}: ${a.over}× rýchlosť nad 90 km/h (max ${a.max} km/h)`]);
+    if(a.priv)out.push(["b",`${nm}: ${a.priv} súkromných jázd`]);
+    // úbytok paliva medzi jazdami bez tankovania (stojace auto)
+    const S=[...R].sort((x,y)=>new Date(x.start_at)-new Date(y.start_at));
+    for(let i=1;i<S.length;i++){const p=S[i-1],c=S[i];if(p.fuel_stop&&c.fuel_start&&+p.fuel_stop-+c.fuel_start>=25&&!(+c.refuel_l))out.push(["r",`${nm}: pokles paliva o ${n0(+p.fuel_stop-+c.fuel_start)} l počas státia (${new Date(p.stop_at).toLocaleString("sk-SK",{day:"numeric",month:"numeric",hour:"2-digit",minute:"2-digit"})} → ${new Date(c.start_at).toLocaleTimeString("sk-SK",{hour:"2-digit",minute:"2-digit"})}) – skontrolovať`])}
+  }
+  return out}
+function vFleet(){const F=STATE.fleet;if(!F)return `<div class="card"><div class="s">Načítavam flotilu…</div></div>`;
+  if(F.err)return `<div class="card"><div class="t">Flotila ešte nie je zapnutá</div><div class="s">Spusti raz SQL zo stránky flotila.html.</div><a class="btn pri" href="flotila.html">Zapnúť flotilu</a></div>`;
+  const per=[["1","Dnes"],["7","7 dní"],["30","30 dní"],["m","Tento mesiac"]];
+  let h=`<div class="card"><div class="btns seg2">${per.map(p=>`<button type="button" data-fper="${p[0]}" aria-pressed="${FPER===p[0]}">${p[1]}</button>`).join("")}</div></div>`;
+  const A=agg(F.rides);
+  h+=`<div class="kgrid"><div class="kb"><small>Najazdené</small><b>${n0(A.km)} km</b></div><div class="kb"><small>Spotreba</small><b>${n0(A.l)} l</b></div><div class="kb hl"><small>Priemer</small><b>${A.cons?n1(A.cons):"–"} <i>l/100 km</i></b></div>
+    <div class="kb"><small>Jazdy</small><b>${A.n}</b></div><div class="kb"><small>Čas jazdy</small><b>${hm(A.sec)}</b></div><div class="kb"><small>Tankovanie</small><b>${n0(A.ref)} l</b>${A.refe?`<em>${n0(A.refe)} € bez DPH</em>`:""}</div></div>`;
+  const AL=fleetAlerts(F);
+  h+=`<h2>Upozornenia${AL.length?` (${AL.length})`:""}</h2><div class="card">${AL.length?AL.slice(0,30).map(a=>`<div class="al ${a[0]}">${esc(a[1])}</div>`).join(""):`<div class="s">Bez upozornení ✓</div>`}</div>`;
+  const Y=F.cfg.yard,NT=(F.cfg.notify||{}).topic;
+  h+=`<h2>Dvor VALKO · Medovská 46</h2><div class="card">`+(Y?`<div class="s">Upozornenie príde pri príchode a odchode každého auta (okruh ${Y.r||150} m).${F.veh.some(v=>v.in_yard)?` Na dvore teraz: <b>${F.veh.filter(v=>v.in_yard).map(v=>esc(v.plate||v.name)).join(", ")}</b>`:""}</div>`
+      :`<div class="s">Nastav polohu dvora – raz. Najľahšie: postav sa na dvor a ťukni „Som na dvore“. Alebo vyber auto, ktoré práve stojí na dvore.</div>`)
+    +`<div class="btns"><button type="button" class="lime" data-yardme>Som na dvore – použiť moju polohu</button></div>
+    <label>alebo podľa auta, ktoré stojí na dvore<select id="yardVeh"><option value="">– vyber auto –</option>${F.veh.filter(v=>v.lat).map(v=>`<option value="${esc(v.id)}">${esc(v.plate||v.name)} · ${esc(ago(v.gps_at))}</option>`).join("")}</select></label>
+    ${NT?`<div class="sub"><b>Upozornenia do mobilu aj pri zavretej aplikácii</b><div class="s">1. Nainštaluj si aplikáciu <b>ntfy</b> (App Store / Google Play, zadarmo). 2. Ťukni na tlačidlo nižšie – otvorí sa odber. Rovnako to urobí kolega na svojom telefóne.</div><div class="btns"><a class="btn pri" href="https://ntfy.sh/${esc(NT)}" target="_blank" rel="noopener">Odoberať upozornenia</a><button type="button" data-copy="${esc(NT)}">Kopírovať názov odberu</button></div><div class="s">Názov odberu: <b class="num">${esc(NT)}</b> – nikomu inému ho nedávaj.</div></div>`:""}
+    ${F.ev.length?`<div class="sub"><b>Posledné pohyby</b>${F.ev.slice(0,15).map(e=>`<div class="row"><span>${e.kind==="yard_in"?"🟢 prišlo":"🔵 odišlo"} · <b style="font-family:var(--f-ui)">${esc(e.plate||"")}</b>${e.driver?" · "+esc(e.driver):""}</span><span class="num" style="font-size:.78rem">${new Date(e.at).toLocaleString("sk-SK",{day:"numeric",month:"numeric",hour:"2-digit",minute:"2-digit"})}</span></div>`).join("")}</div>`:""}</div>`;
+  const now=Date.now();const V=F.veh.map(v=>({v,a:agg(F.rides.filter(r=>r.vehicle_id===v.id))})).sort((x,y)=>y.a.km-x.a.km);
+  const G=F.veh.filter(v=>v.lat&&v.gps_at&&now-new Date(v.gps_at)<6*3600e3).map(v=>({gps_lat:v.lat,gps_lon:v.lon,gps_speed:v.speed,no:(v.plate||"").replace(/\s/g,"").slice(0,7)}));
+  if(G.length)h+=`<h2>Kde sú teraz</h2><div class="card">${fleetMap(G)}</div>`;
+  h+=`<h2>Vozidlá (${V.length})</h2>`+V.map(({v,a})=>{const live=v.gps_at&&now-new Date(v.gps_at)<20*60e3;const st=!v.gps_at?["bez dát","g"]:v.speed>3?["ide "+v.speed+" km/h",""]:v.ign?["stojí, motor beží","w"]:["stojí","g"];
+    const open=FVEH===v.id;const last=F.rides.filter(r=>r.vehicle_id===v.id).slice(0,15);
+    return `<div class="card veh"><button type="button" class="vh" data-fveh="${esc(v.id)}"><span><b>${esc(v.plate||v.name||v.id)}</b><small>${esc(v.name&&v.name!==v.plate?v.name:"")}${last[0]&&last[0].driver?" · "+esc(last[0].driver):""}</small></span>${pill(st)}</button>
+      <div class="vk"><span><small>km</small><b>${n0(a.km)}</b></span><span><small>l/100</small><b class="${A.cons&&a.cons>A.cons*1.15?"bad":a.cons&&A.cons&&a.cons<A.cons*0.95?"good":""}">${a.cons?n1(a.cons):"–"}</b></span><span><small>nádrž</small><b>${v.tank?n0(v.tank)+" l":"–"}</b></span><span><small>tachometer</small><b>${v.odometer?n0(v.odometer):"–"}</b></span></div>
+      <div class="s">${v.gps_at?`Posledná poloha ${esc(ago(v.gps_at))}${v.voltage?` · ${n1(v.voltage)} V`:""} · <a class="copy" style="font-size:.78rem" href="https://maps.google.com/?q=${v.lat},${v.lon}" target="_blank" rel="noopener">mapa</a>`:"Zatiaľ bez polohy"}</div>
+      ${open?`<div class="sub">${last.length?last.map(r=>`<div class="ride"><div class="r1"><b>${new Date(r.start_at).toLocaleString("sk-SK",{day:"numeric",month:"numeric",hour:"2-digit",minute:"2-digit"})}</b><span>${n1(r.distance)} km · ${hm(r.duration)}${r.avg_cons?` · ${n1(r.avg_cons)} l/100`:""}${r.max_speed?` · max ${r.max_speed}`:""}</span></div><div class="s">${esc(r.start_addr||"?")} → ${esc(r.stop_addr||"?")}${r.driver?" · "+esc(r.driver):""}${/PRIVAT/.test(r.ride_type||"")?" · súkromná":""}${r.refuel_l?` · ⛽ ${n0(r.refuel_l)} l`:""}</div></div>`).join(""):`<div class="s">Žiadne jazdy v tomto období.</div>`}</div>`:""}</div>`}).join("");
+  const D={};for(const r of F.rides){const k=r.driver||"neznámy vodič";(D[k]=D[k]||[]).push(r)}
+  const DL=Object.entries(D).map(([k,R])=>[k,agg(R)]).sort((x,y)=>y[1].km-x[1].km);
+  h+=`<h2>Vodiči</h2><div class="card"><div class="dtab"><div class="dh"><span>Vodič</span><span>km</span><span>l/100</span><span>max</span></div>${DL.map(([k,a])=>`<div class="dr"><span>${esc(k)}</span><span>${n0(a.km)}</span><span class="${A.cons&&a.cons>A.cons*1.15?"bad":""}">${a.cons?n1(a.cons):"–"}</span><span class="${a.max>90?"bad":""}">${a.max||"–"}</span></div>`).join("")}</div></div>`;
+  h+=`<div class="s" style="text-align:center">Údaje z Commandera · jazdy sa obnovujú každých 10 min, poloha každé 2 min. Spotreba len pri vozidlách s CAN (LVCAN).</div>`;
+  return h}
+// ================= TÍM =================
+async function saveYard(lat,lon){const r=await sb.from("fleet_cfg").upsert({key:"yard",value:{lat:+(+lat).toFixed(6),lon:+(+lon).toFixed(6),r:150,name:"Medovská 46, Michalovce"}});
+  if(r.error){toast("Chyba: "+r.error.message);return}STATE.fleet=null;renderStaff();toast("Dvor uložený. Upozornenia sú zapnuté.",5000)}
+document.addEventListener("change",async e=>{if(e.target.id!=="yardVeh"||!e.target.value)return;const v=STATE.fleet.veh.find(x=>x.id===e.target.value);if(v&&confirm(`Uložiť polohu auta ${v.plate||v.name} ako dvor?`))await saveYard(v.lat,v.lon)});
+async function loadTeam(){const r=await sb.from("staff").select("*").order("role");STATE.staff=r.data||[]}
+const ROLES={owner:"majiteľ – všetko",admin:"obchod (ceny, obchody, farmári)",dispatch:"doprava a flotila",invoice:"fakturácia"};
+function vTeam(){const L=STATE.staff;if(!L)return `<div class="card"><div class="s">Načítavam…</div></div>`;
+  let h="";if(STATE.invite&&STATE.invite.team)h+=`<div class="box"><b>Prihlásenie pre ${esc(STATE.invite.name)} je pripravené</b><div class="s" style="white-space:pre-wrap;color:var(--ink)">${esc(STATE.invite.txt)}</div><div class="btns">${STATE.invite.tel?`<a class="btn lime" href="https://wa.me/${esc(STATE.invite.tel)}?text=${encodeURIComponent(STATE.invite.txt)}" target="_blank" rel="noopener">Poslať cez WhatsApp</a>`:""}<button type="button" data-copyinv>Kopírovať</button><button type="button" data-closeinv>Hotovo</button></div></div>`;
+  h+=`<form class="card f" id="fTeam"><div class="w t">Pridať človeka do tímu</div><label class="w">Meno<input name="name" required placeholder="napr. Ján Novák"></label><label>E-mail alebo telefón<input name="login" required autocapitalize="off" placeholder="0900 000 000"></label>
+    <label>Čo môže robiť<select name="role">${Object.entries(ROLES).filter(r=>r[0]!=="owner").map(r=>`<option value="${r[0]}">${esc(r[1])}</option>`).join("")}</select></label>
+    <div class="w btns"><button class="pri" type="submit">Vytvoriť prihlásenie</button></div></form>`;
+  h+=L.map(p=>`<div class="card"><div class="row"><span class="t">${esc(p.name)}</span>${pill([ROLES[p.role]||p.role,p.role==="owner"?"":"b"])}</div><div class="s">${esc(String(p.email).replace("@tel.ernte.sk"," (telefón)"))}</div>${p.role!=="owner"?`<div class="btns"><button type="button" data-tpw="${esc(p.email)}" data-tn="${esc(p.name)}" data-tr="${esc(p.role)}">Nové heslo</button><button type="button" class="dng" data-trm="${esc(p.email)}">Odobrať</button></div>`:""}</div>`).join("");
+  return h}
+async function teamLogin(login,name,role){const pw=genPw();const r=await sb.rpc("set_staff_login",{login_in:login,name_in:name,role_in:role,pw});if(r.error){toast("Nepodarilo sa: "+r.error.message,7000);return}
+  const who=String(r.data).endsWith("@tel.ernte.sk")?login:r.data;const tel=String(r.data).endsWith("@tel.ernte.sk")?String(r.data).split("@")[0]:"";
+  STATE.invite={team:1,name,tel,txt:`Dobrý deň, tu je prístup do aplikácie ERNTE (${ROLES[role]}):\n${APP_URL}\n\nPrihlásenie: ${who}\nHeslo: ${pw}\n\nPo prihlásení si ju dajte na plochu.`};await loadTeam();renderStaff();window.scrollTo(0,0)}
+document.addEventListener("click",async e=>{if(!ROLE)return;const t=e.target;let x;
+  if(x=t.closest("[data-fper]")){FPER=x.dataset.fper;STATE.fleet=null;renderStaff();return}
+  if(x=t.closest("[data-yardme]")){if(!navigator.geolocation){toast("Poloha nie je dostupná.");return}toast("Zisťujem polohu…");
+    navigator.geolocation.getCurrentPosition(async p=>{await saveYard(p.coords.latitude,p.coords.longitude)},()=>toast("Polohu sa nepodarilo zistiť – povoľ ju v nastaveniach."),{enableHighAccuracy:true,timeout:15000});return}
+  if(x=t.closest("[data-fveh]")){FVEH=FVEH===x.dataset.fveh?null:x.dataset.fveh;renderStaff();return}
+  if(x=t.closest("[data-tpw]")){if(!confirm("Vytvoriť nové heslo pre "+x.dataset.tn+"?"))return;await teamLogin(x.dataset.tpw.replace("@tel.ernte.sk",""),x.dataset.tn,x.dataset.tr);return}
+  if(x=t.closest("[data-trm]")){if(!confirm("Odobrať prístup?"))return;const r=await sb.rpc("remove_staff",{login_in:x.dataset.trm});if(r.error){toast(r.error.message);return}await loadTeam();renderStaff();return}
+});
+document.addEventListener("submit",async e=>{if(e.target.id!=="fTeam")return;e.preventDefault();const fd=new FormData(e.target);const b=e.target.querySelector("button");busy(b,true);await teamLogin(String(fd.get("login")).trim(),String(fd.get("name")).trim(),fd.get("role"));busy(b,false)},true);
 let ASSIGN=null,TDAY="";
 function vTrans(){if(STATE.noTrans)return `<div class="card"><div class="t">Doprava ešte nie je zapnutá</div><div class="s">Spusti raz SQL zo stránky doprava.html (Kopírovať SQL → SQL Editor → Run).</div><a class="btn pri" href="doprava.html">Otvoriť nastavenie dopravy</a></div>`;
   const R=STATE.reqs.filter(r=>r.kind==="transport"&&r.status==="nova"),T=STATE.trucks.filter(t=>t.active);
