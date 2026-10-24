@@ -57,7 +57,7 @@ form.f .w{grid-column:1/-1}
 label{display:grid;gap:4px;font-size:.76rem;color:var(--muted);min-width:0}
 input,select,textarea{font:500 1rem var(--f-ui);color:var(--ink);background:#fff;border:1px solid var(--line);border-radius:12px;padding:10px 12px;min-height:46px;width:100%;min-width:0}
 textarea{min-height:80px}
-input.code{font:600 1.6rem var(--f-num);letter-spacing:.35em;text-align:center}
+input.code{font:600 1.6rem var(--f-num);letter-spacing:.35em;text-align:center}input.code:placeholder-shown{letter-spacing:normal}
 .tabs{display:flex;gap:6px;overflow-x:auto;position:sticky;top:env(safe-area-inset-top,0px);background:var(--bg);z-index:5;padding:6px 0 4px;scrollbar-width:none}
 .tabs::-webkit-scrollbar{display:none}
 .tabs button{flex:none;min-height:42px;border-radius:999px;position:relative}
@@ -132,8 +132,8 @@ function showLogin(){$("outBtn").hidden=true;$("hS").textContent="výkup komodí
   const A=$("app");
   if(!LOGIN.sent){A.innerHTML=`<div class="center"><div class="hero"><small>Vitajte</small><b>Prihlásenie</b><small>Farmári aj ERNTE (správa) – zadajte svoj e-mail. Aplikácia podľa neho otvorí váš pohľad.</small></div>
     <form class="card" id="fEmail"><label>Váš e-mail<input name="email" type="email" inputmode="email" autocomplete="email" required value="${esc(LOGIN.email)}" placeholder="meno@firma.sk"></label><button class="pri" type="submit">Poslať kód</button></form>${installHint()}</div>`}
-  else{A.innerHTML=`<div class="center"><div class="hero"><small>Kód sme poslali na</small><b>${esc(LOGIN.email)}</b><small>Pozrite si e-mail (aj priečinok Spam) a opíšte kód.</small></div>
-    <form class="card" id="fCode"><label>Kód z e-mailu<input class="code" name="code" inputmode="numeric" autocomplete="one-time-code" maxlength="8" required></label><button class="pri" type="submit">Prihlásiť</button><button type="button" id="backEmail">Zmeniť e-mail / poslať znova</button></form></div>`;
+  else{A.innerHTML=`<div class="center"><div class="hero"><small>Kód sme poslali na</small><b>${esc(LOGIN.email)}</b><small>Pozrite si e-mail (aj priečinok Spam) a opíšte kód. Ak je v e-maile iba tlačidlo „Log In“, podržte na ňom prst → Kopírovať odkaz a vložte ho sem.</small></div>
+    <form class="card" id="fCode"><label>Kód z e-mailu<input class="code" name="code" inputmode="numeric" autocomplete="one-time-code" required></label><button class="pri" type="submit">Prihlásiť</button><button type="button" id="backEmail">Zmeniť e-mail / poslať znova</button></form></div>`;
     setTimeout(()=>{const i=document.querySelector("input.code");if(i)i.focus()},50)}
 }
 function installHint(){if(isStandalone())return "";const ios=/iphone|ipad|ipod/i.test(navigator.userAgent);
@@ -144,8 +144,10 @@ document.addEventListener("submit",async e=>{const f=e.target;
     const {error}=await sb.auth.signInWithOtp({email:LOGIN.email,options:{shouldCreateUser:true,emailRedirectTo:APP_URL}});busy(b,false);
     if(error){toast(error.status===429?"Príliš veľa pokusov, skúste o minútu.":"Kód sa nepodarilo poslať: "+error.message,5000);return}
     LOGIN.sent=true;showLogin();return}
-  if(f.id==="fCode"){e.preventDefault();const b=f.querySelector("button");busy(b,true);const code=String(new FormData(f).get("code")).replace(/\D/g,"");
-    const {data,error}=await sb.auth.verifyOtp({email:LOGIN.email,token:code,type:"email"});busy(b,false);
+  if(f.id==="fCode"){e.preventDefault();const b=f.querySelector("button");busy(b,true);let raw=String(new FormData(f).get("code")).trim();let data,error;for(let i=0;i<3&&/%3F|%26|%3D/i.test(raw);i++){try{raw=decodeURIComponent(raw)}catch(x){break}}
+    const m=raw.match(/[?&]token=([^&\s]+)/);
+    if(m){const tp=(raw.match(/[?&]type=([a-z_]+)/)||[])[1]||"magiclink";({data,error}=await sb.auth.verifyOtp({token_hash:m[1],type:tp}))}
+    else{({data,error}=await sb.auth.verifyOtp({email:LOGIN.email,token:raw.replace(/\D/g,""),type:"email"}))}busy(b,false);
     if(error){toast("Kód nesedí alebo vypršal. Skúste znova.",4500);return}
     LOGIN.sent=false;await enter(data.user);return}
 },true);
