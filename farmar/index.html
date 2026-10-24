@@ -131,16 +131,22 @@ let LOGIN={email:"",sent:false};
 function showLogin(){$("outBtn").hidden=true;$("hS").textContent="výkup komodít";
   const A=$("app");
   if(!LOGIN.sent){A.innerHTML=`<div class="center"><div class="hero"><small>Vitajte</small><b>Prihlásenie</b><small>Farmári aj ERNTE (správa) – zadajte svoj e-mail. Aplikácia podľa neho otvorí váš pohľad.</small></div>
-    <form class="card" id="fEmail"><label>Váš e-mail<input name="email" type="email" inputmode="email" autocomplete="email" required value="${esc(LOGIN.email)}" placeholder="meno@firma.sk"></label><button class="pri" type="submit">Poslať kód</button></form>${installHint()}</div>`}
+    <form class="card" id="fEmail"><label>Váš e-mail<input name="email" type="email" inputmode="email" autocomplete="email" required value="${esc(LOGIN.email)}" placeholder="meno@firma.sk"></label><label>Heslo <span style="font-weight:400">(ak ste si ho nastavili – inak nechajte prázdne)</span><input name="pw" type="password" autocomplete="current-password"></label><button class="pri" type="submit">Prihlásiť / poslať kód</button></form>${installHint()}</div>`}
   else{A.innerHTML=`<div class="center"><div class="hero"><small>Kód sme poslali na</small><b>${esc(LOGIN.email)}</b><small>Pozrite si e-mail (aj priečinok Spam) a opíšte kód. Ak je v e-maile iba tlačidlo „Log In“, podržte na ňom prst → Kopírovať odkaz a vložte ho sem.</small></div>
     <form class="card" id="fCode"><label>Kód z e-mailu<input class="code" name="code" inputmode="numeric" autocomplete="one-time-code" required></label><button class="pri" type="submit">Prihlásiť</button><button type="button" id="backEmail">Zmeniť e-mail / poslať znova</button></form></div>`;
     setTimeout(()=>{const i=document.querySelector("input.code");if(i)i.focus()},50)}
 }
+function pwCard(){return `<form class="card" id="fPw"><div class="t">Heslo na rýchle prihlásenie</div><div class="s">Nastavte si heslo a nabudúce sa prihlásite e-mailom a heslom – bez čakania na e-mail. Funguje aj v ikone na ploche.</div><label>Nové heslo (aspoň 8 znakov)<input name="pw" type="password" autocomplete="new-password" minlength="8" required></label><button type="submit">Uložiť heslo</button></form>`}
+document.addEventListener("submit",async e=>{const f=e.target;if(f.id!=="fPw")return;e.preventDefault();const b=f.querySelector("button");busy(b,true);
+  const {error}=await sb.auth.updateUser({password:String(new FormData(f).get("pw"))});busy(b,false);
+  if(error){toast("Heslo sa neuložilo: "+error.message,5000);return}f.reset();toast("Heslo uložené. Odteraz sa prihlásite e-mailom a heslom.",5000)},true);
 function installHint(){if(isStandalone())return "";const ios=/iphone|ipad|ipod/i.test(navigator.userAgent);
   return `<div class="box"><b>Tip: dajte si ERNTE na plochu</b><div>${ios?"V Safari ťuknite dole na <b>Zdieľať</b> (štvorček so šípkou) → <b>Pridať na plochu</b>.":"V prehliadači otvorte ponuku <b>⋮</b> → <b>Pridať na plochu</b> / <b>Inštalovať aplikáciu</b>."} Potom ERNTE otvárate ako aplikáciu.</div></div>`}
 
 document.addEventListener("submit",async e=>{const f=e.target;
   if(f.id==="fEmail"){e.preventDefault();const b=f.querySelector("button");busy(b,true);LOGIN.email=String(new FormData(f).get("email")).trim().toLowerCase();
+    const pw=String(new FormData(f).get("pw")||"");
+    if(pw){const r=await sb.auth.signInWithPassword({email:LOGIN.email,password:pw});busy(b,false);if(r.error){toast("Nesprávny e-mail alebo heslo.",4500);return}await enter(r.data.user);return}
     const {error}=await sb.auth.signInWithOtp({email:LOGIN.email,options:{shouldCreateUser:true,emailRedirectTo:APP_URL}});busy(b,false);
     if(error){toast(error.status===429?"Príliš veľa pokusov, skúste o minútu.":"Kód sa nepodarilo poslať: "+error.message,5000);return}
     LOGIN.sent=true;showLogin();return}
@@ -193,7 +199,7 @@ function renderFarmer(){const F=FARMER,P=MK.map(m=>STATE.prices.find(x=>x.com===
       ${ORDER===d.id?`<form class="f sub" id="fOrder" data-deal="${esc(d.id)}"><div class="w"><b>Objednávka odvozu VALKO</b></div><label>Počet kamiónov<input name="trucks" inputmode="numeric" value="${Math.max(1,Math.ceil(left/25))}"></label><label>Deň<input name="date" type="date" min="${today()}" required></label><label>Od koľkej<input name="time" type="time" value="07:00"></label><label>Miesto nakládky<input name="place" placeholder="sklad farmy"></label><label class="w">Poznámka<input name="note"></label><div class="w btns"><button class="pri" type="submit">Odoslať objednávku</button><button type="button" data-order="">Zrušiť</button></div></form>`:""}
     </div>`}).join(""):`<div class="card"><div class="s">Zatiaľ nemáte žiadny obchod. Keď si vyberiete cenu a ťuknete na Predať, ERNTE vám pripraví zmluvu.</div></div>`;
   h+=`<h2>Kontakt ERNTE</h2><div class="card"><div class="row"><span>Telefón</span><a class="copy" href="tel:${esc(String(c.phone||"").replace(/\s/g,""))}">${esc(c.phone)}</a></div><div class="row"><span>E-mail</span><a class="copy" href="mailto:${esc(c.email)}">${esc(c.email)}</a></div></div>`;
-  h+=installHint();
+  h+=pwCard()+installHint();
   $("app").innerHTML=h}
 
 document.addEventListener("click",async e=>{if(!FARMER)return;const t=e.target;
@@ -226,7 +232,7 @@ const fName=id=>{const f=STATE.farmers.find(x=>x.id===id);return f?f.name:"?"};
 function renderStaff(){const nNew=STATE.reqs.filter(r=>r.status==="nova").length;
   const tabs=[["req",`Požiadavky${nNew?` <span class="cnt">${nNew}</span>`:""}`],["price","Cenník"],["deals","Obchody"],["farm","Farmári"]];
   let h=`<nav class="tabs">${tabs.map(t=>`<button type="button" data-tab="${t[0]}" aria-pressed="${TAB===t[0]}">${t[1]}</button>`).join("")}</nav>`;
-  h+=({req:vReq,price:vPrice,deals:vDeals,farm:vFarm})[TAB]();$("app").innerHTML=h}
+  h+=({req:vReq,price:vPrice,deals:vDeals,farm:vFarm})[TAB]();if(TAB==="req")h+=pwCard();$("app").innerHTML=h}
 function vReq(){const R=STATE.reqs;if(!R.length)return `<div class="card"><div class="s">Zatiaľ žiadne požiadavky od farmárov.</div></div>`;
   const ord=[...R.filter(r=>r.status==="nova"),...R.filter(r=>r.status!=="nova")];
   return ord.map(r=>{const fr=STATE.farmers.find(x=>x.id===r.farmer_id)||{},d=r.deal_id?STATE.deals.find(x=>x.id===r.deal_id):null;
