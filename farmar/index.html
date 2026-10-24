@@ -449,7 +449,7 @@ function vFleet(){const F=STATE.fleet;if(!F)return `<div class="card"><div class
   const A=agg(F.rides);
   h+=`<div class="kgrid"><div class="kb"><small>Najazdené</small><b>${n0(A.km)} km</b></div><div class="kb"><small>Spotreba</small><b>${n0(A.l)} l</b></div><div class="kb hl"><small>Priemer</small><b>${A.cons?n1(A.cons):"–"} <i>l/100 km</i></b></div>
     <div class="kb"><small>Jazdy</small><b>${A.n}</b></div><div class="kb"><small>Čas jazdy</small><b>${hm(A.sec)}</b></div><div class="kb"><small>Tankovanie</small><b>${n0(A.ref)} l</b>${A.refe?`<em>${n0(A.refe)} € bez DPH</em>`:""}</div></div>`;
-  const CO=Object.assign({diesel:1.952,toll:0.2677,share:100},F.cfg.costs||{});
+  const CO=Object.assign({diesel:1.952,toll:0.2677,share:100,fixed:140000},F.cfg.costs||{});
   const dBez=CO.diesel/1.23,realP=A.ref>0&&A.refe>0?A.refe/A.ref:null,useP=realP||dBez;
   const fuelEur=A.l*useP,tollEur=A.km*(CO.share/100)*CO.toll,tot=fuelEur+tollEur;
   h+=`<div class="kgrid">
@@ -458,8 +458,14 @@ function vFleet(){const F=STATE.fleet;if(!F)return `<div class="card"><div class
     <div class="kb"><small>Mýto (sadzba)</small><b>${CO.toll.toFixed(4).replace(".",",")} <i>€/km</i></b><em>&gt;12 t, 5+ náprav, EURO VI</em></div>
     <div class="kb"><small>Mýto spolu (odhad)</small><b>${n0(tollEur)} €</b><em>${n0(A.km)} km × ${CO.share} % spoplatnených</em></div>
     <div class="kb hl"><small>Nafta + mýto</small><b>${n0(tot)} €</b><em>bez DPH</em></div>
-    <div class="kb"><small>Náklad na 1 km</small><b>${A.km?(tot/A.km).toFixed(3).replace(".",","):"–"} <i>€/km</i></b></div></div>
-  <details class="card"><summary class="s" style="cursor:pointer">Upraviť cenu nafty a mýta</summary><form class="f sub" id="fCosts"><label>Nafta €/l s DPH<input name="diesel" inputmode="decimal" value="${String(CO.diesel).replace(".",",")}"></label><label>Mýto €/km bez DPH<input name="toll" inputmode="decimal" value="${String(CO.toll).replace(".",",")}"></label><label class="w">Podiel spoplatnených km (%) – diaľnice, rýchlostné a mýtne cesty I. triedy<input name="share" inputmode="numeric" value="${CO.share}"></label><div class="w s">Sadzby mýta podľa NV č. 418/2024 Z. z. (od 1. 7. 2025): diaľnica 5+ náprav EURO VI 0,2677 €/km, 4 nápravy 0,3002 €/km; cesty I. triedy súbežné s diaľnicou rovnako, ostatné mýtne úseky I. triedy 0,2238 €/km (4 nápravy). Odhad mýta = km × podiel × sadzba – presné mýto je na faktúre z eMýta.</div><div class="w btns"><button class="pri" type="submit">Uložiť</button></div></form></details>`;
+    <div class="kb"><small>Náklad na 1 km</small><b>${A.km?(tot/A.km).toFixed(3).replace(".",","):"–"} <i>€/km</i></b><em>nafta + mýto</em></div></div>
+  ${ROLE==="owner"?(()=>{const nd=new Date(),dim=new Date(nd.getFullYear(),nd.getMonth()+1,0).getDate();const days=FPER==="m"?dim:FPER==="1"?1:+FPER;
+    const fx=CO.fixed*days/dim,pay=(FPER==="m"&&STATE.pay&&STATE.pay.mon===PMON&&PMON===nd.toISOString().slice(0,7))?STATE.payTot||0:null,all=tot+fx+(pay||0);
+    return `<div class="kgrid"><div class="kb"><small>Pevné náklady flotily</small><b>${n0(fx)} €</b><em>${n0(CO.fixed)} €/mesiac${FPER==="m"?"":` · pomer ${days} dní`}</em></div>
+      ${pay!=null?`<div class="kb"><small>Mzdy vodičov</small><b>${n0(pay)} €</b><em>hrubé, odhad</em></div>`:""}
+      <div class="kb hl"><small>Náklady spolu</small><b>${n0(all)} €</b><em>nafta + mýto + pevné${pay!=null?" + mzdy":""}</em></div>
+      <div class="kb"><small>Celkom na 1 km</small><b>${A.km?(all/A.km).toFixed(3).replace(".",","):"–"} <i>€/km</i></b></div></div>`})():""}
+  <details class="card"><summary class="s" style="cursor:pointer">Upraviť cenu nafty a mýta</summary><form class="f sub" id="fCosts"><label>Nafta €/l s DPH<input name="diesel" inputmode="decimal" value="${String(CO.diesel).replace(".",",")}"></label><label>Mýto €/km bez DPH<input name="toll" inputmode="decimal" value="${String(CO.toll).replace(".",",")}"></label>${ROLE==="owner"?`<label class="w">Pevné náklady flotily €/mesiac (leasing, poistenie, servis, odpisy…)<input name="fixed" inputmode="decimal" value="${CO.fixed}"></label>`:""}<label class="w">Podiel spoplatnených km (%) – diaľnice, rýchlostné a mýtne cesty I. triedy<input name="share" inputmode="numeric" value="${CO.share}"></label><div class="w s">Sadzby mýta podľa NV č. 418/2024 Z. z. (od 1. 7. 2025): diaľnica 5+ náprav EURO VI 0,2677 €/km, 4 nápravy 0,3002 €/km; cesty I. triedy súbežné s diaľnicou rovnako, ostatné mýtne úseky I. triedy 0,2238 €/km (4 nápravy). Odhad mýta = km × podiel × sadzba – presné mýto je na faktúre z eMýta.</div><div class="w btns"><button class="pri" type="submit">Uložiť</button></div></form></details>`;
   const AL=fleetAlerts(F);
   h+=`<h2>Upozornenia${AL.length?` (${AL.length})`:""}</h2><div class="card">${AL.length?AL.slice(0,30).map(a=>`<div class="al ${a[0]}">${esc(a[1])}</div>`).join(""):`<div class="s">Bez upozornení ✓</div>`}</div>`;
   const NT=(F.cfg.notify||{}).topic,P=F.places;
@@ -513,7 +519,7 @@ function vPay(F){if(ROLE!=="owner")return "";const P=STATE.pay;if(!P||P.mon!==PM
     const d=(D[dn]=D[dn]||{});const x=(d[day]=d[day]||{km:0,out:false,plates:new Set()});x.km+=+r.distance||0;if(outReg(r))x.out=true;if(r.plate)x.plates.add(r.plate)}
   const rows=Object.entries(D).map(([n,days])=>{const W=Object.entries(days).filter(([k,v])=>v.km>=C.minKm).sort();const inn=W.filter(([k,v])=>!v.out).length,out=W.length-inn;const sum=inn*C.inReg+out*C.outReg;
     return {n,W,inn,out,sum,pay:Math.max(C.base,sum),plus:Math.max(0,sum-C.base)}}).sort((a,b)=>b.pay-a.pay);
-  const tot=rows.reduce((t,r)=>t+r.pay,0);
+  const tot=rows.reduce((t,r)=>t+r.pay,0);STATE.payTot=tot;
   const months=[...Array(6)].map((_,i)=>{const d=new Date();d.setDate(1);d.setMonth(d.getMonth()-i);return d.toISOString().slice(0,7)});
   let h=`<h2>Mzdy vodičov · hrubá mzda (odhad)</h2><div class="card"><label>Mesiac<select id="pMon">${months.map(m=>`<option value="${m}"${m===PMON?" selected":""}>${new Date(m+"-15").toLocaleDateString("sk-SK",{month:"long",year:"numeric"})}</option>`).join("")}</select></label>
     <div class="s">Základ <b>${n0(C.base)} €</b> · denne <b>${C.inReg} €</b> v Košickom kraji (po Prešov a Rožňavu) · <b>${C.outReg} €</b> mimo neho. Diéty sa rátajú od 1. dňa – vodič dostane vyššie z: základ alebo súčet denných. Odpracovaný deň = aspoň ${C.minKm} km jazdy.</div>
@@ -563,7 +569,7 @@ document.addEventListener("click",async e=>{if(!ROLE)return;const t=e.target;let
   if(x=t.closest("[data-tpw]")){if(!confirm("Vytvoriť nové heslo pre "+x.dataset.tn+"?"))return;await teamLogin(x.dataset.tpw.replace("@tel.ernte.sk",""),x.dataset.tn,x.dataset.tr);return}
   if(x=t.closest("[data-trm]")){if(!confirm("Odobrať prístup?"))return;const r=await sb.rpc("remove_staff",{login_in:x.dataset.trm});if(r.error){toast(r.error.message);return}await loadTeam();renderStaff();return}
 });
-document.addEventListener("submit",async e=>{if(e.target.id!=="fCosts")return;e.preventDefault();const fd=new FormData(e.target);const v={diesel:num(fd.get("diesel"))||1.952,toll:num(fd.get("toll"))||0.2677,share:Math.min(100,Math.max(0,num(fd.get("share"))||0))};
+document.addEventListener("submit",async e=>{if(e.target.id!=="fCosts")return;e.preventDefault();const fd=new FormData(e.target);const old=(STATE.fleet&&STATE.fleet.cfg.costs)||{};const fxv=fd.get("fixed");const v={diesel:num(fd.get("diesel"))||1.952,toll:num(fd.get("toll"))||0.2677,share:Math.min(100,Math.max(0,num(fd.get("share"))||0)),fixed:fxv!=null?(num(fxv)||0):(old.fixed??140000)};
   const r=await sb.from("fleet_cfg").upsert({key:"costs",value:v});if(r.error){toast("Chyba: "+r.error.message);return}STATE.fleet=null;renderStaff();toast("Uložené.")},true);
 document.addEventListener("submit",async e=>{if(e.target.id!=="fTeam")return;e.preventDefault();const fd=new FormData(e.target);const b=e.target.querySelector("button");busy(b,true);await teamLogin(String(fd.get("login")).trim(),String(fd.get("name")).trim(),fd.get("role"));busy(b,false)},true);
 let ASSIGN=null,TDAY="";
