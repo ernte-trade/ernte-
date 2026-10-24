@@ -154,7 +154,7 @@ document.addEventListener("submit",async e=>{const f=e.target;
     const m=raw.match(/[?&]token=([^&\s]+)/);
     if(m){const tp=(raw.match(/[?&]type=([a-z_]+)/)||[])[1]||"magiclink";({data,error}=await sb.auth.verifyOtp({token_hash:m[1],type:tp}))}
     else{({data,error}=await sb.auth.verifyOtp({email:LOGIN.email,token:raw.replace(/\D/g,""),type:"email"}))}busy(b,false);
-    if(error){toast("Kód nesedí alebo vypršal. Skúste znova.",4500);return}
+    if(error){toast("Kód nesedí alebo vypršal ("+(error.message||error.code||"")+"). Najjednoduchšie: prihláste sa heslom.",7000);return}
     LOGIN.sent=false;await enter(data.user);return}
 },true);
 document.addEventListener("click",e=>{if(e.target.id==="backEmail"){LOGIN.sent=false;showLogin()}if(e.target.id==="outBtn"){sb.auth.signOut()}});
