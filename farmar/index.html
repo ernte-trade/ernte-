@@ -1,0 +1,305 @@
+<!doctype html>
+<html lang="sk">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>ERNTE Farmár</title>
+<meta name="theme-color" content="#173b22">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="ERNTE">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icon-180.png">
+<link rel="icon" type="image/png" href="icon-192.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
+<style>
+/* layout: jeden stĺpec do 720 px; hlavička s logom; farmár = cenník + obchody + požiadavky; ERNTE = taby */
+:root{
+  --bg:#f3f5ee; --card:#fff; --ink:#14201a; --muted:#56655b; --line:#dbe2d4;
+  --green:#173b22; --green2:#2f6b3a; --lime:#9cc72a; --lime-soft:#eef6dc;
+  --warn-bg:#fff4df; --warn:#6b4500; --blue-bg:#e6f0fb; --blue:#1d4f8f; --bad:#a3302a; --bad-bg:#fbe9e7;
+  --f-ui:"Sora",system-ui,-apple-system,"Segoe UI",sans-serif; --f-num:"IBM Plex Mono",ui-monospace,Menlo,monospace;
+  color-scheme:light;
+}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+html,body{margin:0;background:var(--bg)}
+body{color:var(--ink);font:400 15px/1.45 var(--f-ui);-webkit-text-size-adjust:100%;
+  padding:env(safe-area-inset-top,0px) max(16px,env(safe-area-inset-right,0px)) calc(32px + env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left,0px))}
+.wrap{max-width:720px;margin:0 auto;display:grid;gap:14px}
+header.top{display:flex;align-items:center;gap:12px;padding:14px 0 4px}
+header.top img{height:42px;width:auto;background:#fff;border-radius:12px;padding:6px 10px;border:1px solid var(--line)}
+header.top .tt{flex:1;min-width:0}
+header.top h1{margin:0;font:700 1.15rem/1.2 var(--f-ui)}
+header.top small{display:block;color:var(--muted);font-size:.8rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.out{min-height:38px;padding:0 12px;font-size:.78rem}
+.hero{background:var(--green);color:#fff;border-radius:20px;padding:18px;display:grid;gap:4px}
+.hero small{color:#cfe3b5;font-size:.78rem}.hero b{font:700 1.25rem var(--f-ui)}
+h2{margin:10px 2px 0;font:700 .74rem var(--f-ui);letter-spacing:.09em;text-transform:uppercase;color:var(--green2)}
+.card{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:14px 16px;display:grid;gap:8px;min-width:0}
+.card .t{font:600 1rem var(--f-ui)}.s{font-size:.8rem;color:var(--muted)}
+.row{display:flex;justify-content:space-between;align-items:baseline;gap:10px;font-size:.86rem}
+.num,.row b{font-family:var(--f-num);font-variant-numeric:tabular-nums;font-weight:600}
+.pill{display:inline-block;padding:3px 10px;border-radius:999px;font:600 .72rem var(--f-num);background:var(--lime-soft);color:var(--green);white-space:nowrap}
+.pill.w{background:var(--warn-bg);color:var(--warn)}.pill.b{background:var(--blue-bg);color:var(--blue)}.pill.g{background:#ececec;color:#444}.pill.r{background:var(--bad-bg);color:var(--bad)}
+.btns{display:flex;flex-wrap:wrap;gap:8px}
+button,.btn{font:600 .9rem var(--f-ui);min-height:46px;padding:0 16px;border-radius:12px;border:1px solid var(--line);background:#fff;color:var(--ink);cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:6px;text-decoration:none}
+button.pri,.btn.pri{background:var(--green);border-color:var(--green);color:#fff}
+button.lime,.btn.lime{background:var(--lime);border-color:var(--lime);color:var(--green)}
+button.dng{color:var(--bad);border-color:#e7c4c1}
+button:disabled{opacity:.55;cursor:default}
+button:focus-visible,.btn:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible{outline:3px solid var(--lime);outline-offset:2px}
+form.f{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+form.f .w{grid-column:1/-1}
+label{display:grid;gap:4px;font-size:.76rem;color:var(--muted);min-width:0}
+input,select,textarea{font:500 1rem var(--f-ui);color:var(--ink);background:#fff;border:1px solid var(--line);border-radius:12px;padding:10px 12px;min-height:46px;width:100%;min-width:0}
+textarea{min-height:80px}
+input.code{font:600 1.6rem var(--f-num);letter-spacing:.35em;text-align:center}
+.tabs{display:flex;gap:6px;overflow-x:auto;position:sticky;top:env(safe-area-inset-top,0px);background:var(--bg);z-index:5;padding:6px 0 4px;scrollbar-width:none}
+.tabs::-webkit-scrollbar{display:none}
+.tabs button{flex:none;min-height:42px;border-radius:999px;position:relative}
+.tabs button[aria-pressed=true]{background:var(--green);color:#fff;border-color:var(--green)}
+.tabs .cnt{background:var(--bad);color:#fff;border-radius:999px;font:600 .7rem var(--f-num);padding:1px 7px}
+.prow{display:grid;grid-template-columns:minmax(0,1fr) auto auto;gap:6px 12px;align-items:center;padding:10px 0;border-top:1px solid var(--line)}
+.prow:first-child{border-top:0;padding-top:2px}
+.prow .t{font:600 .98rem var(--f-ui)}.prow .num{font-size:1rem;white-space:nowrap}
+.prow .sell{min-height:42px}
+.prow form{grid-column:1/-1}
+.box{background:var(--lime-soft);border:1px solid #c9e09a;border-radius:16px;padding:12px 14px;font-size:.88rem;display:grid;gap:8px}
+.box.w{background:var(--warn-bg);border-color:#ecd39b;color:var(--warn)}
+.sub{border-top:1px solid var(--line);padding-top:10px;display:grid;gap:8px}
+.kpis{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.kpi{background:var(--bg);border-radius:12px;padding:8px 10px}.kpi small{display:block;font-size:.7rem;color:var(--muted)}.kpi b{font:600 .98rem var(--f-num)}
+.toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translate(-50%,30px);opacity:0;transition:.25s;background:var(--green);color:#fff;padding:12px 16px;border-radius:14px;font-weight:600;font-size:.9rem;max-width:min(92vw,520px);z-index:50;pointer-events:none;text-align:center}
+.toast.on{opacity:1;transform:translate(-50%,0)}
+.center{min-height:60vh;display:grid;align-content:center;gap:14px}
+.copy{border:0;background:none;padding:0;min-height:0;color:var(--green2);font:600 .9rem var(--f-num);text-decoration:underline;display:inline}
+@media (max-width:460px){form.f{grid-template-columns:1fr}.prow{grid-template-columns:minmax(0,1fr) auto}.prow .sell{grid-column:1/-1}}
+@media (prefers-reduced-motion:reduce){.toast{transition:none}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top"><img src="logo.png" alt="ERNTE"><div class="tt"><h1 id="hT">ERNTE Farmár</h1><small id="hS">výkup komodít</small></div><button type="button" class="out" id="outBtn" hidden>Odhlásiť</button></header>
+  <main id="app" class="wrap" aria-live="polite"><div class="card"><div class="t">Načítavam…</div></div></main>
+</div>
+<div class="toast" id="toast" role="status"></div>
+
+<script src="config.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+<script>
+"use strict";
+const MK=[["repka","Repka"],["lo","LO slnečnica"],["ho","HO slnečnica"],["soja","Sója"],["psenica_p","Pšenica potravinárska"],["psenica_k","Pšenica kŕmna"],["jacmen_k","Jačmeň kŕmny"],["jacmen_s","Jačmeň sladovnícky"],["kukurica","Kukurica"],["cirok","Cirok"]];
+const SPEC={kukurica:[14,2,1],soja:[12,2,1],psenica_k:[13,2],psenica_p:[14,2],jacmen_s:[14.5,2],jacmen_k:[14,2],repka:[8,2],lo:[9,2],ho:[9,2],cirok:[14,2]};
+const DST={navrh:["čaká na podpis","g"],podpisany:["podpísaný",""],odvoz:["odvoz beží","b"],odvezeny:["odvezený",""],fakturacia:["fakturácia","w"],zaplateny:["zaplatený",""],zruseny:["zrušený","r"]};
+const RST={nova:["čaká na ERNTE","w"],vybavena:["vybavené",""],zamietnuta:["zamietnuté","r"]};
+const RKIND={sell:"Chcem predať",transport:"Objednávka odvozu",agree:"Súhlas so zmluvou",message:"Správa"};
+
+const $=id=>document.getElementById(id);
+const esc=t=>String(t??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const num=s=>{if(s==null||s==="")return NaN;if(typeof s==="number")return s;return Number(String(s).replace(/\s/g,"").replace(",","."))};
+const fmt=(x,d=2)=>Number.isFinite(+x)&&x!==null&&x!==""?(+x).toLocaleString("sk-SK",{minimumFractionDigits:d,maximumFractionDigits:d}):"–";
+const dSK=d=>{if(!d)return "";const m=String(d).match(/^(\d{4})-(\d{2})-(\d{2})/);return m?`${+m[3]}. ${+m[2]}. ${m[1]}`:String(d)};
+const dtSK=d=>d?new Date(d).toLocaleString("sk-SK",{day:"numeric",month:"numeric",hour:"2-digit",minute:"2-digit"}):"";
+const comName=c=>(MK.find(m=>m[0]===c)||[c,c||"–"])[1];
+const specLine=c=>{const s=SPEC[c];return s?`vlhkosť max. ${String(s[0]).replace(".",",")} %, nečistoty max. ${s[1]} %${s[2]?", Non-GMO":""}`:""};
+const pill=a=>`<span class="pill ${a[1]||""}">${esc(a[0])}</span>`;
+const today=()=>new Date().toISOString().slice(0,10);
+function toast(t,ms=3500){const e=$("toast");e.textContent=t;e.classList.add("on");clearTimeout(e._t);e._t=setTimeout(()=>e.classList.remove("on"),ms)}
+async function copy(t){try{await navigator.clipboard.writeText(t);toast("Skopírované.")}catch(e){prompt("Skopírujte:",t)}}
+function busy(btn,on){if(!btn)return;btn.disabled=on;if(on){btn._t=btn.textContent;btn.textContent="Chvíľu…"}else if(btn._t)btn.textContent=btn._t}
+const isStandalone=()=>matchMedia("(display-mode: standalone)").matches||navigator.standalone===true;
+
+const CFG=window.ERNTE_CONFIG||{};
+let sb=null,ME=null,ROLE=null,FARMER=null,STATE={};
+const APP_URL=location.origin+location.pathname.replace(/index\.html$/,"");
+
+// ================= štart =================
+async function boot(){
+  if(!CFG.SUPABASE_URL||!CFG.SUPABASE_KEY||!window.supabase){$("app").innerHTML=`<div class="card"><div class="t">Aplikácia ešte nie je pripojená na databázu.</div><div class="s">Doplňte config.js.</div></div>`;return}
+  sb=window.supabase.createClient(CFG.SUPABASE_URL,CFG.SUPABASE_KEY,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}});
+  sb.auth.onAuthStateChange((ev)=>{if(ev==="SIGNED_OUT"){ME=null;showLogin()}});
+  const {data}=await sb.auth.getSession();
+  if(data&&data.session)await enter(data.session.user);else showLogin();
+}
+
+// ================= prihlásenie =================
+let LOGIN={email:"",sent:false};
+function showLogin(){$("outBtn").hidden=true;$("hS").textContent="výkup komodít";
+  const A=$("app");
+  if(!LOGIN.sent){A.innerHTML=`<div class="center"><div class="hero"><small>Vitajte</small><b>Prihlásenie dodávateľa</b><small>Zadajte e-mail, ktorý ste dali ERNTE. Pošleme vám 6-miestny kód.</small></div>
+    <form class="card" id="fEmail"><label>Váš e-mail<input name="email" type="email" inputmode="email" autocomplete="email" required value="${esc(LOGIN.email)}" placeholder="meno@firma.sk"></label><button class="pri" type="submit">Poslať kód</button></form>${installHint()}</div>`}
+  else{A.innerHTML=`<div class="center"><div class="hero"><small>Kód sme poslali na</small><b>${esc(LOGIN.email)}</b><small>Pozrite si e-mail (aj priečinok Spam) a opíšte kód.</small></div>
+    <form class="card" id="fCode"><label>Kód z e-mailu<input class="code" name="code" inputmode="numeric" autocomplete="one-time-code" maxlength="8" required></label><button class="pri" type="submit">Prihlásiť</button><button type="button" id="backEmail">Zmeniť e-mail / poslať znova</button></form></div>`;
+    setTimeout(()=>{const i=document.querySelector("input.code");if(i)i.focus()},50)}
+}
+function installHint(){if(isStandalone())return "";const ios=/iphone|ipad|ipod/i.test(navigator.userAgent);
+  return `<div class="box"><b>Tip: dajte si ERNTE na plochu</b><div>${ios?"V Safari ťuknite dole na <b>Zdieľať</b> (štvorček so šípkou) → <b>Pridať na plochu</b>.":"V prehliadači otvorte ponuku <b>⋮</b> → <b>Pridať na plochu</b> / <b>Inštalovať aplikáciu</b>."} Potom ERNTE otvárate ako aplikáciu.</div></div>`}
+
+document.addEventListener("submit",async e=>{const f=e.target;
+  if(f.id==="fEmail"){e.preventDefault();const b=f.querySelector("button");busy(b,true);LOGIN.email=String(new FormData(f).get("email")).trim().toLowerCase();
+    const {error}=await sb.auth.signInWithOtp({email:LOGIN.email,options:{shouldCreateUser:true,emailRedirectTo:APP_URL}});busy(b,false);
+    if(error){toast(error.status===429?"Príliš veľa pokusov, skúste o minútu.":"Kód sa nepodarilo poslať: "+error.message,5000);return}
+    LOGIN.sent=true;showLogin();return}
+  if(f.id==="fCode"){e.preventDefault();const b=f.querySelector("button");busy(b,true);const code=String(new FormData(f).get("code")).replace(/\D/g,"");
+    const {data,error}=await sb.auth.verifyOtp({email:LOGIN.email,token:code,type:"email"});busy(b,false);
+    if(error){toast("Kód nesedí alebo vypršal. Skúste znova.",4500);return}
+    LOGIN.sent=false;await enter(data.user);return}
+},true);
+document.addEventListener("click",e=>{if(e.target.id==="backEmail"){LOGIN.sent=false;showLogin()}if(e.target.id==="outBtn"){sb.auth.signOut()}});
+
+// ================= kto som =================
+async function enter(user){ME=user;$("outBtn").hidden=false;
+  const st=await sb.from("staff").select("email,name,role").eq("email",String(user.email).toLowerCase()).maybeSingle();
+  if(st.data){ROLE=st.data.role;ME.staffName=st.data.name;$("hS").textContent=st.data.name+" · ERNTE";startStaff();return}
+  const fr=await sb.from("farmers").select("*").limit(1).maybeSingle();
+  if(fr.data){FARMER=fr.data;$("hS").textContent=fr.data.name;startFarmer();return}
+  $("app").innerHTML=`<div class="card"><div class="t">Váš e-mail ešte nemá prístup</div><div class="s">${esc(user.email)} zatiaľ nie je v zozname dodávateľov ERNTE. Zavolajte nám a zapíšeme vás.</div><div class="btns"><a class="btn pri" href="tel:+421918449991">Zavolať ERNTE</a></div></div>`}
+
+// ================= FARMÁR =================
+let SELL=null,ORDER=null;
+async function startFarmer(){await loadFarmer();renderFarmer();
+  sb.channel("f-"+FARMER.id).on("postgres_changes",{event:"*",schema:"public",table:"requests",filter:"farmer_id=eq."+FARMER.id},()=>loadFarmer().then(renderFarmer)).subscribe();
+  document.addEventListener("visibilitychange",()=>{if(!document.hidden)loadFarmer().then(renderFarmer)})}
+async function loadFarmer(){const [p,s,d,r]=await Promise.all([
+  sb.from("prices").select("com,price,updated_at"),sb.from("settings").select("key,value"),
+  sb.from("deals").select("*").order("created_at",{ascending:false}),
+  sb.from("requests").select("*").order("created_at",{ascending:false}).limit(20)]);
+  STATE.prices=(p.data||[]).filter(x=>x.price!=null);STATE.settings=Object.fromEntries((s.data||[]).map(x=>[x.key,x.value]));STATE.deals=d.data||[];STATE.reqs=r.data||[]}
+function contact(){return (STATE.settings||{}).contact||{phone:"+421 918 449 991",email:"jana.valkova@ernte.sk"}}
+function renderFarmer(){const F=FARMER,P=MK.map(m=>STATE.prices.find(x=>x.com===m[0])).filter(Boolean),valid=((STATE.settings||{}).pricelist||{}).valid,c=contact();
+  let h=`<div class="hero"><small>Prihlásený dodávateľ</small><b>${esc(F.name)}</b><small>${esc(ME.email)}</small></div>`;
+  h+=`<h2>Výkupné ceny · FCA farma, bez DPH</h2>`;
+  h+=P.length?`<div class="card">${P.map(p=>`<div class="prow"><div><div class="t">${esc(comName(p.com))}</div><div class="s">${esc(specLine(p.com))}</div></div><b class="num">${fmt(p.price)} €/t</b>
+      ${SELL===p.com?"":`<button type="button" class="lime sell" data-sell="${esc(p.com)}">Predať</button>`}
+      ${SELL===p.com?`<form class="f sub" id="fSell"><div class="w"><b>Predať ${esc(comName(p.com))} za ${fmt(p.price)} €/t</b></div><label>Koľko ton?<input name="tons" inputmode="decimal" required placeholder="napr. 100"></label><label>Odkedy môžeme odviezť?<input name="date" type="date" min="${today()}"></label><label class="w">Poznámka (nepovinné)<input name="note" placeholder="napr. vlhkosť, miesto skladu"></label><div class="w btns"><button class="pri" type="submit">Odoslať ERNTE</button><button type="button" data-sell="">Zrušiť</button></div></form>`:""}</div>`).join("")}
+      <div class="s">${valid?`Ceny platia do ${esc(dSK(valid))}. `:""}Ťuknite na <b>Predať</b>, napíšte tony a odošlite. ERNTE sa vám ozve.</div></div>`
+    :`<div class="card"><div class="s">Cenník práve pripravujeme.</div></div>`;
+  const R=STATE.reqs;
+  if(R.length){h+=`<h2>Moje požiadavky</h2><div class="card">${R.slice(0,8).map(r=>`<div class="row"><span><b style="font-family:var(--f-ui)">${esc(RKIND[r.kind])}</b>${r.com?" · "+esc(comName(r.com)):""}${r.tons?" · "+fmt(r.tons)+" t":""}</span>${pill(RST[r.status]||[r.status])}</div><div class="s" style="margin-top:-6px">${esc(dtSK(r.created_at))}${r.reply?" · ERNTE: "+esc(r.reply):""}</div>`).join("")}</div>`}
+  h+=`<h2>Moje obchody</h2>`;
+  h+=STATE.deals.length?STATE.deals.map(d=>{const left=Math.max(0,(+d.tons||0)-(+d.delivered_t||0));const waitAgree=STATE.reqs.some(r=>r.kind==="agree"&&r.deal_id===d.id&&r.status==="nova");
+    return `<div class="card"><div class="row"><span class="t">${esc(comName(d.com))}</span>${pill(DST[d.status]||[d.status])}</div>
+      <div class="s">Zmluva ${esc(d.no)} · ${fmt(d.price)} €/t FCA${d.term?" · do "+esc(d.term):""}</div>
+      <div class="kpis"><div class="kpi"><small>Dohodnuté</small><b>${fmt(d.tons)} t</b></div><div class="kpi"><small>Odvezené</small><b>${fmt(d.delivered_t)} t</b></div><div class="kpi"><small>Zostáva</small><b>${fmt(left)} t</b></div></div>
+      ${d.note?`<div class="s">Pozn.: ${esc(d.note)}</div>`:""}
+      <div class="btns">${d.status==="navrh"?(waitAgree?`<span class="pill w">súhlas odoslaný</span>`:`<button type="button" class="pri" data-agree="${esc(d.id)}">Súhlasím so zmluvou</button>`):""}
+        ${["podpisany","odvoz"].includes(d.status)&&left>0&&ORDER!==d.id?`<button type="button" class="lime" data-order="${esc(d.id)}">Objednať odvoz</button>`:""}</div>
+      ${ORDER===d.id?`<form class="f sub" id="fOrder" data-deal="${esc(d.id)}"><div class="w"><b>Objednávka odvozu VALKO</b></div><label>Počet kamiónov<input name="trucks" inputmode="numeric" value="${Math.max(1,Math.ceil(left/25))}"></label><label>Deň<input name="date" type="date" min="${today()}" required></label><label>Od koľkej<input name="time" type="time" value="07:00"></label><label>Miesto nakládky<input name="place" placeholder="sklad farmy"></label><label class="w">Poznámka<input name="note"></label><div class="w btns"><button class="pri" type="submit">Odoslať objednávku</button><button type="button" data-order="">Zrušiť</button></div></form>`:""}
+    </div>`}).join(""):`<div class="card"><div class="s">Zatiaľ nemáte žiadny obchod. Keď si vyberiete cenu a ťuknete na Predať, ERNTE vám pripraví zmluvu.</div></div>`;
+  h+=`<h2>Kontakt ERNTE</h2><div class="card"><div class="row"><span>Telefón</span><a class="copy" href="tel:${esc(String(c.phone||"").replace(/\s/g,""))}">${esc(c.phone)}</a></div><div class="row"><span>E-mail</span><a class="copy" href="mailto:${esc(c.email)}">${esc(c.email)}</a></div></div>`;
+  h+=installHint();
+  $("app").innerHTML=h}
+
+document.addEventListener("click",async e=>{if(!FARMER)return;const t=e.target;
+  const s=t.closest("[data-sell]");if(s){SELL=s.dataset.sell||null;renderFarmer();if(SELL)setTimeout(()=>{const i=document.querySelector("#fSell input[name=tons]");if(i)i.focus()},50);return}
+  const o=t.closest("[data-order]");if(o){ORDER=o.dataset.order||null;renderFarmer();return}
+  const a=t.closest("[data-agree]");if(a){if(!confirm("Potvrdiť súhlas s podmienkami zmluvy?"))return;busy(a,true);
+    const d=STATE.deals.find(x=>x.id===a.dataset.agree);const {error}=await sb.from("requests").insert({farmer_id:FARMER.id,kind:"agree",deal_id:d.id,com:d.com,tons:d.tons,price:d.price});
+    if(error){busy(a,false);toast("Nepodarilo sa odoslať. Skúste znova.");return}toast("Súhlas odoslaný ERNTE.");await loadFarmer();renderFarmer()}});
+document.addEventListener("submit",async e=>{if(!FARMER)return;const f=e.target;
+  if(f.id==="fSell"){e.preventDefault();const fd=new FormData(f),tons=num(fd.get("tons"));if(!(tons>0)){toast("Napíšte počet ton.");return}
+    const p=STATE.prices.find(x=>x.com===SELL);const b=f.querySelector("button[type=submit]");busy(b,true);
+    const {error}=await sb.from("requests").insert({farmer_id:FARMER.id,kind:"sell",com:SELL,price:p?p.price:null,tons,pickup_date:fd.get("date")||null,note:String(fd.get("note")||"").slice(0,500)||null});
+    if(error){busy(b,false);toast("Nepodarilo sa odoslať. Skúste znova.");return}
+    SELL=null;toast("Odoslané. ERNTE sa vám ozve.",4500);await loadFarmer();renderFarmer();return}
+  if(f.id==="fOrder"){e.preventDefault();const fd=new FormData(f),d=STATE.deals.find(x=>x.id===f.dataset.deal);const b=f.querySelector("button[type=submit]");busy(b,true);
+    const {error}=await sb.from("requests").insert({farmer_id:FARMER.id,kind:"transport",deal_id:d.id,com:d.com,trucks:parseInt(fd.get("trucks"))||1,pickup_date:fd.get("date"),pickup_time:fd.get("time")||null,place:String(fd.get("place")||"").slice(0,200)||null,note:String(fd.get("note")||"").slice(0,500)||null});
+    if(error){busy(b,false);toast("Nepodarilo sa odoslať. Skúste znova.");return}
+    ORDER=null;toast("Objednávka odoslaná dispečingu VALKO.",4500);await loadFarmer();renderFarmer()}
+});
+
+// ================= ERNTE =================
+let TAB="req",DEALF=null,EDITF=null,FQ="";
+async function startStaff(){await loadStaff();renderStaff();
+  sb.channel("staff-req").on("postgres_changes",{event:"INSERT",schema:"public",table:"requests"},async p=>{await loadStaff();renderStaff();const fr=STATE.farmers.find(x=>x.id===p.new.farmer_id);toast("Nová požiadavka: "+(fr?fr.name:"")+" – "+RKIND[p.new.kind],6000);try{navigator.vibrate&&navigator.vibrate(200)}catch(x){}}).subscribe();
+  document.addEventListener("visibilitychange",()=>{if(!document.hidden)loadStaff().then(renderStaff)})}
+async function loadStaff(){const [f,p,s,d,r]=await Promise.all([sb.from("farmers").select("*").order("name"),sb.from("prices").select("*"),sb.from("settings").select("key,value"),
+  sb.from("deals").select("*").order("created_at",{ascending:false}),sb.from("requests").select("*").order("created_at",{ascending:false}).limit(200)]);
+  STATE.farmers=f.data||[];STATE.prices=p.data||[];STATE.settings=Object.fromEntries((s.data||[]).map(x=>[x.key,x.value]));STATE.deals=d.data||[];STATE.reqs=r.data||[]}
+const fName=id=>{const f=STATE.farmers.find(x=>x.id===id);return f?f.name:"?"};
+function renderStaff(){const nNew=STATE.reqs.filter(r=>r.status==="nova").length;
+  const tabs=[["req",`Požiadavky${nNew?` <span class="cnt">${nNew}</span>`:""}`],["price","Cenník"],["deals","Obchody"],["farm","Farmári"]];
+  let h=`<nav class="tabs">${tabs.map(t=>`<button type="button" data-tab="${t[0]}" aria-pressed="${TAB===t[0]}">${t[1]}</button>`).join("")}</nav>`;
+  h+=({req:vReq,price:vPrice,deals:vDeals,farm:vFarm})[TAB]();$("app").innerHTML=h}
+function vReq(){const R=STATE.reqs;if(!R.length)return `<div class="card"><div class="s">Zatiaľ žiadne požiadavky od farmárov.</div></div>`;
+  const ord=[...R.filter(r=>r.status==="nova"),...R.filter(r=>r.status!=="nova")];
+  return ord.map(r=>{const fr=STATE.farmers.find(x=>x.id===r.farmer_id)||{},d=r.deal_id?STATE.deals.find(x=>x.id===r.deal_id):null;
+    return `<div class="card"><div class="row"><span class="t">${esc(RKIND[r.kind])}</span>${pill(RST[r.status]||[r.status])}</div>
+    <div><b>${esc(fr.name||"?")}</b> <span class="s">· ${esc(dtSK(r.created_at))}</span></div>
+    <div class="s">${[r.com&&comName(r.com),r.tons&&fmt(r.tons)+" t",r.price&&fmt(r.price)+" €/t",d&&"zmluva "+d.no,r.trucks&&r.trucks+" kamión(y)",r.pickup_date&&"od "+dSK(r.pickup_date)+(r.pickup_time?" "+r.pickup_time:""),r.place].filter(Boolean).map(esc).join(" · ")}</div>
+    ${r.note?`<div class="s">„${esc(r.note)}“</div>`:""}
+    ${r.reply?`<div class="s">Odpoveď: ${esc(r.reply)}${r.handled_by?" ("+esc(r.handled_by)+")":""}</div>`:""}
+    <div class="btns">${fr.phone?`<a class="btn" href="tel:${esc(String(fr.phone).replace(/\s/g,""))}">Volať</a>`:""}
+      ${r.status==="nova"&&r.kind==="sell"?`<button type="button" class="lime" data-mkdeal="${esc(r.id)}">Vytvoriť obchod</button>`:""}
+      ${r.status==="nova"&&r.kind==="agree"&&d?`<button type="button" class="lime" data-sign="${esc(r.id)}">Zmluva podpísaná</button>`:""}
+      ${r.status==="nova"?`<button type="button" class="pri" data-done="${esc(r.id)}">Vybavené</button><button type="button" class="dng" data-rej="${esc(r.id)}">Zamietnuť</button>`:""}</div></div>`}).join("")}
+function vPrice(){const P=STATE.prices,valid=((STATE.settings||{}).pricelist||{}).valid||"";
+  return `<form class="card f" id="fPrice"><div class="w s">Výkupné ceny FCA farma bez DPH. Prázdne = farmár komoditu nevidí. Po uložení ich hneď vidia všetci prihlásení farmári.</div>
+  ${MK.map(m=>{const p=P.find(x=>x.com===m[0]);return `<label>${esc(m[1])} €/t<input name="p_${m[0]}" inputmode="decimal" value="${p&&p.price!=null?String(p.price).replace(".",","):""}" placeholder="–"></label>`}).join("")}
+  <label class="w">Platí do<input name="valid" type="date" value="${esc(valid)}"></label><div class="w btns"><button class="pri" type="submit">Uložiť a zverejniť</button></div></form>`}
+function vDeals(){const F=STATE.farmers.filter(f=>f.active),pre=DEALF||{};
+  let h=`<form class="card f" id="fDeal"><div class="w t">Nový obchod</div>
+   <label class="w">Farmár<select name="farmer" required><option value="">– vyber –</option>${F.map(f=>`<option value="${esc(f.id)}"${pre.farmer_id===f.id?" selected":""}>${esc(f.name)}</option>`).join("")}</select></label>
+   <label>Komodita<select name="com" id="dCom">${MK.map(m=>`<option value="${m[0]}"${pre.com===m[0]?" selected":""}>${esc(m[1])}</option>`).join("")}</select></label>
+   <label>Množstvo t<input name="tons" inputmode="decimal" required value="${esc(pre.tons??"")}"></label>
+   <label>Cena €/t FCA<input name="price" id="dPrice" inputmode="decimal" required value="${esc(pre.price!=null?String(pre.price).replace(".",","):"")}"></label>
+   <label>Termín plnenia<input name="term" value="${esc(pre.term||"")}" placeholder="napr. 30. 11. 2026"></label>
+   <label class="w">Poznámka<input name="note" value="${esc(pre.note||"")}"></label>
+   <div class="w btns"><button class="pri" type="submit">Uložiť obchod</button>${DEALF?`<button type="button" data-clrdeal>Zrušiť</button>`:""}</div></form>`;
+  h+=STATE.deals.map(d=>`<div class="card"><div class="row"><span class="t">${esc(fName(d.farmer_id))}</span>${pill(DST[d.status]||[d.status])}</div>
+    <div class="s">${esc(d.no)} · ${esc(comName(d.com))} · ${fmt(d.tons)} t × ${fmt(d.price)} €/t${d.term?" · "+esc(d.term):""}</div>
+    <form class="f sub" data-dedit="${esc(d.id)}"><label>Stav<select name="status">${Object.keys(DST).map(k=>`<option value="${k}"${d.status===k?" selected":""}>${esc(DST[k][0])}</option>`).join("")}</select></label><label>Odvezené t<input name="delivered_t" inputmode="decimal" value="${String(d.delivered_t??0).replace(".",",")}"></label><div class="w btns"><button type="submit">Uložiť zmenu</button></div></form></div>`).join("");
+  return h}
+function vFarm(){const q=FQ.toLowerCase(),L=STATE.farmers.filter(f=>!q||(f.name+" "+(f.email||"")).toLowerCase().includes(q));const E=EDITF==="new"?{}:STATE.farmers.find(f=>f.id===EDITF);
+  let h=`<div class="card"><div class="btns"><button type="button" class="pri" data-fedit="new">+ Pridať farmára</button></div><label>Hľadať<input id="fq" value="${esc(FQ)}" placeholder="meno alebo e-mail"></label>
+   <div class="s">Farmár sa prihlási e-mailom, ktorý tu zapíšeš. Pošli mu pozvánku s odkazom na aplikáciu.</div></div>`;
+  if(E)h+=farmForm(E);
+  h+=L.map(f=>`<div class="card"><div class="row"><span class="t">${esc(f.name)}</span>${f.active?(f.email?pill(["má prístup"]):pill(["bez e-mailu","w"])):pill(["vypnutý","g"])}</div><div class="s">${esc([f.email,f.phone,f.addr].filter(Boolean).join(" · "))}</div>
+    <div class="btns"><button type="button" data-fedit="${esc(f.id)}">Upraviť</button>${f.email&&f.active?`<button type="button" data-invite="${esc(f.id)}">Kopírovať pozvánku</button>`:""}</div></div>`).join("");
+  return h}
+function farmForm(f){const v=k=>esc(f[k]||"");return `<form class="card f" id="fFarm" data-id="${esc(f.id||"")}"><div class="w t">${f.id?"Upraviť farmára":"Nový farmár"}</div>
+  <label class="w">Názov / meno<input name="name" required value="${v("name")}"></label><label>E-mail na prihlásenie<input name="email" type="email" value="${v("email")}"></label><label>Telefón<input name="phone" value="${v("phone")}"></label>
+  <label class="w">Adresa<input name="addr" value="${v("addr")}"></label><label>IČO<input name="ico" value="${v("ico")}"></label><label>DIČ<input name="dic" value="${v("dic")}"></label><label>IČ DPH<input name="icdph" value="${v("icdph")}"></label><label>IBAN<input name="iban" value="${v("iban")}"></label>
+  <label class="w" style="display:flex;flex-direction:row;align-items:center;gap:8px;color:var(--ink)"><input type="checkbox" name="active" style="width:20px;min-height:20px"${f.active===false?"":" checked"}> Prístup povolený</label>
+  <div class="w btns"><button class="pri" type="submit">Uložiť</button><button type="button" data-fedit="">Zavrieť</button></div></form>`}
+
+document.addEventListener("click",async e=>{if(!ROLE)return;const t=e.target,g=s=>t.closest(s);let x;
+  if(x=g("[data-tab]")){TAB=x.dataset.tab;renderStaff();window.scrollTo(0,0);return}
+  if(x=g("[data-done]")||g("[data-rej]")){const id=x.dataset.done||x.dataset.rej,rej=!!x.dataset.rej;const reply=prompt(rej?"Dôvod pre farmára (uvidí ho):":"Odpoveď pre farmára (nepovinné, uvidí ju):",rej?"":"Ozveme sa telefonicky.");if(reply===null)return;
+    await upd("requests",id,{status:rej?"zamietnuta":"vybavena",reply:reply||null,handled_by:ME.staffName,handled_at:new Date().toISOString()});return}
+  if(x=g("[data-mkdeal]")){const r=STATE.reqs.find(y=>y.id===x.dataset.mkdeal);DEALF={farmer_id:r.farmer_id,com:r.com,tons:r.tons,price:r.price,note:r.note||"",fromReq:r.id};TAB="deals";renderStaff();window.scrollTo(0,0);return}
+  if(x=g("[data-clrdeal]")){DEALF=null;renderStaff();return}
+  if(x=g("[data-sign]")){const r=STATE.reqs.find(y=>y.id===x.dataset.sign);busy(x,true);const a=await sb.from("deals").update({status:"podpisany",signed_at:new Date().toISOString()}).eq("id",r.deal_id);
+    if(a.error){busy(x,false);toast("Chyba: "+a.error.message);return}await upd("requests",r.id,{status:"vybavena",reply:"Zmluva potvrdená.",handled_by:ME.staffName,handled_at:new Date().toISOString()});return}
+  if(x=g("[data-fedit]")){EDITF=x.dataset.fedit||null;renderStaff();if(EDITF)window.scrollTo(0,0);return}
+  if(x=g("[data-invite]")){const f=STATE.farmers.find(y=>y.id===x.dataset.invite);copy(`Dobrý deň, ERNTE má pre vás aplikáciu s výkupnými cenami a vašimi obchodmi:\n${APP_URL}\nPrihláste sa e-mailom ${f.email} – príde vám kód. Potom si ju dajte na plochu (Zdieľať → Pridať na plochu).`);return}
+});
+document.addEventListener("input",e=>{if(e.target.id==="fq"){FQ=e.target.value;const p=e.target.selectionStart;renderStaff();const i=$("fq");i.focus();i.setSelectionRange(p,p)}});
+document.addEventListener("change",e=>{if(e.target.id==="dCom"){const p=STATE.prices.find(x=>x.com===e.target.value);if(p&&p.price!=null)$("dPrice").value=String(p.price).replace(".",",")}});
+async function upd(tbl,id,patch){const {error}=await sb.from(tbl).update(patch).eq("id",id);if(error){toast("Chyba: "+error.message,5000);return false}await loadStaff();renderStaff();toast("Uložené.");return true}
+document.addEventListener("submit",async e=>{if(!ROLE)return;const f=e.target,fd=new FormData(f);
+  if(f.id==="fPrice"){e.preventDefault();const b=f.querySelector("button");busy(b,true);const now=new Date().toISOString();
+    const rows=MK.map(m=>{const v=num(fd.get("p_"+m[0]));return {com:m[0],price:Number.isFinite(v)?Math.round(v*100)/100:null,updated_at:now}});
+    const a=await sb.from("prices").upsert(rows);const s=await sb.from("settings").upsert({key:"pricelist",value:{valid:fd.get("valid")||"",by:ME.staffName,at:now}});busy(b,false);
+    if(a.error||s.error){toast("Uloženie zlyhalo: "+(a.error||s.error).message,5000);return}await loadStaff();renderStaff();toast("Cenník uložený a zverejnený.");return}
+  if(f.id==="fDeal"){e.preventDefault();const tons=num(fd.get("tons")),price=num(fd.get("price"));if(!fd.get("farmer")||!(tons>0)||!Number.isFinite(price)){toast("Doplň farmára, množstvo a cenu.");return}
+    const b=f.querySelector("button[type=submit]");busy(b,true);const y=new Date().getFullYear(),n=STATE.deals.filter(d=>String(d.no).startsWith(`ERN-${y}-`)).length+1;
+    const row={no:`ERN-${y}-${String(n).padStart(4,"0")}`,farmer_id:fd.get("farmer"),com:fd.get("com"),tons,price,term:fd.get("term")||null,note:fd.get("note")||null};
+    const {error}=await sb.from("deals").insert(row);if(error){busy(b,false);toast("Chyba: "+error.message,5000);return}
+    if(DEALF&&DEALF.fromReq)await sb.from("requests").update({status:"vybavena",reply:`Pripravili sme zmluvu ${row.no}.`,handled_by:ME.staffName,handled_at:new Date().toISOString()}).eq("id",DEALF.fromReq);
+    DEALF=null;await loadStaff();renderStaff();toast("Obchod "+row.no+" uložený. Farmár ho vidí.");return}
+  if(f.dataset.dedit){e.preventDefault();const dt=num(fd.get("delivered_t"));await upd("deals",f.dataset.dedit,{status:fd.get("status"),delivered_t:Number.isFinite(dt)?dt:0});return}
+  if(f.id==="fFarm"){e.preventDefault();const row={};["name","email","phone","addr","ico","dic","icdph","iban"].forEach(k=>{const v=String(fd.get(k)||"").trim();row[k]=v||null});
+    if(row.email)row.email=row.email.toLowerCase();row.active=!!fd.get("active");const id=f.dataset.id;
+    const r=id?await sb.from("farmers").update(row).eq("id",id):await sb.from("farmers").insert(row);
+    if(r.error){toast(r.error.code==="23505"?"Tento e-mail už má iný farmár.":"Chyba: "+r.error.message,5000);return}EDITF=null;await loadStaff();renderStaff();toast("Farmár uložený.");return}
+});
+
+if("serviceWorker" in navigator&&location.protocol==="https:")navigator.serviceWorker.register("sw.js").catch(()=>{});
+boot();
+</script>
+</body>
+</html>
