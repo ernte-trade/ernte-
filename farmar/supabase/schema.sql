@@ -123,6 +123,7 @@ exception when others then null; end $$;
 -- ---------- ERNTE ľudia ----------
 insert into staff(email,name,role) values
   ('ernte@ernte.sk','Vaľko','owner'),
+  ('report.valko@gmail.com','Vaľko','owner'),
   ('meno@example.sk','Ján Novák','admin'),
   ('meno@example.sk','ERNTE spol','admin'),
   ('jana.valkova@ernte.sk','Jana Valková','invoice')
@@ -132,3 +133,9 @@ insert into settings(key,value) values
   ('pricelist','{"valid":""}'),
   ('contact','{"name":"Ernte spol. s r. o.","phone":"+421 918 449 991","email":"jana.valkova@ernte.sk","addr":"Zbudza 141, 072 23"}')
 on conflict (key) do nothing;
+
+-- ---------- aktuálny cenník (prenesený z portálu v Claude, 24. 10. 2026) ----------
+insert into prices(com,price) values
+  ('repka',515),('lo',500),('ho',580),('soja',470),('psenica_p',192),('psenica_k',182),('jacmen_k',160),('kukurica',225)
+on conflict (com) do nothing;
+update settings set value = '{"valid":"2026-11-01"}'::jsonb where key='pricelist' and coalesce(value->>'valid','')='';

@@ -1,6 +1,6 @@
-// Nastavenie pripojenia na databázu (Supabase → Project Settings → API).
-// Tento kľúč je verejný ("anon / publishable"), prístup strážia pravidlá v databáze.
+// Pripojenie na databázu Supabase (projekt ernte). Kľúč je verejný (publishable),
+// prístup k dátam strážia pravidlá v databáze (RLS).
 window.ERNTE_CONFIG = {
-  SUPABASE_URL: "",
-  SUPABASE_KEY: ""
+  SUPABASE_URL: "https://cflliscddsgleyeykzje.supabase.co",
+  SUPABASE_KEY: "sb_publishable_AOel6p4QZFP_-t4sSoziAA_ESUooutQ"
 };
