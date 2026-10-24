@@ -102,6 +102,16 @@ input.code{font:600 1.7rem var(--f-num);letter-spacing:.35em;text-align:center}i
 .cban::after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,transparent 40%,rgba(10,13,20,.85))}
 @media (max-width:460px){.prow{grid-template-columns:56px minmax(0,1fr) auto}.cimg{width:56px;height:56px;border-radius:14px}.prow .sell{grid-column:1/-1}}
 
+.wxhs{display:flex;gap:8px;overflow-x:auto;padding:4px 2px 8px;scrollbar-width:none;margin:0 -4px}.wxhs::-webkit-scrollbar{display:none}
+.wxh{flex:none;width:62px;display:grid;justify-items:center;gap:3px;padding:10px 4px;border-radius:16px;background:rgba(255,255,255,.05);border:1px solid var(--line)}
+.wxh:first-child{background:linear-gradient(160deg,rgba(182,255,59,.18),rgba(94,234,212,.08));border-color:rgba(182,255,59,.4)}
+.wxh small{font:600 .7rem var(--f-num);color:var(--muted)}.wxh span{font-size:1.3rem;line-height:1}.wxh b{font:600 1rem var(--f-num)}.wxh em{font:500 .62rem var(--f-num);font-style:normal;color:var(--cyan)}
+.wxds{display:grid;gap:2px}
+.wxd{display:grid;grid-template-columns:64px 30px 1fr minmax(120px,1.4fr);align-items:center;gap:8px;padding:9px 2px;border-top:1px solid var(--line);font-size:.84rem}
+.wxd:first-child{border-top:0}.wxd .dn{font-weight:600}.wxd .di{font-size:1.25rem}.wxd .dr{font:500 .72rem var(--f-num);color:var(--cyan)}
+.wxd .dt{display:flex;align-items:center;gap:6px;font-family:var(--f-num)}.wxd .dt b{font-weight:600;font-size:.86rem;min-width:30px;text-align:right}.wxd .dt b.lo{color:var(--muted);text-align:left}
+.bar{position:relative;flex:1;height:6px;border-radius:999px;background:rgba(255,255,255,.08)}.bar i{position:absolute;top:0;bottom:0;border-radius:999px;background:linear-gradient(90deg,#22d3ee,#b6ff3b,#ffb020);box-shadow:0 0 10px rgba(182,255,59,.4)}
+@media (max-width:420px){.wxd{grid-template-columns:54px 26px 1fr;}.wxd .dt{grid-column:1/-1}}
 @media (prefers-reduced-motion:reduce){.toast,button{transition:none}}
 </style>
 </head>
@@ -194,9 +204,31 @@ async function enter(user){ME=user;$("outBtn").hidden=false;
   if(fr.data){FARMER=fr.data;$("hS").textContent=fr.data.name;startFarmer();return}
   $("app").innerHTML=`<div class="card"><div class="t">Váš e-mail ešte nemá prístup</div><div class="s">${esc(user.email)} zatiaľ nie je v zozname dodávateľov ERNTE. Zavolajte nám a zapíšeme vás.</div><div class="btns"><a class="btn pri" href="tel:+421918449991">Zavolať ERNTE</a></div></div>`}
 
+
+// ================= POČASIE (Open-Meteo, 7 dní + hodiny) =================
+const WX_DEF={name:"Michalovce",lat:48.755,lon:21.915};
+let WXLOC=(()=>{try{return JSON.parse(localStorage.getItem("ernte-wxloc"))||WX_DEF}catch(e){return WX_DEF}})(),WXD=null,WXAT=0;
+const WMO=c=>c===0?["☀️","jasno"]:c<=2?["🌤️","polojasno"]:c===3?["☁️","zamračené"]:c<=48?["🌫️","hmla"]:c<=57?["🌦️","mrholenie"]:c<=67?["🌧️","dážď"]:c<=77?["🌨️","sneh"]:c<=82?["🌧️","prehánky"]:c<=86?["🌨️","snehové prehánky"]:["⛈️","búrka"];
+async function loadWx(force){if(!force&&WXD&&Date.now()-WXAT<15*60e3)return;
+  const u=`https://api.open-meteo.com/v1/forecast?latitude=${WXLOC.lat}&longitude=${WXLOC.lon}&hourly=temperature_2m,precipitation,precipitation_probability,weather_code,wind_speed_10m&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_sum,precipitation_probability_max,wind_speed_10m_max&timezone=Europe%2FBratislava&forecast_days=7`;
+  try{const r=await fetch(u);WXD=await r.json();WXAT=Date.now()}catch(e){WXD={err:1}}}
+function wxCard(){if(!WXD)return `<div class="card"><div class="s">Načítavam počasie…</div></div>`;if(WXD.err||!WXD.daily)return `<div class="card"><div class="s">Počasie sa nepodarilo načítať.</div></div>`;
+  const H=WXD.hourly,D=WXD.daily,now=Date.now();let i0=H.time.findIndex(t=>new Date(t).getTime()>now-3600e3);if(i0<0)i0=0;
+  const hrs=H.time.slice(i0,i0+24).map((t,k)=>{const i=i0+k,w=WMO(H.weather_code[i]);return `<div class="wxh"><small>${new Date(t).getHours()}:00</small><span>${w[0]}</span><b>${Math.round(H.temperature_2m[i])}°</b><em>${H.precipitation[i]>0?H.precipitation[i].toFixed(1)+" mm":(H.precipitation_probability[i]??0)+" %"}</em></div>`}).join("");
+  const tmin=Math.min(...D.temperature_2m_min),tmax=Math.max(...D.temperature_2m_max),rng=Math.max(1,tmax-tmin);
+  const days=D.time.map((t,i)=>{const w=WMO(D.weather_code[i]),d=new Date(t+"T12:00");const nm=i===0?"Dnes":i===1?"Zajtra":d.toLocaleDateString("sk-SK",{weekday:"short",day:"numeric",month:"numeric"});
+    const a=(D.temperature_2m_min[i]-tmin)/rng*100,b=(D.temperature_2m_max[i]-tmin)/rng*100;
+    return `<div class="wxd"><span class="dn">${esc(nm)}</span><span class="di" title="${w[1]}">${w[0]}</span><span class="dr">${D.precipitation_sum[i]>0?D.precipitation_sum[i].toFixed(1)+" mm":"–"} · ${D.precipitation_probability_max[i]??0} %</span><span class="dt"><b class="lo">${Math.round(D.temperature_2m_min[i])}°</b><i class="bar"><i style="left:${a}%;right:${100-b}%"></i></i><b>${Math.round(D.temperature_2m_max[i])}°</b></span></div>`}).join("");
+  return `<div class="card wx"><div class="row"><span class="t">📍 ${esc(WXLOC.name)}</span><button type="button" class="out" data-wxloc>Moja poloha</button></div>
+    <div class="wxhs">${hrs}</div><div class="wxds">${days}</div>
+    <div class="s" style="font-size:.7rem">Predpoveď: Open-Meteo · <a class="copy" style="font-size:.7rem" href="https://www.pocasieradar.sk/" target="_blank" rel="noopener">Radar zrážok – pocasieradar.sk</a></div></div>`}
+document.addEventListener("click",e=>{if(!e.target.closest("[data-wxloc]"))return;if(!navigator.geolocation){toast("Poloha nie je dostupná.");return}
+  toast("Zisťujem polohu…");navigator.geolocation.getCurrentPosition(async p=>{WXLOC={name:"Moja poloha",lat:+p.coords.latitude.toFixed(3),lon:+p.coords.longitude.toFixed(3)};try{localStorage.setItem("ernte-wxloc",JSON.stringify(WXLOC))}catch(x){}await loadWx(true);rerender()},()=>toast("Polohu sa nepodarilo zistiť – povoľte ju v nastaveniach."),{timeout:10000})});
+function rerender(){if(FARMER)renderFarmer();else if(ROLE)renderStaff()}
+
 // ================= FARMÁR =================
 let SELL=null,ORDER=null;
-async function startFarmer(){await loadFarmer();renderFarmer();
+async function startFarmer(){await loadFarmer();renderFarmer();loadWx().then(renderFarmer);
   sb.channel("f-"+FARMER.id).on("postgres_changes",{event:"*",schema:"public",table:"requests",filter:"farmer_id=eq."+FARMER.id},()=>loadFarmer().then(renderFarmer)).subscribe();
   document.addEventListener("visibilitychange",()=>{if(!document.hidden)loadFarmer().then(renderFarmer)})}
 async function loadFarmer(){const [p,s,d,r]=await Promise.all([
@@ -215,6 +247,7 @@ function renderFarmer(){const F=FARMER,P=MK.map(m=>STATE.prices.find(x=>x.com===
     :`<div class="card"><div class="s">Cenník práve pripravujeme.</div></div>`;
   const R=STATE.reqs;
   if(R.length){h+=`<h2>Moje požiadavky</h2><div class="card">${R.slice(0,8).map(r=>`<div class="row"><span><b style="font-family:var(--f-ui)">${esc(RKIND[r.kind])}</b>${r.com?" · "+esc(comName(r.com)):""}${r.tons?" · "+fmt(r.tons)+" t":""}</span>${pill(RST[r.status]||[r.status])}</div><div class="s" style="margin-top:-6px">${esc(dtSK(r.created_at))}${r.reply?" · ERNTE: "+esc(r.reply):""}</div>`).join("")}</div>`}
+  h+=`<h2>Počasie · 24 hodín a 7 dní</h2>`+wxCard();
   h+=`<h2>Moje obchody</h2>`;
   h+=STATE.deals.length?STATE.deals.map(d=>{const left=Math.max(0,(+d.tons||0)-(+d.delivered_t||0));const waitAgree=STATE.reqs.some(r=>r.kind==="agree"&&r.deal_id===d.id&&r.status==="nova");
     return `<div class="card">${comImg(d.com,"cban")}<div class="row"><span class="t">${esc(comName(d.com))}</span>${pill(DST[d.status]||[d.status])}</div>
@@ -257,9 +290,9 @@ async function loadStaff(){const [f,p,s,d,r]=await Promise.all([sb.from("farmers
   STATE.farmers=f.data||[];STATE.prices=p.data||[];STATE.settings=Object.fromEntries((s.data||[]).map(x=>[x.key,x.value]));STATE.deals=d.data||[];STATE.reqs=r.data||[]}
 const fName=id=>{const f=STATE.farmers.find(x=>x.id===id);return f?f.name:"?"};
 function renderStaff(){const nNew=STATE.reqs.filter(r=>r.status==="nova").length;
-  const tabs=[["req",`Požiadavky${nNew?` <span class="cnt">${nNew}</span>`:""}`],["price","Cenník"],["deals","Obchody"],["farm","Farmári"]];
+  const tabs=[["req",`Požiadavky${nNew?` <span class="cnt">${nNew}</span>`:""}`],["price","Cenník"],["deals","Obchody"],["farm","Farmári"],["wx","Počasie"]];
   let h=`<nav class="tabs">${tabs.map(t=>`<button type="button" data-tab="${t[0]}" aria-pressed="${TAB===t[0]}">${t[1]}</button>`).join("")}</nav>`;
-  h+=({req:vReq,price:vPrice,deals:vDeals,farm:vFarm})[TAB]();if(TAB==="req")h+=pwCard();$("app").innerHTML=h}
+  if(TAB==="wx"&&!WXD)loadWx().then(renderStaff);h+=({req:vReq,price:vPrice,deals:vDeals,farm:vFarm,wx:wxCard})[TAB]();if(TAB==="req")h+=pwCard();$("app").innerHTML=h}
 function vReq(){const R=STATE.reqs;if(!R.length)return `<div class="card"><div class="s">Zatiaľ žiadne požiadavky od farmárov.</div></div>`;
   const ord=[...R.filter(r=>r.status==="nova"),...R.filter(r=>r.status!=="nova")];
   return ord.map(r=>{const fr=STATE.farmers.find(x=>x.id===r.farmer_id)||{},d=r.deal_id?STATE.deals.find(x=>x.id===r.deal_id):null;
