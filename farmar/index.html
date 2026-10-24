@@ -355,7 +355,7 @@ document.addEventListener("submit",async e=>{if(!FARMER)return;const f=e.target;
 
 // ================= ERNTE =================
 let TAB="req",DEALF=null,EDITF=null,FQ="";
-async function startStaff(){await loadStaff();renderStaff();if(ROLE==="owner"||ROLE==="dispatch"){sb.channel("fleet-ev").on("postgres_changes",{event:"INSERT",schema:"public",table:"fleet_events"},p=>{const e=p.new,m=`${e.plate||"auto"} ${e.kind==="yard_in"?"prišlo na dvor":"odišlo z dvora"}${e.driver?" · "+e.driver:""}`;toast("🚛 "+m,7000);try{navigator.vibrate&&navigator.vibrate([200,100,200])}catch(x){}try{if(window.Notification&&Notification.permission==="granted")new Notification("VALKO dvor",{body:m,icon:"icon-192.png"})}catch(x){}if(TAB==="fleet"){STATE.fleet=null;renderStaff()}}).subscribe();try{if(window.Notification&&Notification.permission==="default")Notification.requestPermission()}catch(x){}}setInterval(async()=>{if(document.hidden||TAB!=="trans")return;await loadStaff();renderStaff()},120000);
+async function startStaff(){await loadStaff();renderStaff();if(ROLE==="owner"||ROLE==="dispatch"){sb.channel("fleet-ev").on("postgres_changes",{event:"INSERT",schema:"public",table:"fleet_events"},p=>{const e=p.new,inn=e.kind==="in"||e.kind==="yard_in",m=`${e.plate||"auto"} ${inn?(e.place_kind==="fuel"?"stojí na čerpačke":"prišlo"):"odišlo"} · ${e.place||"dvor"}${e.driver?" · "+e.driver:""}`;toast("🚛 "+m,7000);try{navigator.vibrate&&navigator.vibrate([200,100,200])}catch(x){}try{if(window.Notification&&Notification.permission==="granted")new Notification("VALKO",{body:m,icon:"icon-192.png"})}catch(x){}if(TAB==="fleet"){STATE.fleet=null;renderStaff()}}).subscribe();try{if(window.Notification&&Notification.permission==="default")Notification.requestPermission()}catch(x){}}setInterval(async()=>{if(document.hidden||TAB!=="trans")return;await loadStaff();renderStaff()},120000);
   sb.channel("staff-req").on("postgres_changes",{event:"INSERT",schema:"public",table:"requests"},async p=>{await loadStaff();renderStaff();const fr=STATE.farmers.find(x=>x.id===p.new.farmer_id);toast("Nová požiadavka: "+(fr?fr.name:"")+" – "+RKIND[p.new.kind],6000);try{navigator.vibrate&&navigator.vibrate(200)}catch(x){}}).subscribe();
   document.addEventListener("visibilitychange",()=>{if(!document.hidden)loadStaff().then(renderStaff)})}
 async function loadStaff(){const [f,p,s,d,r]=await Promise.all([sb.from("farmers").select("*").order("name"),sb.from("prices").select("*"),sb.from("settings").select("key,value"),
@@ -397,9 +397,9 @@ let FPER="7",FVEH=null;
 async function loadFleet(){const days=FPER==="1"?1:+FPER,since=new Date(Date.now()-days*864e5);if(FPER==="1")since.setHours(0,0,0,0);
   if(FPER==="m"){since.setTime(new Date(new Date().getFullYear(),new Date().getMonth(),1).getTime())}
   const [v,r]=await Promise.all([sb.from("cmd_vehicles").select("*"),sb.from("rides").select("*").gte("start_at",since.toISOString()).order("start_at",{ascending:false}).limit(5000)]);
-  const [c,ev]=await Promise.all([sb.from("fleet_cfg").select("*"),sb.from("fleet_events").select("*").order("at",{ascending:false}).limit(40)]);
+  const [c,ev,pl]=await Promise.all([sb.from("fleet_cfg").select("*"),sb.from("fleet_events").select("*").order("at",{ascending:false}).limit(60),sb.from("places").select("id,name,kind,lat,lon,r,notify,source").order("name").limit(2000)]);
   const cfg=Object.fromEntries((c.data||[]).map(x=>[x.key,x.value]));
-  STATE.fleet={veh:v.data||[],rides:r.data||[],err:v.error||r.error,since,cfg,ev:ev.data||[]}}
+  STATE.fleet={veh:v.data||[],rides:r.data||[],err:v.error||r.error,since,cfg,ev:ev.data||[],places:pl.error?null:(pl.data||[])}}
 const n1=x=>Number.isFinite(+x)&&x!==null?(+x).toLocaleString("sk-SK",{maximumFractionDigits:1}):"–";
 const n0=x=>Number.isFinite(+x)&&x!==null?Math.round(+x).toLocaleString("sk-SK"):"–";
 const hm=sec=>{sec=+sec||0;const h=Math.floor(sec/3600),m=Math.round(sec%3600/60);return h?`${h} h ${m} min`:`${m} min`};
@@ -428,13 +428,22 @@ function vFleet(){const F=STATE.fleet;if(!F)return `<div class="card"><div class
     <div class="kb"><small>Jazdy</small><b>${A.n}</b></div><div class="kb"><small>Čas jazdy</small><b>${hm(A.sec)}</b></div><div class="kb"><small>Tankovanie</small><b>${n0(A.ref)} l</b>${A.refe?`<em>${n0(A.refe)} € bez DPH</em>`:""}</div></div>`;
   const AL=fleetAlerts(F);
   h+=`<h2>Upozornenia${AL.length?` (${AL.length})`:""}</h2><div class="card">${AL.length?AL.slice(0,30).map(a=>`<div class="al ${a[0]}">${esc(a[1])}</div>`).join(""):`<div class="s">Bez upozornení ✓</div>`}</div>`;
-  const Y=F.cfg.yard,NT=(F.cfg.notify||{}).topic;
-  h+=`<h2>Dvor VALKO · Medovská 46</h2><div class="card">`+(Y?`<div class="s">Upozornenie príde pri príchode a odchode každého auta (okruh ${Y.r||150} m).${F.veh.some(v=>v.in_yard)?` Na dvore teraz: <b>${F.veh.filter(v=>v.in_yard).map(v=>esc(v.plate||v.name)).join(", ")}</b>`:""}</div>`
-      :`<div class="s">Nastav polohu dvora – raz. Najľahšie: postav sa na dvor a ťukni „Som na dvore“. Alebo vyber auto, ktoré práve stojí na dvore.</div>`)
-    +`<div class="btns"><button type="button" class="lime" data-yardme>Som na dvore – použiť moju polohu</button></div>
-    <label>alebo podľa auta, ktoré stojí na dvore<select id="yardVeh"><option value="">– vyber auto –</option>${F.veh.filter(v=>v.lat).map(v=>`<option value="${esc(v.id)}">${esc(v.plate||v.name)} · ${esc(ago(v.gps_at))}</option>`).join("")}</select></label>
-    ${NT?`<div class="sub"><b>Upozornenia do mobilu aj pri zavretej aplikácii</b><div class="s">1. Nainštaluj si aplikáciu <b>ntfy</b> (App Store / Google Play, zadarmo). 2. Ťukni na tlačidlo nižšie – otvorí sa odber. Rovnako to urobí kolega na svojom telefóne.</div><div class="btns"><a class="btn pri" href="https://ntfy.sh/${esc(NT)}" target="_blank" rel="noopener">Odoberať upozornenia</a><button type="button" data-copy="${esc(NT)}">Kopírovať názov odberu</button></div><div class="s">Názov odberu: <b class="num">${esc(NT)}</b> – nikomu inému ho nedávaj.</div></div>`:""}
-    ${F.ev.length?`<div class="sub"><b>Posledné pohyby</b>${F.ev.slice(0,15).map(e=>`<div class="row"><span>${e.kind==="yard_in"?"🟢 prišlo":"🔵 odišlo"} · <b style="font-family:var(--f-ui)">${esc(e.plate||"")}</b>${e.driver?" · "+esc(e.driver):""}</span><span class="num" style="font-size:.78rem">${new Date(e.at).toLocaleString("sk-SK",{day:"numeric",month:"numeric",hour:"2-digit",minute:"2-digit"})}</span></div>`).join("")}</div>`:""}</div>`;
+  const NT=(F.cfg.notify||{}).topic,P=F.places;
+  const KN={yard:"🏠 Dvor",buyer:"🌾 Odberateľ",fuel:"⛽ Čerpačka",other:"📍 Miesto"};
+  const evTxt=e=>{const k=e.kind==="yard_in"||e.kind==="in";const pk=e.place_kind||(String(e.kind).startsWith("yard")?"yard":"");return `${k?(pk==="fuel"?"⛽ tankuje":"🟢 prišlo"):"🔵 odišlo"} · <b style="font-family:var(--f-ui)">${esc(e.plate||"")}</b> · ${esc(e.place||"Dvor Medovská")}${e.driver?" · "+esc(e.driver):""}`};
+  h+=`<h2>Miesta s upozornením</h2><div class="card">`;
+  if(!P)h+=`<div class="s">Miesta ešte nie sú zapnuté – spusti raz <a class="copy" href="miesta.html">miesta.html</a>.</div>`;
+  else{const fuel=P.filter(p=>p.kind==="fuel"),oth=P.filter(p=>p.kind!=="fuel");
+    h+=oth.map(p=>`<div class="row"><span>${KN[p.kind]} · <b style="font-family:var(--f-ui)">${esc(p.name)}</b><br><small class="s">okruh ${p.r} m${p.source?" · "+esc(p.source):""}${F.veh.some(v=>v.in_yard)&&p.kind==="yard"?" · na dvore: "+F.veh.filter(v=>v.in_yard).map(v=>esc(v.plate||v.name)).join(", "):""}</small></span><span class="btns"><button type="button" class="out" data-plfix="${p.id}">Upresniť</button><button type="button" class="out dng" data-pldel="${p.id}">×</button></span></div>`).join("");
+    h+=`<div class="row"><span>⛽ Čerpacie stanice <b>SLOVNAFT</b><br><small class="s">${fuel.length?fuel.length+" staníc na Slovensku (OpenStreetMap) · upozorní, keď auto zastaví pri stojane":"načítavajú sa – skús o pár minút"}</small></span>${fuel.length?`<button type="button" class="out" data-fueln="${fuel.some(p=>p.notify)?0:1}">${fuel.some(p=>p.notify)?"Vypnúť":"Zapnúť"}</button>`:""}</div>`;
+    if(!oth.some(p=>p.kind==="yard"))h+=`<div class="box w">Nastav dvor Medovská 46: postav sa na dvor a ťukni „Pridať – moja poloha“ s typom Dvor.</div>`;
+    h+=`<form class="f sub" id="fPlace"><label class="w">Nové miesto<input name="name" placeholder="napr. Bunge Tállya, sklad farmy…" required></label><label>Typ<select name="kind"><option value="yard">Dvor</option><option value="buyer" selected>Odberateľ / vykládka</option><option value="other">Iné</option></select></label><label>Okruh (m)<input name="r" inputmode="numeric" value="300"></label>
+      <label class="w">Poloha podľa auta, ktoré tam práve stojí<select name="veh"><option value="">– moja poloha (som na mieste) –</option>${F.veh.filter(v=>v.lat).map(v=>`<option value="${esc(v.id)}">${esc(v.plate||v.name)} · ${esc(ago(v.gps_at))}</option>`).join("")}</select></label><div class="w btns"><button class="pri" type="submit">Pridať</button></div></form>`;
+    if(STATE.plfix){const p=P.find(x=>x.id===STATE.plfix);if(p)h+=`<div class="box"><b>Upresniť: ${esc(p.name)}</b><div class="btns"><button type="button" class="lime" data-plme="${p.id}">Som tam – moja poloha</button></div><label>alebo auto, ktoré tam stojí<select id="plVeh" data-pid="${p.id}"><option value="">– vyber auto –</option>${F.veh.filter(v=>v.lat).map(v=>`<option value="${esc(v.id)}">${esc(v.plate||v.name)} · ${esc(ago(v.gps_at))}</option>`).join("")}</select></label></div>`}
+  }
+  h+=NT?`<div class="sub"><b>Upozornenia do mobilu aj pri zavretej aplikácii</b><div class="s">1. Nainštaluj si aplikáciu <b>ntfy</b> (App Store / Google Play, zadarmo). 2. Ťukni na tlačidlo nižšie. Rovnako kolega na svojom telefóne.</div><div class="btns"><a class="btn pri" href="https://ntfy.sh/${esc(NT)}" target="_blank" rel="noopener">Odoberať upozornenia</a><button type="button" data-copy="${esc(NT)}">Kopírovať názov odberu</button></div><div class="s">Názov odberu: <b class="num">${esc(NT)}</b> – nikomu inému ho nedávaj.</div></div>`:"";
+  h+=F.ev.length?`<div class="sub"><b>Posledné pohyby</b>${F.ev.slice(0,25).map(e=>`<div class="row"><span>${evTxt(e)}</span><span class="num" style="font-size:.76rem;white-space:nowrap">${new Date(e.at).toLocaleString("sk-SK",{day:"numeric",month:"numeric",hour:"2-digit",minute:"2-digit"})}</span></div>`).join("")}</div>`:"";
+  h+=`</div>`;
   const now=Date.now();const V=F.veh.map(v=>({v,a:agg(F.rides.filter(r=>r.vehicle_id===v.id))})).sort((x,y)=>y.a.km-x.a.km);
   const G=F.veh.filter(v=>v.lat&&v.gps_at&&now-new Date(v.gps_at)<6*3600e3).map(v=>({gps_lat:v.lat,gps_lon:v.lon,gps_speed:v.speed,no:(v.plate||"").replace(/\s/g,"").slice(0,7)}));
   if(G.length)h+=`<h2>Kde sú teraz</h2><div class="card">${fleetMap(G)}</div>`;
@@ -450,6 +459,11 @@ function vFleet(){const F=STATE.fleet;if(!F)return `<div class="card"><div class
   h+=`<div class="s" style="text-align:center">Údaje z Commandera · jazdy sa obnovujú každých 10 min, poloha každé 2 min. Spotreba len pri vozidlách s CAN (LVCAN).</div>`;
   return h}
 // ================= TÍM =================
+function myPos(cb){if(!navigator.geolocation){toast("Poloha nie je dostupná.");return}toast("Zisťujem polohu…");navigator.geolocation.getCurrentPosition(p=>cb(+p.coords.latitude.toFixed(6),+p.coords.longitude.toFixed(6)),()=>toast("Polohu sa nepodarilo zistiť – povoľ ju v nastaveniach."),{enableHighAccuracy:true,timeout:15000})}
+document.addEventListener("change",async e=>{if(e.target.id!=="plVeh"||!e.target.value)return;const v=STATE.fleet.veh.find(x=>x.id===e.target.value);if(!v)return;await sb.from("places").update({lat:v.lat,lon:v.lon,source:"podľa auta "+(v.plate||"")}).eq("id",+e.target.dataset.pid);STATE.plfix=null;STATE.fleet=null;renderStaff();toast("Poloha uložená.")});
+document.addEventListener("submit",async e=>{if(e.target.id!=="fPlace")return;e.preventDefault();const fd=new FormData(e.target),vid=fd.get("veh");
+  const add=async(la,lo)=>{const r=await sb.from("places").insert({name:String(fd.get("name")).trim(),kind:fd.get("kind"),lat:la,lon:lo,r:parseInt(fd.get("r"))||300,source:vid?"podľa auta":"moja poloha"});if(r.error){toast("Chyba: "+r.error.message);return}STATE.fleet=null;renderStaff();toast("Miesto pridané – upozornenia zapnuté.")};
+  if(vid){const v=STATE.fleet.veh.find(x=>x.id===vid);await add(v.lat,v.lon)}else myPos(add)},true);
 async function saveYard(lat,lon){const r=await sb.from("fleet_cfg").upsert({key:"yard",value:{lat:+(+lat).toFixed(6),lon:+(+lon).toFixed(6),r:150,name:"Medovská 46, Michalovce"}});
   if(r.error){toast("Chyba: "+r.error.message);return}STATE.fleet=null;renderStaff();toast("Dvor uložený. Upozornenia sú zapnuté.",5000)}
 document.addEventListener("change",async e=>{if(e.target.id!=="yardVeh"||!e.target.value)return;const v=STATE.fleet.veh.find(x=>x.id===e.target.value);if(v&&confirm(`Uložiť polohu auta ${v.plate||v.name} ako dvor?`))await saveYard(v.lat,v.lon)});
@@ -467,6 +481,10 @@ async function teamLogin(login,name,role){const pw=genPw();const r=await sb.rpc(
   STATE.invite={team:1,name,tel,txt:`Dobrý deň, tu je prístup do aplikácie ERNTE (${ROLES[role]}):\n${APP_URL}\n\nPrihlásenie: ${who}\nHeslo: ${pw}\n\nPo prihlásení si ju dajte na plochu.`};await loadTeam();renderStaff();window.scrollTo(0,0)}
 document.addEventListener("click",async e=>{if(!ROLE)return;const t=e.target;let x;
   if(x=t.closest("[data-fper]")){FPER=x.dataset.fper;STATE.fleet=null;renderStaff();return}
+  if(x=t.closest("[data-plfix]")){STATE.plfix=+x.dataset.plfix;renderStaff();return}
+  if(x=t.closest("[data-pldel]")){if(!confirm("Zmazať miesto?"))return;await sb.from("places").delete().eq("id",+x.dataset.pldel);STATE.fleet=null;renderStaff();return}
+  if(x=t.closest("[data-fueln]")){await sb.from("places").update({notify:x.dataset.fueln==="1"}).eq("kind","fuel");STATE.fleet=null;renderStaff();toast("Uložené.");return}
+  if(x=t.closest("[data-plme]")){const id=+x.dataset.plme;myPos(async(la,lo)=>{await sb.from("places").update({lat:la,lon:lo,source:"upresnené"}).eq("id",id);STATE.plfix=null;STATE.fleet=null;renderStaff();toast("Poloha uložená.")});return}
   if(x=t.closest("[data-yardme]")){if(!navigator.geolocation){toast("Poloha nie je dostupná.");return}toast("Zisťujem polohu…");
     navigator.geolocation.getCurrentPosition(async p=>{await saveYard(p.coords.latitude,p.coords.longitude)},()=>toast("Polohu sa nepodarilo zistiť – povoľ ju v nastaveniach."),{enableHighAccuracy:true,timeout:15000});return}
   if(x=t.closest("[data-fveh]")){FVEH=FVEH===x.dataset.fveh?null:x.dataset.fveh;renderStaff();return}
