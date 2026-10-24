@@ -146,6 +146,7 @@ details.trips{border-top:1px solid var(--line);padding-top:8px}details.trips sum
 .ride{padding:8px 0;border-top:1px solid var(--line)}.ride:first-child{border-top:0}.ride .r1{display:flex;justify-content:space-between;gap:8px;font-size:.82rem}.ride .r1 span{font-family:var(--f-num);font-size:.74rem;color:var(--cyan)}
 .dtab{display:grid;gap:0}.dh,.dr{display:grid;grid-template-columns:1fr 70px 60px 50px;gap:6px;padding:8px 0;border-top:1px solid var(--line);font-size:.82rem}.dh{border-top:0;color:var(--muted);font-size:.7rem}.dr span:not(:first-child),.dh span:not(:first-child){text-align:right;font-family:var(--f-num)}
 @media (max-width:420px){.kgrid{grid-template-columns:repeat(2,minmax(0,1fr))}.vk{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.rdbar{display:flex;align-items:center;gap:10px;margin-top:8px}.rdbar .rdplay{width:40px;height:40px;min-height:0;padding:0;border-radius:50%;background:rgba(10,13,20,.7);border:1px solid rgba(255,255,255,.2);color:#fff;font-size:.8rem;cursor:pointer;position:static}.rdbar .rdtime{position:static;font:600 .85rem "IBM Plex Mono",monospace;color:#fff;background:none;border:0;padding:0}
 @media (prefers-reduced-motion:reduce){.toast,button{transition:none}}
 </style>
 </head>
@@ -156,6 +157,7 @@ details.trips{border-top:1px solid var(--line);padding-top:8px}details.trips sum
 </div>
 <div class="toast" id="toast" role="status"></div>
 
+<script>window.LEAFLET_SRC="leaflet.js"</script>
 <script src="config.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
 <script>
@@ -243,28 +245,56 @@ async function enter(user){ME=user;$("outBtn").hidden=false;
   $("app").innerHTML=`<div class="card"><div class="t">Váš e-mail ešte nemá prístup</div><div class="s">${esc(user.email)} zatiaľ nie je v zozname dodávateľov ERNTE. Zavolajte nám a zapíšeme vás.</div><div class="btns"><a class="btn pri" href="tel:+421918449991">Zavolať ERNTE</a></div></div>`}
 
 
-// ERNTE radar zrážok – RainViewer (radar) + CARTO podklad, animácia posledných ~2 hodín
-const RADAR={lat:48.755,lon:21.915,z:7,frames:null,host:"",at:0,timer:null};
-async function radarFrames(){if(RADAR.frames&&Date.now()-RADAR.at<5*60e3)return RADAR.frames;
-  const r=await fetch("https://api.rainviewer.com/public/weather-maps.json",{cache:"no-store"});const j=await r.json();
-  RADAR.host=j.host;RADAR.frames=[...(j.radar.past||[]),...(j.radar.nowcast||[])];RADAR.at=Date.now();return RADAR.frames}
+// ERNTE mapy (Leaflet): posúvateľné, priblížiteľné, mapa + satelit, radar
+const LCSS=`.leaflet-pane,.leaflet-tile,.leaflet-marker-icon,.leaflet-marker-shadow,.leaflet-tile-container,.leaflet-pane>svg,.leaflet-pane>canvas,.leaflet-zoom-box,.leaflet-image-layer,.leaflet-layer{position:absolute;left:0;top:0}
+.leaflet-container{overflow:hidden;-webkit-tap-highlight-color:transparent;background:#0b0f16;outline:0;font:12px/1.4 "Sora",system-ui,sans-serif;touch-action:none}
+.leaflet-tile,.leaflet-marker-icon,.leaflet-marker-shadow{user-select:none;-webkit-user-drag:none}
+.leaflet-container img.leaflet-tile,.leaflet-container .leaflet-marker-icon{max-width:none!important;max-height:none!important;width:auto;padding:0}
+.leaflet-container img.leaflet-tile{mix-blend-mode:plus-lighter}
+.leaflet-tile{filter:inherit;visibility:hidden}.leaflet-tile-loaded{visibility:inherit}
+.leaflet-pane{z-index:400}.leaflet-tile-pane{z-index:200}.leaflet-overlay-pane{z-index:400}.leaflet-marker-pane{z-index:600}.leaflet-tooltip-pane{z-index:650}.leaflet-popup-pane{z-index:700}
+.leaflet-control{position:relative;z-index:800;pointer-events:auto;float:left;clear:both}
+.leaflet-top,.leaflet-bottom{position:absolute;z-index:1000;pointer-events:none}.leaflet-top{top:0}.leaflet-right{right:0}.leaflet-bottom{bottom:0}.leaflet-left{left:0}
+.leaflet-right .leaflet-control{float:right;margin-right:10px}.leaflet-top .leaflet-control{margin-top:10px}.leaflet-left .leaflet-control{margin-left:10px}.leaflet-bottom .leaflet-control{margin-bottom:10px}
+.leaflet-fade-anim .leaflet-popup{opacity:0;transition:opacity .2s linear}.leaflet-fade-anim .leaflet-map-pane .leaflet-popup{opacity:1}
+.leaflet-zoom-animated{transform-origin:0 0}.leaflet-zoom-anim .leaflet-zoom-animated{transition:transform .25s cubic-bezier(0,0,.25,1)}
+.leaflet-zoom-anim .leaflet-tile,.leaflet-pan-anim .leaflet-tile{transition:none}.leaflet-zoom-anim .leaflet-zoom-hide{visibility:hidden}
+.leaflet-interactive{cursor:pointer}.leaflet-grab{cursor:grab}.leaflet-dragging .leaflet-grab{cursor:move}
+.leaflet-bar{border-radius:12px;overflow:hidden;border:1px solid rgba(255,255,255,.2)}
+.leaflet-bar a{display:block;width:36px;height:36px;line-height:36px;text-align:center;text-decoration:none;color:#fff;background:rgba(10,13,20,.8);font:600 18px system-ui;border-bottom:1px solid rgba(255,255,255,.12)}.leaflet-bar a:last-child{border-bottom:0}
+.leaflet-control-attribution{background:rgba(10,13,20,.6);color:#9aa3b8;font-size:9px;padding:1px 6px;border-radius:6px 0 0 0}.leaflet-control-attribution a{color:#b6ff3b}
+.lsw{display:flex;gap:4px;background:rgba(10,13,20,.8);border:1px solid rgba(255,255,255,.2);border-radius:12px;padding:3px}.lsw button{all:unset;cursor:pointer;color:#cfd5e6;font:600 11px system-ui;padding:6px 9px;border-radius:9px}.lsw button.on{background:linear-gradient(135deg,#b6ff3b,#5eead4);color:#06110a}
+.ldark{filter:invert(1) hue-rotate(180deg) brightness(.92) contrast(.9) saturate(.7)}
+.lpin{display:flex;align-items:center;gap:5px;white-space:nowrap;transform:translate(-7px,-7px)}.lpin i{width:14px;height:14px;border-radius:50%;background:#7cc4ff;box-shadow:0 0 0 4px rgba(124,196,255,.3),0 0 12px #7cc4ff;flex:none}.lpin.mv i{background:#b6ff3b;box-shadow:0 0 0 4px rgba(182,255,59,.3),0 0 12px #b6ff3b}
+.lpin span{font:700 11px "Sora",system-ui;color:#fff;background:rgba(10,13,20,.75);padding:2px 6px;border-radius:7px}
+.lmap{height:300px;border-radius:16px;border:1px solid rgba(255,255,255,.16);margin-top:6px}.lmap.sm{height:200px}`;
+(function(){if(document.getElementById("lcss"))return;const s=document.createElement("style");s.id="lcss";s.textContent=LCSS;document.head.appendChild(s)})();
+let LREADY=null;function needL(){if(window.L)return Promise.resolve();if(LREADY)return LREADY;LREADY=new Promise((ok,no)=>{const s=document.createElement("script");s.src=window.LEAFLET_SRC||"https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js";s.onload=ok;s.onerror=no;document.head.appendChild(s)});return LREADY}
+function baseLayers(map,sat){const osm=L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png",{maxZoom:19,className:"ldark",attribution:'© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'});
+  const esri=L.tileLayer("https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",{maxZoom:19,attribution:"© Esri"});
+  (sat?esri:osm).addTo(map);const C=L.Control.extend({onAdd(){const d=L.DomUtil.create("div","lsw");d.innerHTML=`<button type="button" class="${sat?"":"on"}">Mapa</button><button type="button" class="${sat?"on":""}">Satelit</button>`;
+    L.DomEvent.disableClickPropagation(d);const[b1,b2]=d.children;b1.onclick=()=>{map.removeLayer(esri);osm.addTo(map);b1.className="on";b2.className=""};b2.onclick=()=>{map.removeLayer(osm);esri.addTo(map);b2.className="on";b1.className=""};return d}});new C({position:"topright"}).addTo(map)}
+function lmapHTML(pts,cls){return `<div class="lmap ${cls||""}" data-pts="${esc(JSON.stringify(pts))}"></div>`}
+function initMaps(root){const els=[...(root||document).querySelectorAll(".lmap:not(.ok)")];if(!els.length)return;needL().then(()=>{for(const el of els){if(el.classList.contains("ok"))continue;el.classList.add("ok");
+  const P=JSON.parse(el.dataset.pts||"[]");const m=L.map(el,{zoomControl:true,attributionControl:true,scrollWheelZoom:false});baseLayers(m);
+  const ms=P.map(p=>L.marker([p.lat,p.lon],{icon:L.divIcon({className:"",html:`<div class="lpin${p.mv?" mv":""}"><i></i><span>${esc(p.label||"")}</span></div>`,iconSize:[0,0]})}).addTo(m).bindTooltip?.(p.tip||"",{direction:"top"}));
+  if(P.length===1)m.setView([P[0].lat,P[0].lon],12);else if(P.length)m.fitBounds(L.latLngBounds(P.map(p=>[p.lat,p.lon])).pad(.25));else m.setView([48.755,21.915],8);
+  setTimeout(()=>m.invalidateSize(),150)}}).catch(()=>{els.forEach(e=>e.innerHTML='<div style="padding:20px;color:#9aa3b8">Mapa sa nenačítala.</div>')})}
+// radar zrážok – Leaflet + RainViewer
+const RADAR={frames:null,host:"",at:0,timer:null,map:null};
+async function radarFrames(){if(RADAR.frames&&Date.now()-RADAR.at<5*60e3)return RADAR.frames;const r=await fetch("https://api.rainviewer.com/public/weather-maps.json",{cache:"no-store"});const j=await r.json();RADAR.host=j.host;RADAR.frames=[...(j.radar.past||[]),...(j.radar.nowcast||[])];RADAR.at=Date.now();return RADAR.frames}
 function mountRadar(el){if(!el)return;clearInterval(RADAR.timer);
-  const W=el.clientWidth||340,H=Math.round(Math.min(380,W*0.85)),z=RADAR.z,n=2**z,T=256;
-  const wx=(RADAR.lon+180)/360*n*T,lr=RADAR.lat*Math.PI/180,wy=(1-Math.log(Math.tan(lr)+1/Math.cos(lr))/Math.PI)/2*n*T;
-  const x0=wx-W/2,y0=wy-H/2,tx0=Math.floor(x0/T),tx1=Math.floor((x0+W)/T),ty0=Math.floor(y0/T),ty1=Math.floor((y0+H)/T);
-  const tiles=[];for(let tx=tx0;tx<=tx1;tx++)for(let ty=ty0;ty<=ty1;ty++)tiles.push({tx,ty,l:Math.round(tx*T-x0),t:Math.round(ty*T-y0)});
-  el.innerHTML=`<div class="rdmap" style="height:${H}px">${tiles.map(q=>`<img class="rdbase" src="https://a.basemaps.cartocdn.com/dark_all/${z}/${q.tx}/${q.ty}.png" style="left:${q.l}px;top:${q.t}px" alt="" onerror="this.style.visibility='hidden'">`).join("")}<div class="rdlayers"></div>
-    <div class="rdpin" style="left:${W/2}px;top:${H/2}px"><i></i><span>Michalovce</span></div><div class="rdtime">načítavam radar…</div>
-    <button type="button" class="rdplay" aria-label="Prehrať / zastaviť">❚❚</button></div>
-    <div class="rdleg"><span>slabý</span><i></i><span>silný dážď / búrka</span></div><div class="rdsrc">Radar: RainViewer · Mapa: © OpenStreetMap, © CARTO</div>`;
-  const L=el.querySelector(".rdlayers"),tm=el.querySelector(".rdtime"),pb=el.querySelector(".rdplay");
-  radarFrames().then(F=>{if(!F.length){tm.textContent="Radar nie je dostupný";return}
-    L.innerHTML=F.map((f,i)=>`<div class="rdf" style="opacity:${i===F.length-1?1:0}">${tiles.map(q=>`<img src="${RADAR.host}${f.path}/256/${z}/${q.tx}/${q.ty}/2/1_1.png" style="left:${q.l}px;top:${q.t}px" alt="" onerror="this.style.visibility='hidden'">`).join("")}</div>`).join("");
-    const lay=[...L.children];let k=F.length-1,play=true;const now=Date.now()/1000;
-    const show=i=>{lay.forEach((d,j)=>d.style.opacity=j===i?1:0);const t=new Date(F[i].time*1000);tm.textContent=t.toLocaleTimeString("sk-SK",{hour:"2-digit",minute:"2-digit"})+(F[i].time>now?" · predpoveď":"")};
-    show(k);const tick=()=>{k=(k+1)%lay.length;show(k)};RADAR.timer=setInterval(()=>{if(play)tick()},700);
-    pb.onclick=()=>{play=!play;pb.textContent=play?"❚❚":"▶"};
+  el.innerHTML=`<div class="lmap ok rdm" style="height:340px;position:relative"></div><div class="rdbar"><button type="button" class="rdplay" aria-label="Prehrať / zastaviť">❚❚</button><span class="rdtime">načítavam radar…</span></div><div class="rdleg"><span>slabý</span><i></i><span>silný dážď / búrka</span></div><div class="rdsrc">Radar: RainViewer · posúvaj a približuj prstami</div>`;
+  const box=el.querySelector(".rdm"),tm=el.querySelector(".rdtime"),pb=el.querySelector(".rdplay");
+  needL().then(()=>radarFrames()).then(F=>{const m=L.map(box,{scrollWheelZoom:false}).setView([48.755,21.915],7);baseLayers(m);
+    L.marker([48.755,21.915],{icon:L.divIcon({className:"",html:'<div class="lpin mv"><i></i><span>Michalovce</span></div>',iconSize:[0,0]})}).addTo(m);
+    if(!F.length){tm.textContent="Radar nie je dostupný";return}
+    const lay=F.map(f=>L.tileLayer(RADAR.host+f.path+"/256/{z}/{x}/{y}/2/1_1.png",{opacity:0,maxNativeZoom:7,maxZoom:19,zIndex:300}).addTo(m));
+    let k=F.length-1,play=true;const now=Date.now()/1000;
+    const show=i=>{lay.forEach((l,j)=>l.setOpacity(j===i?.75:0));tm.textContent=new Date(F[i].time*1000).toLocaleTimeString("sk-SK",{hour:"2-digit",minute:"2-digit"})+(F[i].time>now?" · predpoveď":"")};
+    show(k);RADAR.timer=setInterval(()=>{if(play){k=(k+1)%lay.length;show(k)}},800);pb.onclick=()=>{play=!play;pb.textContent=play?"❚❚":"▶"};setTimeout(()=>m.invalidateSize(),150)
   }).catch(()=>{tm.textContent="Radar sa nepodarilo načítať"})}
+
 
 // ================= POČASIE (Open-Meteo, 7 dní + hodiny) =================
 const WX_DEF={name:"Michalovce",lat:48.755,lon:21.915};
@@ -285,7 +315,7 @@ function wxCard(){if(!WXD)return `<div class="card"><div class="s">Načítavam p
     <div class="s" style="font-size:.7rem">Predpoveď: Open-Meteo · <a class="copy" style="font-size:.7rem" href="https://www.pocasieradar.sk/" target="_blank" rel="noopener">Radar zrážok – pocasieradar.sk</a></div></div>`}
 document.addEventListener("click",e=>{if(!e.target.closest("[data-wxloc]"))return;if(!navigator.geolocation){toast("Poloha nie je dostupná.");return}
   toast("Zisťujem polohu…");navigator.geolocation.getCurrentPosition(async p=>{WXLOC={name:"Moja poloha",lat:+p.coords.latitude.toFixed(3),lon:+p.coords.longitude.toFixed(3)};try{localStorage.setItem("ernte-wxloc",JSON.stringify(WXLOC))}catch(x){}await loadWx(true);rerender()},()=>toast("Polohu sa nepodarilo zistiť – povoľte ju v nastaveniach."),{timeout:10000})});
-function mountR(){const b=document.getElementById("radarBox");if(b)mountRadar(b)}
+function mountR(){const b=document.getElementById("radarBox");if(b)mountRadar(b);initMaps()}
 function rerender(){if(FARMER)renderFarmer();else if(ROLE)renderStaff()}
 
 // ================= FARMÁR =================
@@ -300,9 +330,7 @@ async function loadFarmer(){const [p,s,d,r]=await Promise.all([
   try{const t=await sb.from("trips").select("id,deal_id,spz,driver,driver_phone,day,time,status,netto,note").order("day",{ascending:true});STATE.trips=t.data||[]}catch(e){STATE.trips=[]}
   STATE.prices=(p.data||[]).filter(x=>x.price!=null);STATE.settings=Object.fromEntries((s.data||[]).map(x=>[x.key,x.value]));STATE.deals=d.data||[];STATE.reqs=r.data||[]}
 function contact(){return (STATE.settings||{}).contact||{phone:"+421 918 449 991",email:"jana.valkova@ernte.sk"}}
-function miniMap(lat,lon,label,z=11){const W=340,H=180,n=2**z,T=256,wx=(lon+180)/360*n*T,lr=lat*Math.PI/180,wy=(1-Math.log(Math.tan(lr)+1/Math.cos(lr))/Math.PI)/2*n*T,x0=wx-W/2,y0=wy-H/2;
-  let t="";for(let tx=Math.floor(x0/T);tx<=Math.floor((x0+W)/T);tx++)for(let ty=Math.floor(y0/T);ty<=Math.floor((y0+H)/T);ty++)t+=`<img src="https://a.basemaps.cartocdn.com/dark_all/${z}/${tx}/${ty}.png" style="left:${Math.round(tx*T-x0)}px;top:${Math.round(ty*T-y0)}px" alt="" onerror="this.style.visibility='hidden'">`;
-  return `<div class="mmap"><div class="mmin" style="width:${W}px;height:${H}px">${t}<div class="rdpin" style="left:${W/2}px;top:${H/2}px"><i></i><span>${esc(label)}</span></div></div></div>`}
+function miniMap(lat,lon,label){return lmapHTML([{lat,lon,label,mv:true}],"sm")}
 const ago=d=>{const m=Math.round((Date.now()-new Date(d))/60000);return m<1?"práve teraz":m<60?`pred ${m} min`:`pred ${Math.round(m/60)} h`};
 async function loadPos(){try{const r=await sb.rpc("my_truck_positions");STATE.pos=r.data||[]}catch(e){STATE.pos=[]}}
 function tripRow(t){const d=new Date(t.day+"T12:00").toLocaleDateString("sk-SK",{weekday:"short",day:"numeric",month:"numeric"});
@@ -384,13 +412,7 @@ function vReq(){const R=STATE.reqs;if(!R.length)return `<div class="card"><div c
       ${r.status==="nova"&&r.kind==="sell"?`<button type="button" class="lime" data-mkdeal="${esc(r.id)}">Vytvoriť obchod</button>`:""}
       ${r.status==="nova"&&r.kind==="agree"&&d?`<button type="button" class="lime" data-sign="${esc(r.id)}">Zmluva podpísaná</button>`:""}
       ${r.status==="nova"?`<button type="button" class="pri" data-done="${esc(r.id)}">Vybavené</button><button type="button" class="dng" data-rej="${esc(r.id)}">Zamietnuť</button>`:""}</div></div>`}).join("")}
-function fleetMap(G){const W=340,H=300,lats=G.map(t=>+t.gps_lat),lons=G.map(t=>+t.gps_lon);const cl=(Math.min(...lats)+Math.max(...lats))/2,cn=(Math.min(...lons)+Math.max(...lons))/2;
-  let z=12;const px=(lat,lon,z)=>{const n=2**z*256,lr=lat*Math.PI/180;return [(lon+180)/360*n,(1-Math.log(Math.tan(lr)+1/Math.cos(lr))/Math.PI)/2*n]};
-  while(z>5){const a=px(Math.max(...lats),Math.min(...lons),z),b=px(Math.min(...lats),Math.max(...lons),z);if(b[0]-a[0]<W-60&&b[1]-a[1]<H-60)break;z--}
-  const c=px(cl,cn,z),x0=c[0]-W/2,y0=c[1]-H/2,T=256;let t="";
-  for(let tx=Math.floor(x0/T);tx<=Math.floor((x0+W)/T);tx++)for(let ty=Math.floor(y0/T);ty<=Math.floor((y0+H)/T);ty++)t+=`<img src="https://a.basemaps.cartocdn.com/dark_all/${z}/${tx}/${ty}.png" style="left:${Math.round(tx*T-x0)}px;top:${Math.round(ty*T-y0)}px" alt="" onerror="this.style.visibility='hidden'">`;
-  const pins=G.map(k=>{const q=px(+k.gps_lat,+k.gps_lon,z);return `<div class="rdpin fpin${k.gps_speed>3?" mv":""}" style="left:${q[0]-x0}px;top:${q[1]-y0}px"><i></i><span>${k.no}</span></div>`}).join("");
-  return `<div class="mmap"><div class="mmin" style="width:${W}px;height:${H}px">${t}${pins}</div></div>`}
+function fleetMap(G){return lmapHTML(G.map(k=>({lat:+k.gps_lat,lon:+k.gps_lon,label:String(k.no),mv:(+k.gps_speed||0)>3})))}
 
 // ================= FLOTILA (Commander) =================
 let FPER="7",FVEH=null;
