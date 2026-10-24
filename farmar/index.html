@@ -267,6 +267,7 @@ const LCSS=`.leaflet-pane,.leaflet-tile,.leaflet-marker-icon,.leaflet-marker-sha
 .ldark{filter:invert(1) hue-rotate(180deg) brightness(.92) contrast(.9) saturate(.7)}
 .lpin{display:flex;align-items:center;gap:5px;white-space:nowrap;transform:translate(-7px,-7px)}.lpin i{width:14px;height:14px;border-radius:50%;background:#7cc4ff;box-shadow:0 0 0 4px rgba(124,196,255,.3),0 0 12px #7cc4ff;flex:none}.lpin.mv i{background:#b6ff3b;box-shadow:0 0 0 4px rgba(182,255,59,.3),0 0 12px #b6ff3b}
 .lpin span{font:700 11px "Sora",system-ui;color:#fff;background:rgba(10,13,20,.75);padding:2px 6px;border-radius:7px}
+.lpin.old i{background:#9aa3b8;box-shadow:0 0 0 4px rgba(154,163,184,.25)}.lpin.old span{opacity:.75}
 .lmap{height:300px;border-radius:16px;border:1px solid rgba(255,255,255,.16);margin-top:6px}.lmap.sm{height:200px}`;
 (function(){if(document.getElementById("lcss"))return;const s=document.createElement("style");s.id="lcss";s.textContent=LCSS;document.head.appendChild(s)})();
 let LREADY=null;function needL(){if(window.L)return Promise.resolve();if(LREADY)return LREADY;LREADY=new Promise((ok,no)=>{const s=document.createElement("script");s.src=window.LEAFLET_SRC||"https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js";s.onload=ok;s.onerror=no;document.head.appendChild(s)});return LREADY}
@@ -277,7 +278,7 @@ function baseLayers(map,sat){const osm=L.tileLayer("https://tile.openstreetmap.o
 function lmapHTML(pts,cls){return `<div class="lmap ${cls||""}" data-pts="${esc(JSON.stringify(pts))}"></div>`}
 function initMaps(root){const els=[...(root||document).querySelectorAll(".lmap:not(.ok)")];if(!els.length)return;needL().then(()=>{for(const el of els){if(el.classList.contains("ok"))continue;el.classList.add("ok");
   const P=JSON.parse(el.dataset.pts||"[]");const m=L.map(el,{zoomControl:true,attributionControl:true,scrollWheelZoom:false});baseLayers(m);
-  const ms=P.map(p=>L.marker([p.lat,p.lon],{icon:L.divIcon({className:"",html:`<div class="lpin${p.mv?" mv":""}"><i></i><span>${esc(p.label||"")}</span></div>`,iconSize:[0,0]})}).addTo(m).bindTooltip?.(p.tip||"",{direction:"top"}));
+  const ms=P.map(p=>L.marker([p.lat,p.lon],{icon:L.divIcon({className:"",html:`<div class="lpin${p.mv?" mv":""}${p.old?" old":""}"><i></i><span>${esc(p.label||"")}</span></div>`,iconSize:[0,0]})}).addTo(m).bindTooltip?.(p.tip||"",{direction:"top"}));
   if(P.length===1)m.setView([P[0].lat,P[0].lon],12);else if(P.length)m.fitBounds(L.latLngBounds(P.map(p=>[p.lat,p.lon])).pad(.25));else m.setView([48.755,21.915],8);
   setTimeout(()=>m.invalidateSize(),150)}}).catch(()=>{els.forEach(e=>e.innerHTML='<div style="padding:20px;color:#9aa3b8">Mapa sa nenačítala.</div>')})}
 // radar zrážok – Leaflet + RainViewer
@@ -412,7 +413,7 @@ function vReq(){const R=STATE.reqs;if(!R.length)return `<div class="card"><div c
       ${r.status==="nova"&&r.kind==="sell"?`<button type="button" class="lime" data-mkdeal="${esc(r.id)}">Vytvoriť obchod</button>`:""}
       ${r.status==="nova"&&r.kind==="agree"&&d?`<button type="button" class="lime" data-sign="${esc(r.id)}">Zmluva podpísaná</button>`:""}
       ${r.status==="nova"?`<button type="button" class="pri" data-done="${esc(r.id)}">Vybavené</button><button type="button" class="dng" data-rej="${esc(r.id)}">Zamietnuť</button>`:""}</div></div>`}).join("")}
-function fleetMap(G){return lmapHTML(G.map(k=>({lat:+k.gps_lat,lon:+k.gps_lon,label:String(k.no),mv:(+k.gps_speed||0)>3})))}
+function fleetMap(G){return lmapHTML(G.map(k=>({lat:+k.gps_lat,lon:+k.gps_lon,label:String(k.no),mv:(+k.gps_speed||0)>3,old:!!k.old})))}
 
 // ================= FLOTILA (Commander) =================
 let FPER="7",FVEH=null;
@@ -480,8 +481,8 @@ function vFleet(){const F=STATE.fleet;if(!F)return `<div class="card"><div class
   h+=F.ev.length?`<div class="sub"><b>Posledné pohyby</b>${F.ev.slice(0,25).map(e=>`<div class="row"><span>${evTxt(e)}</span><span class="num" style="font-size:.76rem;white-space:nowrap">${new Date(e.at).toLocaleString("sk-SK",{day:"numeric",month:"numeric",hour:"2-digit",minute:"2-digit"})}</span></div>`).join("")}</div>`:"";
   h+=`</div>`;
   const now=Date.now();const V=F.veh.map(v=>({v,a:agg(F.rides.filter(r=>r.vehicle_id===v.id))})).sort((x,y)=>y.a.km-x.a.km);
-  const G=F.veh.filter(v=>v.lat&&v.gps_at&&now-new Date(v.gps_at)<6*3600e3).map(v=>({gps_lat:v.lat,gps_lon:v.lon,gps_speed:v.speed,no:(v.plate||"").replace(/\s/g,"").slice(0,7)}));
-  if(G.length)h+=`<h2>Kde sú teraz</h2><div class="card">${fleetMap(G)}</div>`;
+  const G=F.veh.filter(v=>v.lat&&v.gps_at).map(v=>({gps_lat:v.lat,gps_lon:v.lon,gps_speed:now-new Date(v.gps_at)<20*60e3?v.speed:0,old:now-new Date(v.gps_at)>6*3600e3,no:(v.plate||v.name||"").replace(/\s/g,""),tip:ago(v.gps_at)}));
+  if(G.length)h+=`<h2>Kde sú teraz (${G.length})</h2><div class="card">${fleetMap(G)}<div class="s">🟢 ide · 🔵 stojí · ⚪ poloha staršia ako 6 h (auto stojí vypnuté alebo nemá signál)</div></div>`;
   h+=`<h2>Vozidlá (${V.length})</h2>`+V.map(({v,a})=>{const live=v.gps_at&&now-new Date(v.gps_at)<20*60e3;const st=!v.gps_at?["bez dát","g"]:v.speed>3?["ide "+v.speed+" km/h",""]:v.ign?["stojí, motor beží","w"]:["stojí","g"];
     const open=FVEH===v.id;const last=F.rides.filter(r=>r.vehicle_id===v.id).slice(0,15);
     return `<div class="card veh"><button type="button" class="vh" data-fveh="${esc(v.id)}"><span><b>${esc(v.plate||v.name||v.id)}</b><small>${esc(v.name&&v.name!==v.plate?v.name:"")}${last[0]&&last[0].driver?" · "+esc(last[0].driver):""}</small></span>${pill(st)}</button>
@@ -549,7 +550,7 @@ function vTrans(){if(STATE.noTrans)return `<div class="card"><div class="t">Dopr
     <div class="s">🚛 č.${esc(t.truck_no)} · ${esc(t.spz||"")} · ${esc(t.driver||"bez vodiča")}${(()=>{const d=STATE.deals.find(x=>x.id===t.deal_id);return d?" · "+esc(d.no)+" "+esc(comName(d.com)):""})()}</div>
     <form class="f sub" data-tedit="${esc(t.id)}"><label>Stav<select name="status">${Object.keys(TST).map(k=>`<option value="${k}"${t.status===k?" selected":""}>${esc(TST[k][0])}</option>`).join("")}</select></label><label>Netto t (z vážneho lístka)<input name="netto" inputmode="decimal" value="${t.netto!=null?String(t.netto).replace(".",","):""}"></label><div class="w btns"><button type="submit">Uložiť</button></div></form></div>`).join("")
     :`<div class="card"><div class="s">Na tento deň nie sú naplánované jazdy.</div></div>`;
-  const G=STATE.trucks.filter(t=>t.gps_lat&&t.gps_at&&Date.now()-new Date(t.gps_at)<6*3600e3);
+  const G=STATE.trucks.filter(t=>t.gps_lat&&t.gps_at).map(t=>Object.assign({},t,{old:Date.now()-new Date(t.gps_at)>6*3600e3}));
   if(G.length)h+=`<h2>Kde sú autá</h2><div class="card">${fleetMap(G)}<div class="s">Poloha z Commandera, obnovuje sa každé 2 minúty.</div></div>`;
   h+=`<h2>Autá VALKO (${T.length})</h2><div class="card">${STATE.trucks.map(t=>`<form class="trow" data-tk="${t.no}"><b>č.${t.no}</b><span>${esc(t.spz)}${t.gps_lat?`<br><a class="copy" style="font-size:.7rem" href="https://maps.google.com/?q=${t.gps_lat},${t.gps_lon}" target="_blank" rel="noopener">📍 ${esc(ago(t.gps_at))}${t.gps_speed?" · "+t.gps_speed+" km/h":""}</a>`:""}</span><input name="driver" value="${esc(t.driver||"")}" placeholder="vodič"><input name="phone" value="${esc(t.phone||"")}" placeholder="telefón"><button type="submit">Uložiť</button></form>`).join("")}</div>`;
   return h}
