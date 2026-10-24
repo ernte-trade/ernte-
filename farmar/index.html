@@ -167,8 +167,8 @@ async function boot(){
 let LOGIN={email:"",sent:false};
 function showLogin(){$("outBtn").hidden=true;$("hS").textContent="výkup komodít";
   const A=$("app");
-  if(!LOGIN.sent){A.innerHTML=`<div class="center"><div class="hero"><small>Vitajte</small><b>Prihlásenie</b><small>Farmári aj ERNTE (správa) – zadajte svoj e-mail. Aplikácia podľa neho otvorí váš pohľad.</small></div>
-    <form class="card" id="fEmail"><label>Váš e-mail<input name="email" type="email" inputmode="email" autocomplete="email" required value="${esc(LOGIN.email)}" placeholder="meno@firma.sk"></label><label>Heslo <span style="font-weight:400">(ak ste si ho nastavili – inak nechajte prázdne)</span><input name="pw" type="password" autocomplete="current-password"></label><button class="pri" type="submit">Prihlásiť / poslať kód</button></form>${installHint()}</div>`}
+  if(!LOGIN.sent){A.innerHTML=`<div class="center"><div class="hero"><small>Vitajte</small><b>Prihlásenie</b><small>Zadajte e-mail alebo telefón a heslo, ktoré vám poslala ERNTE.</small></div>
+    <form class="card" id="fEmail"><label>E-mail alebo telefón<input name="email" type="text" inputmode="email" autocomplete="username" autocapitalize="off" required value="${esc(LOGIN.email)}" placeholder="meno@firma.sk alebo 0905 123 456"></label><label>Heslo <span style="font-weight:400">(dostali ste ho od ERNTE)</span><input name="pw" type="password" autocomplete="current-password"></label><button class="pri" type="submit">Prihlásiť / poslať kód</button></form>${installHint()}</div>`}
   else{A.innerHTML=`<div class="center"><div class="hero"><small>Kód sme poslali na</small><b>${esc(LOGIN.email)}</b><small>Pozrite si e-mail (aj priečinok Spam) a opíšte kód. Ak je v e-maile iba tlačidlo „Log In“, podržte na ňom prst → Kopírovať odkaz a vložte ho sem.</small></div>
     <form class="card" id="fCode"><label>Kód z e-mailu<input class="code" name="code" inputmode="numeric" autocomplete="one-time-code" required></label><button class="pri" type="submit">Prihlásiť</button><button type="button" id="backEmail">Zmeniť e-mail / poslať znova</button></form></div>`;
     setTimeout(()=>{const i=document.querySelector("input.code");if(i)i.focus()},50)}
@@ -177,12 +177,15 @@ function pwCard(){return `<form class="card" id="fPw"><div class="t">Heslo na r�
 document.addEventListener("submit",async e=>{const f=e.target;if(f.id!=="fPw")return;e.preventDefault();const b=f.querySelector("button");busy(b,true);
   const {error}=await sb.auth.updateUser({password:String(new FormData(f).get("pw"))});busy(b,false);
   if(error){toast("Heslo sa neuložilo: "+error.message,5000);return}f.reset();toast("Heslo uložené. Odteraz sa prihlásite e-mailom a heslom.",5000)},true);
+function loginId(v){v=String(v||"").trim().toLowerCase();if(v.includes("@"))return v;let d=v.replace(/\D/g,"");if(d.startsWith("00"))d=d.slice(2);else if(d.startsWith("0"))d="421"+d.slice(1);return d?d+"@tel.ernte.sk":v}
+function genPw(){const w=["Klas","Zrno","Pole","Repka","Soja","Raz","Mlyn","Sklad","Brazda","Jacmen"],a=new Uint32Array(2);crypto.getRandomValues(a);return w[a[0]%w.length]+"-"+String(1000+a[1]%9000)}
 function installHint(){if(isStandalone())return "";const ios=/iphone|ipad|ipod/i.test(navigator.userAgent);
   return `<div class="box"><b>Tip: dajte si ERNTE na plochu</b><div>${ios?"V Safari ťuknite dole na <b>Zdieľať</b> (štvorček so šípkou) → <b>Pridať na plochu</b>.":"V prehliadači otvorte ponuku <b>⋮</b> → <b>Pridať na plochu</b> / <b>Inštalovať aplikáciu</b>."} Potom ERNTE otvárate ako aplikáciu.</div></div>`}
 
 document.addEventListener("submit",async e=>{const f=e.target;
-  if(f.id==="fEmail"){e.preventDefault();const b=f.querySelector("button");busy(b,true);LOGIN.email=String(new FormData(f).get("email")).trim().toLowerCase();
+  if(f.id==="fEmail"){e.preventDefault();const b=f.querySelector("button");busy(b,true);LOGIN.email=loginId(String(new FormData(f).get("email")));
     const pw=String(new FormData(f).get("pw")||"");
+    if(!pw&&LOGIN.email.endsWith("@tel.ernte.sk")){busy(b,false);toast("Pri prihlásení telefónom zadajte heslo od ERNTE.",5000);return}
     if(pw){const r=await sb.auth.signInWithPassword({email:LOGIN.email,password:pw});busy(b,false);if(r.error){toast("Nesprávny e-mail alebo heslo.",4500);return}await enter(r.data.user);return}
     const {error}=await sb.auth.signInWithOtp({email:LOGIN.email,options:{shouldCreateUser:true,emailRedirectTo:APP_URL}});busy(b,false);
     if(error){toast(error.status===429?"Príliš veľa pokusov, skúste o minútu.":"Kód sa nepodarilo poslať: "+error.message,5000);return}
@@ -324,10 +327,11 @@ function vDeals(){const F=STATE.farmers.filter(f=>f.active),pre=DEALF||{};
   return h}
 function vFarm(){const q=FQ.toLowerCase(),L=STATE.farmers.filter(f=>!q||(f.name+" "+(f.email||"")).toLowerCase().includes(q));const E=EDITF==="new"?{}:STATE.farmers.find(f=>f.id===EDITF);
   let h=`<div class="card"><div class="btns"><button type="button" class="pri" data-fedit="new">+ Pridať farmára</button></div><label>Hľadať<input id="fq" value="${esc(FQ)}" placeholder="meno alebo e-mail"></label>
-   <div class="s">Do aplikácie sa dostane iba farmár so zapnutým prístupom. „Zapnúť prístup a pozvať“ prístup zapne a skopíruje pozvánku, ktorú mu pošleš.</div></div>`;
+   <div class="s">„Vytvoriť prihlásenie“ vygeneruje farmárovi heslo a pripraví pozvánku – pošleš ju cez WhatsApp alebo SMS. Prihlási sa e-mailom alebo telefónom a týmto heslom.</div></div>`;
+  if(STATE.invite){const I=STATE.invite;h+=`<div class="box"><b>Prihlásenie pre ${esc(I.name)} je pripravené</b><div class="s" style="white-space:pre-wrap;color:var(--ink)">${esc(I.txt)}</div><div class="btns">${I.tel?`<a class="btn lime" href="https://wa.me/${esc(I.tel)}?text=${encodeURIComponent(I.txt)}" target="_blank" rel="noopener">Poslať cez WhatsApp</a><a class="btn" href="sms:+${esc(I.tel)}&body=${encodeURIComponent(I.txt)}">Poslať SMS</a>`:""}<button type="button" data-copyinv>Kopírovať</button><button type="button" data-closeinv>Hotovo</button></div><div class="s">Heslo si nikde neukladáme – pošlite ho farmárovi teraz. Ak ho stratí, vytvorte nové.</div></div>`}
   if(E)h+=farmForm(E);
-  h+=L.map(f=>`<div class="card"><div class="row"><span class="t">${esc(f.name)}</span>${!f.email?pill(["bez e-mailu","w"]):f.active?pill(["prístup zapnutý"]):pill(["bez prístupu","g"])}</div><div class="s">${esc([f.email,f.phone,f.addr].filter(Boolean).join(" · "))}</div>
-    <div class="btns"><button type="button" data-fedit="${esc(f.id)}">Upraviť</button>${f.email?(f.active?`<button type="button" data-invite="${esc(f.id)}">Kopírovať pozvánku</button><button type="button" class="dng" data-acc="${esc(f.id)}" data-on="0">Vypnúť prístup</button>`:`<button type="button" class="lime" data-acc="${esc(f.id)}" data-on="1">Zapnúť prístup a pozvať</button>`):""}</div></div>`).join("");
+  h+=L.map(f=>`<div class="card"><div class="row"><span class="t">${esc(f.name)}</span>${!(f.email||f.phone)?pill(["bez kontaktu","w"]):f.active&&f.login?pill(["prihlásenie aktívne"]):f.active?pill(["prístup zapnutý","b"]):pill(["bez prístupu","g"])}</div><div class="s">${esc([f.email,f.phone,f.addr].filter(Boolean).join(" · "))}</div>
+    <div class="btns"><button type="button" data-fedit="${esc(f.id)}">Upraviť</button>${(f.email||f.phone)?`<button type="button" class="lime" data-mklogin="${esc(f.id)}">${f.login?"Nové heslo a pozvánka":"Vytvoriť prihlásenie"}</button>`:""}${f.active&&(f.login||f.email)?`<button type="button" class="dng" data-acc="${esc(f.id)}" data-on="0">Vypnúť prístup</button>`:""}${!f.active&&f.login?`<button type="button" data-acc="${esc(f.id)}" data-on="1">Zapnúť prístup</button>`:""}</div></div>`).join("");
   return h}
 function farmForm(f){const v=k=>esc(f[k]||"");return `<form class="card f" id="fFarm" data-id="${esc(f.id||"")}"><div class="w t">${f.id?"Upraviť farmára":"Nový farmár"}</div>
   <label class="w">Názov / meno<input name="name" required value="${v("name")}"></label><label>E-mail na prihlásenie<input name="email" type="email" value="${v("email")}"></label><label>Telefón<input name="phone" value="${v("phone")}"></label>
@@ -344,6 +348,16 @@ document.addEventListener("click",async e=>{if(!ROLE)return;const t=e.target,g=s
   if(x=g("[data-sign]")){const r=STATE.reqs.find(y=>y.id===x.dataset.sign);busy(x,true);const a=await sb.from("deals").update({status:"podpisany",signed_at:new Date().toISOString()}).eq("id",r.deal_id);
     if(a.error){busy(x,false);toast("Chyba: "+a.error.message);return}await upd("requests",r.id,{status:"vybavena",reply:"Zmluva potvrdená.",handled_by:ME.staffName,handled_at:new Date().toISOString()});return}
   if(x=g("[data-fedit]")){EDITF=x.dataset.fedit||null;renderStaff();if(EDITF)window.scrollTo(0,0);return}
+  if(x=g("[data-mklogin]")){const f=STATE.farmers.find(y=>y.id===x.dataset.mklogin);let usePhone=false;
+    if(f.email&&f.phone)usePhone=!confirm(`Prihlasovať sa bude e-mailom ${f.email}?\n\nOK = e-mail · Zrušiť = telefón ${f.phone}`);
+    else usePhone=!f.email;
+    const pw=genPw();busy(x,true);const r=await sb.rpc("set_farmer_password",{fid:f.id,pw,use_phone:usePhone});busy(x,false);
+    if(r.error){toast("Nepodarilo sa: "+r.error.message,7000);return}
+    const who=usePhone?f.phone:f.email;const txt=`Dobrý deň, ERNTE má pre vás aplikáciu s výkupnými cenami, vašimi obchodmi a počasím:\n${APP_URL}\n\nPrihlásenie: ${who}\nHeslo: ${pw}\n\nPo prihlásení si ju dajte na plochu (Zdieľať → Pridať na plochu).`;
+    const tel=String(f.phone||"").replace(/\D/g,"").replace(/^00/,"").replace(/^0/,"421");
+    STATE.invite={name:f.name,txt,tel};await loadStaff();renderStaff();window.scrollTo(0,0);return}
+  if(x=g("[data-copyinv]")){copy(STATE.invite.txt);return}
+  if(x=g("[data-closeinv]")){STATE.invite=null;renderStaff();return}
   if(x=g("[data-acc]")){const on=x.dataset.on==="1",f=STATE.farmers.find(y=>y.id===x.dataset.acc);busy(x,true);const ok=await upd("farmers",f.id,{active:on});
     if(ok&&on)copy(`Dobrý deň, ERNTE má pre vás aplikáciu s výkupnými cenami a vašimi obchodmi:\n${APP_URL}\nPrihláste sa e-mailom ${f.email} – príde vám kód. Potom si ju dajte na plochu (Zdieľať → Pridať na plochu).`);return}
   if(x=g("[data-invite]")){const f=STATE.farmers.find(y=>y.id===x.dataset.invite);copy(`Dobrý deň, ERNTE má pre vás aplikáciu s výkupnými cenami a vašimi obchodmi:\n${APP_URL}\nPrihláste sa e-mailom ${f.email} – príde vám kód. Potom si ju dajte na plochu (Zdieľať → Pridať na plochu).`);return}
