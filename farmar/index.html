@@ -93,7 +93,15 @@ input.code{font:600 1.7rem var(--f-num);letter-spacing:.35em;text-align:center}i
 .toast.on{opacity:1;transform:translate(-50%,0)}
 .center{min-height:60vh;display:grid;align-content:center;gap:16px}
 .copy{border:0;background:none;padding:0;min-height:0;color:var(--lime);font:600 .9rem var(--f-num);text-decoration:none;display:inline}
-@media (max-width:460px){form.f{grid-template-columns:1fr}.prow{grid-template-columns:minmax(0,1fr) auto}.prow .sell{grid-column:1/-1}}
+@media (max-width:460px){form.f{grid-template-columns:1fr}}
+.cimg{width:64px;height:64px;border-radius:16px;overflow:hidden;flex:none;background:linear-gradient(135deg,rgba(182,255,59,.25),rgba(124,92,255,.25));border:1px solid var(--line2);box-shadow:0 6px 18px rgba(0,0,0,.4)}
+.cimg img,.cban img{width:100%;height:100%;object-fit:cover;display:block}
+.prow{grid-template-columns:64px minmax(0,1fr) auto auto}
+.prow form{grid-column:1/-1}
+.cban{display:block;height:120px;margin:-16px -18px 2px;border-radius:22px 22px 0 0;overflow:hidden;position:relative;background:linear-gradient(135deg,rgba(182,255,59,.2),rgba(124,92,255,.25))}
+.cban::after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,transparent 40%,rgba(10,13,20,.85))}
+@media (max-width:460px){.prow{grid-template-columns:56px minmax(0,1fr) auto}.cimg{width:56px;height:56px;border-radius:14px}.prow .sell{grid-column:1/-1}}
+
 @media (prefers-reduced-motion:reduce){.toast,button{transition:none}}
 </style>
 </head>
@@ -122,6 +130,9 @@ const dSK=d=>{if(!d)return "";const m=String(d).match(/^(\d{4})-(\d{2})-(\d{2})/
 const dtSK=d=>d?new Date(d).toLocaleString("sk-SK",{day:"numeric",month:"numeric",hour:"2-digit",minute:"2-digit"}):"";
 const comName=c=>(MK.find(m=>m[0]===c)||[c,c||"–"])[1];
 const specLine=c=>{const s=SPEC[c];return s?`vlhkosť max. ${String(s[0]).replace(".",",")} %, nečistoty max. ${s[1]} %${s[2]?", Non-GMO":""}`:""};
+const IMG={repka:"Rapsfeld Rapeseed Brassica napus.jpg",lo:"Sunflower (Helianthus annuus) seeds.jpg",ho:"Sonnenblumenkerne sunflower seeds.jpg",soja:"Soybeans.jpg",psenica_p:"Wheat close-up.JPG",psenica_k:"Wheat grain.jpg",jacmen_k:"Barley grains.jpg",jacmen_s:"Barley.jpg",kukurica:"Maize Corn.jpg",cirok:"Sorghum.jpg"};
+const imgUrl=c=>IMG[c]?"https://commons.wikimedia.org/wiki/Special:FilePath/"+encodeURIComponent(IMG[c].replace(/ /g,"_"))+"?width=400":"";
+const comImg=(c,cls="cimg")=>IMG[c]?`<span class="${cls}"><img src="${imgUrl(c)}" alt="${esc(comName(c))}" loading="lazy" referrerpolicy="no-referrer" onerror="this.style.display='none'"></span>`:"";
 const pill=a=>`<span class="pill ${a[1]||""}">${esc(a[0])}</span>`;
 const today=()=>new Date().toISOString().slice(0,10);
 function toast(t,ms=3500){const e=$("toast");e.textContent=t;e.classList.add("on");clearTimeout(e._t);e._t=setTimeout(()=>e.classList.remove("on"),ms)}
@@ -197,16 +208,16 @@ function contact(){return (STATE.settings||{}).contact||{phone:"+421 918 449 991
 function renderFarmer(){const F=FARMER,P=MK.map(m=>STATE.prices.find(x=>x.com===m[0])).filter(Boolean),valid=((STATE.settings||{}).pricelist||{}).valid,c=contact();
   let h=`<div class="hero"><small>Prihlásený dodávateľ</small><b>${esc(F.name)}</b><small>${esc(ME.email)}</small></div>`;
   h+=`<h2>Výkupné ceny · FCA farma, bez DPH</h2>`;
-  h+=P.length?`<div class="card">${P.map(p=>`<div class="prow"><div><div class="t">${esc(comName(p.com))}</div><div class="s">${esc(specLine(p.com))}</div></div><b class="num">${fmt(p.price)} €/t</b>
+  h+=P.length?`<div class="card">${P.map(p=>`<div class="prow">${comImg(p.com)}<div><div class="t">${esc(comName(p.com))}</div><div class="s">${esc(specLine(p.com))}</div></div><b class="num">${fmt(p.price)} €/t</b>
       ${SELL===p.com?"":`<button type="button" class="lime sell" data-sell="${esc(p.com)}">Predať</button>`}
       ${SELL===p.com?`<form class="f sub" id="fSell"><div class="w"><b>Predať ${esc(comName(p.com))} za ${fmt(p.price)} €/t</b></div><label>Koľko ton?<input name="tons" inputmode="decimal" required placeholder="napr. 100"></label><label>Odkedy môžeme odviezť?<input name="date" type="date" min="${today()}"></label><label class="w">Poznámka (nepovinné)<input name="note" placeholder="napr. vlhkosť, miesto skladu"></label><div class="w btns"><button class="pri" type="submit">Odoslať ERNTE</button><button type="button" data-sell="">Zrušiť</button></div></form>`:""}</div>`).join("")}
-      <div class="s">${valid?`Ceny platia do ${esc(dSK(valid))}. `:""}Ťuknite na <b>Predať</b>, napíšte tony a odošlite. ERNTE sa vám ozve.</div></div>`
+      <div class="s">${valid?`Ceny platia do ${esc(dSK(valid))}. `:""}Ťuknite na <b>Predať</b>, napíšte tony a odošlite. ERNTE sa vám ozve.</div><div class="s" style="font-size:.66rem;opacity:.7">Ilustračné fotografie: Wikimedia Commons</div></div>`
     :`<div class="card"><div class="s">Cenník práve pripravujeme.</div></div>`;
   const R=STATE.reqs;
   if(R.length){h+=`<h2>Moje požiadavky</h2><div class="card">${R.slice(0,8).map(r=>`<div class="row"><span><b style="font-family:var(--f-ui)">${esc(RKIND[r.kind])}</b>${r.com?" · "+esc(comName(r.com)):""}${r.tons?" · "+fmt(r.tons)+" t":""}</span>${pill(RST[r.status]||[r.status])}</div><div class="s" style="margin-top:-6px">${esc(dtSK(r.created_at))}${r.reply?" · ERNTE: "+esc(r.reply):""}</div>`).join("")}</div>`}
   h+=`<h2>Moje obchody</h2>`;
   h+=STATE.deals.length?STATE.deals.map(d=>{const left=Math.max(0,(+d.tons||0)-(+d.delivered_t||0));const waitAgree=STATE.reqs.some(r=>r.kind==="agree"&&r.deal_id===d.id&&r.status==="nova");
-    return `<div class="card"><div class="row"><span class="t">${esc(comName(d.com))}</span>${pill(DST[d.status]||[d.status])}</div>
+    return `<div class="card">${comImg(d.com,"cban")}<div class="row"><span class="t">${esc(comName(d.com))}</span>${pill(DST[d.status]||[d.status])}</div>
       <div class="s">Zmluva ${esc(d.no)} · ${fmt(d.price)} €/t FCA${d.term?" · do "+esc(d.term):""}</div>
       <div class="kpis"><div class="kpi"><small>Dohodnuté</small><b>${fmt(d.tons)} t</b></div><div class="kpi"><small>Odvezené</small><b>${fmt(d.delivered_t)} t</b></div><div class="kpi"><small>Zostáva</small><b>${fmt(left)} t</b></div></div>
       ${d.note?`<div class="s">Pozn.: ${esc(d.note)}</div>`:""}
