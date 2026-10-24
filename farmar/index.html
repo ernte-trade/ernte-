@@ -123,6 +123,15 @@ input.code{font:600 1.7rem var(--f-num);letter-spacing:.35em;text-align:center}i
 .rdplay{position:absolute;right:10px;bottom:10px;width:40px;height:40px;min-height:0;padding:0;border-radius:50%;background:rgba(10,13,20,.7);border:1px solid rgba(255,255,255,.2);color:#fff;font-size:.8rem;cursor:pointer}
 .rdleg{display:flex;align-items:center;gap:8px;margin-top:8px;font-size:.68rem;color:#9aa3b8}.rdleg i{flex:1;height:6px;border-radius:999px;background:linear-gradient(90deg,#88ddee,#0099cc,#0077aa,#ffee00,#ff9900,#ff4400,#c10000)}
 .rdsrc{font-size:.62rem;color:#6f7890;margin-top:4px}
+.trip{display:grid;gap:3px;padding:10px 0;border-top:1px solid var(--line)}.trip:first-child{border-top:0;padding-top:0}
+.tr1{display:flex;justify-content:space-between;align-items:center;gap:8px}.tr2{font-size:.84rem;color:var(--muted)}.tr2 b{color:var(--ink)}
+details.trips{border-top:1px solid var(--line);padding-top:8px}details.trips summary{cursor:pointer;font-weight:600;font-size:.86rem;color:var(--lime)}
+.tgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px}
+.tchk{display:flex!important;flex-direction:row!important;align-items:center;gap:8px;padding:9px 10px;border:1px solid var(--line2);border-radius:14px;background:rgba(255,255,255,.04);color:var(--ink)!important}
+.tchk input{width:20px;min-height:20px;accent-color:#b6ff3b}.tchk span{display:grid}.tchk b{font-size:.8rem}.tchk small{font-size:.7rem;color:var(--muted)}
+.trow{display:grid;grid-template-columns:48px 86px 1fr 1fr auto;gap:8px;align-items:center;padding:6px 0;border-top:1px solid var(--line);font-size:.8rem}.trow:first-child{border-top:0}
+.trow input{min-height:40px;padding:6px 10px;font-size:.85rem}.trow button{min-height:40px;padding:0 12px}
+@media (max-width:520px){.trow{grid-template-columns:44px 1fr;}.trow input,.trow button{grid-column:1/-1}}
 @media (prefers-reduced-motion:reduce){.toast,button{transition:none}}
 </style>
 </head>
@@ -141,6 +150,7 @@ const MK=[["repka","Repka"],["lo","LO slnečnica"],["ho","HO slnečnica"],["soja
 const SPEC={kukurica:[14,2,1],soja:[12,2,1],psenica_k:[13,2],psenica_p:[14,2],jacmen_s:[14.5,2],jacmen_k:[14,2],repka:[8,2],lo:[9,2],ho:[9,2],cirok:[14,2]};
 const DST={navrh:["čaká na podpis","g"],podpisany:["podpísaný",""],odvoz:["odvoz beží","b"],odvezeny:["odvezený",""],fakturacia:["fakturácia","w"],zaplateny:["zaplatený",""],zruseny:["zrušený","r"]};
 const RST={nova:["čaká na ERNTE","w"],vybavena:["vybavené",""],zamietnuta:["zamietnuté","r"]};
+const TST={naplanovana:["naplánovaná","b"],na_ceste:["auto na ceste","w"],nakladka:["na nakládke","w"],nalozene:["naložené",""],vylozene:["vyložené · zvážené",""],zrusena:["zrušená","r"]};
 const RKIND={sell:"Chcem predať",transport:"Objednávka odvozu",agree:"Súhlas so zmluvou",message:"Správa"};
 
 const $=id=>document.getElementById(id);
@@ -267,14 +277,17 @@ function rerender(){if(FARMER)renderFarmer();else if(ROLE)renderStaff()}
 // ================= FARMÁR =================
 let SELL=null,ORDER=null;
 async function startFarmer(){await loadFarmer();renderFarmer();loadWx().then(renderFarmer);
-  sb.channel("f-"+FARMER.id).on("postgres_changes",{event:"*",schema:"public",table:"requests",filter:"farmer_id=eq."+FARMER.id},()=>loadFarmer().then(renderFarmer)).subscribe();
+  sb.channel("f-"+FARMER.id).on("postgres_changes",{event:"*",schema:"public",table:"requests",filter:"farmer_id=eq."+FARMER.id},()=>loadFarmer().then(renderFarmer)).on("postgres_changes",{event:"*",schema:"public",table:"trips",filter:"farmer_id=eq."+FARMER.id},()=>loadFarmer().then(renderFarmer)).subscribe();
   document.addEventListener("visibilitychange",()=>{if(!document.hidden)loadFarmer().then(renderFarmer)})}
 async function loadFarmer(){const [p,s,d,r]=await Promise.all([
   sb.from("prices").select("com,price,updated_at"),sb.from("settings").select("key,value"),
   sb.from("deals").select("*").order("created_at",{ascending:false}),
   sb.from("requests").select("*").order("created_at",{ascending:false}).limit(20)]);
+  try{const t=await sb.from("trips").select("id,deal_id,spz,driver,driver_phone,day,time,status,netto,note").order("day",{ascending:true});STATE.trips=t.data||[]}catch(e){STATE.trips=[]}
   STATE.prices=(p.data||[]).filter(x=>x.price!=null);STATE.settings=Object.fromEntries((s.data||[]).map(x=>[x.key,x.value]));STATE.deals=d.data||[];STATE.reqs=r.data||[]}
 function contact(){return (STATE.settings||{}).contact||{phone:"+421 918 449 991",email:"jana.valkova@ernte.sk"}}
+function tripRow(t){const d=new Date(t.day+"T12:00").toLocaleDateString("sk-SK",{weekday:"short",day:"numeric",month:"numeric"});
+  return `<div class="trip"><div class="tr1"><b>${esc(d)}${t.time?" · "+esc(t.time):""}</b>${pill(TST[t.status]||[t.status])}</div><div class="tr2">🚛 <b>${esc(t.spz||"auto VALKO")}</b>${t.driver?" · "+esc(t.driver):""}${t.driver_phone&&!["vylozene","zrusena"].includes(t.status)?` · <a class="copy" href="tel:${esc(String(t.driver_phone).replace(/\s/g,""))}">volať vodiča</a>`:""}</div>${t.netto!=null?`<div class="tr2">Netto: <b class="num">${fmt(t.netto,3)} t</b></div>`:""}${t.note?`<div class="s">${esc(t.note)}</div>`:""}</div>`}
 function renderFarmer(){const F=FARMER,P=MK.map(m=>STATE.prices.find(x=>x.com===m[0])).filter(Boolean),valid=((STATE.settings||{}).pricelist||{}).valid,c=contact();
   let h=`<div class="hero"><small>Prihlásený dodávateľ</small><b>${esc(F.name)}</b><small>${esc(ME.email)}</small></div>`;
   h+=`<h2>Výkupné ceny · FCA farma, bez DPH</h2>`;
@@ -286,12 +299,15 @@ function renderFarmer(){const F=FARMER,P=MK.map(m=>STATE.prices.find(x=>x.com===
   const R=STATE.reqs;
   if(R.length){h+=`<h2>Moje požiadavky</h2><div class="card">${R.slice(0,8).map(r=>`<div class="row"><span><b style="font-family:var(--f-ui)">${esc(RKIND[r.kind])}</b>${r.com?" · "+esc(comName(r.com)):""}${r.tons?" · "+fmt(r.tons)+" t":""}</span>${pill(RST[r.status]||[r.status])}</div><div class="s" style="margin-top:-6px">${esc(dtSK(r.created_at))}${r.reply?" · ERNTE: "+esc(r.reply):""}</div>`).join("")}</div>`}
   h+=`<h2>Počasie · 24 hodín a 7 dní</h2>`+wxCard();
+  const up=(STATE.trips||[]).filter(t=>!["vylozene","zrusena"].includes(t.status));
+  if(up.length)h+=`<h2>Doprava VALKO · naplánované autá</h2><div class="card">${up.map(tripRow).join("")}</div>`;
   h+=`<h2>Moje obchody</h2>`;
   h+=STATE.deals.length?STATE.deals.map(d=>{const left=Math.max(0,(+d.tons||0)-(+d.delivered_t||0));const waitAgree=STATE.reqs.some(r=>r.kind==="agree"&&r.deal_id===d.id&&r.status==="nova");
     return `<div class="card">${comImg(d.com,"cban")}<div class="row"><span class="t">${esc(comName(d.com))}</span>${pill(DST[d.status]||[d.status])}</div>
       <div class="s">Zmluva ${esc(d.no)} · ${fmt(d.price)} €/t FCA${d.term?" · do "+esc(d.term):""}</div>
       <div class="kpis"><div class="kpi"><small>Dohodnuté</small><b>${fmt(d.tons)} t</b></div><div class="kpi"><small>Odvezené</small><b>${fmt(d.delivered_t)} t</b></div><div class="kpi"><small>Zostáva</small><b>${fmt(left)} t</b></div></div>
       ${d.note?`<div class="s">Pozn.: ${esc(d.note)}</div>`:""}
+      ${(STATE.trips||[]).filter(t=>t.deal_id===d.id).length?`<details class="trips"><summary>Jazdy (${(STATE.trips||[]).filter(t=>t.deal_id===d.id).length})</summary>${(STATE.trips||[]).filter(t=>t.deal_id===d.id).map(tripRow).join("")}</details>`:""}
       <div class="btns">${d.status==="navrh"?(waitAgree?`<span class="pill w">súhlas odoslaný</span>`:`<button type="button" class="pri" data-agree="${esc(d.id)}">Súhlasím so zmluvou</button>`):""}
         ${["podpisany","odvoz"].includes(d.status)&&left>0&&ORDER!==d.id?`<button type="button" class="lime" data-order="${esc(d.id)}">Objednať odvoz</button>`:""}</div>
       ${ORDER===d.id?`<form class="f sub" id="fOrder" data-deal="${esc(d.id)}"><div class="w"><b>Objednávka odvozu VALKO</b></div><label>Počet kamiónov<input name="trucks" inputmode="numeric" value="${Math.max(1,Math.ceil(left/25))}"></label><label>Deň<input name="date" type="date" min="${today()}" required></label><label>Od koľkej<input name="time" type="time" value="07:00"></label><label>Miesto nakládky<input name="place" placeholder="sklad farmy"></label><label class="w">Poznámka<input name="note"></label><div class="w btns"><button class="pri" type="submit">Odoslať objednávku</button><button type="button" data-order="">Zrušiť</button></div></form>`:""}
@@ -325,12 +341,13 @@ async function startStaff(){await loadStaff();renderStaff();
   document.addEventListener("visibilitychange",()=>{if(!document.hidden)loadStaff().then(renderStaff)})}
 async function loadStaff(){const [f,p,s,d,r]=await Promise.all([sb.from("farmers").select("*").order("name"),sb.from("prices").select("*"),sb.from("settings").select("key,value"),
   sb.from("deals").select("*").order("created_at",{ascending:false}),sb.from("requests").select("*").order("created_at",{ascending:false}).limit(200)]);
+  try{const [tk,tr]=await Promise.all([sb.from("trucks").select("*").order("no"),sb.from("trips").select("*").order("day",{ascending:false}).limit(300)]);STATE.trucks=tk.data||[];STATE.trips=tr.data||[];STATE.noTrans=!!tk.error}catch(e){STATE.trucks=[];STATE.trips=[];STATE.noTrans=true}
   STATE.farmers=f.data||[];STATE.prices=p.data||[];STATE.settings=Object.fromEntries((s.data||[]).map(x=>[x.key,x.value]));STATE.deals=d.data||[];STATE.reqs=r.data||[]}
 const fName=id=>{const f=STATE.farmers.find(x=>x.id===id);return f?f.name:"?"};
 function renderStaff(){const nNew=STATE.reqs.filter(r=>r.status==="nova").length;
-  const tabs=[["req",`Požiadavky${nNew?` <span class="cnt">${nNew}</span>`:""}`],["price","Cenník"],["deals","Obchody"],["farm","Farmári"],["wx","Počasie"]];
+  const tabs=[["req",`Požiadavky${nNew?` <span class="cnt">${nNew}</span>`:""}`],["price","Cenník"],["trans",`Doprava${(STATE.reqs||[]).filter(r=>r.kind==="transport"&&r.status==="nova").length?` <span class="cnt">${STATE.reqs.filter(r=>r.kind==="transport"&&r.status==="nova").length}</span>`:""}`],["deals","Obchody"],["farm","Farmári"],["wx","Počasie"]];
   let h=`<nav class="tabs">${tabs.map(t=>`<button type="button" data-tab="${t[0]}" aria-pressed="${TAB===t[0]}">${t[1]}</button>`).join("")}</nav>`;
-  if(TAB==="wx"&&!WXD)loadWx().then(renderStaff);h+=({req:vReq,price:vPrice,deals:vDeals,farm:vFarm,wx:wxCard})[TAB]();if(TAB==="req")h+=pwCard();$("app").innerHTML=h;mountR()}
+  if(TAB==="wx"&&!WXD)loadWx().then(renderStaff);h+=({req:vReq,price:vPrice,trans:vTrans,deals:vDeals,farm:vFarm,wx:wxCard})[TAB]();if(TAB==="req")h+=pwCard();$("app").innerHTML=h;mountR()}
 function vReq(){const R=STATE.reqs;if(!R.length)return `<div class="card"><div class="s">Zatiaľ žiadne požiadavky od farmárov.</div></div>`;
   const ord=[...R.filter(r=>r.status==="nova"),...R.filter(r=>r.status!=="nova")];
   return ord.map(r=>{const fr=STATE.farmers.find(x=>x.id===r.farmer_id)||{},d=r.deal_id?STATE.deals.find(x=>x.id===r.deal_id):null;
@@ -343,6 +360,27 @@ function vReq(){const R=STATE.reqs;if(!R.length)return `<div class="card"><div c
       ${r.status==="nova"&&r.kind==="sell"?`<button type="button" class="lime" data-mkdeal="${esc(r.id)}">Vytvoriť obchod</button>`:""}
       ${r.status==="nova"&&r.kind==="agree"&&d?`<button type="button" class="lime" data-sign="${esc(r.id)}">Zmluva podpísaná</button>`:""}
       ${r.status==="nova"?`<button type="button" class="pri" data-done="${esc(r.id)}">Vybavené</button><button type="button" class="dng" data-rej="${esc(r.id)}">Zamietnuť</button>`:""}</div></div>`}).join("")}
+let ASSIGN=null,TDAY="";
+function vTrans(){if(STATE.noTrans)return `<div class="card"><div class="t">Doprava ešte nie je zapnutá</div><div class="s">Spusti raz SQL zo stránky doprava.html (Kopírovať SQL → SQL Editor → Run).</div><a class="btn pri" href="doprava.html">Otvoriť nastavenie dopravy</a></div>`;
+  const R=STATE.reqs.filter(r=>r.kind==="transport"&&r.status==="nova"),T=STATE.trucks.filter(t=>t.active);
+  let h="";
+  h+=R.length?`<h2>Objednávky odvozu od farmárov</h2>`+R.map(r=>{const d=STATE.deals.find(x=>x.id===r.deal_id);const open=ASSIGN===r.id;
+    return `<div class="card"><div class="row"><span class="t">${esc(fName(r.farmer_id))}</span>${pill(["čaká na autá","w"])}</div>
+    <div class="s">${[d&&d.no,r.com&&comName(r.com),r.trucks&&r.trucks+" kamión(y)",r.pickup_date&&"od "+dSK(r.pickup_date)+(r.pickup_time?" "+r.pickup_time:""),r.place].filter(Boolean).map(esc).join(" · ")}</div>${r.note?`<div class="s">„${esc(r.note)}“</div>`:""}
+    ${open?`<form class="f sub" id="fAssign" data-req="${esc(r.id)}"><div class="w s">Vyber autá:</div><div class="w tgrid">${T.map(t=>`<label class="tchk"><input type="checkbox" name="tk" value="${t.no}"><span><b>č.${t.no} · ${esc(t.spz)}</b><small>${esc(t.driver||"bez vodiča")}</small></span></label>`).join("")}</div>
+      <label>Deň<input name="day" type="date" required value="${esc(r.pickup_date||today())}"></label><label>Od koľkej<input name="time" type="time" value="${esc(r.pickup_time||"07:00")}"></label>
+      <label class="w">Poznámka pre farmára (nepovinné)<input name="note" placeholder="napr. príjazd cez dvor"></label>
+      <div class="w btns"><button class="pri" type="submit">Potvrdiť autá farmárovi</button><button type="button" data-assign="">Zrušiť</button></div></form>`
+    :`<div class="btns"><button type="button" class="lime" data-assign="${esc(r.id)}">Prideliť autá</button><button type="button" class="dng" data-rej="${esc(r.id)}">Prerušiť / zamietnuť</button></div>`}</div>`}).join(""):"";
+  const days=[...new Set(STATE.trips.map(t=>t.day))].sort().reverse();const day=TDAY||days.find(d=>d>=today())||days[0]||today();
+  h+=`<h2>Jazdy</h2><div class="card"><label>Deň<input type="date" id="tDay" value="${esc(day)}"></label></div>`;
+  const L=STATE.trips.filter(t=>t.day===day).sort((a,b)=>(a.time||"").localeCompare(b.time||""));
+  h+=L.length?L.map(t=>`<div class="card"><div class="row"><span class="t">${esc(fName(t.farmer_id))}</span><span class="num">${esc(t.time||"")}</span></div>
+    <div class="s">🚛 č.${esc(t.truck_no)} · ${esc(t.spz||"")} · ${esc(t.driver||"bez vodiča")}${(()=>{const d=STATE.deals.find(x=>x.id===t.deal_id);return d?" · "+esc(d.no)+" "+esc(comName(d.com)):""})()}</div>
+    <form class="f sub" data-tedit="${esc(t.id)}"><label>Stav<select name="status">${Object.keys(TST).map(k=>`<option value="${k}"${t.status===k?" selected":""}>${esc(TST[k][0])}</option>`).join("")}</select></label><label>Netto t (z vážneho lístka)<input name="netto" inputmode="decimal" value="${t.netto!=null?String(t.netto).replace(".",","):""}"></label><div class="w btns"><button type="submit">Uložiť</button></div></form></div>`).join("")
+    :`<div class="card"><div class="s">Na tento deň nie sú naplánované jazdy.</div></div>`;
+  h+=`<h2>Autá VALKO (${T.length})</h2><div class="card">${STATE.trucks.map(t=>`<form class="trow" data-tk="${t.no}"><b>č.${t.no}</b><span>${esc(t.spz)}</span><input name="driver" value="${esc(t.driver||"")}" placeholder="vodič"><input name="phone" value="${esc(t.phone||"")}" placeholder="telefón"><button type="submit">Uložiť</button></form>`).join("")}</div>`;
+  return h}
 function vPrice(){const P=STATE.prices,valid=((STATE.settings||{}).pricelist||{}).valid||"";
   return `<form class="card f" id="fPrice"><div class="w s">Výkupné ceny FCA farma bez DPH. Prázdne = farmár komoditu nevidí. Po uložení ich hneď vidia všetci prihlásení farmári.</div>
   ${MK.map(m=>{const p=P.find(x=>x.com===m[0]);return `<label>${esc(m[1])} €/t<input name="p_${m[0]}" inputmode="decimal" value="${p&&p.price!=null?String(p.price).replace(".",","):""}" placeholder="–"></label>`}).join("")}
@@ -383,6 +421,7 @@ document.addEventListener("click",async e=>{if(!ROLE)return;const t=e.target,g=s
   if(x=g("[data-sign]")){const r=STATE.reqs.find(y=>y.id===x.dataset.sign);busy(x,true);const a=await sb.from("deals").update({status:"podpisany",signed_at:new Date().toISOString()}).eq("id",r.deal_id);
     if(a.error){busy(x,false);toast("Chyba: "+a.error.message);return}await upd("requests",r.id,{status:"vybavena",reply:"Zmluva potvrdená.",handled_by:ME.staffName,handled_at:new Date().toISOString()});return}
   if(x=g("[data-fedit]")){EDITF=x.dataset.fedit||null;renderStaff();if(EDITF)window.scrollTo(0,0);return}
+  if(x=g("[data-assign]")){ASSIGN=x.dataset.assign||null;renderStaff();return}
   if(x=g("[data-mklogin]")){const f=STATE.farmers.find(y=>y.id===x.dataset.mklogin);let usePhone=false;
     if(f.email&&f.phone)usePhone=!confirm(`Prihlasovať sa bude e-mailom ${f.email}?\n\nOK = e-mail · Zrušiť = telefón ${f.phone}`);
     else usePhone=!f.email;
@@ -398,7 +437,7 @@ document.addEventListener("click",async e=>{if(!ROLE)return;const t=e.target,g=s
   if(x=g("[data-invite]")){const f=STATE.farmers.find(y=>y.id===x.dataset.invite);copy(`Dobrý deň, ERNTE má pre vás aplikáciu s výkupnými cenami a vašimi obchodmi:\n${APP_URL}\nPrihláste sa e-mailom ${f.email} – príde vám kód. Potom si ju dajte na plochu (Zdieľať → Pridať na plochu).`);return}
 });
 document.addEventListener("input",e=>{if(e.target.id==="fq"){FQ=e.target.value;const p=e.target.selectionStart;renderStaff();const i=$("fq");i.focus();i.setSelectionRange(p,p)}});
-document.addEventListener("change",e=>{if(e.target.id==="dCom"){const p=STATE.prices.find(x=>x.com===e.target.value);if(p&&p.price!=null)$("dPrice").value=String(p.price).replace(".",",")}});
+document.addEventListener("change",e=>{if(e.target.id==="tDay"){TDAY=e.target.value;renderStaff();return}if(e.target.id==="dCom"){const p=STATE.prices.find(x=>x.com===e.target.value);if(p&&p.price!=null)$("dPrice").value=String(p.price).replace(".",",")}});
 async function upd(tbl,id,patch){const {error}=await sb.from(tbl).update(patch).eq("id",id);if(error){toast("Chyba: "+error.message,5000);return false}await loadStaff();renderStaff();toast("Uložené.");return true}
 document.addEventListener("submit",async e=>{if(!ROLE)return;const f=e.target,fd=new FormData(f);
   if(f.id==="fPrice"){e.preventDefault();const b=f.querySelector("button");busy(b,true);const now=new Date().toISOString();
@@ -411,6 +450,15 @@ document.addEventListener("submit",async e=>{if(!ROLE)return;const f=e.target,fd
     const {error}=await sb.from("deals").insert(row);if(error){busy(b,false);toast("Chyba: "+error.message,5000);return}
     if(DEALF&&DEALF.fromReq)await sb.from("requests").update({status:"vybavena",reply:`Pripravili sme zmluvu ${row.no}.`,handled_by:ME.staffName,handled_at:new Date().toISOString()}).eq("id",DEALF.fromReq);
     DEALF=null;await loadStaff();renderStaff();toast("Obchod "+row.no+" uložený. Farmár ho vidí.");return}
+  if(f.id==="fAssign"){e.preventDefault();const r=STATE.reqs.find(y=>y.id===f.dataset.req),nos=fd.getAll("tk").map(Number);if(!nos.length){toast("Vyber aspoň jedno auto.");return}
+    const b=f.querySelector("button[type=submit]");busy(b,true);
+    const rows=nos.map(n=>{const t=STATE.trucks.find(y=>y.no===n);return {farmer_id:r.farmer_id,deal_id:r.deal_id,request_id:r.id,truck_no:n,spz:t.spz,driver:t.driver,driver_phone:t.phone,day:fd.get("day"),time:fd.get("time")||null,note:fd.get("note")||null}});
+    const a=await sb.from("trips").insert(rows);if(a.error){busy(b,false);toast("Chyba: "+a.error.message,6000);return}
+    await sb.from("requests").update({status:"vybavena",reply:`Pridelené ${rows.length} auto(á) na ${dSK(fd.get("day"))}${fd.get("time")?" od "+fd.get("time"):""}.`,handled_by:ME.staffName,handled_at:new Date().toISOString()}).eq("id",r.id);
+    if(r.deal_id)await sb.from("deals").update({status:"odvoz"}).eq("id",r.deal_id).in("status",["navrh","podpisany"]);
+    ASSIGN=null;TDAY=fd.get("day");await loadStaff();renderStaff();toast("Autá potvrdené – farmár ich vidí.");return}
+  if(f.dataset.tedit){e.preventDefault();const n=num(fd.get("netto"));await upd("trips",f.dataset.tedit,{status:fd.get("status"),netto:Number.isFinite(n)?n:null,updated_at:new Date().toISOString()});return}
+  if(f.dataset.tk){e.preventDefault();const {error}=await sb.from("trucks").update({driver:String(fd.get("driver")||"").trim()||null,phone:String(fd.get("phone")||"").trim()||null}).eq("no",+f.dataset.tk);if(error){toast("Chyba: "+error.message);return}await loadStaff();renderStaff();toast("Uložené.");return}
   if(f.dataset.dedit){e.preventDefault();const dt=num(fd.get("delivered_t"));await upd("deals",f.dataset.dedit,{status:fd.get("status"),delivered_t:Number.isFinite(dt)?dt:0});return}
   if(f.id==="fFarm"){e.preventDefault();const row={};["name","email","phone","addr","ico","dic","icdph","iban"].forEach(k=>{const v=String(fd.get(k)||"").trim();row[k]=v||null});
     if(row.email)row.email=row.email.toLowerCase();row.active=!!fd.get("active");const id=f.dataset.id;
