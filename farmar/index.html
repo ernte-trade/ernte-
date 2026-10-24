@@ -264,10 +264,10 @@ function vDeals(){const F=STATE.farmers.filter(f=>f.active),pre=DEALF||{};
   return h}
 function vFarm(){const q=FQ.toLowerCase(),L=STATE.farmers.filter(f=>!q||(f.name+" "+(f.email||"")).toLowerCase().includes(q));const E=EDITF==="new"?{}:STATE.farmers.find(f=>f.id===EDITF);
   let h=`<div class="card"><div class="btns"><button type="button" class="pri" data-fedit="new">+ Pridať farmára</button></div><label>Hľadať<input id="fq" value="${esc(FQ)}" placeholder="meno alebo e-mail"></label>
-   <div class="s">Farmár sa prihlási e-mailom, ktorý tu zapíšeš. Pošli mu pozvánku s odkazom na aplikáciu.</div></div>`;
+   <div class="s">Do aplikácie sa dostane iba farmár so zapnutým prístupom. „Zapnúť prístup a pozvať“ prístup zapne a skopíruje pozvánku, ktorú mu pošleš.</div></div>`;
   if(E)h+=farmForm(E);
-  h+=L.map(f=>`<div class="card"><div class="row"><span class="t">${esc(f.name)}</span>${f.active?(f.email?pill(["má prístup"]):pill(["bez e-mailu","w"])):pill(["vypnutý","g"])}</div><div class="s">${esc([f.email,f.phone,f.addr].filter(Boolean).join(" · "))}</div>
-    <div class="btns"><button type="button" data-fedit="${esc(f.id)}">Upraviť</button>${f.email&&f.active?`<button type="button" data-invite="${esc(f.id)}">Kopírovať pozvánku</button>`:""}</div></div>`).join("");
+  h+=L.map(f=>`<div class="card"><div class="row"><span class="t">${esc(f.name)}</span>${!f.email?pill(["bez e-mailu","w"]):f.active?pill(["prístup zapnutý"]):pill(["bez prístupu","g"])}</div><div class="s">${esc([f.email,f.phone,f.addr].filter(Boolean).join(" · "))}</div>
+    <div class="btns"><button type="button" data-fedit="${esc(f.id)}">Upraviť</button>${f.email?(f.active?`<button type="button" data-invite="${esc(f.id)}">Kopírovať pozvánku</button><button type="button" class="dng" data-acc="${esc(f.id)}" data-on="0">Vypnúť prístup</button>`:`<button type="button" class="lime" data-acc="${esc(f.id)}" data-on="1">Zapnúť prístup a pozvať</button>`):""}</div></div>`).join("");
   return h}
 function farmForm(f){const v=k=>esc(f[k]||"");return `<form class="card f" id="fFarm" data-id="${esc(f.id||"")}"><div class="w t">${f.id?"Upraviť farmára":"Nový farmár"}</div>
   <label class="w">Názov / meno<input name="name" required value="${v("name")}"></label><label>E-mail na prihlásenie<input name="email" type="email" value="${v("email")}"></label><label>Telefón<input name="phone" value="${v("phone")}"></label>
@@ -284,6 +284,8 @@ document.addEventListener("click",async e=>{if(!ROLE)return;const t=e.target,g=s
   if(x=g("[data-sign]")){const r=STATE.reqs.find(y=>y.id===x.dataset.sign);busy(x,true);const a=await sb.from("deals").update({status:"podpisany",signed_at:new Date().toISOString()}).eq("id",r.deal_id);
     if(a.error){busy(x,false);toast("Chyba: "+a.error.message);return}await upd("requests",r.id,{status:"vybavena",reply:"Zmluva potvrdená.",handled_by:ME.staffName,handled_at:new Date().toISOString()});return}
   if(x=g("[data-fedit]")){EDITF=x.dataset.fedit||null;renderStaff();if(EDITF)window.scrollTo(0,0);return}
+  if(x=g("[data-acc]")){const on=x.dataset.on==="1",f=STATE.farmers.find(y=>y.id===x.dataset.acc);busy(x,true);const ok=await upd("farmers",f.id,{active:on});
+    if(ok&&on)copy(`Dobrý deň, ERNTE má pre vás aplikáciu s výkupnými cenami a vašimi obchodmi:\n${APP_URL}\nPrihláste sa e-mailom ${f.email} – príde vám kód. Potom si ju dajte na plochu (Zdieľať → Pridať na plochu).`);return}
   if(x=g("[data-invite]")){const f=STATE.farmers.find(y=>y.id===x.dataset.invite);copy(`Dobrý deň, ERNTE má pre vás aplikáciu s výkupnými cenami a vašimi obchodmi:\n${APP_URL}\nPrihláste sa e-mailom ${f.email} – príde vám kód. Potom si ju dajte na plochu (Zdieľať → Pridať na plochu).`);return}
 });
 document.addEventListener("input",e=>{if(e.target.id==="fq"){FQ=e.target.value;const p=e.target.selectionStart;renderStaff();const i=$("fq");i.focus();i.setSelectionRange(p,p)}});
