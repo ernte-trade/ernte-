@@ -132,6 +132,9 @@ details.trips{border-top:1px solid var(--line);padding-top:8px}details.trips sum
 .trow{display:grid;grid-template-columns:48px 86px 1fr 1fr auto;gap:8px;align-items:center;padding:6px 0;border-top:1px solid var(--line);font-size:.8rem}.trow:first-child{border-top:0}
 .trow input{min-height:40px;padding:6px 10px;font-size:.85rem}.trow button{min-height:40px;padding:0 12px}
 @media (max-width:520px){.trow{grid-template-columns:44px 1fr;}.trow input,.trow button{grid-column:1/-1}}
+.mmap{overflow:hidden;border-radius:16px;border:1px solid var(--line2);margin-top:6px;display:flex;justify-content:center;background:#0b0f16}
+.mmin{position:relative;flex:none}.mmin img{position:absolute;width:256px;height:256px;max-width:none;border:0}
+.fpin i{background:#7cc4ff;box-shadow:0 0 0 4px rgba(124,196,255,.25),0 0 12px #7cc4ff}.fpin.mv i{background:#b6ff3b;box-shadow:0 0 0 4px rgba(182,255,59,.25),0 0 12px #b6ff3b}
 @media (prefers-reduced-motion:reduce){.toast,button{transition:none}}
 </style>
 </head>
@@ -276,7 +279,7 @@ function rerender(){if(FARMER)renderFarmer();else if(ROLE)renderStaff()}
 
 // ================= FARMÁR =================
 let SELL=null,ORDER=null;
-async function startFarmer(){await loadFarmer();renderFarmer();loadWx().then(renderFarmer);
+async function startFarmer(){await loadFarmer();await loadPos();renderFarmer();setInterval(async()=>{if(document.hidden)return;await loadPos();if((STATE.pos||[]).length)renderFarmer()},60000);loadWx().then(renderFarmer);
   sb.channel("f-"+FARMER.id).on("postgres_changes",{event:"*",schema:"public",table:"requests",filter:"farmer_id=eq."+FARMER.id},()=>loadFarmer().then(renderFarmer)).on("postgres_changes",{event:"*",schema:"public",table:"trips",filter:"farmer_id=eq."+FARMER.id},()=>loadFarmer().then(renderFarmer)).subscribe();
   document.addEventListener("visibilitychange",()=>{if(!document.hidden)loadFarmer().then(renderFarmer)})}
 async function loadFarmer(){const [p,s,d,r]=await Promise.all([
@@ -286,8 +289,13 @@ async function loadFarmer(){const [p,s,d,r]=await Promise.all([
   try{const t=await sb.from("trips").select("id,deal_id,spz,driver,driver_phone,day,time,status,netto,note").order("day",{ascending:true});STATE.trips=t.data||[]}catch(e){STATE.trips=[]}
   STATE.prices=(p.data||[]).filter(x=>x.price!=null);STATE.settings=Object.fromEntries((s.data||[]).map(x=>[x.key,x.value]));STATE.deals=d.data||[];STATE.reqs=r.data||[]}
 function contact(){return (STATE.settings||{}).contact||{phone:"+421 918 449 991",email:"jana.valkova@ernte.sk"}}
+function miniMap(lat,lon,label,z=11){const W=340,H=180,n=2**z,T=256,wx=(lon+180)/360*n*T,lr=lat*Math.PI/180,wy=(1-Math.log(Math.tan(lr)+1/Math.cos(lr))/Math.PI)/2*n*T,x0=wx-W/2,y0=wy-H/2;
+  let t="";for(let tx=Math.floor(x0/T);tx<=Math.floor((x0+W)/T);tx++)for(let ty=Math.floor(y0/T);ty<=Math.floor((y0+H)/T);ty++)t+=`<img src="https://a.basemaps.cartocdn.com/dark_all/${z}/${tx}/${ty}.png" style="left:${Math.round(tx*T-x0)}px;top:${Math.round(ty*T-y0)}px" alt="" onerror="this.style.visibility='hidden'">`;
+  return `<div class="mmap"><div class="mmin" style="width:${W}px;height:${H}px">${t}<div class="rdpin" style="left:${W/2}px;top:${H/2}px"><i></i><span>${esc(label)}</span></div></div></div>`}
+const ago=d=>{const m=Math.round((Date.now()-new Date(d))/60000);return m<1?"práve teraz":m<60?`pred ${m} min`:`pred ${Math.round(m/60)} h`};
+async function loadPos(){try{const r=await sb.rpc("my_truck_positions");STATE.pos=r.data||[]}catch(e){STATE.pos=[]}}
 function tripRow(t){const d=new Date(t.day+"T12:00").toLocaleDateString("sk-SK",{weekday:"short",day:"numeric",month:"numeric"});
-  return `<div class="trip"><div class="tr1"><b>${esc(d)}${t.time?" · "+esc(t.time):""}</b>${pill(TST[t.status]||[t.status])}</div><div class="tr2">🚛 <b>${esc(t.spz||"auto VALKO")}</b>${t.driver?" · "+esc(t.driver):""}${t.driver_phone&&!["vylozene","zrusena"].includes(t.status)?` · <a class="copy" href="tel:${esc(String(t.driver_phone).replace(/\s/g,""))}">volať vodiča</a>`:""}</div>${t.netto!=null?`<div class="tr2">Netto: <b class="num">${fmt(t.netto,3)} t</b></div>`:""}${t.note?`<div class="s">${esc(t.note)}</div>`:""}</div>`}
+  return `<div class="trip"><div class="tr1"><b>${esc(d)}${t.time?" · "+esc(t.time):""}</b>${pill(TST[t.status]||[t.status])}</div><div class="tr2">🚛 <b>${esc(t.spz||"auto VALKO")}</b>${t.driver?" · "+esc(t.driver):""}${t.driver_phone&&!["vylozene","zrusena"].includes(t.status)?` · <a class="copy" href="tel:${esc(String(t.driver_phone).replace(/\s/g,""))}">volať vodiča</a>`:""}</div>${t.netto!=null?`<div class="tr2">Netto: <b class="num">${fmt(t.netto,3)} t</b></div>`:""}${t.note?`<div class="s">${esc(t.note)}</div>`:""}${(()=>{const q=(STATE.pos||[]).find(x=>x.trip_id===t.id);return q&&q.lat?`<div class="tr2">📍 Poloha auta ${esc(ago(q.at))}${q.speed?` · ${q.speed} km/h`:""}</div>`+miniMap(+q.lat,+q.lon,t.spz||"auto"):""})()}</div>`}
 function renderFarmer(){const F=FARMER,P=MK.map(m=>STATE.prices.find(x=>x.com===m[0])).filter(Boolean),valid=((STATE.settings||{}).pricelist||{}).valid,c=contact();
   let h=`<div class="hero"><small>Prihlásený dodávateľ</small><b>${esc(F.name)}</b><small>${esc(ME.email)}</small></div>`;
   h+=`<h2>Výkupné ceny · FCA farma, bez DPH</h2>`;
@@ -336,7 +344,7 @@ document.addEventListener("submit",async e=>{if(!FARMER)return;const f=e.target;
 
 // ================= ERNTE =================
 let TAB="req",DEALF=null,EDITF=null,FQ="";
-async function startStaff(){await loadStaff();renderStaff();
+async function startStaff(){await loadStaff();renderStaff();setInterval(async()=>{if(document.hidden||TAB!=="trans")return;await loadStaff();renderStaff()},120000);
   sb.channel("staff-req").on("postgres_changes",{event:"INSERT",schema:"public",table:"requests"},async p=>{await loadStaff();renderStaff();const fr=STATE.farmers.find(x=>x.id===p.new.farmer_id);toast("Nová požiadavka: "+(fr?fr.name:"")+" – "+RKIND[p.new.kind],6000);try{navigator.vibrate&&navigator.vibrate(200)}catch(x){}}).subscribe();
   document.addEventListener("visibilitychange",()=>{if(!document.hidden)loadStaff().then(renderStaff)})}
 async function loadStaff(){const [f,p,s,d,r]=await Promise.all([sb.from("farmers").select("*").order("name"),sb.from("prices").select("*"),sb.from("settings").select("key,value"),
@@ -360,6 +368,13 @@ function vReq(){const R=STATE.reqs;if(!R.length)return `<div class="card"><div c
       ${r.status==="nova"&&r.kind==="sell"?`<button type="button" class="lime" data-mkdeal="${esc(r.id)}">Vytvoriť obchod</button>`:""}
       ${r.status==="nova"&&r.kind==="agree"&&d?`<button type="button" class="lime" data-sign="${esc(r.id)}">Zmluva podpísaná</button>`:""}
       ${r.status==="nova"?`<button type="button" class="pri" data-done="${esc(r.id)}">Vybavené</button><button type="button" class="dng" data-rej="${esc(r.id)}">Zamietnuť</button>`:""}</div></div>`}).join("")}
+function fleetMap(G){const W=340,H=300,lats=G.map(t=>+t.gps_lat),lons=G.map(t=>+t.gps_lon);const cl=(Math.min(...lats)+Math.max(...lats))/2,cn=(Math.min(...lons)+Math.max(...lons))/2;
+  let z=12;const px=(lat,lon,z)=>{const n=2**z*256,lr=lat*Math.PI/180;return [(lon+180)/360*n,(1-Math.log(Math.tan(lr)+1/Math.cos(lr))/Math.PI)/2*n]};
+  while(z>5){const a=px(Math.max(...lats),Math.min(...lons),z),b=px(Math.min(...lats),Math.max(...lons),z);if(b[0]-a[0]<W-60&&b[1]-a[1]<H-60)break;z--}
+  const c=px(cl,cn,z),x0=c[0]-W/2,y0=c[1]-H/2,T=256;let t="";
+  for(let tx=Math.floor(x0/T);tx<=Math.floor((x0+W)/T);tx++)for(let ty=Math.floor(y0/T);ty<=Math.floor((y0+H)/T);ty++)t+=`<img src="https://a.basemaps.cartocdn.com/dark_all/${z}/${tx}/${ty}.png" style="left:${Math.round(tx*T-x0)}px;top:${Math.round(ty*T-y0)}px" alt="" onerror="this.style.visibility='hidden'">`;
+  const pins=G.map(k=>{const q=px(+k.gps_lat,+k.gps_lon,z);return `<div class="rdpin fpin${k.gps_speed>3?" mv":""}" style="left:${q[0]-x0}px;top:${q[1]-y0}px"><i></i><span>${k.no}</span></div>`}).join("");
+  return `<div class="mmap"><div class="mmin" style="width:${W}px;height:${H}px">${t}${pins}</div></div>`}
 let ASSIGN=null,TDAY="";
 function vTrans(){if(STATE.noTrans)return `<div class="card"><div class="t">Doprava ešte nie je zapnutá</div><div class="s">Spusti raz SQL zo stránky doprava.html (Kopírovať SQL → SQL Editor → Run).</div><a class="btn pri" href="doprava.html">Otvoriť nastavenie dopravy</a></div>`;
   const R=STATE.reqs.filter(r=>r.kind==="transport"&&r.status==="nova"),T=STATE.trucks.filter(t=>t.active);
@@ -379,7 +394,9 @@ function vTrans(){if(STATE.noTrans)return `<div class="card"><div class="t">Dopr
     <div class="s">🚛 č.${esc(t.truck_no)} · ${esc(t.spz||"")} · ${esc(t.driver||"bez vodiča")}${(()=>{const d=STATE.deals.find(x=>x.id===t.deal_id);return d?" · "+esc(d.no)+" "+esc(comName(d.com)):""})()}</div>
     <form class="f sub" data-tedit="${esc(t.id)}"><label>Stav<select name="status">${Object.keys(TST).map(k=>`<option value="${k}"${t.status===k?" selected":""}>${esc(TST[k][0])}</option>`).join("")}</select></label><label>Netto t (z vážneho lístka)<input name="netto" inputmode="decimal" value="${t.netto!=null?String(t.netto).replace(".",","):""}"></label><div class="w btns"><button type="submit">Uložiť</button></div></form></div>`).join("")
     :`<div class="card"><div class="s">Na tento deň nie sú naplánované jazdy.</div></div>`;
-  h+=`<h2>Autá VALKO (${T.length})</h2><div class="card">${STATE.trucks.map(t=>`<form class="trow" data-tk="${t.no}"><b>č.${t.no}</b><span>${esc(t.spz)}</span><input name="driver" value="${esc(t.driver||"")}" placeholder="vodič"><input name="phone" value="${esc(t.phone||"")}" placeholder="telefón"><button type="submit">Uložiť</button></form>`).join("")}</div>`;
+  const G=STATE.trucks.filter(t=>t.gps_lat&&t.gps_at&&Date.now()-new Date(t.gps_at)<6*3600e3);
+  if(G.length)h+=`<h2>Kde sú autá</h2><div class="card">${fleetMap(G)}<div class="s">Poloha z Commandera, obnovuje sa každé 2 minúty.</div></div>`;
+  h+=`<h2>Autá VALKO (${T.length})</h2><div class="card">${STATE.trucks.map(t=>`<form class="trow" data-tk="${t.no}"><b>č.${t.no}</b><span>${esc(t.spz)}${t.gps_lat?`<br><a class="copy" style="font-size:.7rem" href="https://maps.google.com/?q=${t.gps_lat},${t.gps_lon}" target="_blank" rel="noopener">📍 ${esc(ago(t.gps_at))}${t.gps_speed?" · "+t.gps_speed+" km/h":""}</a>`:""}</span><input name="driver" value="${esc(t.driver||"")}" placeholder="vodič"><input name="phone" value="${esc(t.phone||"")}" placeholder="telefón"><button type="submit">Uložiť</button></form>`).join("")}</div>`;
   return h}
 function vPrice(){const P=STATE.prices,valid=((STATE.settings||{}).pricelist||{}).valid||"";
   return `<form class="card f" id="fPrice"><div class="w s">Výkupné ceny FCA farma bez DPH. Prázdne = farmár komoditu nevidí. Po uložení ich hneď vidia všetci prihlásení farmári.</div>
