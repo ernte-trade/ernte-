@@ -112,6 +112,17 @@ input.code{font:600 1.7rem var(--f-num);letter-spacing:.35em;text-align:center}i
 .wxd .dt{display:flex;align-items:center;gap:6px;font-family:var(--f-num)}.wxd .dt b{font-weight:600;font-size:.86rem;min-width:30px;text-align:right}.wxd .dt b.lo{color:var(--muted);text-align:left}
 .bar{position:relative;flex:1;height:6px;border-radius:999px;background:rgba(255,255,255,.08)}.bar i{position:absolute;top:0;bottom:0;border-radius:999px;background:linear-gradient(90deg,#22d3ee,#b6ff3b,#ffb020);box-shadow:0 0 10px rgba(182,255,59,.4)}
 @media (max-width:420px){.wxd{grid-template-columns:54px 26px 1fr;}.wxd .dt{grid-column:1/-1}}
+.rdbox{margin:4px 0 2px}
+.rdmap{position:relative;overflow:hidden;border-radius:18px;background:#0b0f16;border:1px solid rgba(255,255,255,.14);box-shadow:inset 0 1px 0 rgba(255,255,255,.08),0 12px 34px rgba(0,0,0,.45)}
+.rdmap img{position:absolute;width:256px;height:256px;max-width:none;border:0;user-select:none;pointer-events:none}
+.rdlayers,.rdf{position:absolute;inset:0}.rdf{transition:opacity .25s}.rdf img{opacity:.85}
+.rdpin{position:absolute;transform:translate(-50%,-50%);display:flex;align-items:center;gap:6px;pointer-events:none}
+.rdpin i{width:12px;height:12px;border-radius:50%;background:#b6ff3b;box-shadow:0 0 0 4px rgba(182,255,59,.25),0 0 16px #b6ff3b}
+.rdpin span{font:600 .7rem "Sora",system-ui,sans-serif;color:#fff;text-shadow:0 1px 3px #000}
+.rdtime{position:absolute;left:10px;top:10px;padding:5px 10px;border-radius:999px;background:rgba(10,13,20,.7);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);border:1px solid rgba(255,255,255,.15);font:600 .78rem "IBM Plex Mono",monospace;color:#fff}
+.rdplay{position:absolute;right:10px;bottom:10px;width:40px;height:40px;min-height:0;padding:0;border-radius:50%;background:rgba(10,13,20,.7);border:1px solid rgba(255,255,255,.2);color:#fff;font-size:.8rem;cursor:pointer}
+.rdleg{display:flex;align-items:center;gap:8px;margin-top:8px;font-size:.68rem;color:#9aa3b8}.rdleg i{flex:1;height:6px;border-radius:999px;background:linear-gradient(90deg,#88ddee,#0099cc,#0077aa,#ffee00,#ff9900,#ff4400,#c10000)}
+.rdsrc{font-size:.62rem;color:#6f7890;margin-top:4px}
 @media (prefers-reduced-motion:reduce){.toast,button{transition:none}}
 </style>
 </head>
@@ -208,6 +219,29 @@ async function enter(user){ME=user;$("outBtn").hidden=false;
   $("app").innerHTML=`<div class="card"><div class="t">Váš e-mail ešte nemá prístup</div><div class="s">${esc(user.email)} zatiaľ nie je v zozname dodávateľov ERNTE. Zavolajte nám a zapíšeme vás.</div><div class="btns"><a class="btn pri" href="tel:+421918449991">Zavolať ERNTE</a></div></div>`}
 
 
+// ERNTE radar zrážok – RainViewer (radar) + CARTO podklad, animácia posledných ~2 hodín
+const RADAR={lat:48.755,lon:21.915,z:7,frames:null,host:"",at:0,timer:null};
+async function radarFrames(){if(RADAR.frames&&Date.now()-RADAR.at<5*60e3)return RADAR.frames;
+  const r=await fetch("https://api.rainviewer.com/public/weather-maps.json",{cache:"no-store"});const j=await r.json();
+  RADAR.host=j.host;RADAR.frames=[...(j.radar.past||[]),...(j.radar.nowcast||[])];RADAR.at=Date.now();return RADAR.frames}
+function mountRadar(el){if(!el)return;clearInterval(RADAR.timer);
+  const W=el.clientWidth||340,H=Math.round(Math.min(380,W*0.85)),z=RADAR.z,n=2**z,T=256;
+  const wx=(RADAR.lon+180)/360*n*T,lr=RADAR.lat*Math.PI/180,wy=(1-Math.log(Math.tan(lr)+1/Math.cos(lr))/Math.PI)/2*n*T;
+  const x0=wx-W/2,y0=wy-H/2,tx0=Math.floor(x0/T),tx1=Math.floor((x0+W)/T),ty0=Math.floor(y0/T),ty1=Math.floor((y0+H)/T);
+  const tiles=[];for(let tx=tx0;tx<=tx1;tx++)for(let ty=ty0;ty<=ty1;ty++)tiles.push({tx,ty,l:Math.round(tx*T-x0),t:Math.round(ty*T-y0)});
+  el.innerHTML=`<div class="rdmap" style="height:${H}px">${tiles.map(q=>`<img class="rdbase" src="https://a.basemaps.cartocdn.com/dark_all/${z}/${q.tx}/${q.ty}.png" style="left:${q.l}px;top:${q.t}px" alt="" onerror="this.style.visibility='hidden'">`).join("")}<div class="rdlayers"></div>
+    <div class="rdpin" style="left:${W/2}px;top:${H/2}px"><i></i><span>Michalovce</span></div><div class="rdtime">načítavam radar…</div>
+    <button type="button" class="rdplay" aria-label="Prehrať / zastaviť">❚❚</button></div>
+    <div class="rdleg"><span>slabý</span><i></i><span>silný dážď / búrka</span></div><div class="rdsrc">Radar: RainViewer · Mapa: © OpenStreetMap, © CARTO</div>`;
+  const L=el.querySelector(".rdlayers"),tm=el.querySelector(".rdtime"),pb=el.querySelector(".rdplay");
+  radarFrames().then(F=>{if(!F.length){tm.textContent="Radar nie je dostupný";return}
+    L.innerHTML=F.map((f,i)=>`<div class="rdf" style="opacity:${i===F.length-1?1:0}">${tiles.map(q=>`<img src="${RADAR.host}${f.path}/256/${z}/${q.tx}/${q.ty}/2/1_1.png" style="left:${q.l}px;top:${q.t}px" alt="" onerror="this.style.visibility='hidden'">`).join("")}</div>`).join("");
+    const lay=[...L.children];let k=F.length-1,play=true;const now=Date.now()/1000;
+    const show=i=>{lay.forEach((d,j)=>d.style.opacity=j===i?1:0);const t=new Date(F[i].time*1000);tm.textContent=t.toLocaleTimeString("sk-SK",{hour:"2-digit",minute:"2-digit"})+(F[i].time>now?" · predpoveď":"")};
+    show(k);const tick=()=>{k=(k+1)%lay.length;show(k)};RADAR.timer=setInterval(()=>{if(play)tick()},700);
+    pb.onclick=()=>{play=!play;pb.textContent=play?"❚❚":"▶"};
+  }).catch(()=>{tm.textContent="Radar sa nepodarilo načítať"})}
+
 // ================= POČASIE (Open-Meteo, 7 dní + hodiny) =================
 const WX_DEF={name:"Michalovce",lat:48.755,lon:21.915};
 let WXLOC=(()=>{try{return JSON.parse(localStorage.getItem("ernte-wxloc"))||WX_DEF}catch(e){return WX_DEF}})(),WXD=null,WXAT=0;
@@ -223,10 +257,11 @@ function wxCard(){if(!WXD)return `<div class="card"><div class="s">Načítavam p
     const a=(D.temperature_2m_min[i]-tmin)/rng*100,b=(D.temperature_2m_max[i]-tmin)/rng*100;
     return `<div class="wxd"><span class="dn">${esc(nm)}</span><span class="di" title="${w[1]}">${w[0]}</span><span class="dr">${D.precipitation_sum[i]>0?D.precipitation_sum[i].toFixed(1)+" mm":"–"} · ${D.precipitation_probability_max[i]??0} %</span><span class="dt"><b class="lo">${Math.round(D.temperature_2m_min[i])}°</b><i class="bar"><i style="left:${a}%;right:${100-b}%"></i></i><b>${Math.round(D.temperature_2m_max[i])}°</b></span></div>`}).join("");
   return `<div class="card wx"><div class="row"><span class="t">📍 ${esc(WXLOC.name)}</span><button type="button" class="out" data-wxloc>Moja poloha</button></div>
-    <div class="wxhs">${hrs}</div><div class="wxds">${days}</div>
+    <div class="wxhs">${hrs}</div><div class="wxds">${days}</div><div class="t" style="margin-top:6px">🛰️ Radar zrážok</div><div class="rdbox" id="radarBox"></div>
     <div class="s" style="font-size:.7rem">Predpoveď: Open-Meteo · <a class="copy" style="font-size:.7rem" href="https://www.pocasieradar.sk/" target="_blank" rel="noopener">Radar zrážok – pocasieradar.sk</a></div></div>`}
 document.addEventListener("click",e=>{if(!e.target.closest("[data-wxloc]"))return;if(!navigator.geolocation){toast("Poloha nie je dostupná.");return}
   toast("Zisťujem polohu…");navigator.geolocation.getCurrentPosition(async p=>{WXLOC={name:"Moja poloha",lat:+p.coords.latitude.toFixed(3),lon:+p.coords.longitude.toFixed(3)};try{localStorage.setItem("ernte-wxloc",JSON.stringify(WXLOC))}catch(x){}await loadWx(true);rerender()},()=>toast("Polohu sa nepodarilo zistiť – povoľte ju v nastaveniach."),{timeout:10000})});
+function mountR(){const b=document.getElementById("radarBox");if(b)mountRadar(b)}
 function rerender(){if(FARMER)renderFarmer();else if(ROLE)renderStaff()}
 
 // ================= FARMÁR =================
@@ -263,7 +298,7 @@ function renderFarmer(){const F=FARMER,P=MK.map(m=>STATE.prices.find(x=>x.com===
     </div>`}).join(""):`<div class="card"><div class="s">Zatiaľ nemáte žiadny obchod. Keď si vyberiete cenu a ťuknete na Predať, ERNTE vám pripraví zmluvu.</div></div>`;
   h+=`<h2>Kontakt ERNTE</h2><div class="card"><div class="row"><span>Telefón</span><a class="copy" href="tel:${esc(String(c.phone||"").replace(/\s/g,""))}">${esc(c.phone)}</a></div><div class="row"><span>E-mail</span><a class="copy" href="mailto:${esc(c.email)}">${esc(c.email)}</a></div></div>`;
   h+=pwCard()+installHint();
-  $("app").innerHTML=h}
+  $("app").innerHTML=h;mountR()}
 
 document.addEventListener("click",async e=>{if(!FARMER)return;const t=e.target;
   const s=t.closest("[data-sell]");if(s){SELL=s.dataset.sell||null;renderFarmer();if(SELL)setTimeout(()=>{const i=document.querySelector("#fSell input[name=tons]");if(i)i.focus()},50);return}
@@ -295,7 +330,7 @@ const fName=id=>{const f=STATE.farmers.find(x=>x.id===id);return f?f.name:"?"};
 function renderStaff(){const nNew=STATE.reqs.filter(r=>r.status==="nova").length;
   const tabs=[["req",`Požiadavky${nNew?` <span class="cnt">${nNew}</span>`:""}`],["price","Cenník"],["deals","Obchody"],["farm","Farmári"],["wx","Počasie"]];
   let h=`<nav class="tabs">${tabs.map(t=>`<button type="button" data-tab="${t[0]}" aria-pressed="${TAB===t[0]}">${t[1]}</button>`).join("")}</nav>`;
-  if(TAB==="wx"&&!WXD)loadWx().then(renderStaff);h+=({req:vReq,price:vPrice,deals:vDeals,farm:vFarm,wx:wxCard})[TAB]();if(TAB==="req")h+=pwCard();$("app").innerHTML=h}
+  if(TAB==="wx"&&!WXD)loadWx().then(renderStaff);h+=({req:vReq,price:vPrice,deals:vDeals,farm:vFarm,wx:wxCard})[TAB]();if(TAB==="req")h+=pwCard();$("app").innerHTML=h;mountR()}
 function vReq(){const R=STATE.reqs;if(!R.length)return `<div class="card"><div class="s">Zatiaľ žiadne požiadavky od farmárov.</div></div>`;
   const ord=[...R.filter(r=>r.status==="nova"),...R.filter(r=>r.status!=="nova")];
   return ord.map(r=>{const fr=STATE.farmers.find(x=>x.id===r.farmer_id)||{},d=r.deal_id?STATE.deals.find(x=>x.id===r.deal_id):null;
