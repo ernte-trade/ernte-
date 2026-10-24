@@ -11,7 +11,7 @@ create table if not exists rides(
   start_at timestamptz, stop_at timestamptz, start_addr text, stop_addr text,
   distance numeric, duration int, avg_speed numeric, max_speed int,
   fuel_consumed numeric, avg_cons numeric, fuel_start numeric, fuel_stop numeric, odo_start numeric, odo_stop numeric,
-  refuel_l numeric, refuel_eur numeric, note text);
+  refuel_l numeric, refuel_eur numeric, note text, lat_start numeric, lon_start numeric, lat_stop numeric, lon_stop numeric);
 create index if not exists rides_start on rides(start_at);
 create index if not exists rides_veh on rides(vehicle_id, start_at);
 
@@ -56,15 +56,15 @@ begin
           end loop;
         elsif r.kind='rides' then
           for p in select * from jsonb_array_elements(coalesce(j->'rides',j->'data','[]'::jsonb)) loop
-            insert into rides(ride_id,vehicle_id,plate,driver,ride_type,start_at,stop_at,start_addr,stop_addr,distance,duration,avg_speed,max_speed,fuel_consumed,avg_cons,fuel_start,fuel_stop,odo_start,odo_stop,refuel_l,refuel_eur,note)
+            insert into rides(ride_id,vehicle_id,plate,driver,ride_type,start_at,stop_at,start_addr,stop_addr,lat_start,lon_start,lat_stop,lon_stop,distance,duration,avg_speed,max_speed,fuel_consumed,avg_cons,fuel_start,fuel_stop,odo_start,odo_stop,refuel_l,refuel_eur,note)
             values(p->>'rideId',p->>'vehicleId',p->>'vehicleRegistrationPlate',p->>'driverName',p->>'rideType',to_timestamp(cmd_num(p->>'startTime')),to_timestamp(cmd_num(p->>'stopTime')),
-              p->>'startAddress',p->>'stopAddress',cmd_num(p->>'distance'),cmd_num(p->>'duration')::int,cmd_num(p->>'avgSpeed'),cmd_num(p->>'maxSpeed')::int,
+              p->>'startAddress',p->>'stopAddress',cmd_num(p->>'latStart'),cmd_num(p->>'lonStart'),cmd_num(p->>'latStop'),cmd_num(p->>'lonStop'),cmd_num(p->>'distance'),cmd_num(p->>'duration')::int,cmd_num(p->>'avgSpeed'),cmd_num(p->>'maxSpeed')::int,
               nullif(cmd_num(p->>'fuelConsumed'),0),nullif(cmd_num(p->>'averageConsumption'),0),nullif(cmd_num(p->>'fuelLevelStart'),0),nullif(cmd_num(p->>'fuelLevelStop'),0),
               cmd_num(p->>'odometerStart'),cmd_num(p->>'odometerStop'),
               (select sum(cmd_num(x->>'volume')) from jsonb_array_elements(case when jsonb_typeof(p->'refueling')='array' then p->'refueling' else '[]'::jsonb end) x),
               (select sum(cmd_num(x->>'priceVatExc')) from jsonb_array_elements(case when jsonb_typeof(p->'refueling')='array' then p->'refueling' else '[]'::jsonb end) x),
               p->>'note')
-            on conflict(ride_id) do update set driver=excluded.driver,ride_type=excluded.ride_type,stop_at=excluded.stop_at,stop_addr=excluded.stop_addr,distance=excluded.distance,duration=excluded.duration,
+            on conflict(ride_id) do update set lat_start=excluded.lat_start,lon_start=excluded.lon_start,lat_stop=excluded.lat_stop,lon_stop=excluded.lon_stop,start_addr=excluded.start_addr,driver=excluded.driver,ride_type=excluded.ride_type,stop_at=excluded.stop_at,stop_addr=excluded.stop_addr,distance=excluded.distance,duration=excluded.duration,
               avg_speed=excluded.avg_speed,max_speed=excluded.max_speed,fuel_consumed=excluded.fuel_consumed,avg_cons=excluded.avg_cons,fuel_stop=excluded.fuel_stop,odo_stop=excluded.odo_stop,refuel_l=excluded.refuel_l,refuel_eur=excluded.refuel_eur,note=excluded.note;
           end loop;
           if cmd_num(j->>'totalPages')>cmd_num(j->>'page') and r.url is not null then

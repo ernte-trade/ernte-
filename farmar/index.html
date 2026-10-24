@@ -144,7 +144,7 @@ details.trips{border-top:1px solid var(--line);padding-top:8px}details.trips sum
 .vk{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px}.vk span{background:rgba(255,255,255,.05);border-radius:12px;padding:6px 8px;display:grid}.vk small{font-size:.62rem;color:var(--muted)}.vk b{font:600 .9rem var(--f-num)}
 .bad{color:var(--bad)!important}.good{color:var(--lime)!important}
 .ride{padding:8px 0;border-top:1px solid var(--line)}.ride:first-child{border-top:0}.ride .r1{display:flex;justify-content:space-between;gap:8px;font-size:.82rem}.ride .r1 span{font-family:var(--f-num);font-size:.74rem;color:var(--cyan)}
-.dtab{display:grid;gap:0}.dh,.dr{display:grid;grid-template-columns:1fr 70px 60px 50px;gap:6px;padding:8px 0;border-top:1px solid var(--line);font-size:.82rem}.dh{border-top:0;color:var(--muted);font-size:.7rem}.dr span:not(:first-child),.dh span:not(:first-child){text-align:right;font-family:var(--f-num)}
+.dtab{display:grid;gap:0}button.dr{all:unset;cursor:pointer;display:grid;width:100%;box-sizing:border-box;gap:6px;padding:8px 0;border-top:1px solid var(--line);font-size:.82rem}.dh.pay,.dr.pay{grid-template-columns:1fr 78px 82px 92px}.dr.pay small{font-size:.66rem}.dh,.dr{display:grid;grid-template-columns:1fr 70px 60px 50px;gap:6px;padding:8px 0;border-top:1px solid var(--line);font-size:.82rem}.dh{border-top:0;color:var(--muted);font-size:.7rem}.dr span:not(:first-child),.dh span:not(:first-child){text-align:right;font-family:var(--f-num)}
 @media (max-width:420px){.kgrid{grid-template-columns:repeat(2,minmax(0,1fr))}.vk{grid-template-columns:repeat(2,minmax(0,1fr))}}
 .rdbar{display:flex;align-items:center;gap:10px;margin-top:8px}.rdbar .rdplay{width:40px;height:40px;min-height:0;padding:0;border-radius:50%;background:rgba(10,13,20,.7);border:1px solid rgba(255,255,255,.2);color:#fff;font-size:.8rem;cursor:pointer;position:static}.rdbar .rdtime{position:static;font:600 .85rem "IBM Plex Mono",monospace;color:#fff;background:none;border:0;padding:0}
 @media (prefers-reduced-motion:reduce){.toast,button{transition:none}}
@@ -489,11 +489,46 @@ function vFleet(){const F=STATE.fleet;if(!F)return `<div class="card"><div class
       <div class="vk"><span><small>km</small><b>${n0(a.km)}</b></span><span><small>l/100</small><b class="${A.cons&&a.cons>A.cons*1.15?"bad":a.cons&&A.cons&&a.cons<A.cons*0.95?"good":""}">${a.cons?n1(a.cons):"–"}</b></span><span><small>nádrž</small><b>${v.tank?n0(v.tank)+" l":"–"}</b></span><span><small>tachometer</small><b>${v.odometer?n0(v.odometer):"–"}</b></span></div>
       <div class="s">${v.gps_at?`Posledná poloha ${esc(ago(v.gps_at))}${v.voltage?` · ${n1(v.voltage)} V`:""} · <a class="copy" style="font-size:.78rem" href="https://maps.google.com/?q=${v.lat},${v.lon}" target="_blank" rel="noopener">mapa</a>`:"Zatiaľ bez polohy"}</div>
       ${open?`<div class="sub">${last.length?last.map(r=>`<div class="ride"><div class="r1"><b>${new Date(r.start_at).toLocaleString("sk-SK",{day:"numeric",month:"numeric",hour:"2-digit",minute:"2-digit"})}</b><span>${n1(r.distance)} km · ${hm(r.duration)}${r.avg_cons?` · ${n1(r.avg_cons)} l/100`:""}${r.max_speed?` · max ${r.max_speed}`:""}</span></div><div class="s">${esc(r.start_addr||"?")} → ${esc(r.stop_addr||"?")}${r.driver?" · "+esc(r.driver):""}${/PRIVAT/.test(r.ride_type||"")?" · súkromná":""}${r.refuel_l?` · ⛽ ${n0(r.refuel_l)} l`:""}</div></div>`).join(""):`<div class="s">Žiadne jazdy v tomto období.</div>`}</div>`:""}</div>`}).join("");
+  h+=vPay(F);
   const D={};for(const r of F.rides){const k=r.driver||"neznámy vodič";(D[k]=D[k]||[]).push(r)}
   const DL=Object.entries(D).map(([k,R])=>[k,agg(R)]).sort((x,y)=>y[1].km-x[1].km);
   h+=`<h2>Vodiči</h2><div class="card"><div class="dtab"><div class="dh"><span>Vodič</span><span>km</span><span>l/100</span><span>max</span></div>${DL.map(([k,a])=>`<div class="dr"><span>${esc(k)}</span><span>${n0(a.km)}</span><span class="${A.cons&&a.cons>A.cons*1.15?"bad":""}">${a.cons?n1(a.cons):"–"}</span><span class="${a.max>90?"bad":""}">${a.max||"–"}</span></div>`).join("")}</div></div>`;
   h+=`<div class="s" style="text-align:center">Údaje z Commandera · jazdy sa obnovujú každých 10 min, poloha každé 2 min. Spotreba len pri vozidlách s CAN (LVCAN).</div>`;
   return h}
+
+// ================= MZDY VODIČOV (iba majiteľ) =================
+let PMON=new Date().toISOString().slice(0,7),PDRV=null;
+const KE_REG={latMin:48.38,latMax:49.05,lonMin:20.25,lonMax:22.57};
+const FOREIGN=/(Hungary|Maďarsko|Magyar|Ukrajin|Ukraine|Poľsko|Poland|Česk|Czech|Austria|Rakúsk|\bHU\b|\bUA\b|\bPL\b|\bCZ\b|\bAT\b)/i;
+function outReg(r){const pts=[[r.lat_start,r.lon_start],[r.lat_stop,r.lon_stop]].filter(p=>p[0]!=null);
+  if(pts.some(([la,lo])=>+la<KE_REG.latMin||+la>KE_REG.latMax||+lo<KE_REG.lonMin||+lo>KE_REG.lonMax))return true;
+  return FOREIGN.test((r.start_addr||"")+" "+(r.stop_addr||""))}
+async function loadPay(){const [y,m]=PMON.split("-").map(Number),a=new Date(y,m-1,1),b=new Date(y,m,1);
+  const r=await sb.from("rides").select("driver,start_at,distance,lat_start,lon_start,lat_stop,lon_stop,start_addr,stop_addr,ride_type,plate").gte("start_at",a.toISOString()).lt("start_at",b.toISOString()).limit(10000);
+  STATE.pay={mon:PMON,rides:r.data||[],err:r.error}}
+function vPay(F){if(ROLE!=="owner")return "";const P=STATE.pay;if(!P||P.mon!==PMON){loadPay().then(renderStaff);return `<h2>Mzdy vodičov</h2><div class="card"><div class="s">Načítavam…</div></div>`}
+  const C=Object.assign({base:1031,inReg:80,outReg:90,minKm:10},F.cfg.pay||{});
+  const hasGeo=P.rides.some(r=>r.lat_start!=null);
+  const D={};for(const r of P.rides){if(/PRIVAT/.test(r.ride_type||""))continue;const dn=r.driver||"neznámy vodič";const day=new Date(r.start_at).toLocaleDateString("sv-SE",{timeZone:"Europe/Bratislava"});
+    const d=(D[dn]=D[dn]||{});const x=(d[day]=d[day]||{km:0,out:false,plates:new Set()});x.km+=+r.distance||0;if(outReg(r))x.out=true;if(r.plate)x.plates.add(r.plate)}
+  const rows=Object.entries(D).map(([n,days])=>{const W=Object.entries(days).filter(([k,v])=>v.km>=C.minKm).sort();const inn=W.filter(([k,v])=>!v.out).length,out=W.length-inn;const sum=inn*C.inReg+out*C.outReg;
+    return {n,W,inn,out,sum,pay:Math.max(C.base,sum),plus:Math.max(0,sum-C.base)}}).sort((a,b)=>b.pay-a.pay);
+  const tot=rows.reduce((t,r)=>t+r.pay,0);
+  const months=[...Array(6)].map((_,i)=>{const d=new Date();d.setDate(1);d.setMonth(d.getMonth()-i);return d.toISOString().slice(0,7)});
+  let h=`<h2>Mzdy vodičov · hrubá mzda (odhad)</h2><div class="card"><label>Mesiac<select id="pMon">${months.map(m=>`<option value="${m}"${m===PMON?" selected":""}>${new Date(m+"-15").toLocaleDateString("sk-SK",{month:"long",year:"numeric"})}</option>`).join("")}</select></label>
+    <div class="s">Základ <b>${n0(C.base)} €</b> · denne <b>${C.inReg} €</b> v Košickom kraji (po Prešov a Rožňavu) · <b>${C.outReg} €</b> mimo neho. Diéty sa rátajú od 1. dňa – vodič dostane vyššie z: základ alebo súčet denných. Odpracovaný deň = aspoň ${C.minKm} km jazdy.</div>
+    ${hasGeo?"":`<div class="box w">Jazdy ešte nemajú súradnice – mimo kraja sa zatiaľ určuje len podľa adresy. Spusti raz <a class="copy" href="mzdy.html">mzdy.html</a>.</div>`}
+    <div class="kgrid"><div class="kb"><small>Vodiči</small><b>${rows.length}</b></div><div class="kb"><small>Odpracované dni</small><b>${rows.reduce((t,r)=>t+r.W.length,0)}</b></div><div class="kb hl"><small>Mzdy spolu</small><b>${n0(tot)} €</b><em>hrubé</em></div></div>
+    <div class="dtab"><div class="dh pay"><span>Vodič</span><span>dni kraj / mimo</span><span>súčet denných</span><span>mzda</span></div>
+    ${rows.map(r=>`<button type="button" class="dr pay" data-pdrv="${esc(r.n)}"><span>${esc(r.n)}</span><span>${r.inn} / ${r.out}</span><span>${n0(r.sum)} €</span><span><b>${n0(r.pay)} €</b>${r.plus?`<small class="good"> +${n0(r.plus)}</small>`:""}</span></button>
+      ${PDRV===r.n?`<div class="sub">${r.W.map(([d,v])=>`<div class="row"><span>${new Date(d+"T12:00").toLocaleDateString("sk-SK",{weekday:"short",day:"numeric",month:"numeric"})} · ${n0(v.km)} km · ${esc([...v.plates].join(", "))}</span><span class="${v.out?"bad":""}">${v.out?"mimo kraja "+C.outReg:"kraj "+C.inReg} €</span></div>`).join("")||`<div class="s">Žiadne odpracované dni.</div>`}</div>`:""}`).join("")}</div>
+    <details><summary class="s" style="cursor:pointer;margin-top:8px">Upraviť sadzby</summary><form class="f sub" id="fPay"><label>Základ € (hrubé)<input name="base" inputmode="decimal" value="${C.base}"></label><label>Deň v kraji €<input name="inReg" inputmode="decimal" value="${C.inReg}"></label><label>Deň mimo kraja €<input name="outReg" inputmode="decimal" value="${C.outReg}"></label><label>Min. km na odpracovaný deň<input name="minKm" inputmode="numeric" value="${C.minKm}"></label><div class="w btns"><button class="pri" type="submit">Uložiť</button></div></form></details>
+    <div class="s">Odhad z jázd v Commanderi (vodič podľa čipu/kľúča). Nie je to výplatná páska – nezahŕňa odvody, dovolenku, PN ani ručné úpravy.</div></div>`;
+  return h}
+document.addEventListener("change",e=>{if(e.target.id==="pMon"){PMON=e.target.value;PDRV=null;renderStaff()}});
+document.addEventListener("click",e=>{const x=e.target.closest("[data-pdrv]");if(!x)return;PDRV=PDRV===x.dataset.pdrv?null:x.dataset.pdrv;renderStaff()});
+document.addEventListener("submit",async e=>{if(e.target.id!=="fPay")return;e.preventDefault();const fd=new FormData(e.target);const v={base:num(fd.get("base"))||1031,inReg:num(fd.get("inReg"))||80,outReg:num(fd.get("outReg"))||90,minKm:num(fd.get("minKm"))||10};
+  const r=await sb.from("fleet_cfg").upsert({key:"pay",value:v});if(r.error){toast("Chyba: "+r.error.message);return}STATE.fleet=null;renderStaff();toast("Sadzby uložené.")},true);
 // ================= TÍM =================
 function myPos(cb){if(!navigator.geolocation){toast("Poloha nie je dostupná.");return}toast("Zisťujem polohu…");navigator.geolocation.getCurrentPosition(p=>cb(+p.coords.latitude.toFixed(6),+p.coords.longitude.toFixed(6)),()=>toast("Polohu sa nepodarilo zistiť – povoľ ju v nastaveniach."),{enableHighAccuracy:true,timeout:15000})}
 document.addEventListener("change",async e=>{if(e.target.id!=="plVeh"||!e.target.value)return;const v=STATE.fleet.veh.find(x=>x.id===e.target.value);if(!v)return;await sb.from("places").update({lat:v.lat,lon:v.lon,source:"podľa auta "+(v.plate||"")}).eq("id",+e.target.dataset.pid);STATE.plfix=null;STATE.fleet=null;renderStaff();toast("Poloha uložená.")});
