@@ -147,6 +147,22 @@ details.trips{border-top:1px solid var(--line);padding-top:8px}details.trips sum
 .dtab{display:grid;gap:0}button.dr{all:unset;cursor:pointer;display:grid;width:100%;box-sizing:border-box;gap:6px;padding:8px 0;border-top:1px solid var(--line);font-size:.82rem}.dh.pay,.dr.pay{grid-template-columns:1fr 78px 82px 92px}.dr.pay small{font-size:.66rem}.dh,.dr{display:grid;grid-template-columns:1fr 70px 60px 50px;gap:6px;padding:8px 0;border-top:1px solid var(--line);font-size:.82rem}.dh{border-top:0;color:var(--muted);font-size:.7rem}.dr span:not(:first-child),.dh span:not(:first-child){text-align:right;font-family:var(--f-num)}
 @media (max-width:420px){.kgrid{grid-template-columns:repeat(2,minmax(0,1fr))}.vk{grid-template-columns:repeat(2,minmax(0,1fr))}}
 .rdbar{display:flex;align-items:center;gap:10px;margin-top:8px}.rdbar .rdplay{width:40px;height:40px;min-height:0;padding:0;border-radius:50%;background:rgba(10,13,20,.7);border:1px solid rgba(255,255,255,.2);color:#fff;font-size:.8rem;cursor:pointer;position:static}.rdbar .rdtime{position:static;font:600 .85rem "IBM Plex Mono",monospace;color:#fff;background:none;border:0;padding:0}
+.pyhero{position:relative;overflow:hidden;border-radius:26px;padding:20px;display:grid;gap:14px;background:radial-gradient(120% 140% at 100% 0%,rgba(182,255,59,.35),transparent 55%),linear-gradient(135deg,#1b1640,#0d2a2c);border:1px solid rgba(255,255,255,.16);box-shadow:0 24px 60px rgba(0,0,0,.45),inset 0 1px 0 rgba(255,255,255,.15)}
+.pyh1{display:grid;gap:2px}.pyh1 small{font-size:.74rem;color:rgba(255,255,255,.7);letter-spacing:.06em;text-transform:uppercase}.pyh1 b{font:600 2.4rem/1.05 var(--f-head);letter-spacing:-.03em;background:linear-gradient(90deg,#fff,#d9ffb0);-webkit-background-clip:text;background-clip:text;color:transparent}.pyh1 span{font-size:.8rem;color:rgba(255,255,255,.75)}
+.pyh2{display:grid;grid-template-columns:1fr 1fr;gap:8px}.pyh2>div{background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.12);border-radius:16px;padding:10px 12px;display:grid}.pyh2 small{font-size:.66rem;color:rgba(255,255,255,.65)}.pyh2 b{font:600 1.1rem var(--f-num)}
+.pymon{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none}.pymon button{flex:1 0 auto;min-height:40px;padding:0 10px;border-radius:999px;text-transform:capitalize}.pymon button[aria-pressed=true]{background:var(--grad);color:#06110a;border-color:transparent;box-shadow:0 6px 20px rgba(182,255,59,.3)}
+.pylist{display:grid;gap:10px}
+.pyc{background:var(--glass);border:1px solid var(--line);border-radius:22px;padding:14px 16px;display:grid;gap:10px;backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);transition:border-color .2s}.pyc.open{border-color:rgba(182,255,59,.45);box-shadow:0 0 0 1px rgba(182,255,59,.15),0 20px 50px rgba(0,0,0,.4)}
+.pyt{all:unset;cursor:pointer;display:grid;grid-template-columns:44px minmax(0,1fr) auto;gap:12px;align-items:center}
+.pav{width:44px;height:44px;border-radius:14px;display:grid;place-items:center;font:700 .9rem var(--f-head);color:#06110a;background:linear-gradient(135deg,#b6ff3b,#5eead4);box-shadow:0 6px 18px rgba(182,255,59,.3)}
+.pnm{display:grid;min-width:0}.pnm b{font:600 .98rem var(--f-head);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.pnm small{font-size:.74rem;color:var(--muted)}
+.pam{display:grid;text-align:right}.pam b{font:600 1.2rem var(--f-num);letter-spacing:-.02em}.pam small{font-size:.68rem;color:var(--muted)}
+.pbar{position:relative;height:10px;border-radius:999px;background:rgba(255,255,255,.07);overflow:visible}.pbar i{position:absolute;top:0;bottom:0;border-radius:999px}.pbar i.pin,.pleg i.pin{background:linear-gradient(90deg,#22c55e,#b6ff3b)}.pbar i.pout,.pleg i.pout{background:linear-gradient(90deg,#7c5cff,#c084fc)}
+.pbar i.pin{left:0}.pbar em{position:absolute;top:-4px;bottom:-4px;width:2px;background:#fff;border-radius:2px;box-shadow:0 0 8px #fff;transform:translateX(-1px)}
+.pleg{display:flex;flex-wrap:wrap;gap:6px 14px;font:500 .72rem var(--f-num);color:var(--muted)}.pleg span{display:inline-flex;align-items:center;gap:6px}.pleg i{width:10px;height:10px;border-radius:3px;display:inline-block}.pbase{margin-left:auto}
+.pcal{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:5px;margin-top:4px}.pdh{font:600 .62rem var(--f-ui);color:var(--muted);text-align:center}
+.pd{aspect-ratio:1;border-radius:11px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.06);display:grid;place-items:center;align-content:center;gap:0;font-size:.7rem}.pd b{font:600 .8rem var(--f-num)}.pd small{font:500 .55rem var(--f-num);opacity:.85}
+.pd.k{background:linear-gradient(160deg,rgba(34,197,94,.45),rgba(182,255,59,.22));border-color:rgba(182,255,59,.45);color:#eaffd0}.pd.o{background:linear-gradient(160deg,rgba(124,92,255,.55),rgba(192,132,252,.25));border-color:rgba(192,132,252,.55);color:#f3e8ff}
 @media (prefers-reduced-motion:reduce){.toast,button{transition:none}}
 </style>
 </head>
@@ -460,7 +476,7 @@ function vFleet(){const F=STATE.fleet;if(!F)return `<div class="card"><div class
     <div class="kb hl"><small>Nafta + mýto</small><b>${n0(tot)} €</b><em>bez DPH</em></div>
     <div class="kb"><small>Náklad na 1 km</small><b>${A.km?(tot/A.km).toFixed(3).replace(".",","):"–"} <i>€/km</i></b><em>nafta + mýto</em></div></div>
   ${ROLE==="owner"?(()=>{const nd=new Date(),dim=new Date(nd.getFullYear(),nd.getMonth()+1,0).getDate();const days=FPER==="m"?dim:FPER==="1"?1:+FPER;
-    const fx=CO.fixed*days/dim,pay=(FPER==="m"&&STATE.pay&&STATE.pay.mon===PMON&&PMON===nd.toISOString().slice(0,7))?STATE.payTot||0:null,all=tot+fx+(pay||0);
+    const fx=CO.fixed*days/dim,pay=(FPER==="m"&&STATE.pay&&STATE.pay.mon===PMON&&PMON===(nd.getFullYear()+"-"+String(nd.getMonth()+1).padStart(2,"0")))?STATE.payTot||0:null,all=tot+fx+(pay||0);
     return `<div class="kgrid"><div class="kb"><small>Pevné náklady flotily</small><b>${n0(fx)} €</b><em>${n0(CO.fixed)} €/mesiac${FPER==="m"?"":` · pomer ${days} dní`}</em></div>
       ${pay!=null?`<div class="kb"><small>Mzdy vodičov</small><b>${n0(pay)} €</b><em>hrubé, odhad</em></div>`:""}
       <div class="kb hl"><small>Náklady spolu</small><b>${n0(all)} €</b><em>nafta + mýto + pevné${pay!=null?" + mzdy":""}</em></div>
@@ -503,7 +519,7 @@ function vFleet(){const F=STATE.fleet;if(!F)return `<div class="card"><div class
   return h}
 
 // ================= MZDY VODIČOV (iba majiteľ) =================
-let PMON=new Date().toISOString().slice(0,7),PDRV=null;
+let PMON=(d=>d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0"))(new Date()),PDRV=null;
 const KE_REG={latMin:48.38,latMax:49.05,lonMin:20.25,lonMax:22.57};
 const FOREIGN=/(Hungary|Maďarsko|Magyar|Ukrajin|Ukraine|Poľsko|Poland|Česk|Czech|Austria|Rakúsk|\bHU\b|\bUA\b|\bPL\b|\bCZ\b|\bAT\b)/i;
 function outReg(r){const pts=[[r.lat_start,r.lon_start],[r.lat_stop,r.lon_stop]].filter(p=>p[0]!=null);
@@ -519,19 +535,28 @@ function vPay(F){if(ROLE!=="owner")return "";const P=STATE.pay;if(!P||P.mon!==PM
     const d=(D[dn]=D[dn]||{});const x=(d[day]=d[day]||{km:0,out:false,plates:new Set()});x.km+=+r.distance||0;if(outReg(r))x.out=true;if(r.plate)x.plates.add(r.plate)}
   const rows=Object.entries(D).map(([n,days])=>{const W=Object.entries(days).filter(([k,v])=>v.km>=C.minKm).sort();const inn=W.filter(([k,v])=>!v.out).length,out=W.length-inn;const sum=inn*C.inReg+out*C.outReg;
     return {n,W,inn,out,sum,pay:Math.max(C.base,sum),plus:Math.max(0,sum-C.base)}}).sort((a,b)=>b.pay-a.pay);
-  const tot=rows.reduce((t,r)=>t+r.pay,0);STATE.payTot=tot;
-  const months=[...Array(6)].map((_,i)=>{const d=new Date();d.setDate(1);d.setMonth(d.getMonth()-i);return d.toISOString().slice(0,7)});
-  let h=`<h2>Mzdy vodičov · hrubá mzda (odhad)</h2><div class="card"><label>Mesiac<select id="pMon">${months.map(m=>`<option value="${m}"${m===PMON?" selected":""}>${new Date(m+"-15").toLocaleDateString("sk-SK",{month:"long",year:"numeric"})}</option>`).join("")}</select></label>
-    <div class="s">Základ <b>${n0(C.base)} €</b> · denne <b>${C.inReg} €</b> v Košickom kraji (po Prešov a Rožňavu) · <b>${C.outReg} €</b> mimo neho. Diéty sa rátajú od 1. dňa – vodič dostane vyššie z: základ alebo súčet denných. Odpracovaný deň = aspoň ${C.minKm} km jazdy.</div>
-    ${hasGeo?"":`<div class="box w">Jazdy ešte nemajú súradnice – mimo kraja sa zatiaľ určuje len podľa adresy. Spusti raz <a class="copy" href="mzdy.html">mzdy.html</a>.</div>`}
-    <div class="kgrid"><div class="kb"><small>Vodiči</small><b>${rows.length}</b></div><div class="kb"><small>Odpracované dni</small><b>${rows.reduce((t,r)=>t+r.W.length,0)}</b></div><div class="kb hl"><small>Mzdy spolu</small><b>${n0(tot)} €</b><em>hrubé</em></div></div>
-    <div class="dtab"><div class="dh pay"><span>Vodič</span><span>dni kraj / mimo</span><span>súčet denných</span><span>mzda</span></div>
-    ${rows.map(r=>`<button type="button" class="dr pay" data-pdrv="${esc(r.n)}"><span>${esc(r.n)}</span><span>${r.inn} / ${r.out}</span><span>${n0(r.sum)} €</span><span><b>${n0(r.pay)} €</b>${r.plus?`<small class="good"> +${n0(r.plus)}</small>`:""}</span></button>
-      ${PDRV===r.n?`<div class="sub">${r.W.map(([d,v])=>`<div class="row"><span>${new Date(d+"T12:00").toLocaleDateString("sk-SK",{weekday:"short",day:"numeric",month:"numeric"})} · ${n0(v.km)} km · ${esc([...v.plates].join(", "))}</span><span class="${v.out?"bad":""}">${v.out?"mimo kraja "+C.outReg:"kraj "+C.inReg} €</span></div>`).join("")||`<div class="s">Žiadne odpracované dni.</div>`}</div>`:""}`).join("")}</div>
-    <details><summary class="s" style="cursor:pointer;margin-top:8px">Upraviť sadzby</summary><form class="f sub" id="fPay"><label>Základ € (hrubé)<input name="base" inputmode="decimal" value="${C.base}"></label><label>Deň v kraji €<input name="inReg" inputmode="decimal" value="${C.inReg}"></label><label>Deň mimo kraja €<input name="outReg" inputmode="decimal" value="${C.outReg}"></label><label>Min. km na odpracovaný deň<input name="minKm" inputmode="numeric" value="${C.minKm}"></label><div class="w btns"><button class="pri" type="submit">Uložiť</button></div></form></details>
-    <div class="s">Odhad z jázd v Commanderi (vodič podľa čipu/kľúča). Nie je to výplatná páska – nezahŕňa odvody, dovolenku, PN ani ručné úpravy.</div></div>`;
+  const tot=rows.reduce((t,r)=>t+r.pay,0);STATE.payTot=tot;const plusT=rows.reduce((t,r)=>t+r.plus,0),daysT=rows.reduce((t,r)=>t+r.W.length,0),outT=rows.reduce((t,r)=>t+r.out,0);
+  const months=[...Array(6)].map((_,i)=>{const d=new Date();d.setDate(15);d.setMonth(d.getMonth()-i);return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")});
+  const mName=m=>new Date(m+"-15").toLocaleDateString("sk-SK",{month:"long"});
+  const [yy,mm]=PMON.split("-").map(Number),dim=new Date(yy,mm,0).getDate(),first=(new Date(yy,mm-1,1).getDay()+6)%7;
+  const ini=n=>n.split(/\s+/).filter(Boolean).map(w=>w[0]).slice(0,2).join("").toUpperCase();
+  const maxPay=Math.max(C.base*1.6,...rows.map(r=>r.pay));
+  let h=`<h2>Mzdy vodičov</h2>
+  <div class="pyhero"><div class="pyh1"><small>Hrubé mzdy · ${esc(mName(PMON))} ${yy}</small><b>${n0(tot)} €</b><span>${rows.length} vodičov · ${daysT} odpracovaných dní${outT?` · ${outT}× mimo kraja`:""}</span></div>
+    <div class="pyh2"><div><small>nad základ</small><b class="good">+${n0(plusT)} €</b></div><div><small>priemer / vodič</small><b>${rows.length?n0(tot/rows.length):"–"} €</b></div></div></div>
+  <div class="pymon">${months.map(m=>`<button type="button" data-pmon="${m}" aria-pressed="${m===PMON}">${esc(mName(m).slice(0,3))}</button>`).join("")}</div>
+  ${hasGeo?"":`<div class="box w">Jazdy ešte nemajú súradnice – mimo kraja sa zatiaľ určuje len podľa adresy. Spusti raz <a class="copy" href="mzdy.html">mzdy.html</a>.</div>`}
+  <div class="pylist">${rows.map(r=>{const open=PDRV===r.n,bw=Math.min(100,r.pay/maxPay*100),basePos=C.base/maxPay*100,inW=r.sum?r.inn*C.inReg/maxPay*100:0,outW=r.out*C.outReg/maxPay*100;
+    const map=Object.fromEntries(r.W.map(([d,v])=>[+d.slice(8,10),v]));
+    return `<div class="pyc${open?" open":""}"><button type="button" class="pyt" data-pdrv="${esc(r.n)}"><span class="pav">${esc(ini(r.n))}</span><span class="pnm"><b>${esc(r.n)}</b><small>${r.inn} dní kraj · ${r.out} mimo</small></span><span class="pam"><b>${n0(r.pay)} €</b>${r.plus?`<small class="good">+${n0(r.plus)} € nad základ</small>`:`<small>základ</small>`}</span></button>
+      <div class="pbar"><i class="pin" style="width:${inW}%"></i><i class="pout" style="left:${inW}%;width:${outW}%"></i><em style="left:${basePos}%"></em></div>
+      <div class="pleg"><span><i class="pin"></i>${r.inn} × ${C.inReg} €</span><span><i class="pout"></i>${r.out} × ${C.outReg} €</span><span class="pbase">┆ základ ${n0(C.base)} €</span></div>
+      ${open?`<div class="pcal">${["Po","Ut","St","Št","Pi","So","Ne"].map(d=>`<span class="pdh">${d}</span>`).join("")}${"<span></span>".repeat(first)}${[...Array(dim)].map((_,i)=>{const v=map[i+1];return `<span class="pd ${v?(v.out?"o":"k"):""}" title="${v?n0(v.km)+" km":""}"><b>${i+1}</b>${v?`<small>${n0(v.km)}</small>`:""}</span>`}).join("")}</div>
+        <div class="s">🟩 kraj ${C.inReg} € · 🟪 mimo kraja ${C.outReg} € · číslo pod dňom = km</div>`:""}</div>`}).join("")||`<div class="card"><div class="s">V tomto mesiaci zatiaľ žiadne jazdy.</div></div>`}</div>
+  <details class="card"><summary class="s" style="cursor:pointer">Sadzby a pravidlá</summary><div class="s">Denne ${C.inReg} € v Košickom kraji (po Prešov a Rožňavu), ${C.outReg} € mimo neho, od 1. dňa. Vodič dostane vyššie z: základ ${n0(C.base)} € alebo súčet denných. Odpracovaný deň = aspoň ${C.minKm} km. Odhad z Commandera – nie výplatná páska (bez odvodov, dovolenky, PN).</div>
+    <form class="f sub" id="fPay"><label>Základ € (hrubé)<input name="base" inputmode="decimal" value="${C.base}"></label><label>Deň v kraji €<input name="inReg" inputmode="decimal" value="${C.inReg}"></label><label>Deň mimo kraja €<input name="outReg" inputmode="decimal" value="${C.outReg}"></label><label>Min. km na deň<input name="minKm" inputmode="numeric" value="${C.minKm}"></label><div class="w btns"><button class="pri" type="submit">Uložiť</button></div></form></details>`;
   return h}
-document.addEventListener("change",e=>{if(e.target.id==="pMon"){PMON=e.target.value;PDRV=null;renderStaff()}});
+document.addEventListener("click",e=>{const x=e.target.closest("[data-pmon]");if(!x)return;PMON=x.dataset.pmon;PDRV=null;renderStaff()});
 document.addEventListener("click",e=>{const x=e.target.closest("[data-pdrv]");if(!x)return;PDRV=PDRV===x.dataset.pdrv?null:x.dataset.pdrv;renderStaff()});
 document.addEventListener("submit",async e=>{if(e.target.id!=="fPay")return;e.preventDefault();const fd=new FormData(e.target);const v={base:num(fd.get("base"))||1031,inReg:num(fd.get("inReg"))||80,outReg:num(fd.get("outReg"))||90,minKm:num(fd.get("minKm"))||10};
   const r=await sb.from("fleet_cfg").upsert({key:"pay",value:v});if(r.error){toast("Chyba: "+r.error.message);return}STATE.fleet=null;renderStaff();toast("Sadzby uložené.")},true);
