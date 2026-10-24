@@ -37,8 +37,8 @@ begin
       begin
         j:=r.content::jsonb;
         if r.kind='vehicles' then
-          for p in select * from jsonb_array_elements(coalesce(j->'vehicles','[]'::jsonb)) loop
-            insert into cmd_vehicles(id,name,plate,last_comm) values(p->>'vehicleId',p->>'vehicleName',p->>'vehicleRegistrationPlate',to_timestamp(nullif(cmd_num(p->>'lastCommunication'),0)))
+          for p in select * from jsonb_array_elements(case when jsonb_typeof(j)='array' then j else coalesce(j->'vehicles',j->'data','[]'::jsonb) end) loop
+            insert into cmd_vehicles(id,name,plate,last_comm) values(p->>'vehicleId',p->>'vehicleName',p->>'vehicleRegistrationPlate',null)
               on conflict(id) do update set name=excluded.name,plate=excluded.plate,last_comm=excluded.last_comm;
             update trucks set cmd_id=p->>'vehicleId'
              where upper(regexp_replace(spz,'[^A-Za-z0-9]','','g'))=upper(regexp_replace(coalesce(p->>'vehicleRegistrationPlate',''),'[^A-Za-z0-9]','','g'));
