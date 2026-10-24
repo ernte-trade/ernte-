@@ -130,7 +130,7 @@ async function boot(){
 let LOGIN={email:"",sent:false};
 function showLogin(){$("outBtn").hidden=true;$("hS").textContent="výkup komodít";
   const A=$("app");
-  if(!LOGIN.sent){A.innerHTML=`<div class="center"><div class="hero"><small>Vitajte</small><b>Prihlásenie dodávateľa</b><small>Zadajte e-mail, ktorý ste dali ERNTE. Pošleme vám 6-miestny kód.</small></div>
+  if(!LOGIN.sent){A.innerHTML=`<div class="center"><div class="hero"><small>Vitajte</small><b>Prihlásenie</b><small>Farmári aj ERNTE (správa) – zadajte svoj e-mail. Aplikácia podľa neho otvorí váš pohľad.</small></div>
     <form class="card" id="fEmail"><label>Váš e-mail<input name="email" type="email" inputmode="email" autocomplete="email" required value="${esc(LOGIN.email)}" placeholder="meno@firma.sk"></label><button class="pri" type="submit">Poslať kód</button></form>${installHint()}</div>`}
   else{A.innerHTML=`<div class="center"><div class="hero"><small>Kód sme poslali na</small><b>${esc(LOGIN.email)}</b><small>Pozrite si e-mail (aj priečinok Spam) a opíšte kód.</small></div>
     <form class="card" id="fCode"><label>Kód z e-mailu<input class="code" name="code" inputmode="numeric" autocomplete="one-time-code" maxlength="8" required></label><button class="pri" type="submit">Prihlásiť</button><button type="button" id="backEmail">Zmeniť e-mail / poslať znova</button></form></div>`;
