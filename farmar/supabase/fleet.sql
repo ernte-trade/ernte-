@@ -109,8 +109,8 @@ begin
     insert into cmd_log(id,kind,url) select net.http_get(url:=u,headers:=jsonb_build_object('Authorization',a,'Accept','application/json')),'rides',u
       from (select base||'all-rides?datetimeStart='||s||'&datetimeEnd='||e||'&limit=1000&page=1' as u) q;
   end if;
-  -- história 60 dní po dňoch (6 dní na jeden beh); deň bez kódu alebo s chybou sa po 20 min zopakuje (max 3×)
-  for d in select g::date from generate_series(current_date-60,current_date-1,'1 day') g
+  -- história od 1. 7. 2026 (min. 60 dní) po dňoch (6 dní na jeden beh); deň bez kódu alebo s chybou sa po 20 min zopakuje (max 3×)
+  for d in select g::date from generate_series(least(current_date-60,date '2026-07-01'),current_date-1,'1 day') g
             where not exists(select 1 from cmd_log b where b.kind='backfill' and b.url=g::date::text
                              and (b.ref is null or b.code=200 or coalesce(b.n,0)>=3 or b.at>now()-interval '20 minutes')) order by g desc limit 6 loop
     s:=extract(epoch from d::timestamp at time zone 'Europe/Bratislava')::bigint; e:=s+86400;
