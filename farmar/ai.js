@@ -104,14 +104,23 @@ async function copyTxt(t,btn){try{await navigator.clipboard.writeText(t)}catch(e
 function docTitle(t){const f=String(t||"").split("\n").map(l=>l.replace(/^#+\s*/,"").replace(/\*\*/g,"").trim()).find(Boolean)||"ERNTE";return f.slice(0,70)}
 function docHTML(x){const d=new Date(x.created_at).toLocaleDateString("sk-SK",{day:"numeric",month:"long",year:"numeric"});
   const body=String(x.content||"").split(/\n-{3,}\s*\n/)[0].split("\n").filter(l=>!/ťukni\s+\**(pdf|word|uložiť|tlačiť)|pod odpoveďou/i.test(l)).join("\n");
-  return `<div class="aidoc"><div class="aidoc-h"><img src="logo.png" alt="ERNTE"><div><b>ERNTE spol. s r.o. · VALKO s.r.o.</b><small>Zbudza 141, 072 23 · ${esc(d)}</small></div></div>${md(body)}</div>`}
-const DOCCSS=`.aidoc{font:12pt/1.5 Georgia,"Times New Roman",serif;color:#111}.aidoc-h{display:flex;gap:14px;align-items:center;border-bottom:2px solid #8bc34a;padding-bottom:10px;margin-bottom:16px}.aidoc-h img{height:46px}.aidoc-h b{display:block;font:700 13pt Arial,sans-serif}.aidoc-h small{color:#555;font:9pt Arial,sans-serif}.aidoc h3,.aidoc h4{font-family:Arial,sans-serif;margin:14px 0 6px}.aidoc table{border-collapse:collapse;width:100%;margin:8px 0}.aidoc th,.aidoc td{border:1px solid #bbb;padding:5px 7px;text-align:left;font-size:10.5pt}.aidoc th{background:#eef5e4}.aidoc pre{white-space:pre-wrap;background:#f5f5f5;padding:8px;border-radius:4px}.aidoc .aitask,.aidoc .aicp{display:none}.aidoc a{color:#111}.aidoc th,.aidoc td,.aidoc pre,.aidoc p,.aidoc li,.aidoc b{color:#111!important}.aidoc th{background:#eef5e4!important}.aidoc .aicode{background:#f5f5f5!important;border:1px solid #ccc!important}.aidoc .aicode pre{padding:10px!important;font:10.5pt/1.45 Menlo,Consolas,monospace!important}.aidoc .aitbl{border:0!important;overflow:visible}`;
+  return `<div class="aidoc"><div class="aidoc-h"><img src="logo.png" alt="ERNTE"><div><b>ERNTE spol. s r.o. · VALKO s.r.o.</b><small>Zbudza 141, 072 23 · ${esc(d)}</small></div></div>${placeStamp(md(body),stampFor(x,body))}</div>`}
+function placeStamp(h,st){if(!st)return h;const re=/(<p>[^]*?(konateľ|Vaľko)[^]*?<\/p>)/i;return re.test(h)?h.replace(re,"$1"+st):h+st}
+// pečiatka s podpisom – uložená len v databáze (nie verejne), vidí iba majiteľ
+const STAMP={};
+async function loadStamps(){try{const r=await sb.from("ai_state").select("key,value").like("key","stamp_%");for(const x of (r.data||[]))STAMP[x.key.slice(6)]=x.value}catch(e){}}
+function stampFor(x,body){if(x.nostamp)return "";const t=String(body||""),k=String(x.kind||"");
+  const valko=/upozornen|výzv|vyzv/i.test(k)||/VALKO|vodič|vodic|vozidl|ŠPZ|SPZ|tankov|spotreb|nafty|nafta/i.test(t);
+  const ernte=/ERNTE/i.test(t)&&!valko;
+  const S=(valko&&STAMP.valko)||(ernte&&STAMP.ernte)||null;
+  return S&&S.img?`<div class="aistamp"><img src="${S.img}" alt="Pečiatka a podpis ${esc(S.firma||"")}"></div>`:""}
+const DOCCSS=`.aidoc{font:12pt/1.5 Georgia,"Times New Roman",serif;color:#111}.aidoc-h{display:flex;gap:14px;align-items:center;border-bottom:2px solid #8bc34a;padding-bottom:10px;margin-bottom:16px}.aidoc-h img{height:46px}.aidoc-h b{display:block;font:700 13pt Arial,sans-serif}.aidoc-h small{color:#555;font:9pt Arial,sans-serif}.aidoc h3,.aidoc h4{font-family:Arial,sans-serif;margin:14px 0 6px}.aidoc table{border-collapse:collapse;width:100%;margin:8px 0}.aidoc th,.aidoc td{border:1px solid #bbb;padding:5px 7px;text-align:left;font-size:10.5pt}.aidoc th{background:#eef5e4}.aidoc pre{white-space:pre-wrap;background:#f5f5f5;padding:8px;border-radius:4px}.aidoc .aitask,.aidoc .aicp{display:none}.aidoc a{color:#111}.aidoc .aistamp{display:flex;justify-content:flex-start;margin:-6px 0 10px;page-break-inside:avoid}.aidoc .aistamp img{width:62mm;max-width:60%;height:auto}.aidoc th,.aidoc td,.aidoc pre,.aidoc p,.aidoc li,.aidoc b{color:#111!important}.aidoc th{background:#eef5e4!important}.aidoc .aicode{background:#f5f5f5!important;border:1px solid #ccc!important}.aidoc .aicode pre{padding:10px!important;font:10.5pt/1.45 Menlo,Consolas,monospace!important}.aidoc .aitbl{border:0!important;overflow:visible}`;
 function dl(name,blob){const u=URL.createObjectURL(blob),a=document.createElement("a");a.href=u;a.download=name;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(u),4000)}
 function fname(x,ext){return (docTitle(x.content).normalize("NFD").replace(/[̀-ͯ]/g,"").replace(/[^A-Za-z0-9]+/g,"-").replace(/^-|-$/g,"").slice(0,40)||"ERNTE")+"."+ext}
 // ===== ARCHÍV DOKUMENTOV =====
 const DK={upozornenie:["⚠️","Upozornenie"],vyzva:["❓","Výzva na vysvetlenie"],zmluva:["📜","Zmluva"],ponuka:["💼","Ponuka"],list:["✉️","List"],iny:["📄","Dokument"],dokument:["📄","Dokument"]};
 const DS={novy:["nový","n"],odoslany:["odoslaný","o"],vyriesene:["vyriešené","v"]};
-function docObj(d){return d?{id:"d"+d.id,content:d.content,created_at:d.created_at,role:"assistant",status:"ok",title:d.title}:null}
+function docObj(d){return d?{id:"d"+d.id,content:d.content,created_at:d.created_at,role:"assistant",status:"ok",title:d.title,kind:d.kind}:null}
 function docsView(){if(A.docs===null)return `<div class="aiempty"><span>Archív dokumentov sa zapne po aktualizácii databázy (prebehne automaticky do pár minút).</span></div>`;
   const D=A.docs,drv=[...new Set(D.map(d=>d.driver).filter(Boolean))].sort((a,b)=>a.localeCompare(b,"sk")),f=A.dflt||"";
   const L=D.filter(d=>!f||(f==="_n"?d.status==="novy":d.driver===f));
@@ -157,7 +166,7 @@ async function msgAct(kind,id,btn){const x=String(id).startsWith("d")?docObj(A.d
   if(kind==="share"){try{await navigator.share({title:docTitle(x.content),text:plain(x.content)})}catch(e){}}}
 async function load(){const [m,t,dc]=await Promise.all([sb.from("ai_msgs").select("id,kind,role,content,status,created_at,att_meta").order("id",{ascending:false}).limit(80),sb.from("ai_tasks").select("*").order("created_at",{ascending:false}).limit(40),sb.from("ai_docs").select("*").order("created_at",{ascending:false}).limit(300)]);A.docs=dc.error?null:(dc.data||[]);
   if(m.error){A.ready=/ai_msgs|relation|does not exist|schema cache/i.test(m.error.message)?"setup":"err:"+m.error.message;return}
-  A.ready="ok";A.msgs=(m.data||[]).reverse();A.tasks=t.data||[];badge()}
+  A.ready="ok";if(!Object.keys(STAMP).length)loadStamps();A.msgs=(m.data||[]).reverse();A.tasks=t.data||[];badge()}
 function badge(){const b=$("aiBtn");if(!b)return;let seen=0;try{seen=+localStorage.getItem("aiSeen")||0}catch(e){}
   const n=A.msgs.filter(x=>x.role==="assistant"&&x.kind!=="chat"&&x.status==="ok"&&x.id>seen).length;let e=b.querySelector("em");if(n){if(!e){e=document.createElement("em");b.appendChild(e)}e.textContent=n}else if(e)e.remove()}
 function markSeen(){const mx=Math.max(0,...A.msgs.map(x=>x.id));try{localStorage.setItem("aiSeen",mx)}catch(e){}badge()}
