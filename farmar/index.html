@@ -197,6 +197,27 @@ details.trips{border-top:1px solid var(--line);padding-top:8px}details.trips sum
 .xdh{display:grid;grid-template-columns:44px 1fr;gap:12px;align-items:center}.xdn{display:grid;min-width:0}.xdn b{font:600 .98rem var(--f-head)}.xdn small{font-size:.76rem;color:var(--muted)}
 .live{display:inline-block;width:8px;height:8px;border-radius:50%;background:#b6ff3b;box-shadow:0 0 10px #b6ff3b;margin-right:6px;animation:pulse 1.6s infinite}@keyframes pulse{50%{opacity:.35}}
 .xset summary{list-style:none;cursor:pointer;display:flex;gap:10px;align-items:center}.xset summary::-webkit-details-marker{display:none}.xset summary span{width:36px;height:36px;border-radius:12px;display:grid;place-items:center;background:rgba(255,255,255,.07)}
+.vhero{position:relative;overflow:hidden;isolation:isolate;border-radius:30px;min-height:330px;display:grid;align-items:end;background:var(--bg) center 40%/cover no-repeat,#05070a;border:1px solid rgba(255,255,255,.14);box-shadow:0 30px 80px rgba(0,0,0,.6)}
+.vhero::before{content:"";position:absolute;inset:0;background:linear-gradient(180deg,rgba(5,7,10,.15) 0%,rgba(5,7,10,.55) 45%,rgba(5,7,10,.96) 100%),radial-gradient(80% 60% at 0% 100%,rgba(182,255,59,.28),transparent 60%),radial-gradient(70% 60% at 100% 0%,rgba(124,92,255,.35),transparent 60%)}
+.vhin{position:relative;padding:22px 20px 18px;display:grid;gap:10px}
+.vbrand{display:flex;align-items:center;gap:10px;font:700 .72rem var(--f-head);letter-spacing:.32em}.vbrand i{width:6px;height:6px;border-radius:50%;background:#b6ff3b;box-shadow:0 0 12px #b6ff3b}
+.vhero h1{margin:0;font:700 clamp(1.9rem,8vw,2.8rem)/1.02 var(--f-head);letter-spacing:-.04em;text-shadow:0 4px 30px rgba(0,0,0,.6)}.vhero h1 em{font-style:normal;background:linear-gradient(90deg,#b6ff3b,#5eead4);-webkit-background-clip:text;background-clip:text;color:transparent}
+.vhero p{margin:0;font-size:.8rem;color:rgba(255,255,255,.75)}
+.vlive{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;margin-top:4px}.vlive div{padding:10px 6px;border-radius:16px;text-align:center;background:rgba(10,13,20,.45);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border:1px solid rgba(255,255,255,.14)}
+.vlive b{display:block;font:700 1.4rem var(--f-head)}.vlive small{font-size:.62rem;color:rgba(255,255,255,.7);text-transform:uppercase;letter-spacing:.06em}.vlive .al{border-color:rgba(255,107,129,.6);box-shadow:0 0 20px rgba(255,107,129,.35)}.vlive .al b{color:#ff8a9b}
+.vnav{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.vnav button{all:unset;cursor:pointer;display:grid;gap:3px;justify-items:start;padding:12px;border-radius:18px;background:var(--glass);border:1px solid var(--line);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);transition:transform .15s,border-color .2s;min-height:74px;box-sizing:border-box}
+.vnav button:active{transform:scale(.97)}.vnav button span{font-size:1.2rem}.vnav button b{font:600 .78rem/1.15 var(--f-ui)}.vnav button small{font:600 .68rem var(--f-num);color:var(--lime)}
+.vnav button[aria-pressed=true]{background:linear-gradient(140deg,rgba(182,255,59,.22),rgba(94,234,212,.1));border-color:rgba(182,255,59,.55);box-shadow:0 0 24px rgba(182,255,59,.18)}
+.vdash{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.vd{all:unset;cursor:pointer;display:grid;gap:3px;padding:16px;border-radius:22px;background:var(--glass);border:1px solid var(--line);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);box-sizing:border-box}
+.vd small{font-size:.66rem;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}.vd b{font:700 1.6rem/1.1 var(--f-head);letter-spacing:-.03em}.vd b i{font-style:normal;font-size:.8rem;color:var(--muted)}.vd b.sm{font-size:1.1rem}.vd span{font-size:.74rem;color:var(--muted)}
+.vd.big{grid-column:1/-1;background:radial-gradient(100% 140% at 100% 0%,rgba(182,255,59,.28),transparent 55%),linear-gradient(160deg,#12261a,#0b1012);border-color:rgba(182,255,59,.35)}.vd.big b{font-size:2.4rem;background:linear-gradient(90deg,#fff,#d9ffb0);-webkit-background-clip:text;background-clip:text;color:transparent}
+.vd.wide{grid-column:1/-1}.vd.red{border-color:rgba(255,107,129,.5);box-shadow:0 0 24px rgba(255,107,129,.2)}.vd.red b{color:#ff8a9b}.vd.ok b{color:#b6ff3b}
+.vfirm{border-radius:26px;padding:18px;display:grid;gap:14px;background:var(--glass);border:1px solid var(--line)}.vfh{display:flex;gap:14px;align-items:center}.vfh img{height:44px;width:auto;background:#fff;border-radius:12px;padding:6px 10px}.vfh div{display:grid}.vfh b{font:700 1.1rem var(--f-head)}.vfh small{font-size:.72rem;color:var(--muted)}
+.vstats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px}.vstats div{text-align:center;padding:10px 4px;border-radius:14px;background:rgba(255,255,255,.05)}.vstats b{display:block;font:700 1.15rem var(--f-head);color:#d9ffb0}.vstats small{font-size:.6rem;color:var(--muted)}
+.vcerts{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.vcerts div{padding:10px 12px;border-radius:14px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);display:grid}.vcerts b{font-size:.8rem}.vcerts small{font-size:.68rem;color:var(--muted)}.vcerts .warn{border-color:rgba(255,207,90,.5)}
+.vteam{display:grid;gap:8px}.vt{display:grid;grid-template-columns:44px 1fr auto auto;gap:10px;align-items:center;padding:10px 12px;border-radius:18px;background:var(--glass);border:1px solid var(--line)}.vt div{display:grid;min-width:0}.vt b{font-size:.88rem}.vt small{font-size:.72rem;color:var(--muted)}.vt .btn{min-height:40px;padding:0 12px}
 @media (prefers-reduced-motion:reduce){.toast,button{transition:none}}
 </style>
 </head>
@@ -495,6 +516,7 @@ function fleetAlerts(F){const out=[],now=Date.now(),avg=agg(F.rides).cons;
 function vFleet(){const F=STATE.fleet;if(!F)return `<div class="card"><div class="s">Načítavam flotilu…</div></div>`;
   if(F.err)return `<div class="card"><div class="t">Flotila ešte nie je zapnutá</div><div class="s">Spusti raz SQL zo stránky flotila.html.</div><a class="btn pri" href="flotila.html">Zapnúť flotilu</a></div>`;
   const per=[["1","Dnes"],["7","7 dní"],["30","30 dní"],["m","Tento mesiac"]];
+  const S={};let cur="perf";
   let h=`<div class="card"><div class="btns seg2">${per.map(p=>`<button type="button" data-fper="${p[0]}" aria-pressed="${FPER===p[0]}">${p[1]}</button>`).join("")}</div></div>`;
   const A=agg(F.rides);
   const CO=Object.assign({diesel:1.952,toll:0.2677,share:100,fixed:140000},F.cfg.costs||{});
@@ -524,6 +546,7 @@ function vFleet(){const F=STATE.fleet;if(!F)return `<div class="card"><div class
   const KN={yard:"🏠 Dvor",buyer:"🌾 Odberateľ",fuel:"⛽ Čerpačka",other:"📍 Miesto"};
   const evTxt=e=>{if(e.kind==="fuel_drop"||e.kind==="refuel_gap")return `🚨 ${e.kind==="fuel_drop"?"pokles nafty":"tankovanie nesedí"} ${n0(e.liters)} l · <b style="font-family:var(--f-ui)">${esc(e.plate||"")}</b>${e.driver?" · "+esc(e.driver):""}`;if(e.kind==="depart")return `▶️ pohlo sa po ${e.minutes>=60?Math.floor(e.minutes/60)+" h "+e.minutes%60+" min":e.minutes+" min"} · <b style="font-family:var(--f-ui)">${esc(e.plate||"")}</b>${e.place?" · "+esc(e.place):""}${e.lat?` · <a class="copy" style="font-size:.76rem" href="https://maps.google.com/?q=${e.lat},${e.lon}" target="_blank" rel="noopener">mapa</a>`:""}${e.driver?" · "+esc(e.driver):""}`;const k=e.kind==="yard_in"||e.kind==="in";const pk=e.place_kind||(String(e.kind).startsWith("yard")?"yard":"");return `${k?(pk==="fuel"?"⛽ tankuje":"🟢 prišlo"):"🔵 odišlo"} · <b style="font-family:var(--f-ui)">${esc(e.plate||"")}</b> · ${esc(e.place||"Dvor Medovská")}${e.driver?" · "+esc(e.driver):""}`};
   // ===== ALARMY =====
+  S[cur]=h;h="";cur="alarm";
   const FC=Object.assign({drop:20,win:90,gap:30,cool:180},F.cfg.fuel||{});
   const FE=F.ev.filter(e=>e.kind==="fuel_drop"||e.kind==="refuel_gap");
   const AL=fleetAlerts(F);
@@ -535,13 +558,16 @@ function vFleet(){const F=STATE.fleet;if(!F)return `<div class="card"><div class
     ${AX.length?AX.slice(0,25).map(a=>`<div class="xai ${a.lv}"><span>${a.ic}</span><div><b>${esc(a.t)}</b><small>${a.d}${a.at?" · "+new Date(a.at).toLocaleString("sk-SK",{day:"numeric",month:"numeric",hour:"2-digit",minute:"2-digit"}):""}${a.map?` · <a class="copy" href="${a.map}" target="_blank" rel="noopener">mapa</a>`:""}</small></div></div>`).join(""):`<div class="xok">✓ Žiadne podozrivé poklesy nafty, rýchlosť ani spotreba.</div>`}
     <div class="xalf">Stráži: pokles nafty ${FC.drop}+ l v stojacom aute · tankovanie vs. nádrž (${FC.gap}+ l) · spotreba +15 % · rýchlosť nad 90 km/h · auto bez signálu 24 h · súkromné jazdy</div></div>`;
   // ===== MAPA =====
+  S[cur]=h;h="";cur="map";
   const G=F.veh.filter(v=>v.lat&&v.gps_at).map(v=>({gps_lat:v.lat,gps_lon:v.lon,gps_speed:now-new Date(v.gps_at)<20*60e3?v.speed:0,old:now-new Date(v.gps_at)>6*3600e3,no:(v.plate||v.name||"").replace(/\s/g,"")}));
   const moving=F.veh.filter(v=>v.gps_at&&now-new Date(v.gps_at)<20*60e3&&v.speed>3).length,yard=F.veh.filter(v=>v.in_yard).length;
   if(G.length)h+=`<h2>Kde sú teraz</h2><div class="xmap"><div class="xmh"><span><b>${moving}</b> ide</span><span><b>${G.length-moving}</b> stojí</span><span><b>${yard}</b> na dvore</span></div>${fleetMap(G)}<div class="s">🟢 ide · 🔵 stojí · ⚪ poloha staršia ako 6 h</div></div>`;
   // ===== POHYBY =====
+  S[cur]=h;h="";cur="moves";
   const MV=F.ev.filter(e=>!(e.kind==="fuel_drop"||e.kind==="refuel_gap")).slice(0,20);
   if(MV.length)h+=`<h2>Pohyby</h2><div class="xtl">${MV.map(e=>`<div class="xti"><time>${new Date(e.at).toLocaleTimeString("sk-SK",{hour:"2-digit",minute:"2-digit"})}<small>${new Date(e.at).toLocaleDateString("sk-SK",{day:"numeric",month:"numeric"})}</small></time><i class="${e.kind==="depart"?"d":e.place_kind==="fuel"?"f":(e.kind==="in"||e.kind==="yard_in")?"i":"o"}"></i><span>${evTxt(e)}</span></div>`).join("")}</div>`;
   // ===== VOZIDLÁ =====
+  S[cur]=h;h="";cur="veh";
   const V=F.veh.map(v=>({v,a:agg(F.rides.filter(r=>r.vehicle_id===v.id))})).sort((x,y)=>y.a.km-x.a.km);
   h+=`<h2>Vozidlá (${V.length})</h2><div class="xvl">`+V.map(({v,a})=>{const st=!v.gps_at?["bez dát","g"]:now-new Date(v.gps_at)>6*3600e3?["vypnuté","g"]:v.speed>3?["ide "+v.speed+" km/h",""]:v.ign?["stojí, motor beží","w"]:["stojí","b"];
     const tk=truckOf(v),lr=LV[v.id],drv=lr&&now-new Date(lr.stop_at||lr.start_at)<14*3600e3?lr.driver:null,dp=drv&&PH[drv];
@@ -553,6 +579,7 @@ function vFleet(){const F=STATE.fleet;if(!F)return `<div class="card"><div class
       ${open?`<div class="sub"><b class="sth">Nádrž za 48 h</b>${STATE.tank&&STATE.tank.id===v.id?(STATE.tank.err?`<div class="s">Graf zapneš spustením <a class="copy" href="nafta.html">nafta.html</a>.</div>`:tankChart(STATE.tank.rows)):"<div class='s'>Načítavam…</div>"}
         <b class="sth">Posledné jazdy</b>${last.length?last.map(r=>`<div class="ride"><div class="r1"><b>${new Date(r.start_at).toLocaleString("sk-SK",{day:"numeric",month:"numeric",hour:"2-digit",minute:"2-digit"})}</b><span>${n1(r.distance)} km · ${hm(r.duration)}${r.avg_cons?` · ${n1(r.avg_cons)} l/100`:""}${r.max_speed?` · max ${r.max_speed}`:""}</span></div><div class="s">${esc(r.start_addr||"?")} → ${esc(r.stop_addr||"?")}${r.driver?" · "+esc(r.driver):""}${/PRIVAT/.test(r.ride_type||"")?" · súkromná":""}${r.refuel_l?` · ⛽ ${n0(r.refuel_l)} l`:""}</div></div>`).join(""):`<div class="s">Žiadne jazdy v tomto období.</div>`}</div>`:""}</div>`}).join("")+`</div>`;
   // ===== VODIČI =====
+  S[cur]=h;h="";cur="drv";
   const ini=n=>n.split(/\s+/).filter(Boolean).map(w=>w[0]).slice(0,2).join("").toUpperCase();
   if(ROLE==="owner")h+=vPay(F,{LD,vById,PH,truckOf,telA,now,AC:A.cons,firmPh});
   else{const D={};for(const r of F.rides){const k=r.driver;if(!k)continue;(D[k]=D[k]||[]).push(r)}
@@ -565,6 +592,7 @@ function vFleet(){const F=STATE.fleet;if(!F)return `<div class="card"><div class
         :(()=>{const fp=firmPh(k,lr);return `<div class="btns xact">${fp?`<a class="btn pri" href="tel:${esc(telA(fp.ph))}">📞 Firemný${fp.no?" (č."+fp.no+")":""}</a>`:""}${ph?`<a class="btn lime" href="tel:${esc(telA(ph))}">📱 Súkromný</a><a class="btn" href="https://wa.me/${esc(telA(ph).replace(/^\+/,"").replace(/^0/,"421"))}" target="_blank" rel="noopener">WhatsApp</a>`:""}<button type="button" data-phedit="${esc(k)}">${ph?"✏️":"+ súkromný"}</button></div>`})()}</div>`}).join("")+`</div>`;}
 
   // ===== NASTAVENIA =====
+  S[cur]=h;h="";cur="set";
   h+=`<h2>Nastavenia flotily</h2><details class="card xset"><summary><span>⚙️</span><b>Náklady, miesta, upozornenia, ochrana nafty</b></summary>`;
   h+=`<div class="sub"><b class="sth">💶 Cena nafty, mýto, pevné náklady</b>`+`<form class="f sub" id="fCosts"><label>Nafta €/l s DPH<input name="diesel" inputmode="decimal" value="${String(CO.diesel).replace(".",",")}"></label><label>Mýto €/km bez DPH<input name="toll" inputmode="decimal" value="${String(CO.toll).replace(".",",")}"></label>${ROLE==="owner"?`<label class="w">Pevné náklady flotily €/mesiac (leasing, poistenie, servis, odpisy…)<input name="fixed" inputmode="decimal" value="${CO.fixed}"></label>`:""}<label class="w">Podiel spoplatnených km (%) – diaľnice, rýchlostné a mýtne cesty I. triedy<input name="share" inputmode="numeric" value="${CO.share}"></label><div class="w s">Sadzby mýta podľa NV č. 418/2024 Z. z. (od 1. 7. 2025): diaľnica 5+ náprav EURO VI 0,2677 €/km, 4 nápravy 0,3002 €/km; cesty I. triedy súbežné s diaľnicou rovnako, ostatné mýtne úseky I. triedy 0,2238 €/km (4 nápravy). Odhad mýta = km × podiel × sadzba – presné mýto je na faktúre z eMýta.</div><div class="w btns"><button class="pri" type="submit">Uložiť</button></div></form>`+`</div>`;
   const NT=(F.cfg.notify||{}).topic,P=F.places;
@@ -585,7 +613,36 @@ function vFleet(){const F=STATE.fleet;if(!F)return `<div class="card"><div class
   h+=`<div class="sub"><b class="sth">🛡️ Citlivosť ochrany nafty</b><form class="f" id="fFuel"><label>Pokles o (l)<input name="drop" inputmode="numeric" value="${FC.drop}"></label><label>Za (min)<input name="win" inputmode="numeric" value="${FC.win}"></label><label>Rozdiel pri tankovaní (l)<input name="gap" inputmode="numeric" value="${FC.gap}"></label><label>Opakovať najskôr po (min)<input name="cool" inputmode="numeric" value="${FC.cool}"></label><div class="w btns"><button class="pri" type="submit">Uložiť</button></div></form><div class="s">Údaj o nádrži je z CAN zbernice – presnosť ±2–5 %. Na menšie odčerpania treba kapacitnú sondu.</div></div>`;
   h+=`<div class="sub"><b class="sth">📱 Súkromné čísla vodičov – hromadne</b><form id="fPhones" class="f"><label class="w">Vlož zoznam (z Excelu: meno a číslo v riadku)<textarea name="list" placeholder="Ján Novák	0905 123 456&#10;Ján Novák	0911 222 333"></textarea></label><div class="w btns"><button class="pri" type="submit">Uložiť čísla</button></div></form><div class="s">Mená sa spárujú s vodičmi z Commandera aj pri prehodenom poradí mena a priezviska.</div></div>`;
   h+=`</details><div class="s" style="text-align:center">Údaje z Commandera · poloha každé 2 min, jazdy každých 10 min.</div>`;
-  return h}
+  S[cur]=h;
+  const BG="https://www.valko-logistics.sk/_next/image?url=%2Fvalko_trucks.jpg&w=1920&q=80&dpl=dpl_5DuQwbKn2mwZdbgHLVAissZ6jdba";
+  const OWNx=ROLE==="owner",alN=AX.length,costM=OWNx?all:tot;
+  const NAV=[["dash","🏠","Dashboard",""],["perf","📊","Prevádzka a náklady",`${n0(costM)} €`],["alarm","🚨","Alarmy",alN?`${alN}`:"OK"],["map","🗺️","Kde sú autá",`${moving} ide`],["moves","🔁","Pohyby",`${MV.length}`],["veh","🚛","Vozidlá",`${F.veh.length}`],["drv","👥",OWNx?"Vodiči a mzdy":"Vodiči",OWNx&&STATE.payTot?`${n0(STATE.payTot)} €`:""],["firm","🏢","Firma VALKO",""],["set","⚙️","Nastavenia",""]];
+  const sec=STATE.fsec||"dash";
+  let o=`<div class="vhero" style="--bg:url('${BG}')"><div class="vhin"><div class="vbrand"><span>VALKO</span><i></i><span>ERNTE</span></div>
+    <h1>Váš náklad.<br><em>Naša zodpovednosť.</em></h1><p>Flotila VALKO · ${new Date().toLocaleDateString("sk-SK",{weekday:"long",day:"numeric",month:"long"})}</p>
+    <div class="vlive"><div><b>${moving}</b><small>ide</small></div><div><b>${G.length-moving}</b><small>stojí</small></div><div><b>${yard}</b><small>na dvore</small></div><div class="${alN?"al":""}"><b>${alN}</b><small>alarmy</small></div></div></div></div>
+  <nav class="vnav">${NAV.map(n=>`<button type="button" data-fsec="${n[0]}" aria-pressed="${sec===n[0]}"><span>${n[1]}</span><b>${esc(n[2])}</b>${n[3]?`<small>${esc(n[3])}</small>`:""}</button>`).join("")}</nav>`;
+  if(sec==="dash"){
+    o+=`<div class="vdash">
+      <button type="button" class="vd big" data-fsec="perf"><small>${OWNx?"Náklady spolu":"Nafta + mýto"} · ${esc(perName)}</small><b>${n0(costM)} €</b><span>${A.km?f3(costM/A.km):"–"} €/km · ${n0(A.km)} km</span></button>
+      <button type="button" class="vd ${alN?"red":"ok"}" data-fsec="alarm"><small>Alarmy</small><b>${alN||"✓"}</b><span>${alN?AX.filter(a=>a.lv==="r").length+" vážne":"všetko v poriadku"}</span></button>
+      <button type="button" class="vd" data-fsec="perf"><small>Priemerná spotreba</small><b>${A.cons?n1(A.cons):"–"}<i> l/100</i></b><span>${n0(A.l)} l nafty</span></button>
+      <button type="button" class="vd" data-fsec="map"><small>Autá</small><b>${moving}<i> / ${F.veh.length}</i></b><span>na ceste · ${yard} na dvore</span></button>
+      ${OWNx?`<button type="button" class="vd" data-fsec="drv"><small>Mzdy · ${esc(new Date().toLocaleDateString("sk-SK",{month:"long"}))}</small><b>${STATE.payTot?n0(STATE.payTot)+" €":"–"}</b><span>hrubé, odhad</span></button>`:""}
+      <button type="button" class="vd wide" data-fsec="moves"><small>Posledný pohyb</small><b class="sm">${MV[0]?esc(MV[0].plate||""):"–"}</b><span>${MV[0]?esc((MV[0].place||"")+" · "+new Date(MV[0].at).toLocaleTimeString("sk-SK",{hour:"2-digit",minute:"2-digit"})):"zatiaľ nič"}</span></button></div>`;
+    o+=S.map||"";
+    if(OWNx&&!STATE.payTot)vPay(F,{});
+  }else if(sec==="firm")o+=vFirm();
+  else o+=S[sec]||"";
+  return o}
+function vFirm(){const T=[["Ján Novák","riaditeľka","0900 000 000","meno@example.sk"],["Ján Novák","zástupkyňa riaditeľky","0900 000 000","meno@example.sk"],["Ján Novák","fakturácia","0900 000 000","meno@example.sk"],["Ján Novák","koordinátorka dopravy","0900 000 000","meno@example.sk"],["Ján Novák","koordinátor vnútroštátnej dopravy","0900 000 000","meno@example.sk"],["HR / personalistika","nábor vodičov","0900 000 000","info@valko-logistics.sk"]];
+  const gmpDays=Math.round((new Date("2027-10-04")-Date.now())/864e5);
+  return `<h2>Firma VALKO</h2><div class="vfirm"><div class="vfh"><img src="https://www.valko-logistics.sk/_next/image?url=%2Fvalko_logo.png&w=828&q=75&dpl=dpl_5DuQwbKn2mwZdbgHLVAissZ6jdba" alt="VALKO" onerror="this.remove()"><div><b>Valko s.r.o.</b><small>Valko Logistics · Zbudza 141, 072 23 · IČO 53 365 241 · DIČ SK2121345424</small></div></div>
+    <div class="vstats"><div><b>2020</b><small>založená</small></div><div><b>30+</b><small>vozidiel EURO 6</small></div><div><b>12+</b><small>krajín EÚ</small></div><div><b>24/7</b><small>dostupnosť</small></div></div>
+    <div class="vcerts"><div class="${gmpDays<90?"warn":""}"><b>GMP+ SK24/00000145</b><small>preprava krmív · platí do 4. 10. 2027 · ${gmpDays} dní</small></div><div><b>DIN EN 12642 Code XL</b><small>zaistenie nákladu · 27 000 kg</small></div><div><b>Licencia EÚ</b><small>medzinárodná nákladná doprava</small></div><div><b>Poistenie CMR</b><small>zodpovednosť dopravcu</small></div></div>
+    <div class="s">Služby: FTL (13,6 m, do 90 m³, doručenie do 24 h), LTL od 1 palety · návesy: plachtové, štandard, mega, sklápacie · krajiny: SK, CZ, PL, DE, AT, HU, IT, CH, FR, BE, NL, HR</div></div>
+  <h2>Tím VALKO</h2><div class="vteam">${T.map(t=>`<div class="vt"><span class="pav">${esc(t[0].split(" ").map(w=>w[0]).slice(0,2).join(""))}</span><div><b>${esc(t[0])}</b><small>${esc(t[1])}</small></div><a class="btn lime" href="tel:${t[2].replace(/\s/g,"")}">📞</a><a class="btn" href="mailto:${t[3]}">✉️</a></div>`).join("")}</div>
+  <div class="s" style="text-align:center">Údaje z valko-logistics.sk · <a class="copy" href="https://www.valko-logistics.sk" target="_blank" rel="noopener">otvoriť web</a></div>`}
 
 // ================= MZDY VODIČOV (iba majiteľ) =================
 let PMON=(d=>d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0"))(new Date()),PDRV=null;
@@ -697,6 +754,7 @@ async function teamLogin(login,name,role){const pw=genPw();const r=await sb.rpc(
   const who=String(r.data).endsWith("@tel.ernte.sk")?login:r.data;const tel=String(r.data).endsWith("@tel.ernte.sk")?String(r.data).split("@")[0]:"";
   STATE.invite={team:1,name,tel,txt:`Dobrý deň, tu je prístup do aplikácie ERNTE (${ROLES[role]}):\n${APP_URL}\n\nPrihlásenie: ${who}\nHeslo: ${pw}\n\nPo prihlásení si ju dajte na plochu.`};await loadTeam();renderStaff();window.scrollTo(0,0)}
 document.addEventListener("click",async e=>{if(!ROLE)return;const t=e.target;let x;
+  if(x=t.closest("[data-fsec]")){STATE.fsec=x.dataset.fsec;renderStaff();window.scrollTo({top:0,behavior:"smooth"});return}
   if(x=t.closest("[data-fper]")){FPER=x.dataset.fper;STATE.fleet=null;renderStaff();return}
   if(x=t.closest("[data-stopmin]")){const m=+x.dataset.stopmin;const r=await sb.from("fleet_cfg").upsert({key:"stop",value:m?{min:m,on:true}:{min:+(STATE.fleet.cfg.stop||{}).min||30,on:false}});if(r.error){toast("Chyba: "+r.error.message);return}STATE.fleet=null;renderStaff();toast(m?"Upozorním po "+m+" min státia.":"Vypnuté.");return}
   if(x=t.closest("[data-plfix]")){STATE.plfix=+x.dataset.plfix;renderStaff();return}
