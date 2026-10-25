@@ -219,6 +219,20 @@ details.trips{border-top:1px solid var(--line);padding-top:8px}details.trips sum
 .vd small{font-size:.66rem;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}.vd b{font:700 1.6rem/1.1 var(--f-head);letter-spacing:-.03em}.vd b i{font-style:normal;font-size:.8rem;color:var(--muted)}.vd b.sm{font-size:1.1rem}.vd span{font-size:.74rem;color:var(--muted)}
 .vd.big{grid-column:1/-1;background:radial-gradient(100% 140% at 100% 0%,rgba(182,255,59,.28),transparent 55%),linear-gradient(160deg,#12261a,#0b1012);border-color:rgba(182,255,59,.35)}.vd.big b{font-size:2.4rem;background:linear-gradient(90deg,#fff,#d9ffb0);-webkit-background-clip:text;background-clip:text;color:transparent}
 .vd.big.neg{background:radial-gradient(100% 140% at 100% 0%,rgba(255,80,100,.35),transparent 55%),linear-gradient(160deg,#2a0f16,#100a0d);border-color:rgba(255,107,129,.5)}.vd.big.neg b{background:linear-gradient(90deg,#fff,#ffb3bf);-webkit-background-clip:text;background-clip:text;color:transparent}
+.pwg{position:relative;isolation:isolate;display:flex;align-items:center;gap:12px;width:100%;min-height:58px;padding:10px 18px;border-radius:20px;border:1px solid rgba(255,255,255,.26);
+  background:linear-gradient(135deg,rgba(255,255,255,.16),rgba(255,255,255,.04));backdrop-filter:blur(20px) saturate(170%);-webkit-backdrop-filter:blur(20px) saturate(170%);
+  box-shadow:0 10px 30px rgba(0,0,0,.35),inset 0 1px 0 rgba(255,255,255,.35),inset 0 -1px 0 rgba(255,255,255,.06);color:#fff;font:700 1rem var(--f-ui,system-ui);text-align:left;cursor:pointer;overflow:hidden;
+  -webkit-user-select:none;user-select:none;-webkit-touch-callout:none;touch-action:manipulation;-webkit-tap-highlight-color:transparent;transition:transform .2s cubic-bezier(.2,.8,.2,1),box-shadow .3s ease,border-color .3s ease,background .3s ease}
+.pwg::before{content:"";position:absolute;inset:0;z-index:-1;background:radial-gradient(120% 140% at 0% 0%,rgba(182,255,59,.28),transparent 45%),radial-gradient(120% 140% at 100% 100%,rgba(34,211,238,.22),transparent 50%);opacity:.55;transition:opacity .3s ease}
+.pwg::after{content:"";position:absolute;top:0;left:-60%;width:40%;height:100%;z-index:-1;background:linear-gradient(100deg,transparent,rgba(255,255,255,.28),transparent);transform:skewX(-18deg);transition:left .7s ease}
+.pwg:hover{border-color:rgba(182,255,59,.55);box-shadow:0 12px 36px rgba(0,0,0,.4),0 0 26px rgba(182,255,59,.22),inset 0 1px 0 rgba(255,255,255,.45)}.pwg:hover::before{opacity:1}.pwg:hover::after{left:120%}
+.pwg:active{transform:scale(.975)}.pwg:focus-visible{outline:2px solid #b6ff3b;outline-offset:3px}
+.pwg.on,.pwg.ok{border-color:rgba(182,255,59,.85);box-shadow:0 0 0 4px rgba(182,255,59,.14),0 0 30px rgba(182,255,59,.3),inset 0 1px 0 rgba(255,255,255,.45)}.pwg.on::before,.pwg.ok::before{opacity:1}
+.pwg .pwi{display:grid;place-items:center;width:38px;height:38px;border-radius:12px;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.22);font-size:1.1rem;flex:none}
+.pwg .pwt{display:grid;gap:2px;min-width:0}.pwg .pwv{font:700 1.08rem var(--f-num,ui-monospace,monospace);letter-spacing:.14em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.pwg.ok .pwv{letter-spacing:.02em;color:#d9ffb0}
+.pwg small{font:500 .7rem var(--f-ui,system-ui);color:rgba(255,255,255,.62);letter-spacing:.01em}
+@media (prefers-color-scheme:light){.pwg{background:linear-gradient(135deg,rgba(255,255,255,.24),rgba(255,255,255,.08));border-color:rgba(255,255,255,.4);text-shadow:0 1px 2px rgba(0,0,0,.35)}}
+@media (prefers-reduced-motion:reduce){.pwg,.pwg::after,.pwg::before{transition:none}}
 .vd.wide{grid-column:1/-1}.vd em{font-style:normal;font-size:.72rem;color:#d9ffb0}.vd.big em{display:block;margin-top:2px}
 .dsc{display:grid;gap:8px}.dsc .xd{gap:8px}.dsc .bad{color:#ff8a9b}.dsc .good{color:#b6ff3b}.dsc .xvk+.xvk{margin-top:0}.dsn{font-size:.72rem;color:var(--warn)}
 .yfb{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px;margin:8px 0}.yfb span{background:rgba(255,255,255,.05);border-radius:12px;padding:8px;display:grid}.yfb small{font-size:.6rem;color:var(--muted)}.yfb b{font:700 .86rem var(--f-num);white-space:nowrap}.yfb .bad b{color:#ff8a9b}.yfb .bad{border:1px solid rgba(255,107,129,.6);box-shadow:0 0 18px rgba(255,107,129,.25)}
@@ -317,10 +331,8 @@ function showLogin(){$("outBtn").hidden=true;$("aiBtn").hidden=true;$("hS").text
     <form class="card" id="fCode"><label>Kód z e-mailu<input class="code" name="code" inputmode="numeric" autocomplete="one-time-code" required></label><button class="pri" type="submit">Prihlásiť</button><button type="button" id="backEmail">Zmeniť e-mail / poslať znova</button></form></div>`;
     setTimeout(()=>{const i=document.querySelector("input.code");if(i)i.focus()},50)}
 }
-function pwCard(){return `<form class="card" id="fPw"><div class="t">Heslo na rýchle prihlásenie</div><div class="s">Nastavte si heslo a nabudúce sa prihlásite e-mailom a heslom – bez čakania na e-mail. Funguje aj v ikone na ploche.</div><label>Nové heslo (aspoň 8 znakov)<input name="pw" type="password" autocomplete="new-password" minlength="8" required></label><button type="submit">Uložiť heslo</button></form>`}
-document.addEventListener("submit",async e=>{const f=e.target;if(f.id!=="fPw")return;e.preventDefault();const b=f.querySelector("button");busy(b,true);
-  const {error}=await sb.auth.updateUser({password:String(new FormData(f).get("pw"))});busy(b,false);
-  if(error){toast("Heslo sa neuložilo: "+error.message,5000);return}f.reset();toast("Heslo uložené. Odteraz sa prihlásite e-mailom a heslom.",5000)},true);
+function pwCard(){return `<div class="card"><div class="t">Heslo na rýchle prihlásenie</div><div class="s">S rýchlym heslom sa prihlásiš e-mailom a heslom – bez čakania na e-mail. Funguje aj v ikone na ploche.</div>
+  <button type="button" class="pwg" data-pwg="own" aria-label="Rýchle heslo – ťuknutím vytvoríš a skopíruješ, podržaním zobrazíš na 5 sekúnd"><span class="pwi">🔑</span><span class="pwt"><span class="pwv">${STATE.qpw?PWMASK:"Rýchle heslo"}</span><small>${STATE.qpw?"ťukni = kopírovať · podrž = ukázať 5 s":"ťukni = vytvoriť a skopírovať · podrž = ukázať"}</small></span></button></div>`}
 function loginId(v){v=String(v||"").trim().toLowerCase();if(v.includes("@"))return v;let d=v.replace(/\D/g,"");if(d.startsWith("00"))d=d.slice(2);else if(d.startsWith("0"))d="421"+d.slice(1);return d?d+"@tel.ernte.sk":v}
 function genPw(){const w=["Klas","Zrno","Pole","Repka","Soja","Raz","Mlyn","Sklad","Brazda","Jacmen"],a=new Uint32Array(2);crypto.getRandomValues(a);return w[a[0]%w.length]+"-"+String(1000+a[1]%9000)}
 function installHint(){if(isStandalone())return "";const ios=/iphone|ipad|ipod/i.test(navigator.userAgent);
@@ -1003,15 +1015,41 @@ document.addEventListener("change",async e=>{if(e.target.id!=="yardVeh"||!e.targ
 async function loadTeam(){const r=await sb.from("staff").select("*").order("role");STATE.staff=r.data||[]}
 const ROLES={owner:"majiteľ – všetko",admin:"obchod (ceny, obchody, farmári)",dispatch:"doprava a flotila",invoice:"fakturácia"};
 function vTeam(){const L=STATE.staff;if(!L)return `<div class="card"><div class="s">Načítavam…</div></div>`;
-  let h="";if(STATE.invite&&STATE.invite.team)h+=`<div class="box"><b>Prihlásenie pre ${esc(STATE.invite.name)} je pripravené</b><div class="s" style="white-space:pre-wrap;color:var(--ink)">${esc(STATE.invite.txt)}</div><div class="btns">${STATE.invite.tel?`<a class="btn lime" href="https://wa.me/${esc(STATE.invite.tel)}?text=${encodeURIComponent(STATE.invite.txt)}" target="_blank" rel="noopener">Poslať cez WhatsApp</a>`:""}<button type="button" data-copyinv>Kopírovať</button><button type="button" data-closeinv>Hotovo</button></div></div>`;
+  let h="";if(STATE.invite&&STATE.invite.team)h+=inviteBox(STATE.invite,false);
   h+=`<form class="card f" id="fTeam"><div class="w t">Pridať človeka do tímu</div><label class="w">Meno<input name="name" required placeholder="napr. Ján Novák"></label><label>E-mail alebo telefón<input name="login" required autocapitalize="off" placeholder="0900 000 000"></label>
     <label>Čo môže robiť<select name="role">${Object.entries(ROLES).filter(r=>r[0]!=="owner").map(r=>`<option value="${r[0]}">${esc(r[1])}</option>`).join("")}</select></label>
     <div class="w btns"><button class="pri" type="submit">Vytvoriť prihlásenie</button></div></form>`;
   h+=L.map(p=>`<div class="card"><div class="row"><span class="t">${esc(p.name)}</span>${pill([ROLES[p.role]||p.role,p.role==="owner"?"":"b"])}</div><div class="s">${esc(String(p.email).replace("@tel.ernte.sk"," (telefón)"))}</div>${p.role!=="owner"?`<div class="btns"><button type="button" data-tpw="${esc(p.email)}" data-tn="${esc(p.name)}" data-tr="${esc(p.role)}">Nové heslo</button><button type="button" class="dng" data-trm="${esc(p.email)}">Odobrať</button></div>`:""}</div>`).join("");
   return h}
+// ================= RÝCHLE HESLO: sklenené tlačidlo (ťuknutie = kopírovať, podržanie = ukázať na 5 s) – heslo sa nikde nevypisuje =====
+const PWMASK="••••••••";
+// silné rýchle heslo (drží sa iba v pamäti tejto obrazovky, nikam sa neukladá ani nevypisuje)
+function qpwGen(){const w=["Klas","Zrno","Pole","Repka","Soja","Mlyn","Sklad","Brazda","Jacmen","Kombajn","Silo","Vaha","Pluh","Snop"],a=new Uint32Array(4);crypto.getRandomValues(a);return w[a[0]%w.length]+"-"+w[a[1]%w.length]+"-"+String(100000+a[2]%900000)+"!"}
+function inviteBox(I,sms){const t=I.pw?I.txt.split(I.pw).join(PWMASK):I.txt;
+  return `<div class="box"><b>Prihlásenie pre ${esc(I.name)} je pripravené</b><div class="s" style="white-space:pre-wrap;color:var(--ink)">${esc(t)}</div>
+  ${I.pw?`<button type="button" class="pwg" data-pwg aria-label="Heslo – ťuknutím skopíruješ, podržaním zobrazíš na 5 sekúnd"><span class="pwi">🔑</span><span class="pwt"><span class="pwv">${PWMASK}</span><small>ťukni = kopírovať · podrž = ukázať</small></span></button>`:""}
+  <div class="btns">${I.tel?`<button type="button" class="lime" data-invsend="wa">Poslať cez WhatsApp</button>${sms?`<button type="button" data-invsend="sms">Poslať SMS</button>`:""}`:""}<button type="button" data-copyinv>Kopírovať správu</button><button type="button" data-closeinv>Hotovo</button></div>
+  <div class="s">Heslo si nikde neukladáme – pošlite ho teraz. Ak ho stratí, vytvorte nové.</div></div>`}
+(()=>{let tm=null,long=false,hideT=null;const V=b=>b&&b.querySelector(".pwv");
+  const mask=b=>{const v=V(b);if(v)v.textContent=PW(b)?PWMASK:"Rýchle heslo";b.classList.remove("on","ok")};
+  const PW=b=>b.dataset.pwg==="own"?STATE.qpw:(STATE.invite&&STATE.invite.pw);
+  document.addEventListener("pointerdown",e=>{const b=e.target.closest("[data-pwg]");if(!b||!PW(b))return;long=false;clearTimeout(tm);
+    tm=setTimeout(()=>{long=true;const v=V(b);if(v)v.textContent=PW(b);b.classList.add("on");clearTimeout(hideT);hideT=setTimeout(()=>mask(b),5000);try{navigator.vibrate&&navigator.vibrate(30)}catch(x){}},550)});
+  const cancel=()=>clearTimeout(tm);["pointerup","pointercancel","pointerleave"].forEach(k=>document.addEventListener(k,e=>{if(e.target.closest&&e.target.closest("[data-pwg]"))cancel()}));
+  document.addEventListener("contextmenu",e=>{if(e.target.closest("[data-pwg]"))e.preventDefault()});
+  document.addEventListener("click",async e=>{const b=e.target.closest("[data-pwg]");if(!b)return;e.preventDefault();if(long){long=false;return}
+    if(b.dataset.pwg==="own"&&!STATE.qpw){if(b.disabled||!confirm("Vytvoriť nové rýchle heslo? Doterajšie heslo prestane platiť."))return;b.disabled=true;
+      const pw=qpwGen();const {error}=await sb.auth.updateUser({password:pw});b.disabled=false;if(error){toast("Heslo sa neuložilo: "+error.message,5000);return}
+      STATE.qpw=pw;const sm=b.querySelector("small");if(sm)sm.textContent="ťukni = kopírovať · podrž = ukázať 5 s"}
+    if(!PW(b))return;
+    try{await navigator.clipboard.writeText(PW(b));const v=V(b);if(v)v.textContent="Skopírované ✓";b.classList.add("ok");clearTimeout(hideT);hideT=setTimeout(()=>mask(b),1500)}
+    catch(x){toast("Kopírovanie sa nepodarilo – podrž tlačidlo a heslo si opíš.",4000)}});
+  document.addEventListener("click",e=>{const b=e.target.closest("[data-invsend]");if(!b||!STATE.invite)return;const I=STATE.invite,u=b.dataset.invsend==="wa"?`https://wa.me/${I.tel}?text=${encodeURIComponent(I.txt)}`:`sms:+${I.tel}?&body=${encodeURIComponent(I.txt)}`;
+    if(b.dataset.invsend==="wa")window.open(u,"_blank","noopener");else location.href=u});
+})();
 async function teamLogin(login,name,role){const pw=genPw();const r=await sb.rpc("set_staff_login",{login_in:login,name_in:name,role_in:role,pw});if(r.error){toast("Nepodarilo sa: "+r.error.message,7000);return}
   const who=String(r.data).endsWith("@tel.ernte.sk")?login:r.data;const tel=String(r.data).endsWith("@tel.ernte.sk")?String(r.data).split("@")[0]:"";
-  STATE.invite={team:1,name,tel,txt:`Dobrý deň, tu je prístup do aplikácie ERNTE (${ROLES[role]}):\n${APP_URL}\n\nPrihlásenie: ${who}\nHeslo: ${pw}\n\nPo prihlásení si ju dajte na plochu.`};await loadTeam();renderStaff();window.scrollTo(0,0)}
+  STATE.invite={team:1,name,tel,pw,txt:`Dobrý deň, tu je prístup do aplikácie ERNTE (${ROLES[role]}):\n${APP_URL}\n\nPrihlásenie: ${who}\nHeslo: ${pw}\n\nPo prihlásení si ju dajte na plochu.`};await loadTeam();renderStaff();window.scrollTo(0,0)}
 document.addEventListener("click",async e=>{if(!ROLE)return;const t=e.target;let x;
   if(x=t.closest("[data-fsec]")){STATE.fsec=x.dataset.fsec;renderStaff();requestAnimationFrame(()=>{const a=document.getElementById("fsecTop");if(a){const y=a.getBoundingClientRect().top+scrollY-70;window.scrollTo({top:y,behavior:"smooth"})}});return}
   if(x=t.closest("[data-fper]")){FPER=x.dataset.fper;STATE.fleet=null;renderStaff();return}
@@ -1073,7 +1111,7 @@ function vDeals(){const F=STATE.farmers.filter(f=>f.active),pre=DEALF||{};
 function vFarm(){const q=FQ.toLowerCase(),L=STATE.farmers.filter(f=>!q||(f.name+" "+(f.email||"")).toLowerCase().includes(q));const E=EDITF==="new"?{}:STATE.farmers.find(f=>f.id===EDITF);
   let h=`<div class="card"><div class="btns"><button type="button" class="pri" data-fedit="new">+ Pridať farmára</button></div><label>Hľadať<input id="fq" value="${esc(FQ)}" placeholder="meno alebo e-mail"></label>
    <div class="s">„Vytvoriť prihlásenie“ vygeneruje farmárovi heslo a pripraví pozvánku – pošleš ju cez WhatsApp alebo SMS. Prihlási sa e-mailom alebo telefónom a týmto heslom.</div></div>`;
-  if(STATE.invite){const I=STATE.invite;h+=`<div class="box"><b>Prihlásenie pre ${esc(I.name)} je pripravené</b><div class="s" style="white-space:pre-wrap;color:var(--ink)">${esc(I.txt)}</div><div class="btns">${I.tel?`<a class="btn lime" href="https://wa.me/${esc(I.tel)}?text=${encodeURIComponent(I.txt)}" target="_blank" rel="noopener">Poslať cez WhatsApp</a><a class="btn" href="sms:+${esc(I.tel)}&body=${encodeURIComponent(I.txt)}">Poslať SMS</a>`:""}<button type="button" data-copyinv>Kopírovať</button><button type="button" data-closeinv>Hotovo</button></div><div class="s">Heslo si nikde neukladáme – pošlite ho farmárovi teraz. Ak ho stratí, vytvorte nové.</div></div>`}
+  if(STATE.invite&&!STATE.invite.team)h+=inviteBox(STATE.invite,true);
   if(E)h+=farmForm(E);
   h+=L.map(f=>`<div class="card"><div class="row"><span class="t">${esc(f.name)}</span>${!(f.email||f.phone)?pill(["bez kontaktu","w"]):f.active&&f.login?pill(["prihlásenie aktívne"]):f.active?pill(["prístup zapnutý","b"]):pill(["bez prístupu","g"])}</div><div class="s">${esc([f.email,f.phone,f.addr].filter(Boolean).join(" · "))}</div>
     <div class="btns"><button type="button" data-fedit="${esc(f.id)}">Upraviť</button>${(f.email||f.phone)?`<button type="button" class="lime" data-mklogin="${esc(f.id)}">${f.login?"Nové heslo a pozvánka":"Vytvoriť prihlásenie"}</button>`:""}${f.active&&(f.login||f.email)?`<button type="button" class="dng" data-acc="${esc(f.id)}" data-on="0">Vypnúť prístup</button>`:""}${!f.active&&f.login?`<button type="button" data-acc="${esc(f.id)}" data-on="1">Zapnúť prístup</button>`:""}</div></div>`).join("");
@@ -1099,10 +1137,10 @@ document.addEventListener("click",async e=>{if(!ROLE)return;const t=e.target,g=s
     else usePhone=!f.email;
     const pw=genPw();busy(x,true);const r=await sb.rpc("set_farmer_password",{fid:f.id,pw,use_phone:usePhone});busy(x,false);
     if(r.error){toast("Nepodarilo sa: "+r.error.message,7000);return}
-    const who=usePhone?f.phone:f.email;const txt=`Dobrý deň, ERNTE má pre vás aplikáciu s výkupnými cenami, vašimi obchodmi a počasím:\n${APP_URL}\n\nPrihlásenie: ${who}\nHeslo: ${pw}\n\nPo prihlásení si ju dajte na plochu (Zdieľať → Pridať na plochu).`;
+    const who=usePhone?f.phone:f.email;const txt=`Dobrý deň, ERNTE má pre vás aplikáciu s výkupnými cenami, vašimi obchodmi a počasím:\n${APP_URL}\n\nPrihlásenie: ${who}\nHeslo: ${pw}\n\nPo prihlásení si ju dajte na plochu (Zdieľať → Pridať na plochu).`,pwv=pw;
     const tel=String(f.phone||"").replace(/\D/g,"").replace(/^00/,"").replace(/^0/,"421");
-    STATE.invite={name:f.name,txt,tel};await loadStaff();renderStaff();window.scrollTo(0,0);return}
-  if(x=g("[data-copyinv]")){copy(STATE.invite.txt);return}
+    STATE.invite={name:f.name,txt,tel,pw:pwv};await loadStaff();renderStaff();window.scrollTo(0,0);return}
+  if(x=g("[data-copyinv]")){try{await navigator.clipboard.writeText(STATE.invite.txt);toast("Správa skopírovaná.")}catch(er){toast("Kopírovanie sa nepodarilo – pošli cez WhatsApp/SMS.",4000)}return}
   if(x=g("[data-closeinv]")){STATE.invite=null;renderStaff();return}
   if(x=g("[data-acc]")){const on=x.dataset.on==="1",f=STATE.farmers.find(y=>y.id===x.dataset.acc);busy(x,true);const ok=await upd("farmers",f.id,{active:on});
     if(ok&&on)copy(`Dobrý deň, ERNTE má pre vás aplikáciu s výkupnými cenami a vašimi obchodmi:\n${APP_URL}\nPrihláste sa e-mailom ${f.email} – príde vám kód. Potom si ju dajte na plochu (Zdieľať → Pridať na plochu).`);return}
