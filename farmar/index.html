@@ -1240,7 +1240,13 @@ async function loadFleetX(){const days=FPER==="1"?1:+FPER,since=new Date(Date.no
   const cfg=Object.fromEntries((c.data||[]).map(x=>[x.key,x.value]));const tk=await sb.from("trucks").select("no,spz,phone,cmd_id,driver");
   const [co,cd,cr]=await Promise.all([sb.rpc("cmd_overview"),sb.from("cmd_drivers").select("*").order("surname").limit(1000),sb.from("cmd_refuel").select("*").gte("at",new Date(Date.now()-35*864e5).toISOString()).order("at",{ascending:false}).limit(1000)]);
   const cmd={ov:co.error?null:co.data,drivers:cd.error?null:(cd.data||[]),refuel:cr.error?null:(cr.data||[]),off:!!(co.error||cd.error)};
-  const vok=!!(cmd.ov&&(cmd.ov.api||[]).some(a=>a.kind==="vehicles"&&a.code===200)),VA=(v.data||[]).filter(x=>!x.deleted);cmd.unknown=vok?VA.filter(x=>!x.plate&&!x.name):[];
+  // tá istá ŠPZ pod viacerými GPS jednotkami = jedno auto: jazdy, udalosti aj poloha idú pod auto s menom
+  const nzP=x=>String(x||"").replace(/\s/g,"").toUpperCase(),ALL=v.data||[],byP={};
+  for(const x of ALL)if(x.plate&&!x.deleted&&(x.name||!byP[nzP(x.plate)]))byP[nzP(x.plate)]=x;
+  const AL={};for(const x of ALL){const c=x.plate&&byP[nzP(x.plate)];if(c&&c.id!==x.id){AL[x.id]=c.id;if(x.gps_at&&(!c.gps_at||new Date(x.gps_at)>new Date(c.gps_at)))for(const k of ["lat","lon","gps_at","speed","ign","tank","odometer","engine_hours","voltage","in_yard","address","rpm","throttle"])if(x[k]!=null)c[k]=x[k]}}
+  window.VALIAS=AL;const ali=L=>{for(const o of L||[])if(o&&AL[o.vehicle_id])o.vehicle_id=AL[o.vehicle_id];return L};
+  ali(r.data);ali(ev.data);ali(al.data);ali(ns.data);ali(r30.data);
+  const vok=!!(cmd.ov&&(cmd.ov.api||[]).some(a=>a.kind==="vehicles"&&a.code===200)),VA=ALL.filter(x=>!x.deleted&&!AL[x.id]);cmd.unknown=vok?VA.filter(x=>!x.plate&&!x.name):[];
   STATE.fleet={cmd,veh:VA.filter(x=>!vok||x.plate||x.name),rides:r.data||[],err:v.error||r.error,since,cfg,ev:ev.data||[],alev:al.data||[],nosig:ns.data||[],r30:r30.data||null,yf:yf.error?null:(yf.data||[]),places:pl.error?null:(pl.data||[]),trucks:tk.data||[]}}
 const n1=x=>Number.isFinite(+x)&&x!==null?(+x).toLocaleString("sk-SK",{maximumFractionDigits:1}):"–";
 const n0=x=>Number.isFinite(+x)&&x!==null?Math.round(+x).toLocaleString("sk-SK"):"–";
@@ -1624,6 +1630,7 @@ function loadPay(){const mon=PMON;if(loadPay.p&&loadPay.m===mon)return loadPay.p
   const [r,ev,yf]=await Promise.all([sb.from("rides").select("ride_id,driver,start_at,stop_at,distance,duration,fuel_consumed,fuel_start,fuel_stop,refuel_l,max_speed,vehicle_id,lat_start,lon_start,lat_stop,lon_stop,start_addr,stop_addr,ride_type,plate").gte("start_at",a.toISOString()).lt("start_at",b.toISOString()).limit(10000),
     sb.from("fleet_events").select("vehicle_id,plate,kind,at,driver,liters,src_key").eq("kind","fuel_drop").gte("at",a.toISOString()).lt("at",b.toISOString()).limit(1000),
     sb.from("yard_fuel").select("*").eq("kind","vydaj").gte("day",ds(a)).lt("day",ds(b)).limit(2000)]);
+  for(const o of r.data||[])if(window.VALIAS&&window.VALIAS[o.vehicle_id])o.vehicle_id=window.VALIAS[o.vehicle_id];
   if(PMON===mon)STATE.pay={mon,rides:r.data||[],err:r.error,ev:ev.data||[],yf:yf.error?[]:(yf.data||[])};loadPay.p=null})()}
 function vPay(F,X){X=X||{};if(ROLE!=="owner")return "";const P=payView();if(!P||P.mon!==PMON){loadPay().then(renderStaff);return `<h2>Mzdy vodičov</h2><div class="card"><div class="s">Načítavam…</div></div>`}
   const C=Object.assign({base:1031,inReg:80,outReg:90,minKm:10},F.cfg.pay||{});
