@@ -249,6 +249,16 @@ begin
   perform ai_gh_issue(t);
 end $$;
 grant execute on function public.ai_task_retry(uuid) to authenticated;
+create or replace function public.ai_task_dismiss(t uuid) returns void language plpgsql security definer set search_path=public as $$
+begin
+  if not is_owner() then raise exception 'Iba majiteľ.'; end if;
+  update ai_tasks set status='hotova', done_at=now(), report=coalesce(nullif(report,''),'')||case when report is null or report='' then '' else E'\n' end||'Zrušené majiteľom.' where id=t and status in ('chyba','nova');
+end $$;
+grant execute on function public.ai_task_dismiss(uuid) to authenticated;
+-- 4 úlohy z 25. 10. (málo dát, KPI, alarm nafty, cenník) spravil Claude priamo – označiť ako hotové
+update ai_tasks set status='hotova', done_at=now(), report='Spravené priamo s Claude 25. 10. 2026: málo dát pod 100 km, karta KPI s upozornením na chýbajúce mzdy, alarm rozdielu nafty, upozornenie na platnosť cenníka a „nezadané“ ceny.'
+  where status='chyba' and created_at::date='2026-10-25' and (text ilike '%rebríčka spotreby%' or text ilike '%mesačných KPI%' or text ilike '%Rozdiel natankovanej%' or text ilike '%záložke Cenník%' or text ilike '%Cenník%upozornenie%' or text ilike '%DIAGNOSTIK%' or text ilike '%kpi_z_aplikacie%');
+
 
 -- spracuj odpovede (volá aplikácia aj cron)
 create or replace function public.ai_collect() returns int language plpgsql security definer set search_path=public, net as $$
