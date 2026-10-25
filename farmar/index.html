@@ -527,7 +527,7 @@ function vFleet(){const F=STATE.fleet;if(!F)return `<div class="card"><div class
   const S={};let cur="perf";
   let h=`<div class="card"><div class="btns seg2">${per.map(p=>`<button type="button" data-fper="${p[0]}" aria-pressed="${FPER===p[0]}">${p[1]}</button>`).join("")}</div></div>`;
   const A=agg(F.rides);
-  const CO=Object.assign({diesel:1.952,toll:0.2677,share:100,fixed:140000},F.cfg.costs||{});
+  const CO=Object.assign({diesel:1.952,toll:0.2677,share:100,fixed:80000},F.cfg.costs||{});
   const dBez=CO.diesel/1.23,realP=A.ref>0&&A.refe>0?A.refe/A.ref:null,useP=realP||dBez;
   const fuelEur=A.l*useP,tollEur=A.km*(CO.share/100)*CO.toll,tot=fuelEur+tollEur;
   const nd=new Date(),dim=new Date(nd.getFullYear(),nd.getMonth()+1,0).getDate(),days=FPER==="m"?dim:FPER==="1"?1:+FPER;
@@ -789,7 +789,7 @@ document.addEventListener("click",async e=>{if(!ROLE)return;const t=e.target;let
   if(x=t.closest("[data-tpw]")){if(!confirm("Vytvoriť nové heslo pre "+x.dataset.tn+"?"))return;await teamLogin(x.dataset.tpw.replace("@tel.ernte.sk",""),x.dataset.tn,x.dataset.tr);return}
   if(x=t.closest("[data-trm]")){if(!confirm("Odobrať prístup?"))return;const r=await sb.rpc("remove_staff",{login_in:x.dataset.trm});if(r.error){toast(r.error.message);return}await loadTeam();renderStaff();return}
 });
-document.addEventListener("submit",async e=>{if(e.target.id!=="fCosts")return;e.preventDefault();const fd=new FormData(e.target);const old=(STATE.fleet&&STATE.fleet.cfg.costs)||{};const fxv=fd.get("fixed");const v={diesel:num(fd.get("diesel"))||1.952,toll:num(fd.get("toll"))||0.2677,share:Math.min(100,Math.max(0,num(fd.get("share"))||0)),fixed:fxv!=null?(num(fxv)||0):(old.fixed??140000)};
+document.addEventListener("submit",async e=>{if(e.target.id!=="fCosts")return;e.preventDefault();const fd=new FormData(e.target);const old=(STATE.fleet&&STATE.fleet.cfg.costs)||{};const fxv=fd.get("fixed");const v={diesel:num(fd.get("diesel"))||1.952,toll:num(fd.get("toll"))||0.2677,share:Math.min(100,Math.max(0,num(fd.get("share"))||0)),fixed:fxv!=null?(num(fxv)||0):(old.fixed??80000)};
   const r=await sb.from("fleet_cfg").upsert({key:"costs",value:v});if(r.error){toast("Chyba: "+r.error.message);return}STATE.fleet=null;renderStaff();toast("Uložené.")},true);
 document.addEventListener("submit",async e=>{if(e.target.id!=="fTeam")return;e.preventDefault();const fd=new FormData(e.target);const b=e.target.querySelector("button");busy(b,true);await teamLogin(String(fd.get("login")).trim(),String(fd.get("name")).trim(),fd.get("role"));busy(b,false)},true);
 let ASSIGN=null,TDAY="";
