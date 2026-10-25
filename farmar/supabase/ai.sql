@@ -94,20 +94,29 @@ revoke all on function public.ai_fleet_kpi() from public, anon, authenticated;
 -- rozpis tohto mesiaca po vodičoch a ich autách (spotreba priradená konkrétnemu vodičovi)
 -- l_100km iba z jázd, ktoré majú km aj litre; pod 100 km = „málo dát“
 create or replace function public.ai_fleet_drivers() returns jsonb language plpgsql stable security definer set search_path=public as $$
-declare m0 timestamptz:=date_trunc('month', now() at time zone 'Europe/Bratislava') at time zone 'Europe/Bratislava'; r jsonb;
+declare m0 timestamptz:=date_trunc('month', now() at time zone 'Europe/Bratislava') at time zone 'Europe/Bratislava'; r jsonb; c jsonb; dz numeric; t numeric; sh numeric;
 begin
+  select value into c from fleet_cfg where key='costs'; c:=coalesce(c,'{}');
+  dz:=coalesce((c->>'diesel')::numeric,1.952); t:=coalesce((c->>'toll')::numeric,0.2677); sh:=coalesce((c->>'share')::numeric,100);
   with p as (select coalesce(nullif(trim(driver),''),'neznámy vodič') vodic, coalesce(nullif(trim(plate),''),vehicle_id,'?') auto,
       coalesce(sum(distance),0) km, coalesce(sum(fuel_consumed),0) l,
       coalesce(sum(fuel_consumed) filter (where distance>0 and fuel_consumed>0),0) lok, coalesce(sum(distance) filter (where distance>0 and fuel_consumed>0),0) kok,
-      coalesce(sum(refuel_l),0) ref
+      coalesce(sum(refuel_l),0) ref, count(*) filter (where max_speed>90) sp, max(max_speed) mx
     from rides where start_at>=m0 group by 1,2),
-  d as (select vodic, sum(km) km, sum(l) l, sum(lok) lok, sum(kok) kok, sum(ref) ref,
+  y as (select lower(trim(driver)) dn, sum(liters) yl from yard_fuel where kind='vydaj' and day>=(m0 at time zone 'Europe/Bratislava')::date and driver is not null group by 1),
+  f as (select coalesce(nullif(trim(driver),''),'neznámy vodič') vodic, count(*) n from fleet_events where kind='fuel_drop' and at>=m0 group by 1),
+  d as (select p.vodic, sum(km) km, sum(l) l, sum(lok) lok, sum(kok) kok, sum(ref) ref, sum(sp) sp, max(mx) mx,
       jsonb_agg(jsonb_build_object('auto',auto,'km',round(km),'litre',round(l),
-        'l_100km',case when km>=100 and kok>20 then to_jsonb(round(lok/kok*100,1)) else '"málo dát"'::jsonb end,'natankovane_l',round(ref)) order by km desc) auta
-    from p group by vodic)
+        'l_100km',case when km>=100 and kok>20 then to_jsonb(round(lok/kok*100,1)) else '"málo dát"'::jsonb end,'natankovane_l',round(ref),'prekrocenia_90',sp) order by km desc) auta
+    from p group by p.vodic),
+  z as (select d.*, coalesce(y.yl,0) yl, coalesce(f.n,0) dn, d.l-d.ref-coalesce(y.yl,0) gap from d left join y on y.dn=lower(d.vodic) left join f on f.vodic=d.vodic)
   select coalesce(jsonb_agg(jsonb_build_object('vodic',vodic,'km',round(km),'litre',round(l),
       'l_100km',case when km>=100 and kok>20 then to_jsonb(round(lok/kok*100,1)) else '"málo dát"'::jsonb end,
-      'malo_dat',km<100,'natankovane_l',round(ref),'auta',auta) order by km desc),'[]') into r from d;
+      'malo_dat',km<100,'natankovane_l',round(ref),'z_nadrze_dvor_l',round(yl),
+      'rozdiel_nafty_l',round(gap),'rozdiel_nafty_pct',case when l>0 then round(gap/l*100,1) end,'rozdiel_nafty_eur',round(gap*dz),
+      'prekrocenia_90_kmh',sp,'max_rychlost',mx,'poklesy_paliva_pri_stati',dn,
+      'naklad_nafta_myto_eur_km',case when km>0 then round((l*dz/1.23+km*sh/100*t)/km,3) end,
+      'auta',auta) order by (km<100), gap desc),'[]') into r from z;
   return r;
 exception when others then return jsonb_build_object('chyba',SQLERRM);
 end $$;
@@ -415,6 +424,7 @@ begin
   return coalesce(k,0);
 end $$;
 revoke all on function public.check_run(text) from public, anon, authenticated;
+-- ride_check: udalosti z jázd (fleet_alarms.sql)
 create or replace function public.yard_check() returns int language plpgsql security definer set search_path=public as $$
 declare k int:=0;
 begin
@@ -422,6 +432,7 @@ begin
   k:=k+check_run('place_check');
   k:=k+check_run('stop_check');
   k:=k+check_run('fuel_check');
+  k:=k+check_run('ride_check');
   return k;
 end $$;
 revoke all on function public.yard_check() from public, anon, authenticated;
@@ -484,5 +495,5 @@ revoke all on function public.ai_auto_sync(boolean) from public, anon, authentic
 -- automaticky: každú minútu spracovanie, prehľad ráno 6:00 a poobede 14:00 (Bratislava)
 select cron.unschedule(jobname) from cron.job where jobname in ('ai-tick','ai-rano','ai-poobede');
 select cron.schedule('ai-tick','* * * * *','select public.ai_tick()');
-select cron.schedule('ai-rano','0 5 * * *','select public.ai_report()');
-select cron.schedule('ai-poobede','0 13 * * 1-5','select public.ai_report()');
+select cron.schedule('ai-rano','0 5 * * *','select public.ai_brief_report()'); -- ai_brief_report vo fleet_alarms.sql
+select cron.schedule('ai-poobede','0 13 * * 1-5','select public.ai_brief_report()');
