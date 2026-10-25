@@ -160,7 +160,7 @@ declare c jsonb; pc jsonb; m0 timestamptz; m1 timestamptz; dim int; dd int; vkm 
 begin
   select value into c from fleet_cfg where key='costs'; c:=coalesce(c,'{}');
   select value into pc from fleet_cfg where key='pay'; pc:=coalesce(pc,'{}');
-  d:=coalesce((c->>'diesel')::numeric,1.952); t:=coalesce((c->>'toll')::numeric,0.2677); sh:=coalesce((c->>'share')::numeric,100); fx:=coalesce((c->>'fixed')::numeric,80000); rt:=coalesce((c->>'rate')::numeric,1.5);
+  d:=coalesce((c->>'diesel')::numeric,1.952); t:=coalesce((c->>'toll')::numeric,0.2677); sh:=coalesce((c->>'share')::numeric,100); fx:=coalesce((c->>'fixed')::numeric,140000); rt:=coalesce((c->>'rate')::numeric,1.5);
   m0:=date_trunc('month',dday)::timestamp at time zone 'Europe/Bratislava'; m1:=(dday+1)::timestamp at time zone 'Europe/Bratislava';
   dim:=extract(day from date_trunc('month',dday)+interval '1 month - 1 day')::int; dd:=extract(day from dday)::int;
   select coalesce(sum(distance),0), coalesce(sum(fuel_consumed) filter (where distance>0),0) into vkm,vl from rides where start_at>=m0 and start_at<m1;
