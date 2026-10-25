@@ -74,7 +74,7 @@ declare k text:=ai_secret('anthropic_key');
 begin
   if k is null then raise exception 'Chýba API kľúč – spusti nastavenie na stránke ai.html.'; end if;
   return net.http_post(url:='https://api.anthropic.com/v1/messages',
-    headers:=jsonb_build_object('x-api-key',k,'anthropic-version','2023-06-01','content-type','application/json'),
+    headers:=case when k like 'sk-ant-api%' then jsonb_build_object('x-api-key',k) else jsonb_build_object('Authorization','Bearer '||k) end||jsonb_build_object('anthropic-version','2023-06-01','content-type','application/json'),
     body:=jsonb_build_object('model',coalesce((select value->>'model' from ai_state where key='model'),'claude-sonnet-5-5'),'max_tokens',3000,
       'system', ai_system()||E'\n\nAKTUÁLNE ÚDAJE FIRMY (JSON):\n'||ai_snapshot()::text||sys_extra,
       'messages',convo,
