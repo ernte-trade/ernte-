@@ -1,0 +1,23 @@
+<!doctype html><html lang="sk"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="color-scheme" content="dark">
+<title>ERNTE – napojenie Commander</title>
+<style>body{margin:0;background:#05070a;color:#f2f5ff;font:16px/1.5 -apple-system,system-ui,sans-serif;padding:20px}.w{max-width:600px;margin:0 auto;display:grid;gap:14px}
+label{display:grid;gap:6px;color:#9aa3b8;font-size:.85rem}input{font:500 1rem system-ui;color:#fff;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.2);border-radius:14px;padding:12px;min-height:50px}
+button,a.b{display:flex;align-items:center;justify-content:center;font:700 1.1rem system-ui;min-height:62px;border-radius:16px;border:0;background:linear-gradient(135deg,#7c5cff,#22d3ee);color:#fff;text-decoration:none}
+button.ok{background:linear-gradient(135deg,#b6ff3b,#5eead4);color:#06110a}a.b{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.2)}ol,.n{color:#9aa3b8;margin:0}ol{padding-left:22px}</style></head>
+.box{border:1px solid rgba(255,255,255,.14);border-radius:20px;padding:14px;background:rgba(255,255,255,.04);display:grid;gap:10px}.box h2{margin:0;font-size:1rem}</style></head>
+<body><div class="w"><h1 style="margin:0">Commander naplno · Región a EU</h1>
+<p class="n">Zapne ťahanie všetkého, čo Commander dáva (vozidlá s VIN a modelom, vodiči a ich karty, tankovacie karty, tachograf, body, strediská, otáčky, teploty, adresy…), a rozdelí autá na <b>Región · sklápače</b> (tie, čo už v aplikácii sú) a <b>Flotila EU</b> (ťahače).</p>
+<div class="box"><h2>Ťahače EU sú pod iným prihlásením do Commandera?</h2>
+<p class="n">Ak 28 ťahačov vidíš v Commanderi pod <b>tým istým</b> prihlásením ako sklápače, nechaj polia prázdne – aplikácia ich načíta sama, len ak ich prepoj ERNTE-Farmar vidí. Ak sú pod iným kontom, vytvor tam prepoj (API) a zadaj ho sem.</p>
+<label>Identifikátor prepoja EU (nepovinné)<input id="u" autocapitalize="off" autocomplete="off"></label>
+<label>Heslo prepoja EU<input id="p" type="password" autocomplete="off"></label></div>
+<button id="c">1. Kopírovať SQL</button>
+<a class="b" href="https://supabase.com/dashboard/project/cflliscddsgleyeykzje/sql/new">2. Otvoriť SQL Editor</a>
+<ol><li>Ťukni do prázdneho poľa, podrž prst → <b>Vložiť</b> → <b>Run</b>.</li><li>Na konci má byť „ok“. Do 10 minút sa načíta všetko, história jázd EU od 1. 7. do ~1,5 hodiny.</li><li>V aplikácii: Flotila → <b>📡 Commander</b> ukáže, čo prišlo a čo Commander nepovolil.</li></ol>
+<a class="b" href="index.html">3. Otvoriť aplikáciu</a></div>
+<script>let T="";fetch("supabase/commander2.sql?"+Date.now()).then(r=>r.text()).then(t=>T=t);
+const q=s=>"'"+String(s).replace(/'/g,"''")+"'";
+c.onclick=()=>{const U=u.value.trim(),P=p.value;if(!T){alert("Ešte sa načítava, skús o sekundu.");return}
+ if(U&&P.length<3){alert("Zadaj aj heslo prepoja EU, alebo nechaj obe polia prázdne.");return}
+ const sec=U?`do $$ begin if exists(select 1 from vault.secrets where name='commander_basic_eu') then perform vault.update_secret((select id from vault.secrets where name='commander_basic_eu'),${q(U+":"+P)}); else perform vault.create_secret(${q(U+":"+P)},'commander_basic_eu'); end if; end $$;\nselect public.cmd_sync();\n`:"";
+ navigator.clipboard.writeText(sec?T.replace("select public.cmd_sync();\nselect 'ok' as hotovo;",sec+"select 'ok' as hotovo;"):T).then(()=>{c.textContent="Skopírované ✓";c.className="ok";p.value=""}).catch(e=>alert("Nevyšlo: "+e.message))}</script></body></html>
