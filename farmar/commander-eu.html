@@ -6,7 +6,7 @@ button,a.b{display:flex;align-items:center;justify-content:center;font:700 1.1re
 button.ok{background:linear-gradient(135deg,#b6ff3b,#5eead4);color:#06110a}a.b{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.2)}ol,.n{color:#9aa3b8;margin:0}ol{padding-left:22px}</style></head>
 .box{border:1px solid rgba(255,255,255,.14);border-radius:20px;padding:14px;background:rgba(255,255,255,.04);display:grid;gap:10px}.box h2{margin:0;font-size:1rem}</style></head>
 <body><div class="w"><h1 style="margin:0">Commander naplno · Región a EU</h1>
-<p class="n">Zapne ťahanie všetkého, čo Commander dáva (vozidlá s VIN a modelom, vodiči a ich karty, tankovacie karty, tachograf, body, strediská, otáčky, teploty, adresy…), a rozdelí autá na <b>Región · sklápače</b> (tie, čo už v aplikácii sú) a <b>Flotila EU</b> (ťahače).</p>
+<p class="n">Zapne ťahanie všetkého, čo Commander dáva (vozidlá s VIN a modelom, vodiči a ich karty, tankovacie karty, tachograf, body, strediská, otáčky, teploty, adresy…), a rozdelí autá na <b>Flotila Región</b> (sklápače), <b>Flotila EU</b> (ťahače) a <b>Služobné autá</b>.</p>
 <div class="box"><h2>Ťahače EU sú pod iným prihlásením do Commandera?</h2>
 <p class="n">Ak 28 ťahačov vidíš v Commanderi pod <b>tým istým</b> prihlásením ako sklápače, nechaj polia prázdne – aplikácia ich načíta sama, len ak ich prepoj ERNTE-Farmar vidí. Ak sú pod iným kontom, vytvor tam prepoj (API) a zadaj ho sem.</p>
 <label>Identifikátor prepoja EU (nepovinné)<input id="u" autocapitalize="off" autocomplete="off"></label>
@@ -15,7 +15,7 @@ button.ok{background:linear-gradient(135deg,#b6ff3b,#5eead4);color:#06110a}a.b{b
 <a class="b" href="https://supabase.com/dashboard/project/cflliscddsgleyeykzje/sql/new">2. Otvoriť SQL Editor</a>
 <ol><li>Ťukni do prázdneho poľa, podrž prst → <b>Vložiť</b> → <b>Run</b>.</li><li>Na konci má byť „ok“. Do 10 minút sa načíta všetko, história jázd EU od 1. 7. do ~1,5 hodiny.</li><li>V aplikácii: Flotila → <b>📡 Commander</b> ukáže, čo prišlo a čo Commander nepovolil.</li></ol>
 <a class="b" href="index.html">3. Otvoriť aplikáciu</a></div>
-<script>let T="";fetch("supabase/commander2.sql?"+Date.now()).then(r=>r.text()).then(t=>T=t);
+<script>let T="";Promise.all([fetch("supabase/commander2.sql?"+Date.now()).then(r=>r.text()),fetch("supabase/commander3.sql?"+Date.now()).then(r=>r.text())]).then(a=>T=a.join("\n\n"));
 const q=s=>"'"+String(s).replace(/'/g,"''")+"'";
 c.onclick=()=>{const U=u.value.trim(),P=p.value;if(!T){alert("Ešte sa načítava, skús o sekundu.");return}
  if(U&&P.length<3){alert("Zadaj aj heslo prepoja EU, alebo nechaj obe polia prázdne.");return}
