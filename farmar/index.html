@@ -630,7 +630,7 @@ function vFleet(){const F=STATE.fleet;if(!F)return `<div class="card"><div class
   h+=`<div class="sub"><b class="sth">📱 Súkromné čísla vodičov – hromadne</b><form id="fPhones" class="f"><label class="w">Vlož zoznam (z Excelu: meno a číslo v riadku)<textarea name="list" placeholder="Ján Novák	0905 123 456&#10;Ján Novák	0911 222 333"></textarea></label><div class="w btns"><button class="pri" type="submit">Uložiť čísla</button></div></form><div class="s">Mená sa spárujú s vodičmi z Commandera aj pri prehodenom poradí mena a priezviska.</div></div>`;
   h+=`</details><div class="s" style="text-align:center">Údaje z Commandera · poloha každé 2 min, jazdy každých 10 min.</div>`;
   S[cur]=h;
-  const BG="valko-fleet.jpg";
+  const BG="valko-flotila.jpg";
   const OWNx=ROLE==="owner",alN=AX.length,costM=OWNx?all:tot;
   const NAV=[["dash","🏠","Dashboard",""],["perf","📊","Prevádzka a náklady",`${n0(costM)} €`],["alarm","🚨","Alarmy",alN?`${alN}`:"OK"],["map","🗺️","Kde sú autá",`${moving} ide`],["moves","🔁","Pohyby",`${MV.length}`],["veh","🚛","Vozidlá",`${F.veh.length}`],["drv","👥",OWNx?"Vodiči a mzdy":"Vodiči",OWNx&&STATE.payTot?`${n0(STATE.payTot)} €`:""],["firm","🏢","Firma VALKO",""],["set","⚙️","Nastavenia",""]];
   const sec=STATE.fsec||"dash";
