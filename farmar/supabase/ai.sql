@@ -31,6 +31,41 @@ create or replace function public.ai_secret(n text) returns text language sql st
   select decrypted_secret from vault.decrypted_secrets where name=n limit 1 $$;
 revoke all on function public.ai_secret(text) from public, anon, authenticated;
 
+-- ARCHÍV DOKUMENTOV (upozornenia vodičom, zmluvy, listy) – história s PDF
+create table if not exists ai_docs(id bigserial primary key, kind text not null default 'dokument', driver text, title text not null, content text not null,
+  msg_id bigint, status text not null default 'novy' check (status in ('novy','odoslany','vyriesene')), created_at timestamptz not null default now(), sent_at timestamptz);
+create index if not exists ai_docs_at on ai_docs(created_at desc);
+alter table ai_docs enable row level security;
+drop policy if exists ai_docs_own on ai_docs; create policy ai_docs_own on ai_docs for select using (is_owner());
+create or replace function public.ai_doc_save(p_title text, p_content text, p_kind text default 'dokument', p_driver text default null, p_msg bigint default null) returns bigint language plpgsql security definer set search_path=public as $$
+declare i bigint;
+begin
+  if auth.uid() is not null and not is_owner() then raise exception 'Iba majiteľ.'; end if;
+  insert into ai_docs(kind,driver,title,content,msg_id) values(coalesce(nullif(p_kind,''),'dokument'),nullif(trim(coalesce(p_driver,'')),''),left(coalesce(nullif(trim(p_title),''),'Dokument'),200),p_content,p_msg) returning id into i;
+  return i;
+end $$;
+grant execute on function public.ai_doc_save(text,text,text,text,bigint) to authenticated;
+create or replace function public.ai_doc_mark(p_id bigint, p_status text) returns void language plpgsql security definer set search_path=public as $$
+begin
+  if not is_owner() then raise exception 'Iba majiteľ.'; end if;
+  if p_status='zmazat' then delete from ai_docs where id=p_id; return; end if;
+  update ai_docs set status=p_status, sent_at=case when p_status='odoslany' then coalesce(sent_at,now()) else sent_at end where id=p_id;
+end $$;
+grant execute on function public.ai_doc_mark(bigint,text) to authenticated;
+-- z odpovede AI vytiahne bloky [[DOKUMENT|typ|vodič|názov]] … [[KONIEC]] a uloží ich do archívu
+create or replace function public.ai_doc_extract(txt text, mid bigint) returns text language plpgsql security definer set search_path=public as $$
+declare r text[]; hd text[]; out text:=txt;
+begin
+  for r in select regexp_matches(txt, '\[\[DOKUMENT\|([^\]]*?)\]\]\s*(.*?)\s*\[\[KONIEC\]\]', 'g') loop
+    hd:=string_to_array(r[1],'|');
+    perform ai_doc_save(coalesce(hd[3],'Dokument'), r[2], coalesce(hd[1],'dokument'), hd[2], mid);
+  end loop;
+  out:=regexp_replace(out, '\[\[DOKUMENT\|([^|\]]*)\|([^|\]]*)\|([^\]]*)\]\]', E'> 📁 **Uložené do Dokumentov:** \\3\n', 'g');
+  out:=regexp_replace(out, '\[\[KONIEC\]\]', '', 'g');
+  return out;
+end $$;
+revoke all on function public.ai_doc_extract(text,bigint) from public, anon, authenticated;
+
 -- bezpečný dopyt: chyba v jednej časti nezhodí celý prehľad
 create or replace function public.ai_part(q text) returns jsonb language plpgsql volatile security definer set search_path=public, extensions as $$
 declare r jsonb; begin execute 'select to_jsonb(('||q||'))' into r; return r; exception when others then return jsonb_build_object('chyba',SQLERRM); end $$;
@@ -139,6 +174,7 @@ begin
    'nastavenia_nakladov', ai_part($q$select value from fleet_cfg where key='costs'$q$),
    'kpi_z_aplikacie', ai_part($q$select coalesce((select value||jsonb_build_object('aktualizovane',to_char(updated_at at time zone 'Europe/Bratislava','DD.MM HH24:MI')) from ai_state where key='kpi'),'"majiteľ ešte neotvoril Flotilu"'::jsonb)$q$),
    'diagnostika', ai_diag(),
+   'dokumenty_archiv', ai_part($q$select coalesce(jsonb_agg(x),'[]') from (select kind typ, driver vodic, title nazov, status stav, to_char(created_at at time zone 'Europe/Bratislava','DD.MM.YYYY') datum from ai_docs order by created_at desc limit 40) x$q$),
    'posledne_upravy_ai', ai_part($q$select coalesce(jsonb_agg(x),'[]') from (select text uloha, status, report, created_at::date from ai_tasks order by created_at desc limit 8) x$q$));
 exception when others then return jsonb_build_object('chyba_prehladu',SQLERRM);
 end $$;
@@ -154,6 +190,12 @@ PLNÉ OPRÁVNENIE: majiteľ ti dal plný prístup ku všetkému v tejto aplikác
 (jeden riadok na jednu zmenu). Povedz mu, že úprava bude hotová spravidla do hodiny a zhrnutie uvidí v Dashboarde. Aplikácia: ERNTE Trade & Logistic (záložky Požiadavky, Cenník, Doprava, Flotila, Obchody, Farmári, Počasie, Tím; Flotila má Dashboard, Prevádzka a náklady, Alarmy, Mapa, Pohyby, Vozidlá, Vodiči a mzdy, Miesta, Nastavenia).
 Formát (Markdown): krátke odseky, nadpisy „## “, odrážky „- “, číslované zoznamy, tučné **takto**, tabuľky | stĺpec | stĺpec |.
 DOKUMENTY A VÝSTUPY: vieš pripraviť čokoľvek – zmluvy, kúpne a prepravné zmluvy, cenové ponuky, objednávky, listy, e-maily, upomienky, reporty, tabuľky, plány, preklady. Píš ich ako hotový dokument s nadpisom (prvý riadok „## Názov“), dátumom a údajmi firmy z prehľadu. Aplikácia pod každou tvojou odpoveďou automaticky ukáže tlačidlá Kopírovať, Uložiť PDF, Tlačiť, Word, Excel (keď sú v odpovedi tabuľky), E-mail a Zdieľať – preto nikdy nehovor, že PDF alebo súbor nevieš urobiť. Pri dokumente napíš do odpovede iba samotný dokument; pokyny typu „ťukni Uložiť PDF“ daj najviac ako jednu krátku vetu úplne na koniec za oddeľovač ---, nikdy dovnútra dokumentu.
+ARCHÍV DOKUMENTOV: každý hotový dokument (upozornenie vodičovi, výzva na vysvetlenie, zmluva, ponuka, list, upomienka) zabaľ presne takto, aby sa sám uložil do archívu Dokumenty s PDF:
+[[DOKUMENT|typ|meno vodiča alebo partnera|Názov dokumentu]]
+## Názov dokumentu
+…celý text…
+[[KONIEC]]
+typ je jedno z: upozornenie, vyzva, zmluva, ponuka, list, iny. Ak nejde o vodiča, nechaj meno prázdne (napr. [[DOKUMENT|zmluva||Kúpna zmluva repka]]). Pred blokom napíš max 1 vetu. Upozornenia vodičom píš vecne a slušne: fakty z dát (km, litre, %, dátumy), žiadosť o vysvetlenie a doklady s termínom, ďalší postup – nikoho priamo neobviňuj z krádeže, kým to nepotvrdia doklady (dáta o tankovaní môžu byť neúplné). Na konci: Prevzal dňa ____ Podpis vodiča ____. Pozri dokumenty_archiv, nevytváraj duplicitu k tomu istému problému v tom istom mesiaci.
 KOPÍROVANIE: keď majiteľ chce text na skopírovanie (správa, SMS, e-mail, príspevok, údaje), daj ten text do bloku ohraničeného riadkami ``` – aplikácia k nemu pridá tlačidlo Kopírovať (dva štvorčeky). Mimo bloku napíš max 1 vetu.
 Údaje, ktoré nepoznáš (IČO odberateľa, presné adresy), nevymýšľaj – nechaj [doplniť].
 PRÍLOHY: majiteľ ti môže poslať fotky (vážne lístky, faktúry, doklady, poškodenia), PDF, Word, Excel. Prečítaj ich dôkladne, vytiahni čísla a údaje a povedz, čo s nimi spraviť.' $$;
@@ -219,7 +261,7 @@ declare cv jsonb; aid bigint;
 begin
   if auth.uid() is not null and not is_owner() then raise exception 'Iba majiteľ.'; end if;
   cv:=jsonb_build_array(jsonb_build_object('role','user','content',coalesce(what,
-    'Sprav prehľad pre majiteľa na Dashboard: 1) TRHY dnes – MATIF repka, pšenica, kukurica, CBOT sója (vyhľadaj aktuálne ceny a trend) a porovnaj s naším cenníkom; 2) OBCHODY – čo je otvorené, riziká, marža; 3) FLOTILA – km, spotreba, náklady, zisk/strata, alarmy, podozrivé veci; 4) ČO ROBIŤ DNES – max 5 konkrétnych krokov. Začni jednou vetou s najdôležitejšou vecou. Max ~250 slov.')));
+    'Sprav prehľad pre majiteľa na Dashboard: 1) TRHY dnes – MATIF repka, pšenica, kukurica, CBOT sója (vyhľadaj aktuálne ceny a trend) a porovnaj s naším cenníkom; 2) OBCHODY – čo je otvorené, riziká, marža; 3) FLOTILA – km, spotreba, náklady, zisk/strata, alarmy, podozrivé veci; 4) ČO ROBIŤ DNES – max 5 konkrétnych krokov; 5) UPOZORNENIA VODIČOM – ak niektorý vodič má nový závažný problém (rozdiel nafty nad 15 %, pokles paliva pri státí, opakovaná rýchlosť nad 90 km/h, spotreba výrazne nad priemerom) a v dokumenty_archiv ešte nemá upozornenie k tomu istému problému za tento mesiac, priprav mu písomné upozornenie ako DOKUMENT. Začni jednou vetou s najdôležitejšou vecou. Max ~250 slov.')));
   insert into ai_msgs(kind,role,content) values('report','user',coalesce(what,'Prehľad'));
   insert into ai_msgs(kind,role,status,convo,req_id) values('report','assistant','wait',cv,ai_post(cv)) returning id into aid;
   return aid;
@@ -288,6 +330,7 @@ begin
     if nullif(trim(txt),'') is null then
       update ai_msgs set status='err', content='AI nedokončila odpoveď ('||coalesce(j->>'stop_reason','?')||'). Skús to znova – ťukni Urobiť prehľad / pošli otázku ešte raz.' where id=m.id; continue; end if;
     if j->>'stop_reason'='max_tokens' then txt:=txt||E'\n\n_(odpoveď bola dlhá a skrátila sa – napíš „pokračuj“)_'; end if;
+    begin txt:=ai_doc_extract(txt,m.id); exception when others then null; end;
     for ln in select (regexp_matches(txt, '^\s*\**ÚLOHA:\**\s*(.+)$', 'gm'))[1] loop
       insert into ai_tasks(text,msg_id) values(trim(ln),m.id) returning id into tid;
       perform ai_gh_issue(tid);
