@@ -238,7 +238,7 @@ details.trips{border-top:1px solid var(--line);padding-top:8px}details.trips sum
 </head>
 <body>
 <div class="wrap">
-  <header class="top"><img src="logo.png" alt="ERNTE"><div class="tt"><h1 id="hT">ERNTE Farmár</h1><small id="hS">výkup komodít</small></div><button type="button" class="out" id="outBtn" hidden>Odhlásiť</button></header>
+  <header class="top"><img src="logo.png" alt="ERNTE"><div class="tt"><h1 id="hT">ERNTE Farmár</h1><small id="hS">výkup komodít</small></div><button type="button" class="aibtn" id="aiBtn" hidden aria-label="AI Podpora"><i></i><span>Podpora</span></button><button type="button" class="out" id="outBtn" hidden>Odhlásiť</button></header>
   <main id="app" class="wrap" aria-live="polite"><div class="card"><div class="t">Načítavam…</div></div></main>
 </div>
 <div class="toast" id="toast" role="status"></div>
@@ -288,7 +288,7 @@ async function boot(){
 
 // ================= prihlásenie =================
 let LOGIN={email:"",sent:false};
-function showLogin(){$("outBtn").hidden=true;$("hS").textContent="výkup komodít";
+function showLogin(){$("outBtn").hidden=true;$("aiBtn").hidden=true;$("hS").textContent="výkup komodít";
   const A=$("app");
   if(!LOGIN.sent){A.innerHTML=`<div class="center"><div class="hero"><small>Vitajte</small><b>Prihlásenie</b><small>Zadajte e-mail alebo telefón a heslo, ktoré vám poslala ERNTE.</small></div>
     <form class="card" id="fEmail"><label>E-mail alebo telefón<input name="email" type="text" inputmode="email" autocomplete="username" autocapitalize="off" required value="${esc(LOGIN.email)}" placeholder="meno@firma.sk alebo 0905 123 456"></label><label>Heslo <span style="font-weight:400">(dostali ste ho od ERNTE)</span><input name="pw" type="password" autocomplete="current-password"></label><button class="pri" type="submit">Prihlásiť / poslať kód</button></form>${installHint()}</div>`}
@@ -470,7 +470,7 @@ document.addEventListener("submit",async e=>{if(!FARMER)return;const f=e.target;
 
 // ================= ERNTE =================
 let TAB="req",DEALF=null,EDITF=null,FQ="";
-async function startStaff(){await loadStaff();renderStaff();if(ROLE==="owner"||ROLE==="dispatch"){sb.channel("fleet-ev").on("postgres_changes",{event:"INSERT",schema:"public",table:"fleet_events"},p=>{const e=p.new,inn=e.kind==="in"||e.kind==="yard_in",m=e.kind==="fuel_drop"?`🚨 MOŽNÁ KRÁDEŽ NAFTY · ${e.plate} −${e.liters} l`:e.kind==="refuel_gap"?`Tankovanie nesedí · ${e.plate} ${e.liters} l`:e.kind==="depart"?`${e.plate||"auto"} sa pohlo po ${e.minutes} min státia${e.place?" · "+e.place:""}`:`${e.plate||"auto"} ${inn?(e.place_kind==="fuel"?"stojí na čerpačke":"prišlo"):"odišlo"} · ${e.place||"dvor"}${e.driver?" · "+e.driver:""}`;toast("🚛 "+m,7000);try{navigator.vibrate&&navigator.vibrate([200,100,200])}catch(x){}try{if(window.Notification&&Notification.permission==="granted")new Notification("VALKO",{body:m,icon:"icon-192.png"})}catch(x){}if(TAB==="fleet"){STATE.fleet=null;renderStaff()}}).subscribe();try{if(window.Notification&&Notification.permission==="default")Notification.requestPermission()}catch(x){}}setInterval(async()=>{if(document.hidden||TAB!=="trans")return;await loadStaff();renderStaff()},120000);
+async function startStaff(){await loadStaff();renderStaff();window.aiInit&&aiInit();if(ROLE==="owner"||ROLE==="dispatch"){sb.channel("fleet-ev").on("postgres_changes",{event:"INSERT",schema:"public",table:"fleet_events"},p=>{const e=p.new,inn=e.kind==="in"||e.kind==="yard_in",m=e.kind==="fuel_drop"?`🚨 MOŽNÁ KRÁDEŽ NAFTY · ${e.plate} −${e.liters} l`:e.kind==="refuel_gap"?`Tankovanie nesedí · ${e.plate} ${e.liters} l`:e.kind==="depart"?`${e.plate||"auto"} sa pohlo po ${e.minutes} min státia${e.place?" · "+e.place:""}`:`${e.plate||"auto"} ${inn?(e.place_kind==="fuel"?"stojí na čerpačke":"prišlo"):"odišlo"} · ${e.place||"dvor"}${e.driver?" · "+e.driver:""}`;toast("🚛 "+m,7000);try{navigator.vibrate&&navigator.vibrate([200,100,200])}catch(x){}try{if(window.Notification&&Notification.permission==="granted")new Notification("VALKO",{body:m,icon:"icon-192.png"})}catch(x){}if(TAB==="fleet"){STATE.fleet=null;renderStaff()}}).subscribe();try{if(window.Notification&&Notification.permission==="default")Notification.requestPermission()}catch(x){}}setInterval(async()=>{if(document.hidden||TAB!=="trans")return;await loadStaff();renderStaff()},120000);
   sb.channel("staff-req").on("postgres_changes",{event:"INSERT",schema:"public",table:"requests"},async p=>{await loadStaff();renderStaff();const fr=STATE.farmers.find(x=>x.id===p.new.farmer_id);toast("Nová požiadavka: "+(fr?fr.name:"")+" – "+RKIND[p.new.kind],6000);try{navigator.vibrate&&navigator.vibrate(200)}catch(x){}}).subscribe();
   document.addEventListener("visibilitychange",()=>{if(!document.hidden)loadStaff().then(renderStaff)})}
 async function loadStaff(){const [f,p,s,d,r]=await Promise.all([sb.from("farmers").select("*").order("name"),sb.from("prices").select("*"),sb.from("settings").select("key,value"),
@@ -540,6 +540,7 @@ function vFleet(){const F=STATE.fleet;if(!F)return `<div class="card"><div class
   const nd=new Date(),dim=new Date(nd.getFullYear(),nd.getMonth()+1,0).getDate(),days=FPER==="m"?dim:FPER==="1"?1:+FPER;
   const OWN=ROLE==="owner",fx=OWN?CO.fixed*days/dim:0,pay=OWN&&FPER==="m"&&STATE.pay&&STATE.pay.mon===PMON&&PMON===(nd.getFullYear()+"-"+String(nd.getMonth()+1).padStart(2,"0"))?(STATE.payTot||0):null;
   const all=tot+fx+(pay||0),f3=x=>x.toFixed(3).replace(".",",");
+  if(OWN){const rv=A.km*CO.rate;STATE.aiKpi={obdobie:FPER,km:Math.round(A.km),jazd:A.n,nafta_l:Math.round(A.l),spotreba_l_100:A.cons?+A.cons.toFixed(1):null,nafta_eur:Math.round(fuelEur),myto_eur:Math.round(tollEur),pevne_eur:Math.round(fx),mzdy_eur:pay!=null?Math.round(pay):null,naklady_spolu_eur:Math.round(all),obrat_eur:Math.round(rv),zisk_eur:Math.round(rv-all),cena_nafty:CO.diesel,myto_km:CO.toll,sadzba_km:CO.rate}}
   const perName={"1":"dnes","7":"posledných 7 dní","30":"posledných 30 dní","m":"tento mesiac"}[FPER];
   const segs=[["Nafta",fuelEur,"sf"],["Mýto",tollEur,"st"]].concat(OWN?[["Pevné",fx,"sx"]]:[]).concat(pay!=null?[["Mzdy",pay,"sp"]]:[]);
   // prevádzka
@@ -639,6 +640,7 @@ function vFleet(){const F=STATE.fleet;if(!F)return `<div class="card"><div class
     <div class="vlive"><div><b>${moving}</b><small>ide</small></div><div><b>${G.length-moving}</b><small>stojí</small></div><div><b>${yard}</b><small>na dvore</small></div><div class="${alN?"al":""}"><b>${alN}</b><small>alarmy</small></div></div></div></div>
   <nav class="vnav">${NAV.map(n=>`<button type="button" data-fsec="${n[0]}" aria-pressed="${sec===n[0]}"${n[0]==="alarm"&&alN?` class="hot"`:""}><span>${n[1]}</span><b>${esc(n[2])}</b>${n[3]?`<small>${esc(n[3])}</small>`:""}</button>`).join("")}</nav><div id="fsecTop"></div>`;
   if(sec==="dash"){
+    if(OWNx)o+=`<div class="aidash"></div>`;
     o+=`<div class="vdash">
       ${OWNx?(()=>{const rev=A.km*CO.rate,pr=rev-all;return `<button type="button" class="vd big ${pr>=0?"pos":"neg"}" data-fsec="perf"><small>${pr>=0?"Zisk":"Strata"} · ${esc(perName)}</small><b>${pr>=0?"+":"−"}${n0(Math.abs(pr))} €</b><span>obrat ${n0(rev)} € · náklady ${n0(all)} € · ${n0(A.km)} km</span></button>`})():`<button type="button" class="vd big" data-fsec="perf"><small>Nafta + mýto · ${esc(perName)}</small><b>${n0(costM)} €</b><span>${A.km?f3(costM/A.km):"–"} €/km · ${n0(A.km)} km</span></button>`}
       <button type="button" class="vd ${alN?"red":"ok"}" data-fsec="alarm"><small>Alarmy</small><b>${alN||"✓"}</b><span>${alN?AX.filter(a=>a.lv==="r").length+" vážne":"všetko v poriadku"}</span></button>
@@ -898,5 +900,6 @@ document.addEventListener("submit",async e=>{if(!ROLE)return;const f=e.target,fd
 if("serviceWorker" in navigator&&location.protocol==="https:")navigator.serviceWorker.register("sw.js").catch(()=>{});
 boot();
 </script>
+<script src="ai.js"></script>
 </body>
 </html>
