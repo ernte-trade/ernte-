@@ -112,6 +112,7 @@ begin
    'poziadaviek_spolu', ai_part('select count(*) from requests'),
    'poziadaviek_novych', ai_part($q$select count(*) from requests where status='nova'$q$),
    'ai_ulohy', ai_part($q$select coalesce(jsonb_object_agg(status,n),'{}') from (select status,count(*) n from ai_tasks group by status) x$q$),
+   'auto_zmeny_db', ai_part($q$select coalesce(jsonb_agg(jsonb_build_object('subor',name,'stav',status,'chyba',msg,'kedy',to_char(coalesce(done_at,at) at time zone 'Europe/Bratislava','DD.MM HH24:MI')) order by name desc),'[]') from (select * from ai_mig order by name desc limit 8) x$q$),
    'github_token_ulozeny', ai_part($q$select exists(select 1 from vault.secrets where name='github_token')$q$));
 end $$;
 grant execute on function public.ai_diag() to authenticated;
@@ -147,6 +148,7 @@ create or replace function public.ai_system() returns text language sql stable a
 'Si ERNTE AI – osobný poradca a kontrolór majiteľa (Martin Vaľko) firiem ERNTE spol. s r.o. (výkup obilia a olejnín od farmárov, predaj odberateľom/na burzu) a VALKO s.r.o. (kamiónová doprava, Scania ťahače, Michalovce, dvor Medovská 46). Píš po slovensky, stručne, priamo, bez omáčok, ako skúsený obchodný riaditeľ. Používaj čísla.
 Úlohy: 1) kontroluj obchody, náklady, zisky a straty, flotilu (spotreba, krádeže nafty, prestoje) a upozorni čo je zlé a čo dobré; 2) sleduj trhy (MATIF repka/pšenica/kukurica, CBOT sója, slovenské a maďarské výkupné ceny, nafta) – na aktuálne ceny VŽDY použi web_search a uveď zdroj a dátum; 3) raď konkrétne čo má robiť (kúpiť/predať/držať, za akú cenu, komu volať, čo skontrolovať).
 Nikdy si nevymýšľaj čísla – ak údaj chýba, napíš „nezadané“ alebo „málo dát“, nikdy nie 0. Zisk = obrat − (nafta + mýto + pevné náklady + mzdy); ak chýbajú mzdy (kpi_z_aplikacie.mzdy_eur je null), napíš že zisk sa nedá presne spočítať. Autá s menej ako 100 km za mesiac majú „málo dát“ – nerátaj ich do priemernej spotreby ani alarmov. Spotrebu konkrétneho vodiča ber z flotila_po_vodicoch (vodič → autá, km, litre, l/100 km, natankované litre); vodič s menej ako 100 km za mesiac má „málo dát“ – jeho spotrebu nehodnoť. Pri technických problémoch (chýbajúce udalosti, alarmy, jazdy) použi sekciu diagnostika a povedz presne, čo je vypnuté alebo nenastavené.
+PLNÉ OPRÁVNENIE: majiteľ ti dal plný prístup ku všetkému v tejto aplikácii (kód aj databáza). Úpravy aj zmeny databázy sa robia a nasadzujú automaticky – nikdy nežiadaj majiteľa, aby spúšťal SQL alebo niečo kopíroval. Ak vidíš chybu alebo chýbajúce dáta (aj v diagnostike), sám navrhni opravu ako ÚLOHU.
 ÚPRAVY APLIKÁCIE: ak majiteľ chce niečo v aplikácii opraviť, pridať alebo zmeniť, NEROB to v texte – na koniec odpovede pridaj samostatný riadok presne v tvare
 ÚLOHA: <presný a úplný popis zmeny po slovensky, aby ju programátor vedel spraviť bez ďalších otázok>
 (jeden riadok na jednu zmenu). Povedz mu, že úprava bude hotová spravidla do hodiny a zhrnutie uvidí v Dashboarde. Aplikácia: ERNTE Trade & Logistic (záložky Požiadavky, Cenník, Doprava, Flotila, Obchody, Farmári, Počasie, Tím; Flotila má Dashboard, Prevádzka a náklady, Alarmy, Mapa, Pohyby, Vozidlá, Vodiči a mzdy, Miesta, Nastavenia).
@@ -315,6 +317,7 @@ create or replace function public.ai_tick() returns void language plpgsql securi
 begin
   perform ai_collect();
   perform ai_gh_sync(extract(minute from now())::int % 5 = 0);
+  begin perform ai_auto_sync(extract(minute from now())::int % 3 = 0); exception when others then null; end;
 end $$;
 
 -- kontroly flotily (dvor, miesta, odchod po státí, nafta) so zápisom chýb – predtým sa chyby ticho zahadzovali
@@ -345,6 +348,61 @@ begin
   return k;
 end $$;
 revoke all on function public.yard_check() from public, anon, authenticated;
+
+-- AUTOMATICKÉ ZMENY DATABÁZY: ERNTE AI (programátor) dáva zašifrované SQL do farmar/supabase/auto/*.sql.asc,
+-- databáza ich sama stiahne, overí (dešifruje AI kľúčom) a spustí. Majiteľ nemusí nič kopírovať.
+create table if not exists ai_mig(name text primary key, status text not null default 'stahuje', msg text, req_id bigint, at timestamptz default now(), done_at timestamptz);
+alter table ai_mig enable row level security;
+drop policy if exists ai_mig_own on ai_mig; create policy ai_mig_own on ai_mig for select using (is_owner());
+create or replace function public.ai_auto_sync(list boolean default false) returns void language plpgsql security definer set search_path=public, extensions, net as $$
+declare tk text:=regexp_replace(coalesce(ai_secret('github_token'),''),'\s','','g'); pw text:=ai_secret('ai_pass'); st jsonb; r record; it jsonb; m record; sq text; tid uuid; hdr jsonb;
+begin
+  if tk='' or pw is null then return; end if;
+  hdr:=jsonb_build_object('Authorization','Bearer '||tk,'Accept','application/vnd.github+json','User-Agent','ernte-ai','X-GitHub-Api-Version','2022-11-28');
+  -- 1) zoznam súborov
+  select value into st from ai_state where key='mig_list';
+  if st is not null then
+    select * into r from net._http_response where id=(st->>'req')::bigint;
+    if r.id is not null then
+      if r.status_code=200 and jsonb_typeof(ai_json(r.content))='array' then
+        for it in select * from jsonb_array_elements(ai_json(r.content)) loop
+          if it->>'name' like '%.sql.asc' and not exists(select 1 from ai_mig where name=it->>'name') then
+            insert into ai_mig(name,req_id) values(it->>'name', net.http_get(url:=it->>'download_url', headers:=hdr));
+          end if;
+        end loop;
+      end if;
+      delete from ai_state where key='mig_list';
+    elsif (st->>'at')::timestamptz<now()-interval '10 minutes' then delete from ai_state where key='mig_list'; end if;
+  end if;
+  if list and not exists(select 1 from ai_state where key='mig_list') then
+    insert into ai_state(key,value) values('mig_list',jsonb_build_object('at',now(),'req',net.http_get(
+      url:='https://api.github.com/repos/ernte-trade/ernte-/contents/farmar/supabase/auto?ref=main', headers:=hdr)));
+  end if;
+  -- 2) spustenie stiahnutých (po poradí názvov)
+  for m in select * from ai_mig where status='stahuje' order by name loop
+    select * into r from net._http_response where id=m.req_id;
+    if r.id is null then
+      if m.at<now()-interval '15 minutes' then delete from ai_mig where name=m.name; end if; -- skúsi sa znova
+      exit; end if;
+    if r.status_code is distinct from 200 then delete from ai_mig where name=m.name; exit; end if;
+    begin
+      sq:=convert_from(pgp_sym_decrypt_bytea(dearmor(r.content),pw),'UTF8');
+    exception when others then
+      update ai_mig set status='odmietnuta', msg='Neplatný podpis/šifra – nespustené', done_at=now() where name=m.name; continue;
+    end;
+    begin
+      execute sq;
+      update ai_mig set status='ok', msg=null, done_at=now() where name=m.name;
+      insert into ai_msgs(kind,role,content) values('fix','assistant','🗄 **Databáza aktualizovaná automaticky:** '||regexp_replace(m.name,'\.sql\.asc$',''));
+    exception when others then
+      update ai_mig set status='chyba', msg=left(SQLERRM,400), done_at=now() where name=m.name;
+      insert into ai_msgs(kind,role,content) values('fix','assistant','⚠️ **Zmena databázy zlyhala:** '||regexp_replace(m.name,'\.sql\.asc$','')||' – '||left(SQLERRM,200)||'. Opravím to automaticky.');
+      insert into ai_tasks(text) values('Oprav automatickú zmenu databázy '||m.name||' – pri spustení zlyhala s chybou: '||left(SQLERRM,300)||'. Vytvor nový opravený súbor v farmar/supabase/auto (nový názov).') returning id into tid;
+      perform ai_gh_issue(tid);
+    end;
+  end loop;
+end $$;
+revoke all on function public.ai_auto_sync(boolean) from public, anon, authenticated;
 
 -- automaticky: každú minútu spracovanie, prehľad ráno 6:00 a poobede 14:00 (Bratislava)
 select cron.unschedule(jobname) from cron.job where jobname in ('ai-tick','ai-rano','ai-poobede');
