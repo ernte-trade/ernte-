@@ -278,6 +278,7 @@ details.trips{border-top:1px solid var(--line);padding-top:8px}details.trips sum
 .hdet{border-top:1px solid rgba(255,255,255,.08);padding:10px 0}.hdet summary{cursor:pointer;font:600 .88rem var(--f-head)}
 .hai{width:100%;margin-top:14px;min-height:50px;border-radius:16px;border:0;font:700 .9rem var(--f-head);color:#06110a;background:linear-gradient(135deg,#b6ff3b,#5eead4);cursor:pointer}
 .tdrops{display:grid;gap:6px;margin-top:8px}.tdrops .al{font-size:.8rem;line-height:1.45}
+.rsq{display:flex;flex-wrap:wrap;gap:6px}.rsq button{min-height:36px;padding:0 12px;border-radius:999px;border:1px solid rgba(255,255,255,.2);background:rgba(255,255,255,.06);color:inherit;font:600 .78rem var(--f-ui,system-ui);cursor:pointer}
 .pban{display:grid;gap:3px;margin:10px 0;padding:13px 15px;border-radius:18px;backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px)}.pban b{font:700 .95rem var(--f-head)}.pban span{font-size:.78rem;color:rgba(255,255,255,.75)}.pban.w{background:linear-gradient(150deg,rgba(250,204,21,.22),rgba(250,204,21,.06));border:1px solid rgba(250,204,21,.55)}.pban.w b{color:#fde68a}.pban.r{background:linear-gradient(150deg,rgba(239,68,68,.32),rgba(255,107,129,.08));border:1px solid rgba(255,107,129,.6);box-shadow:0 0 24px rgba(255,80,100,.25)}.pban.r b{color:#ffd2d8}
 .xmiss{display:grid;gap:6px;margin-top:10px;padding:14px;border-radius:20px;background:linear-gradient(150deg,rgba(239,68,68,.28),rgba(255,107,129,.08));border:1px solid rgba(255,107,129,.55);box-shadow:0 0 24px rgba(255,80,100,.2)}.xmiss b{color:#ffd2d8;font:700 .98rem var(--f-head)}.xmiss span{font-size:.78rem;color:rgba(255,255,255,.75)}.xmiss button{justify-self:start;min-height:38px;padding:0 14px;border-radius:12px;border:1px solid rgba(255,255,255,.3);background:rgba(255,255,255,.1);color:#fff;font:700 .78rem system-ui;cursor:pointer}
 .xprof{display:grid;grid-template-columns:1fr 1fr;gap:8px}.xprof>div{display:grid;gap:2px;padding:14px;border-radius:20px;backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);box-shadow:inset 0 1px 0 rgba(255,255,255,.18)}
@@ -959,40 +960,45 @@ document.addEventListener("click",e=>{const b=e.target.closest("[data-refresh]")
 setInterval(()=>{if(document.hidden||typeof ROLE==="undefined"||!ROLE||ROLE==="farmer")return;if(!["req","trans"].includes(TAB))return;if(document.querySelector("form :focus,#aiSheet,.hsheet"))return;loadStaff().then(()=>{if(!document.querySelector("form :focus"))renderStaff()}).catch(()=>{})},60000);
 document.addEventListener("visibilitychange",()=>{if(!document.hidden&&typeof ROLE!=="undefined"&&ROLE&&ROLE!=="farmer"&&Date.now()-REFT>30000&&!document.querySelector("form :focus")){REFT=Date.now();loadStaff().then(renderStaff).catch(()=>{})}});
 // ===== HĽADANIE JÁZD: vodič / auto + deň + čas od–do =====
-let RS={drv:"",veh:"",day:"",from:"00:00",to:"23:59",res:null,busy:false};
+let RS={drv:"",veh:"",day:"",day2:"",from:"00:00",to:"23:59",res:null,busy:false};
 function rideSearchHTML(F){const D=[...new Set(F.rides.map(r=>r.driver).filter(Boolean))].sort((a,b)=>a.localeCompare(b,"sk"));
   const V=F.veh.map(v=>[v.id,v.plate||v.name||v.id]).sort((a,b)=>String(a[1]).localeCompare(String(b[1])));
   const f=d=>new Date(d).toLocaleString("sk-SK",{day:"numeric",month:"numeric",hour:"2-digit",minute:"2-digit"});
   let h=`<h2>Hľadať záznamy</h2><form class="card f" id="fRide"><label>Vodič<select name="drv"><option value="">– všetci –</option>${D.map(n=>`<option${RS.drv===n?" selected":""}>${esc(n)}</option>`).join("")}</select></label>
    <label>Auto<select name="veh"><option value="">– všetky –</option>${V.map(v=>`<option value="${esc(v[0])}"${RS.veh===v[0]?" selected":""}>${esc(v[1])}</option>`).join("")}</select></label>
-   <label class="w">Deň<input type="date" name="day" required value="${esc(RS.day)}"></label><label>Od<input type="time" name="from" value="${esc(RS.from)}"></label><label>Do<input type="time" name="to" value="${esc(RS.to)}"></label>
+   <label>Od dňa<input type="date" name="day" required value="${esc(RS.day)}"></label><label>čas od<input type="time" name="from" value="${esc(RS.from)}"></label><label>Do dňa<input type="date" name="day2" value="${esc(RS.day2||RS.day)}"></label><label>čas do<input type="time" name="to" value="${esc(RS.to)}"></label>
+   <div class="w rsq">${[["Dnes",0,0],["Včera",1,1],["7 dní",6,0],["30 dní",29,0],["Tento mesiac","m",0],["Od 1. 7.","j",0]].map(q=>`<button type="button" data-rsq="${q[1]}|${q[2]}">${q[0]}</button>`).join("")}</div>
    <div class="w btns"><button class="pri" type="submit">${RS.busy?"Hľadám…":"🔍 Hľadať"}</button></div></form>`;
   const X=RS.res;if(!X)return h;
   if(X.err)return h+`<div class="card"><div class="s">Chyba: ${esc(X.err)}</div></div>`;
   const tot=X.rides.reduce((a,r)=>({km:a.km+(+r.distance||0),l:a.l+(+r.fuel_consumed||0),ref:a.ref+(+r.refuel_l||0)}),{km:0,l:0,ref:0});
   h+=`<div class="card"><div class="t">${esc(X.title)}</div><div class="s">${X.rides.length} jázd · ${n0(tot.km)} km · spotreba ${n0(tot.l)} l · natankované ${n0(tot.ref)} l${X.ev.length?` · ${X.ev.length} udalostí`:""}</div>`;
   if(!X.rides.length&&!X.ev.length)h+=`<div class="s" style="margin-top:8px">V tomto čase nie sú žiadne jazdy ani udalosti.</div>`;
-  h+=X.rides.map(r=>`<div class="ride"><div class="r1"><b>${f(r.start_at)} → ${r.stop_at?new Date(r.stop_at).toLocaleTimeString("sk-SK",{hour:"2-digit",minute:"2-digit"}):"?"}</b><span>${esc(r.plate||"")} · ${n1(r.distance||0)} km · ${hm(r.duration||0)}${r.fuel_consumed?` · ${n1(r.fuel_consumed)} l`:""}${r.max_speed?` · max ${r.max_speed}`:""}</span></div>
+  let lastD="";h+=X.rides.map(r=>{const dk=new Date(r.start_at).toLocaleDateString("sk-SK",{weekday:"long",day:"numeric",month:"numeric"});const hd=dk!==lastD?`<div class="sth" style="margin-top:12px">${esc(dk)}</div>`:"";lastD=dk;return hd+`<div class="ride"><div class="r1"><b>${f(r.start_at)} → ${r.stop_at?new Date(r.stop_at).toLocaleTimeString("sk-SK",{hour:"2-digit",minute:"2-digit"}):"?"}</b><span>${esc(r.plate||"")} · ${n1(r.distance||0)} km · ${hm(r.duration||0)}${r.fuel_consumed?` · ${n1(r.fuel_consumed)} l`:""}${r.max_speed?` · max ${r.max_speed}`:""}</span></div>
      <div class="s">${esc(r.start_addr||"?")} → ${esc(r.stop_addr||"?")}${r.driver?" · 👤 "+esc(r.driver):""}${/PRIVAT/.test(r.ride_type||"")?" · súkromná":""}</div>
-     <div class="s">⛽ nádrž ${r.fuel_start!=null?n0(r.fuel_start)+" l":"?"} → ${r.fuel_stop!=null?n0(r.fuel_stop)+" l":"?"}${r.refuel_l?` · <b>natankované ${n0(r.refuel_l)} l</b>${r.refuel_eur?" ("+n0(r.refuel_eur)+" €)":""}`:""}${r.lat_stop?` · <a class="copy" href="https://maps.google.com/?q=${r.lat_stop},${r.lon_stop}" target="_blank" rel="noopener">mapa</a>`:""}</div></div>`).join("");
+     <div class="s">⛽ nádrž ${r.fuel_start!=null?n0(r.fuel_start)+" l":"?"} → ${r.fuel_stop!=null?n0(r.fuel_stop)+" l":"?"}${r.refuel_l?` · <b>natankované ${n0(r.refuel_l)} l</b>${r.refuel_eur?" ("+n0(r.refuel_eur)+" €)":""}`:""}${r.lat_stop?` · <a class="copy" href="https://maps.google.com/?q=${r.lat_stop},${r.lon_stop}" target="_blank" rel="noopener">mapa</a>`:""}</div></div>`}).join("");
   if(X.gaps.length)h+=X.gaps.map(g=>`<div class="al r" style="margin-top:8px">🚨 Medzi jazdami ${esc(g.t)} klesla nádrž o <b>${n0(g.l)} l</b> (${n0(g.a)} → ${n0(g.b)} l) bez jazdy</div>`).join("");
   if(X.ev.length)h+=`<div class="sth" style="margin-top:10px">Udalosti</div>`+X.ev.map(e=>`<div class="s">${f(e.at)} · ${esc(e.kind)} · ${esc(e.plate||"")}${e.liters?" · "+n0(e.liters)+" l":""}${e.place?" · "+esc(e.place):""}</div>`).join("");
   if(X.tank&&X.tank.length>1)h+=`<div class="sth" style="margin-top:10px">Nádrž v tomto čase</div>`+tankChart(X.tank);
   else if(X.oldTank)h+=`<div class="s" style="margin-top:8px">Podrobný záznam nádrže pre tento deň už nie je uložený (doteraz sa držal 14 dní, odteraz 120 dní) (hodnoty nádrže pri jazdách vyššie sú z Commandera).</div>`;
   return h+`</div>`}
+document.addEventListener("click",e=>{const b=e.target.closest("[data-rsq]");if(!b)return;const f=document.getElementById("fRide");if(!f)return;const [x,y]=b.dataset.rsq.split("|");const iso=d=>d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");const t=new Date();let a=new Date(t),z=new Date(t);
+  if(x==="m")a=new Date(t.getFullYear(),t.getMonth(),1);else if(x==="j")a=new Date(2026,6,1);else{a.setDate(t.getDate()-(+x));z.setDate(t.getDate()-(+y))}
+  f.day.value=iso(a);f.day2.value=iso(z);f.from.value="00:00";f.to.value="23:59";f.requestSubmit()});
 document.addEventListener("submit",async e=>{if(e.target.id!=="fRide")return;e.preventDefault();const fd=new FormData(e.target);
-  RS.drv=fd.get("drv")||"";RS.veh=fd.get("veh")||"";RS.day=fd.get("day")||"";RS.from=fd.get("from")||"00:00";RS.to=fd.get("to")||"23:59";if(!RS.day)return;
-  RS.busy=true;renderStaff();const a=new Date(RS.day+"T"+RS.from+":00"),b=new Date(RS.day+"T"+RS.to+":59");
-  try{let q=sb.from("rides").select("*").lt("start_at",b.toISOString()).gte("start_at",new Date(a-12*3600e3).toISOString()).order("start_at",{ascending:true}).limit(500);
+  RS.drv=fd.get("drv")||"";RS.veh=fd.get("veh")||"";RS.day=fd.get("day")||"";RS.day2=fd.get("day2")||RS.day;RS.from=fd.get("from")||"00:00";RS.to=fd.get("to")||"23:59";if(!RS.day)return;
+  if(RS.day2<RS.day){const t=RS.day;RS.day=RS.day2;RS.day2=t}
+  RS.busy=true;renderStaff();const a=new Date(RS.day+"T"+RS.from+":00"),b=new Date(RS.day2+"T"+RS.to+":59");
+  try{let q=sb.from("rides").select("*").lt("start_at",b.toISOString()).gte("start_at",new Date(a-12*3600e3).toISOString()).order("start_at",{ascending:true}).limit(5000);
     if(RS.veh)q=q.eq("vehicle_id",RS.veh);let rr=(await q).data||[];
     rr=rr.filter(r=>new Date(r.stop_at||r.start_at)>=a&&new Date(r.start_at)<=b&&(!RS.drv||r.driver===RS.drv));
     const vids=[...new Set(rr.map(r=>r.vehicle_id).concat(RS.veh?[RS.veh]:[]))];
     let ev=[];if(vids.length){const er=await sb.from("fleet_events").select("*").in("vehicle_id",vids).gte("at",a.toISOString()).lte("at",b.toISOString()).order("at").limit(300);ev=er.data||[]}
-    let tank=null;if(vids.length===1){const tr=await sb.from("tank_log").select("at,tank,speed,ign").eq("vehicle_id",vids[0]).gte("at",a.toISOString()).lte("at",b.toISOString()).order("at").limit(3000);tank=tr.data||[]}
+    let tank=null;if(vids.length===1&&b-a<=4*864e5){const tr=await sb.from("tank_log").select("at,tank,speed,ign").eq("vehicle_id",vids[0]).gte("at",a.toISOString()).lte("at",b.toISOString()).order("at").limit(3000);tank=tr.data||[]}
     const gaps=[];const byV={};for(const r of rr)(byV[r.vehicle_id]=byV[r.vehicle_id]||[]).push(r);
     for(const id in byV){const L=byV[id];for(let i=1;i<L.length;i++){const p=L[i-1],c=L[i];if(p.fuel_stop!=null&&c.fuel_start!=null&&+p.fuel_stop-+c.fuel_start>=15&&!(+p.refuel_l))gaps.push({t:new Date(p.stop_at).toLocaleTimeString("sk-SK",{hour:"2-digit",minute:"2-digit"})+"–"+new Date(c.start_at).toLocaleTimeString("sk-SK",{hour:"2-digit",minute:"2-digit"})+" ("+(c.plate||"")+")",l:+p.fuel_stop-+c.fuel_start,a:+p.fuel_stop,b:+c.fuel_start})}}
     const vn=RS.veh&&(STATE.fleet.veh.find(v=>v.id===RS.veh)||{});
-    RS.res={rides:rr,ev,tank,gaps,oldTank:(tank&&!tank.length),title:`${RS.drv||"Všetci vodiči"}${vn?" · "+(vn.plate||vn.name):""} · ${dSK(RS.day)} ${RS.from}–${RS.to}`}}
+    RS.res={rides:rr,ev,tank,gaps,oldTank:(tank&&!tank.length),title:`${RS.drv||"Všetci vodiči"}${vn?" · "+(vn.plate||vn.name):""} · ${dSK(RS.day)} ${RS.from} – ${RS.day2!==RS.day?dSK(RS.day2)+" ":""}${RS.to}`}}
   catch(err){RS.res={err:err.message||String(err)}}
   RS.busy=false;renderStaff()});
 function priceBanner(){const v=((STATE.settings||{}).pricelist||{}).valid;
