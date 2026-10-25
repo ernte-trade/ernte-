@@ -136,13 +136,29 @@ function docsView(){if(A.docs===null)return `<div class="aiempty"><span>Archív 
     ${op?`<div class="aimsg a aidbody">${md(d.content)}</div>`:""}
     <div class="aiact"><button type="button" data-aia="send" data-id="d${d.id}">📤<span>Odoslať</span></button><button type="button" data-aia="pdfsave" data-id="d${d.id}">⬇️<span>PDF</span></button><button type="button" data-aia="pdf" data-id="d${d.id}">🖨<span>Tlačiť</span></button><button type="button" data-aia="doc" data-id="d${d.id}">📝<span>Word</span></button>${d.status!=="odoslany"?`<button type="button" data-aidst="${d.id}|odoslany">✓<span>Odoslané</span></button>`:""}${d.status!=="vyriesene"?`<button type="button" data-aidst="${d.id}|vyriesene">✔︎<span>Vyriešené</span></button>`:""}<button type="button" data-aidst="${d.id}|zmazat" class="dng">🗑</button></div></div>`}).join("")}
 async function makePdf(x){const H=await loadLib("https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js","html2pdf");
-  const box=document.createElement("div");box.style.cssText="position:fixed;left:-10000px;top:0;width:180mm;background:#fff";box.innerHTML=`<style>${DOCCSS}</style>`+docHTML(x);document.body.appendChild(box);
-  try{return await H().set({margin:[14,14,14,14],image:{type:"jpeg",quality:.95},html2canvas:{scale:2,useCORS:true,backgroundColor:"#ffffff"},jsPDF:{unit:"mm",format:"a4",orientation:"portrait"},pagebreak:{mode:["css","legacy"],avoid:["tr","li","h3","h4"]}}).from(box.querySelector(".aidoc")).outputPdf("blob")}finally{box.remove()}}
+  const sx=window.scrollX,sy=window.scrollY;window.scrollTo(0,0);
+  const box=document.createElement("div");box.style.cssText="position:absolute;left:0;top:0;width:180mm;background:#fff;z-index:-5";box.innerHTML=`<style>${DOCCSS}</style>`+docHTML(x);document.body.appendChild(box);
+  try{await Promise.all([...box.querySelectorAll("img")].map(im=>im.complete?1:new Promise(r=>{im.onload=im.onerror=r})));
+    const w=H().set({margin:[14,14,14,14],image:{type:"jpeg",quality:.95},html2canvas:{scale:2,useCORS:true,backgroundColor:"#ffffff",scrollX:0,scrollY:0,windowWidth:box.scrollWidth,windowHeight:box.scrollHeight},jsPDF:{unit:"mm",format:"a4",orientation:"portrait"},pagebreak:{mode:["css","legacy"],avoid:["tr","li","h3","h4",".aistamp"]}}).from(box.querySelector(".aidoc"));
+    const cv=await w.toCanvas().get("canvas");
+    // kontrola: ak je horná časť prázdna, PDF by bolo zlé → použije sa tlač
+    const c2=cv.getContext("2d"),hh=Math.min(cv.height,400),d=c2.getImageData(0,0,cv.width,hh).data;let ink=0;for(let k=0;k<d.length;k+=16)if(d[k]<200)ink++;
+    if(ink<20)throw new Error("prázdna strana");
+    return await w.toPdf().output("blob")}
+  finally{box.remove();window.scrollTo(sx,sy)}}
+// zdieľanie súboru vyžaduje čerstvé ťuknutie – po príprave PDF ukáže tlačidlo „Odoslať teraz“
+function shareReady(file,title,after){const o=document.createElement("div");o.className="hsheet";o.id="pdfReady";
+  o.innerHTML=`<div class="hbox" style="max-width:420px;text-align:center"><div style="font-size:2.4rem">📄</div><b style="font:800 1.2rem var(--f-head,system-ui)">PDF je pripravené</b><p class="hrole" style="margin:8px 0 14px">${esc(file.name)}</p>
+   <button type="button" class="hai" id="pdfGo">📤 Odoslať teraz (WhatsApp, e-mail…)</button><button type="button" class="hai" id="pdfDl" style="background:rgba(255,255,255,.1);color:#fff;margin-top:8px">⬇️ Uložiť do telefónu</button><button type="button" class="hx" id="pdfX" style="margin:12px auto 0;display:block">×</button></div>`;
+  document.body.appendChild(o);const close=()=>o.remove();
+  o.querySelector("#pdfGo").onclick=async()=>{try{await navigator.share({files:[file],title});close();after&&after()}catch(e){if(e&&e.name!=="AbortError"){dl(file.name,file);close();after&&after()}}};
+  o.querySelector("#pdfDl").onclick=()=>{dl(file.name,file);close();after&&after()};o.querySelector("#pdfX").onclick=close}
+async function sharePdf(x,file,after){if(navigator.canShare&&navigator.canShare({files:[file]})){try{await navigator.share({files:[file],title:docTitle(x.content)});after&&after();return}catch(e){if(e&&e.name==="AbortError")return;return shareReady(file,docTitle(x.content),after)}}
+  dl(file.name,file);after&&after()}
 async function sendDoc(x,btn){const sp=btn&&btn.querySelector("span");if(sp)sp.textContent="Pripravujem…";const name=fname(x,"pdf");
-  try{const blob=await makePdf(x),file=new File([blob],name,{type:"application/pdf"});
-    if(navigator.canShare&&navigator.canShare({files:[file]})){await navigator.share({files:[file],title:docTitle(x.content)})}else{dl(name,blob)}
-    const id=String(x.id).replace(/^d/,"");if(String(x.id).startsWith("d")){await sb.rpc("ai_doc_mark",{p_id:+id,p_status:"odoslany"});await load();view()}}
-  catch(e){if(e&&e.name==="AbortError"){if(sp)sp.textContent="Odoslať";return}if(navigator.share){try{await navigator.share({title:docTitle(x.content),text:plain(x.content)})}catch(_){}}else msgAct("pdf",x.id,null)}
+  const mark=async()=>{if(String(x.id).startsWith("d")){await sb.rpc("ai_doc_mark",{p_id:+String(x.id).slice(1),p_status:"odoslany"});await load();view()}};
+  try{const blob=await makePdf(x);await sharePdf(x,new File([blob],name,{type:"application/pdf"}),mark)}
+  catch(e){toast("Priame PDF nevyšlo – v tlači vyber „Uložiť ako PDF“ a potom ho pošli.");msgAct("pdf",x.id,null)}
   if(sp)sp.textContent="Odoslať"}
 async function saveDoc(x,btn){const sp=btn&&btn.querySelector("span");const txt=String(x.content||"");const m=txt.match(/upozornen|výzv|vyzv/i);
   const drv=(A.docs||[]).map(d=>d.driver).filter(Boolean).find(n=>txt.includes(n.split(" ")[0]))||null;
@@ -154,15 +170,12 @@ async function msgAct(kind,id,btn){const x=String(id).startsWith("d")?docObj(A.d
   if(kind==="copy")return copyTxt(plain(x.content),btn);
   if(kind==="send"){return sendDoc(x,btn)}
   if(kind==="save"){return saveDoc(x,btn)}
-  if(kind==="pdfsave"){const sp=btn&&btn.querySelector("span");if(sp)sp.textContent="Pripravujem…";
-    try{const H=await loadLib("https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js","html2pdf");
-      const box=document.createElement("div");box.style.cssText="position:fixed;left:-10000px;top:0;width:180mm;background:#fff;padding:0";box.innerHTML=`<style>${DOCCSS}</style>`+docHTML(x);document.body.appendChild(box);
-      const name=fname(x,"pdf");const opt={margin:[14,14,14,14],filename:name,image:{type:"jpeg",quality:.95},html2canvas:{scale:2,useCORS:true,backgroundColor:"#ffffff"},jsPDF:{unit:"mm",format:"a4",orientation:"portrait"},pagebreak:{mode:["css","legacy"],avoid:["tr","li","h3","h4"]}};
-      const blob=await H().set(opt).from(box.querySelector(".aidoc")).outputPdf("blob");box.remove();
-      const file=new File([blob],name,{type:"application/pdf"});
-      if(navigator.canShare&&navigator.canShare({files:[file]})&&/iPhone|iPad|Android/i.test(navigator.userAgent)){try{await navigator.share({files:[file],title:docTitle(x.content)})}catch(e){dl(name,blob)}}else dl(name,blob);
-      if(sp)sp.textContent="Uložené ✓"}catch(e){if(sp)sp.textContent="Uložiť PDF";document.querySelectorAll("body>div[style*='-10000px']").forEach(n=>n.remove());toast("Uloženie priamo nevyšlo – v tlači vyber „Uložiť ako PDF“.");return msgAct("pdf",id,null)}
-    setTimeout(()=>{if(sp)sp.textContent="Uložiť PDF"},2500);return}
+  if(kind==="pdfsave"){const sp=btn&&btn.querySelector("span");if(sp)sp.textContent="Pripravujem…";const name=fname(x,"pdf");
+    try{const blob=await makePdf(x),file=new File([blob],name,{type:"application/pdf"});
+      if(/iPhone|iPad|Android/i.test(navigator.userAgent))await sharePdf(x,file,null);else dl(name,blob);
+      if(sp)sp.textContent="Uložené ✓"}
+    catch(e){if(sp)sp.textContent="Uložiť PDF";toast("Priame PDF nevyšlo – v tlači vyber „Uložiť ako PDF“.");return msgAct("pdf",x.id,null)}
+    setTimeout(()=>{if(sp)sp.textContent=sp.textContent==="Uložené ✓"?"Uložiť PDF":sp.textContent},2500);return}
   if(kind==="pdf"){let p=$("aiprint");if(!p){p=document.createElement("div");p.id="aiprint";document.body.appendChild(p)}p.innerHTML=`<style>${DOCCSS}</style>`+docHTML(x);const t=document.title;document.title=docTitle(x.content);document.documentElement.classList.add("aiprinting");
     setTimeout(()=>{window.print();setTimeout(()=>{document.documentElement.classList.remove("aiprinting");document.title=t},800)},150);return}
   if(kind==="doc"){const html=`<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word"><head><meta charset="utf-8"><title>${esc(docTitle(x.content))}</title><style>${DOCCSS}</style></head><body>${docHTML(x).replace(/src="(logo|valko-logo)\.png"/g,(m,n)=>'src="'+location.href.replace(/[^/]*$/,"")+n+'.png"')}</body></html>`;
