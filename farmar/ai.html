@@ -11,7 +11,7 @@ button.ok{background:linear-gradient(135deg,#b6ff3b,#5eead4);color:#06110a}a.b{b
 <ol><li>Otvor <a href="https://console.anthropic.com/settings/keys" target="_blank">console.anthropic.com → API Keys</a> a prihlás sa.</li><li><b>Billing</b> → pridaj kartu a kredit (napr. 20 $).</li><li><b>Create Key</b> → názov „ERNTE“ → skopíruj kľúč (začína <code>sk-ant-</code>).</li></ol>
 <label>Claude API kľúč<input id="k" type="password" autocomplete="off" placeholder="sk-ant-…"></label></div>
 <div class="box"><h2>2 · Úpravy aplikácie cez AI</h2>
-<ol><li>Otvor <a href="https://github.com/settings/personal-access-tokens/new" target="_blank">GitHub → nový token</a>.</li><li>Názov „ERNTE AI“, platnosť 1 rok. <b>Repository access</b> → Only select → <b>ernte-trade/ernte-</b>.</li><li><b>Permissions</b> → Repository → <b>Issues: Read and write</b> → Generate → skopíruj.</li></ol>
+<ol><li>Otvor <a href="https://github.com/settings/personal-access-tokens/new" target="_blank">GitHub → nový token</a>.</li><li>Názov „ERNTE AI“, Expiration <b>No expiration</b>. <b>Repository access</b> → Only select → <b>ernte-trade/ernte-</b>.</li><li><b>Permissions</b> → <b>+</b> → <b>Issues</b> → <b>Read and write</b> → Generate token → ťukni ikonku kopírovať a <b>hneď</b> vlož sem (nič iné medzitým nekopíruj).</li></ol>
 <label>GitHub token<input id="g" type="password" autocomplete="off" placeholder="github_pat_…"></label>
 <label>AI kľúč (dostal si ho v chate)<input id="s" autocomplete="off" autocapitalize="off" placeholder="ernte-…"></label></div>
 <button id="c">Kopírovať SQL</button>
@@ -23,8 +23,9 @@ const q=s=>"'"+String(s).replace(/'/g,"''")+"'";
 const sec=(n,v)=>`do $$ begin if exists(select 1 from vault.secrets where name='${n}') then perform vault.update_secret((select id from vault.secrets where name='${n}'),${q(v)}); else perform vault.create_secret(${q(v)},'${n}'); end if; end $$;`;
 c.onclick=()=>{const K=k.value.trim(),G=g.value.trim(),S=s.value.trim();
  if(!T){alert("Ešte sa načítava, skús o sekundu.");return}
- if(K&&!/^sk-ant-/.test(K)){alert("Claude kľúč má začínať sk-ant-");return}
- if(G&&!S){alert("K GitHub tokenu zadaj aj AI kľúč z chatu.");return}
+ if(K&&!/^sk-ant-[A-Za-z0-9_-]{20,}$/.test(K)){alert("Claude kľúč má začínať sk-ant- a byť celý (bez medzier). Vložilo sa: „"+K.slice(0,14)+"…“ – asi si mal v schránke niečo iné.");return}
+ if(G&&!/^(github_pat_|ghp_)[A-Za-z0-9_]{20,}$/.test(G)){alert("GitHub token má začínať github_pat_ (alebo ghp_) a byť celý. Vložilo sa: „"+G.slice(0,14)+"…“ – skopíruj token znova ikonkou kopírovať.");return}
+ if(S&&!/^ernte-[0-9a-f]{24}$/.test(S)){alert("AI kľúč má tvar ernte- a 24 znakov (z chatu).");return}
  let x=T+"\n\n";if(K)x+=sec("anthropic_key",K)+"\n";if(G)x+=sec("github_token",G)+"\n";if(S)x+=sec("ai_pass",S)+"\n";
  x+="select 'ok' as hotovo;";
  navigator.clipboard.writeText(x).then(()=>{c.textContent="Skopírované ✓";c.className="ok";k.value="";g.value=""}).catch(e=>alert("Nevyšlo: "+e.message))}</script></body></html>

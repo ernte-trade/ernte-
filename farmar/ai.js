@@ -88,8 +88,8 @@ function view(){const el=$("aiSheet");if(!el)return;el.classList.toggle("busy",!
       `<div class="aiempty"><div class="aiorb" style="width:84px;height:84px"></div><b>Ahoj, som ERNTE AI.</b><span>Kontrolujem obchody, flotilu, náklady a zisk, sledujem trhy a radím, čo robiť. Napíš aj „oprav…“ alebo „pridaj…“ a aplikáciu upravím – zhrnutie nájdeš v Dashboarde.</span></div>`}
   else if(A.tab==="rep"){const R=A.msgs.filter(x=>x.kind==="report"&&x.role==="assistant").reverse();
     body=`<button type="button" class="aibig" data-ai="rep">${A.busy?"Pripravujem prehľad…":"✦ Urobiť prehľad teraz"}</button>`+(R.length?R.map(x=>`<div class="aicard"><div class="s">${tm(x.created_at)} · prehľad</div>${x.status==="wait"?`<span class="aitype"><i></i><i></i><i></i>&nbsp;Pripravujem…</span>`:`<div class="aimsg a" style="max-width:100%;background:none;border:0;padding:0;backdrop-filter:none">${md(x.content)}</div>`}</div>`).join(""):`<div class="aiempty"><span>Prehľad príde automaticky každé ráno o 6:00 a v pracovné dni o 14:00.</span></div>`)}
-  else{const T=A.tasks,SN={nova:"čaká",odoslana:"robí sa",hotova:"hotové",chyba:"chyba"};
-    body=T.length?T.map(t=>`<div class="aicard"><div style="display:flex;gap:8px;align-items:center"><span class="aist ${t.status}">${SN[t.status]||t.status}</span><span class="s">${tm(t.created_at)}${t.done_at?" → "+tm(t.done_at):""}</span></div><h3>${esc(t.text)}</h3>${t.report?`<div class="aimsg a" style="max-width:100%;background:none;border:0;padding:0;backdrop-filter:none">${md(t.report)}</div>`:""}</div>`).join(""):
+  else{const T=A.tasks,SN={nova:"čaká na odoslanie",odoslana:"odoslaná · robí sa",hotova:"hotové",chyba:"chyba – neodoslané"};
+    body=T.length?T.map(t=>`<div class="aicard"><div style="display:flex;gap:8px;align-items:center"><span class="aist ${t.status}">${SN[t.status]||t.status}</span><span class="s">${tm(t.created_at)}${t.done_at?" → "+tm(t.done_at):""}</span></div><h3>${esc(t.text)}</h3>${t.status==="chyba"?`<button type="button" class="aibig" data-airetry="${esc(t.id)}" style="min-height:44px">↻ Skúsiť znova</button>`:""}${t.report?`<div class="aimsg a" style="max-width:100%;background:none;border:0;padding:0;backdrop-filter:none">${md(t.report)}</div>`:""}</div>`).join(""):
       `<div class="aiempty"><span>Zatiaľ žiadne úpravy. V chate napíš napr. „pridaj do Obchodov export do Excelu“.</span></div>`}
   el.querySelector(".aitabs").innerHTML=tabs.map(t=>`<button type="button" data-aitab="${t[0]}" aria-pressed="${A.tab===t[0]}">${t[1]}</button>`).join("");
   const b=el.querySelector(".aibody");const atBottom=b.scrollHeight-b.scrollTop-b.clientHeight<80;b.innerHTML=body;if(A.tab==="chat"&&(atBottom||A.jump)){b.scrollTop=b.scrollHeight;A.jump=false}
@@ -122,7 +122,8 @@ document.addEventListener("click",e=>{const t=e.target;let x;
   if(!t.closest("#aiSheet")&&!t.closest(".aidash"))return;
   if((x=t.closest("[data-ai]"))){const a=x.dataset.ai;if(a==="close")closeAI();else if(a==="rep"){if(!$("aiSheet"))openAI().then(()=>{A.tab="rep";view();report()});else report()}else if(a==="open")openAI();else if(a==="openrep"){openAI().then(()=>{A.tab="rep";view()})}else if(a==="openfix"){openAI().then(()=>{A.tab="fix";view()})}return}
   if((x=t.closest("[data-aitab]"))){A.tab=x.dataset.aitab;A.jump=true;view();return}
-  if((x=t.closest("[data-aiq]"))){ask(x.dataset.aiq)}});
+  if((x=t.closest("[data-aiq]"))){ask(x.dataset.aiq);return}
+  if((x=t.closest("[data-airetry]"))){x.disabled=true;x.textContent="Odosielam…";sb.rpc("ai_task_retry",{t:x.dataset.airetry}).then(async r=>{if(r.error)toast("Chyba: "+r.error.message);setTimeout(async()=>{try{await sb.rpc("ai_collect")}catch(e){}await load();view()},4000);await load();view()})}});
 document.addEventListener("submit",e=>{if(!e.target.closest(".aiin"))return;e.preventDefault();const ta=e.target.querySelector("textarea");const v=ta.value;ta.value="";ta.style.height="";ask(v)});
 document.addEventListener("input",e=>{if(e.target.matches(".aiin textarea")){e.target.style.height="auto";e.target.style.height=Math.min(140,e.target.scrollHeight)+"px"}});
 document.addEventListener("keydown",e=>{if(e.key==="Escape"&&$("aiSheet"))closeAI();if(e.key==="Enter"&&!e.shiftKey&&e.target.matches(".aiin textarea")&&window.innerWidth>700){e.preventDefault();e.target.form.requestSubmit()}});
@@ -132,13 +133,38 @@ async function fillDash(el){el.classList.add("ok");if(A.ready!=="ok")await load(
   if(A.ready==="setup"){el.innerHTML=`<div class="h"><div class="aiorb"></div><b>ERNTE AI</b></div><div class="txt"><p>AI kontrola obchodov, flotily a trhov ešte nie je zapnutá.</p></div><div class="row"><button type="button" class="p" onclick="location.href='ai.html'">Zapnúť AI Podporu</button></div>`;return}
   if(A.ready!=="ok"){el.remove();return}
   const R=A.msgs.filter(x=>x.kind==="report"&&x.role==="assistant"&&x.status==="ok").pop();
-  const F=A.msgs.filter(x=>x.kind==="fix").slice(-3).reverse();const W=A.tasks.filter(t=>t.status==="odoslana"||t.status==="nova").length;
+  const F=A.msgs.filter(x=>x.kind==="fix").slice(-3).reverse();const W=A.tasks.filter(t=>t.status==="odoslana"||t.status==="nova").length;const ER=A.tasks.filter(t=>t.status==="chyba").length;
   el.innerHTML=`<div class="h"><div class="aiorb"></div><b>AI prehľad</b><small>${R?tm(R.created_at):"zatiaľ žiadny"}</small></div>
    <div class="txt">${R?md(R.content):"<p>Prvý prehľad (trhy, obchody, flotila, čo robiť) si vytvor tlačidlom nižšie – potom príde sám každé ráno.</p>"}</div>
-   ${F.length||W?`<div class="fx">${W?`<div>⏳ <span>${W} ${W===1?"úprava sa práve robí":"úpravy sa práve robia"}</span></div>`:""}${F.map(f=>`<div>✅ <span>${esc(String(f.content||"").replace(/\*\*/g,"").split("\n")[0].slice(0,140))}</span></div>`).join("")}</div>`:""}
+   ${F.length||W||ER?`<div class="fx">${ER?`<div style="background:rgba(239,68,68,.14);border-color:rgba(255,107,129,.5)" data-ai="openfix">❌ <span>${ER} ${ER===1?"úprava sa nepodarila odoslať":"úpravy sa nepodarilo odoslať"} – ťukni pre detail</span></div>`:""}${W?`<div>⏳ <span>${W} ${W===1?"úprava sa práve robí":"úpravy sa práve robia"}</span></div>`:""}${F.map(f=>`<div>✅ <span>${esc(String(f.content||"").replace(/\*\*/g,"").split("\n")[0].slice(0,140))}</span></div>`).join("")}</div>`:""}
    <div class="row">${R?`<button type="button" data-ai="openrep">Celý prehľad</button>`:`<button type="button" class="p" data-ai="rep">✦ Urobiť prehľad</button>`}<button type="button" class="p" data-ai="open">✦ Opýtať sa AI</button></div>`}
 function refreshDash(){document.querySelectorAll(".aidash.ok").forEach(e=>{e.classList.remove("ok");fillDash(e)})}
 new MutationObserver(()=>{document.querySelectorAll(".aidash:not(.ok)").forEach(fillDash)}).observe(document.body,{childList:true,subtree:true});
+
+let kpiAt=0,kpiFull=false;window.aiSaveKpi=function(){if(typeof ROLE==="undefined"||ROLE!=="owner"||typeof STATE==="undefined"||!STATE.aiKpi||FPER!=="m")return;const full=STATE.aiKpi.mzdy_eur!=null;if(!full&&kpiAt)return;if(full&&kpiFull&&Date.now()-kpiAt<5*60e3)return;kpiAt=Date.now();kpiFull=full;
+  sb.from("ai_state").upsert({key:"kpi",value:STATE.aiKpi,updated_at:new Date().toISOString()}).then(()=>{},()=>{})};
+// Diagnostika dát (Nastavenia flotily)
+const DL={udalosti_spolu:"Udalosti flotily spolu",udalosti_posledna:"Posledná udalosť",udalosti_podla_typu_30_dni:"Udalosti za 30 dní",dvor_nastaveny:"Dvor Medovská nastavený",miesta:"Miesta",miesta_s_upozornenim:"Miesta s upozornením",ntfy_tema_nastavena:"Upozornenia ntfy",funkcie:"Zapnuté kontroly",cron_ulohy:"Automatické úlohy",cron_posledne_behy:"Behy za 15 min",cron_chyby_24h:"Chyby úloh za 24 h",commander_posledne:"Commander – posledné načítanie",aut_spolu:"Áut v Commanderi",auta_bez_jazd_tento_mesiac:"Autá bez jázd tento mesiac",auta_malo_dat_pod_100km:"Autá s málo dátami (< 100 km)",jazdy_mesiac:"Jazdy tento mesiac",jazdy_s_tankovanim_mesiac:"Jazdy s tankovaním",tankovanie_bez_ceny_mesiac:"Tankovania bez ceny",farmari:"Farmári",obchodov_spolu:"Obchodov spolu",poziadaviek_spolu:"Požiadaviek spolu",poziadaviek_novych:"Nových požiadaviek",ai_ulohy:"AI úpravy",github_token_ulozeny:"GitHub token uložený"};
+const FN={yard_check:"dvor",place_check:"miesta",stop_check:"odchod po státí",fuel_check:"ochrana nafty",osm_sync:"čerpačky OSM"};
+function dv(k,v){if(v&&typeof v==="object"&&v.chyba)return `<span style="color:#ffc2cb">chyba: ${esc(v.chyba)}</span>`;
+  if(v===true)return `<b style="color:#b6ff3b">áno</b>`;if(v===false)return `<b style="color:#ff8a9a">nie</b>`;if(v==null||v==="")return `<span style="color:#fde68a">nezadané</span>`;
+  if(k==="funkcie")return Object.entries(v).map(([a,b])=>`${FN[a]||a}: ${b?"✅":"❌"}`).join(" · ");
+  if(k==="cron_ulohy")return v.length?v.map(j=>`${esc(j.uloha)} ${j.zapnuta?"✅":"⏸"}`).join(" · "):`<span style="color:#ff8a9a">žiadne</span>`;
+  if(k==="cron_posledne_behy")return v.length?v.slice(0,6).map(j=>`${esc(j.uloha)} ${j.status==="succeeded"?"✅":"❌ "+esc(j.sprava||"")} ${esc(j.kedy)}`).join("<br>"):`<span style="color:#ff8a9a">žiadne behy</span>`;
+  if(k==="cron_chyby_24h")return v.length?v.map(j=>`❌ ${esc(j.uloha)}: ${j.chyb}× – ${esc(j.posledna||"")}`).join("<br>"):`<b style="color:#b6ff3b">žiadne</b>`;
+  if(k==="commander_posledne")return v.length?v.map(j=>`${esc(j.kind)}: ${esc(j.posledne)}${j.kod&&j.kod!==200?" (kód "+j.kod+")":""}`).join(" · "):`<span style="color:#ff8a9a">nič</span>`;
+  if(k==="auta_malo_dat_pod_100km")return v.length?v.map(j=>`${esc(j.auto)} (${j.km??0} km, ${j.l??0} l)`).join(", "):"žiadne";
+  if(Array.isArray(v))return v.length?v.map(x=>esc(typeof x==="object"?JSON.stringify(x):x)).join(", "):"žiadne";
+  if(typeof v==="object"){const e=Object.entries(v);return e.length?e.map(([a,b])=>`${esc(a)}: ${esc(b)}`).join(" · "):`<span style="color:#fde68a">žiadne</span>`}
+  return esc(v)}
+async function fillDiag(el,run){el.classList.add("ok");
+  if(!run){el.innerHTML=`<div class="aicard" style="margin:12px 0"><h3>🩺 Diagnostika dát</h3><div class="s">Skontroluje, či bežia automatické úlohy, či sa zapisujú udalosti a alarmy, ktoré autá nemajú dáta, a koľko je farmárov a obchodov.</div><button type="button" class="aibig" data-aidiag="1">Spustiť diagnostiku</button></div>`;return}
+  el.innerHTML=`<div class="aicard" style="margin:12px 0"><h3>🩺 Diagnostika dát</h3><span class="aitype"><i></i><i></i><i></i>&nbsp;kontrolujem…</span></div>`;
+  const r=await sb.rpc("ai_diag");
+  if(r.error){el.innerHTML=`<div class="aicard" style="margin:12px 0"><h3>🩺 Diagnostika dát</h3><div class="s">${/ai_diag|function/i.test(r.error.message)?'Najprv spusti aktualizáciu SQL na stránke <a href="ai.html">ai.html</a> (polia nechaj prázdne).':esc(r.error.message)}</div></div>`;return}
+  const d=r.data||{};el.innerHTML=`<div class="aicard" style="margin:12px 0"><h3>🩺 Diagnostika dát · ${new Date().toLocaleTimeString("sk-SK",{hour:"2-digit",minute:"2-digit"})}</h3>${Object.keys(DL).filter(k=>k in d).map(k=>`<div style="display:grid;grid-template-columns:minmax(0,42%) 1fr;gap:8px;font-size:.8rem;padding:6px 0;border-top:1px solid rgba(255,255,255,.08)"><span style="color:rgba(255,255,255,.6)">${DL[k]}</span><span>${dv(k,d[k])}</span></div>`).join("")}<button type="button" class="aibig" data-aidiag="1">Znova</button></div>`}
+document.addEventListener("click",e=>{const b=e.target.closest("[data-aidiag]");if(b){const el=b.closest(".aidiag");if(el)fillDiag(el,true)}});
+new MutationObserver(()=>{document.querySelectorAll(".aidiag:not(.ok)").forEach(el=>fillDiag(el,false))}).observe(document.body,{childList:true,subtree:true});
 
 window.aiInit=function(){const b=$("aiBtn");if(!b)return;b.hidden=ROLE!=="owner";if(ROLE==="owner")load()};
 try{if(typeof ROLE!=="undefined"&&ROLE)window.aiInit()}catch(e){}
