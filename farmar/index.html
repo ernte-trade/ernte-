@@ -250,7 +250,7 @@ details.trips{border-top:1px solid var(--line);padding-top:8px}details.trips sum
 .vnav button b{font:600 .8rem/1.15 var(--f-head);letter-spacing:-.01em}
 .vnav button.hot{border-color:rgba(255,107,129,.55);box-shadow:0 0 24px rgba(255,107,129,.25)}.vnav button.hot span{background:linear-gradient(135deg,rgba(255,107,129,.35),rgba(124,92,255,.25))}.vnav button.hot small{color:#ff8a9b}
 .vnav button[aria-pressed=true]::after{background:radial-gradient(circle,rgba(182,255,59,.45),transparent 70%)}
-.hrow{display:flex;justify-content:flex-end;margin:8px 0 2px}.hbtn{display:inline-flex;align-items:center;gap:7px;min-height:34px;padding:0 13px 0 6px;border-radius:999px;border:1px solid rgba(124,196,255,.45);background:linear-gradient(135deg,rgba(124,92,255,.22),rgba(34,211,238,.12));color:#e6f0ff;font:600 .76rem var(--f-ui,system-ui);cursor:pointer;backdrop-filter:blur(12px);box-shadow:0 0 18px rgba(124,92,255,.2)}.hbtn span{width:22px;height:22px;border-radius:50%;display:grid;place-items:center;background:linear-gradient(135deg,#7cc4ff,#a78bfa);color:#071022;font:800 .8rem system-ui}
+.hrow{display:flex;justify-content:flex-end;gap:8px;margin:8px 0 2px;flex-wrap:wrap}.rbtn{display:inline-flex;align-items:center;gap:7px;min-height:34px;padding:0 13px 0 6px;border-radius:999px;border:1px solid rgba(182,255,59,.5);background:linear-gradient(135deg,rgba(182,255,59,.18),rgba(94,234,212,.1));color:#e9ffd0;font:600 .76rem var(--f-ui,system-ui);cursor:pointer;backdrop-filter:blur(12px)}.rbtn span{width:22px;height:22px;border-radius:50%;display:grid;place-items:center;background:linear-gradient(135deg,#b6ff3b,#5eead4);color:#06110a;font:900 .9rem system-ui}.rbtn.spin span{animation:aispin .8s linear infinite}@keyframes aispin{to{transform:rotate(360deg)}}.hbtn{display:inline-flex;align-items:center;gap:7px;min-height:34px;padding:0 13px 0 6px;border-radius:999px;border:1px solid rgba(124,196,255,.45);background:linear-gradient(135deg,rgba(124,92,255,.22),rgba(34,211,238,.12));color:#e6f0ff;font:600 .76rem var(--f-ui,system-ui);cursor:pointer;backdrop-filter:blur(12px);box-shadow:0 0 18px rgba(124,92,255,.2)}.hbtn span{width:22px;height:22px;border-radius:50%;display:grid;place-items:center;background:linear-gradient(135deg,#7cc4ff,#a78bfa);color:#071022;font:800 .8rem system-ui}
 .hsheet{position:fixed;inset:0;z-index:3500;background:rgba(3,5,10,.6);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);display:flex;align-items:flex-end;justify-content:center;animation:hfade .2s}@keyframes hfade{from{opacity:0}}
 .hbox{width:100%;max-width:640px;max-height:88vh;overflow-y:auto;border-radius:28px 28px 0 0;padding:18px 18px calc(22px + env(safe-area-inset-bottom));background:radial-gradient(90% 50% at 100% 0%,rgba(124,92,255,.35),transparent 60%),radial-gradient(70% 40% at 0% 100%,rgba(182,255,59,.14),transparent 60%),#070a12;border:1px solid rgba(255,255,255,.16);box-shadow:0 -20px 60px rgba(0,0,0,.6);animation:hup .28s cubic-bezier(.2,.8,.2,1)}@keyframes hup{from{transform:translateY(40px)}}
 @media (min-width:700px){.hsheet{align-items:center}.hbox{border-radius:28px}}
@@ -569,6 +569,13 @@ document.addEventListener("click",e=>{const t=e.target;let x;
   if((x=t.closest("[data-hai]"))){const s=$("helpSheet");if(s)s.remove();const b=$("aiBtn");if(b&&!b.hidden){b.click();setTimeout(()=>{const ta=document.querySelector(".aiin textarea");if(ta){ta.value="Vysvetli mi podrobne, ako funguje "+x.dataset.hai+" v aplikácii a ako ju mám najlepšie používať.";ta.focus()}},500)}}});
 document.addEventListener("keydown",e=>{if(e.key==="Escape"){const s=$("helpSheet");if(s)s.remove()}});
 
+let REFT=0;async function refreshAll(btn){if(btn){btn.classList.add("spin");btn.disabled=true}
+  try{await loadStaff();if(TAB==="fleet"){STATE.fleet=null;await loadFleet()}if(TAB==="wx"&&typeof loadWx==="function"){WXD=null;await loadWx()}if(TAB==="team"&&typeof loadTeam==="function"){STATE.staff=null;await loadTeam()}}catch(e){}
+  REFT=Date.now();renderStaff();toast("Obnovené "+new Date().toLocaleTimeString("sk-SK",{hour:"2-digit",minute:"2-digit"}))}
+document.addEventListener("click",e=>{const b=e.target.closest("[data-refresh]");if(b)refreshAll(b)});
+// samo každú minútu na Požiadavkách a Doprave, keď je aplikácia otvorená
+setInterval(()=>{if(document.hidden||typeof ROLE==="undefined"||!ROLE||ROLE==="farmer")return;if(!["req","trans"].includes(TAB))return;if(document.querySelector("form :focus,#aiSheet,.hsheet"))return;loadStaff().then(()=>{if(!document.querySelector("form :focus"))renderStaff()}).catch(()=>{})},60000);
+document.addEventListener("visibilitychange",()=>{if(!document.hidden&&typeof ROLE!=="undefined"&&ROLE&&ROLE!=="farmer"&&Date.now()-REFT>30000&&!document.querySelector("form :focus")){REFT=Date.now();loadStaff().then(renderStaff).catch(()=>{})}});
 function priceBanner(){const v=((STATE.settings||{}).pricelist||{}).valid;
   if(!v)return `<div class="pban w"><b>Cenník nemá zadanú platnosť</b><span>Doplň dátum „Platí do“ v záložke Cenník.</span></div>`;
   const end=new Date(v+"T23:59:59"),t0=new Date();t0.setHours(0,0,0,0);const d=Math.round((new Date(v+"T00:00:00")-t0)/864e5);
@@ -583,7 +590,7 @@ function renderStaff(){const nNew=STATE.reqs.filter(r=>r.status==="nova").length
   if(ROLE==="invoice")tabs=tabs.filter(t=>t[0]!=="fleet");
   if(!tabs.some(t=>t[0]===TAB))TAB=tabs[0][0];
   let h=`<nav class="tabs">${tabs.map(t=>`<button type="button" data-tab="${t[0]}" aria-pressed="${TAB===t[0]}">${t[1]}</button>`).join("")}</nav>`;
-  h+=`<div class="hrow">${helpBtn(TAB)}</div>`;
+  h+=`<div class="hrow"><button type="button" class="rbtn" data-refresh="1" aria-label="Obnoviť"><span>↻</span>Obnoviť</button>${helpBtn(TAB)}</div>`;
   if(tabs.some(t=>t[0]==="price")&&(TAB==="price"||TAB==="req"))h+=priceBanner();
   if(TAB==="wx"&&!WXD)loadWx().then(renderStaff);if(TAB==="fleet"&&!STATE.fleet)loadFleet().then(renderStaff);if(TAB==="team"&&!STATE.staff)loadTeam().then(renderStaff);h+=({req:vReq,price:vPrice,trans:vTrans,deals:vDeals,farm:vFarm,wx:wxCard,fleet:vFleet,team:vTeam})[TAB]();if(TAB==="req")h+=pwCard();$("app").innerHTML=h;mountR()}
 function vReq(){const R=STATE.reqs;if(!R.length)return `<div class="card"><div class="s">Zatiaľ žiadne požiadavky od farmárov.</div></div>`;
