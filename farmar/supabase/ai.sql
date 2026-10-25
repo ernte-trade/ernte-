@@ -97,6 +97,11 @@ begin
    'cron_chyby_24h', ai_part($q$select coalesce(jsonb_agg(x),'[]') from (select j.jobname uloha, count(*) chyb, max(left(d.return_message,160)) posledna from cron.job_run_details d join cron.job j on j.jobid=d.jobid where d.status<>'succeeded' and d.start_time>now()-interval '24 hours' group by j.jobname) x$q$),
    'commander_posledne', ai_part($q$select coalesce(jsonb_agg(x),'[]') from (select kind, to_char(max(at) at time zone 'Europe/Bratislava','DD.MM HH24:MI') posledne, max(code) filter (where at>now()-interval '1 hour') kod from cmd_log group by kind) x$q$),
    'aut_spolu', ai_part('select count(*) from cmd_vehicles'),
+   'auta_s_polohou_do_30_min', ai_part($q$select count(*) from cmd_vehicles where lat is not null and gps_at>now()-interval '30 minutes'$q$),
+   'najnovsia_poloha', ai_part($q$select to_char(max(gps_at) at time zone 'Europe/Bratislava','DD.MM HH24:MI') from cmd_vehicles$q$),
+   'najstarsia_poloha', ai_part($q$select to_char(min(gps_at) at time zone 'Europe/Bratislava','DD.MM HH24:MI') from cmd_vehicles$q$),
+   'auta_na_mieste_teraz', ai_part('select count(*) from veh_place where place_id is not null'),
+   'kontroly_stav', ai_part($q$select coalesce(jsonb_agg(jsonb_build_object('kontrola',fn,'posledny_ok',to_char(ok_at at time zone 'Europe/Bratislava','DD.MM HH24:MI'),'udalosti',n,'chyba',msg,'chyba_kedy',to_char(at at time zone 'Europe/Bratislava','DD.MM HH24:MI'))),'[]') from check_err$q$),
    'auta_bez_jazd_tento_mesiac', ai_part('select coalesce(jsonb_agg(coalesce(v.plate,v.name,v.id)),''[]'') from cmd_vehicles v where not exists(select 1 from rides r where r.vehicle_id=v.id and r.start_at>='||m0||'::timestamptz)'),
    'auta_malo_dat_pod_100km', ai_part('select coalesce(jsonb_agg(jsonb_build_object(''auto'',a,''km'',km,''l'',l)),''[]'') from (select coalesce(plate,vehicle_id) a, round(sum(distance)) km, round(sum(fuel_consumed)) l from rides where start_at>='||m0||'::timestamptz group by 1 having coalesce(sum(distance),0)<100) x'),
    'jazdy_mesiac', ai_part('select count(*) from rides where start_at>='||m0||'::timestamptz'),
@@ -311,6 +316,35 @@ begin
   perform ai_collect();
   perform ai_gh_sync(extract(minute from now())::int % 5 = 0);
 end $$;
+
+-- kontroly flotily (dvor, miesta, odchod po státí, nafta) so zápisom chýb – predtým sa chyby ticho zahadzovali
+create table if not exists check_err(fn text primary key, msg text, at timestamptz default now(), ok_at timestamptz, n int default 0);
+alter table check_err enable row level security;
+drop policy if exists check_err_own on check_err; create policy check_err_own on check_err for select using (is_owner());
+drop function if exists public.check_run(text);
+create or replace function public.check_run(f text) returns int language plpgsql security definer set search_path=public as $$
+declare k int:=0;
+begin
+  if to_regprocedure('public.'||f||'()') is null then return 0; end if;
+  begin
+    if f='osm_sync' then execute 'select 0 from (select public.osm_sync()) x' into k; else execute 'select public.'||f||'()' into k; end if;
+    insert into check_err as c(fn,msg,ok_at,n) values(f,null,now(),coalesce(k,0)) on conflict on constraint check_err_pkey do update set ok_at=now(), n=c.n+coalesce(k,0), msg=null;
+  exception when others then
+    insert into check_err as c(fn,msg,at) values(f,left(SQLERRM,300),now()) on conflict on constraint check_err_pkey do update set msg=excluded.msg, at=now();
+  end;
+  return coalesce(k,0);
+end $$;
+revoke all on function public.check_run(text) from public, anon, authenticated;
+create or replace function public.yard_check() returns int language plpgsql security definer set search_path=public as $$
+declare k int:=0;
+begin
+  perform check_run('osm_sync');
+  k:=k+check_run('place_check');
+  k:=k+check_run('stop_check');
+  k:=k+check_run('fuel_check');
+  return k;
+end $$;
+revoke all on function public.yard_check() from public, anon, authenticated;
 
 -- automaticky: každú minútu spracovanie, prehľad ráno 6:00 a poobede 14:00 (Bratislava)
 select cron.unschedule(jobname) from cron.job where jobname in ('ai-tick','ai-rano','ai-poobede');
