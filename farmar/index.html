@@ -219,7 +219,12 @@ details.trips{border-top:1px solid var(--line);padding-top:8px}details.trips sum
 .vd small{font-size:.66rem;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}.vd b{font:700 1.6rem/1.1 var(--f-head);letter-spacing:-.03em}.vd b i{font-style:normal;font-size:.8rem;color:var(--muted)}.vd b.sm{font-size:1.1rem}.vd span{font-size:.74rem;color:var(--muted)}
 .vd.big{grid-column:1/-1;background:radial-gradient(100% 140% at 100% 0%,rgba(182,255,59,.28),transparent 55%),linear-gradient(160deg,#12261a,#0b1012);border-color:rgba(182,255,59,.35)}.vd.big b{font-size:2.4rem;background:linear-gradient(90deg,#fff,#d9ffb0);-webkit-background-clip:text;background-clip:text;color:transparent}
 .vd.big.neg{background:radial-gradient(100% 140% at 100% 0%,rgba(255,80,100,.35),transparent 55%),linear-gradient(160deg,#2a0f16,#100a0d);border-color:rgba(255,107,129,.5)}.vd.big.neg b{background:linear-gradient(90deg,#fff,#ffb3bf);-webkit-background-clip:text;background-clip:text;color:transparent}
-.vd.wide{grid-column:1/-1}.vd.red{border-color:rgba(255,107,129,.5);box-shadow:0 0 24px rgba(255,107,129,.2)}.vd.red b{color:#ff8a9b}.vd.ok b{color:#b6ff3b}
+.vd.wide{grid-column:1/-1}.vd .vnote{color:#fde68a;font-size:.7rem}.vd .vsub{font-size:1rem!important;background:none!important;color:#fff!important;-webkit-text-fill-color:#fff}
+.ybal{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px;margin-top:8px}.ybal>div{display:grid;gap:2px;padding:10px;border-radius:14px;background:rgba(255,255,255,.05);border:1px solid var(--line)}.ybal small{font-size:.62rem;color:var(--muted);text-transform:uppercase;letter-spacing:.06em}.ybal b{font:700 1rem var(--f-num)}
+.ybal>div.bad{background:rgba(255,107,129,.14);border-color:rgba(255,107,129,.6)}.ybal>div.bad b{color:#ff8a9b}.ybal>div.ok b{color:#b6ff3b}
+.scg{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px;margin-top:8px}.scg>span{display:grid;gap:1px;padding:8px;border-radius:12px;background:rgba(255,255,255,.04)}.scg small{font-size:.6rem;color:var(--muted);text-transform:uppercase;letter-spacing:.05em}.scg b{font:700 .9rem var(--f-num)}.scg b.bad{color:#ff8a9b}.scg b.w{color:var(--warn)}
+.scc{border-left:3px solid var(--line)}.scc.r{border-left-color:var(--bad)}.scc.w{border-left-color:var(--warn)}
+@media(max-width:420px){.ybal,.scg{grid-template-columns:repeat(2,minmax(0,1fr))}}.vd.red{border-color:rgba(255,107,129,.5);box-shadow:0 0 24px rgba(255,107,129,.2)}.vd.red b{color:#ff8a9b}.vd.ok b{color:#b6ff3b}
 .vfirm{border-radius:26px;padding:18px;display:grid;gap:14px;background:var(--glass);border:1px solid var(--line)}.vfh{display:flex;gap:14px;align-items:center}.vfh img{height:44px;width:auto;background:#fff;border-radius:12px;padding:6px 10px}.vfh div{display:grid}.vfh b{font:700 1.1rem var(--f-head)}.vfh small{font-size:.72rem;color:var(--muted)}
 .vstats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px}.vstats div{text-align:center;padding:10px 4px;border-radius:14px;background:rgba(255,255,255,.05)}.vstats b{display:block;font:700 1.15rem var(--f-head);color:#d9ffb0}.vstats small{font-size:.6rem;color:var(--muted)}
 .vcerts{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.vcerts div{padding:10px 12px;border-radius:14px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);display:grid}.vcerts b{font-size:.8rem}.vcerts small{font-size:.68rem;color:var(--muted)}.vcerts .warn{border-color:rgba(255,207,90,.5)}
@@ -487,7 +492,7 @@ document.addEventListener("submit",async e=>{if(!FARMER)return;const f=e.target;
 
 // ================= ERNTE =================
 let TAB="req",DEALF=null,EDITF=null,FQ="";
-async function startStaff(){await loadStaff();renderStaff();window.aiInit&&aiInit();if(ROLE==="owner"||ROLE==="dispatch"){sb.channel("fleet-ev").on("postgres_changes",{event:"INSERT",schema:"public",table:"fleet_events"},p=>{const e=p.new,inn=e.kind==="in"||e.kind==="yard_in",m=e.kind==="fuel_drop"?`🚨 MOŽNÁ KRÁDEŽ NAFTY · ${e.plate} −${e.liters} l`:e.kind==="refuel_gap"?`Tankovanie nesedí · ${e.plate} ${e.liters} l`:e.kind==="depart"?`${e.plate||"auto"} sa pohlo po ${e.minutes} min státia${e.place?" · "+e.place:""}`:`${e.plate||"auto"} ${inn?(e.place_kind==="fuel"?"stojí na čerpačke":"prišlo"):"odišlo"} · ${e.place||"dvor"}${e.driver?" · "+e.driver:""}`;toast("🚛 "+m,7000);try{navigator.vibrate&&navigator.vibrate([200,100,200])}catch(x){}try{if(window.Notification&&Notification.permission==="granted")new Notification("VALKO",{body:m,icon:"icon-192.png"})}catch(x){}if(TAB==="fleet"){STATE.fleet=null;renderStaff()}}).subscribe();try{if(window.Notification&&Notification.permission==="default")Notification.requestPermission()}catch(x){}}setInterval(async()=>{if(document.hidden||TAB!=="trans")return;await loadStaff();renderStaff()},120000);
+async function startStaff(){await loadStaff();renderStaff();window.aiInit&&aiInit();if(ROLE==="owner"||ROLE==="dispatch"){sb.channel("fleet-ev").on("postgres_changes",{event:"INSERT",schema:"public",table:"fleet_events"},p=>{const e=p.new;if(e.kind==="speed"||(e.src==="jazdy"&&!(/fuel_drop|refuel_gap/.test(e.kind)&&Date.now()-new Date(e.at)<6*3600e3)))return;const inn=e.kind==="in"||e.kind==="yard_in",m=e.kind==="fuel_drop"?`🚨 MOŽNÁ KRÁDEŽ NAFTY · ${e.plate} −${e.liters} l`:e.kind==="refuel_gap"?`Tankovanie nesedí · ${e.plate} ${e.liters} l`:e.kind==="depart"?`${e.plate||"auto"} sa pohlo po ${e.minutes} min státia${e.place?" · "+e.place:""}`:`${e.plate||"auto"} ${inn?(e.place_kind==="fuel"?"stojí na čerpačke":"prišlo"):"odišlo"} · ${e.place||"dvor"}${e.driver?" · "+e.driver:""}`;toast("🚛 "+m,7000);try{navigator.vibrate&&navigator.vibrate([200,100,200])}catch(x){}try{if(window.Notification&&Notification.permission==="granted")new Notification("VALKO",{body:m,icon:"icon-192.png"})}catch(x){}if(TAB==="fleet"){STATE.fleet=null;renderStaff()}}).subscribe();try{if(window.Notification&&Notification.permission==="default")Notification.requestPermission()}catch(x){}}setInterval(async()=>{if(document.hidden||TAB!=="trans")return;await loadStaff();renderStaff()},120000);
   sb.channel("staff-req").on("postgres_changes",{event:"INSERT",schema:"public",table:"requests"},async p=>{await loadStaff();renderStaff();const fr=STATE.farmers.find(x=>x.id===p.new.farmer_id);toast("Nová požiadavka: "+(fr?fr.name:"")+" – "+RKIND[p.new.kind],6000);try{navigator.vibrate&&navigator.vibrate(200)}catch(x){}}).subscribe();
   document.addEventListener("visibilitychange",()=>{if(!document.hidden)loadStaff().then(renderStaff)})}
 async function loadStaff(){const [f,p,s,d,r]=await Promise.all([sb.from("farmers").select("*").order("name"),sb.from("prices").select("*"),sb.from("settings").select("key,value"),
@@ -530,12 +535,13 @@ team:{t:"Tím",i:"👥",r:"Kto z ERNTE/VALKO má prístup a čo smie.",s:[
  ["Pridať človeka","Zadaj e-mail, meno, rolu a heslo – môže sa hneď prihlásiť."]]}};
 const FHELP={
 dash:["Dashboard","Rýchly prehľad celej flotily a AI prehľad. Ťuknutím na dlaždicu prejdeš do detailu."],
-perf:["Prevádzka a náklady","Km, spotreba, nafta (cena podľa tvojich tankovaní alebo bez DPH), mýto (km × podiel spoplatnených km × sadzba), pevné náklady a mzdy. Obrat = km × sadzba €/km z Nastavení – je to odhad, nie faktúry. Zisk = obrat − všetky náklady; ak chýbajú mzdy, nedá sa spočítať."],
-alarm:["Alarmy","Pokles nafty v stojacom aute, tankovanie nesedí s nádržou, rozdiel natankovanej a spotrebovanej nafty (nad 10 %), vysoká spotreba, rýchlosť nad 90 km/h, auto bez signálu, súkromné jazdy, autá s málo dátami. Rozdiel nafty nie je dôkaz krádeže – over karty a výdaj z nádrže na dvore."],
+perf:["Prevádzka a náklady","Km, spotreba, nafta = spotrebované litre × cena bez DPH (cena s DPH z Nastavení / 1,23; v zátvorke s DPH), mýto (km × podiel spoplatnených km × sadzba), pevné náklady a mzdy. Pevné náklady za tento mesiac sa počítajú pomerne k dnešnému dňu (zisk „do dnes“) a zvlášť s plnou sumou (celý mesiac). Obrat = km × sadzba €/km – je to odhad, nie faktúry, kým v Nastaveniach nezadáš skutočný obrat. Zisk = obrat − všetky náklady; ak chýbajú mzdy, nedá sa spočítať."],
+alarm:["Alarmy","Pokles nafty v stojacom aute, tankovanie nesedí s nádržou, rozdiel nafty po autách (mesiac, od 100 km, nad 15 % = vysoký, € bez DPH), nádrž na dvore nesedí (nad 3 %), jazda bez vodiča (TACHO / neznámy nad 20 km = stredný), auto bez signálu nad 24 h (okrem odstavených), sync polôh bez novej polohy 30 min, vysoká spotreba, rýchlosť nad 90 km/h, súkromné jazdy. Autá bez tankovania z karty sú zvlášť ako „tankuje mimo karty alebo chýbajú dáta“. Rozdiel nafty nie je dôkaz krádeže – over karty a výdaj z nádrže na dvore."],
 map:["Kde sú autá","Živá poloha z Commandera (zelené ide, modré stojí, sivé = poloha staršia ako 6 h). Mapu posúvaš a približuješ prstami, prepínač Mapa/Satelit."],
 moves:["Pohyby","Príchody a odchody (dvor, Agro-Somotor, čerpačky, odberatelia) a odchod po státí. Tie isté udalosti chodia ako upozornenia na telefón."],
-veh:["Vozidlá","Každé auto: stav, nádrž, km, spotreba, max rýchlosť, tachometer, vodič a tlačidlá na zavolanie. Ťukni na auto pre graf nádrže za 48 h a posledné jazdy. Pod 100 km = „málo dát“."],
-drv:["Vodiči a mzdy","Vodiči podľa jázd v Commanderi, firemný a súkromný mobil, WhatsApp. Mzda = základ 1 031 € alebo súčet diét (80 € v Košickom kraji po Prešov/Rožňavu, 90 € mimo), čo je viac; deň sa počíta od 10 km."],
+veh:["Vozidlá","Každé auto: stav, nádrž, km, spotreba, max rýchlosť, tachometer, vodič a tlačidlá na zavolanie. Ťukni na auto pre graf nádrže za 48 h a posledné jazdy. Pod 100 km = „málo dát“. Tlačidlom 🅿️ Odstavené označíš auto mimo prevádzky – nebude hlásiť chýbajúci signál ani jazdy."],
+yard:["Nádrž na dvore","Evidencia vlastnej nafty: nákup do nádrže, výdaj do auta (dátum, ŠPZ, vodič, litre, stav nádrže po výdaji) a odmeraný stav. Bilancia = stav + nákup − výdaj − aktuálny stav; nad 3 % svieti červeno. Výdaj sa pripočíta autu aj vodičovi ako natankovaná nafta."],
+drv:["Vodiči a mzdy","Vodiči podľa jázd v Commanderi, firemný a súkromný mobil, WhatsApp. Mzda = základ 1 031 € alebo súčet diét (80 € v Košickom kraji po Prešov/Rožňavu, 90 € mimo), čo je viac; deň sa počíta od 10 km. Hodnotenie vodičov za zvolený mesiac: km, l/100, spotrebované a natankované litre (karta podľa vodiča v čase tankovania + výdaj z dvora), rozdiel l/%/€ bez DPH, rýchlosť nad 90, poklesy paliva, nafta + mýto na km."],
 firm:["Firma VALKO","Údaje firmy, certifikáty (GMP+ s odpočtom platnosti) a kontakty tímu."],
 set:["Nastavenia","Cena nafty, mýto a podiel spoplatnených km, sadzba obratu €/km, pevné náklady, miesta s upozornením (dvor, čerpačky, odberatelia), čas státia pre upozornenie, ochrana nafty, ntfy a 🩺 Diagnostika dát."]};
 function helpBtn(k){return HELP[k]?`<button type="button" class="hbtn" data-help="${k}" aria-label="Ako to funguje"><span>?</span>Ako to funguje</button>`:""}
@@ -586,10 +592,13 @@ function fleetMap(G){return lmapHTML(G.map(k=>({lat:+k.gps_lat,lon:+k.gps_lon,la
 let FPER="m",FVEH=null;
 async function loadFleet(){const days=FPER==="1"?1:+FPER,since=new Date(Date.now()-days*864e5);if(FPER==="1")since.setHours(0,0,0,0);
   if(FPER==="m"){since.setTime(new Date(new Date().getFullYear(),new Date().getMonth(),1).getTime())}
-  const [v,r]=await Promise.all([sb.from("cmd_vehicles").select("*"),sb.from("rides").select("*").gte("start_at",since.toISOString()).order("start_at",{ascending:false}).limit(5000)]);
-  const [c,ev,pl]=await Promise.all([sb.from("fleet_cfg").select("*"),sb.from("fleet_events").select("*").order("at",{ascending:false}).limit(60),sb.from("places").select("id,name,kind,lat,lon,r,notify,source").order("name").limit(2000)]);
+  const m0=new Date(new Date().getFullYear(),new Date().getMonth(),1),from=since<m0?since:m0;
+  const [v,r]=await Promise.all([sb.from("cmd_vehicles").select("*"),sb.from("rides").select("*").gte("start_at",from.toISOString()).order("start_at",{ascending:false}).limit(8000)]);
+  const [c,ev,pl,yd,me]=await Promise.all([sb.from("fleet_cfg").select("*"),sb.from("fleet_events").select("*").neq("kind","speed").order("at",{ascending:false}).limit(60),sb.from("places").select("id,name,kind,lat,lon,r,notify,source").order("name").limit(2000),
+    sb.from("yard_fuel").select("*").order("day",{ascending:false}).order("id",{ascending:false}).limit(1000),sb.from("fleet_events").select("kind,driver,plate,vehicle_id,at,liters,ride_id,src").eq("kind","fuel_drop").gte("at",m0.toISOString()).limit(3000)]);
   const cfg=Object.fromEntries((c.data||[]).map(x=>[x.key,x.value]));const tk=await sb.from("trucks").select("no,spz,phone,cmd_id,driver");
-  STATE.fleet={veh:v.data||[],rides:r.data||[],err:v.error||r.error,since,cfg,ev:ev.data||[],places:pl.error?null:(pl.data||[]),trucks:tk.data||[]}}
+  const all=r.data||[];
+  STATE.fleet={veh:v.data||[],rides:all.filter(x=>new Date(x.start_at)>=since),mrides:all.filter(x=>new Date(x.start_at)>=m0),m0,err:v.error||r.error,since,cfg,ev:ev.data||[],mev:me.data||[],yard:yd.error?null:(yd.data||[]),places:pl.error?null:(pl.data||[]),trucks:tk.data||[]}}
 const n1=x=>Number.isFinite(+x)&&x!==null?(+x).toLocaleString("sk-SK",{maximumFractionDigits:1}):"–";
 const n0=x=>Number.isFinite(+x)&&x!==null?Math.round(+x).toLocaleString("sk-SK"):"–";
 const hm=sec=>{sec=+sec||0;const h=Math.floor(sec/3600),m=Math.round(sec%3600/60);return h?`${h} h ${m} min`:`${m} min`};
@@ -601,29 +610,106 @@ const MINKM=100;
 function fleetCons(R){const by={};for(const r of R)(by[r.vehicle_id]=by[r.vehicle_id]||[]).push(r);let l=0,k=0;for(const id in by){const a=agg(by[id]);if(a.km>=MINKM){l+=a.l;k+=a.lkm}}return k>20?l/k*100:null}
 const consTxt=a=>a.km<MINKM?(a.n||a.lraw?"málo dát":"–"):a.cons?n1(a.cons):"–";
 // rozpis vodič × auto: km, spotrebované l, l/100 (pod 100 km = málo dát), natankované l
-function dcBreak(R,vById){vById=vById||{};const pl=r=>{const v=vById[r.vehicle_id];return String(r.plate||(v&&(v.plate||v.name))||r.vehicle_id||"?").trim()};
+function dcBreak(R,vById){vById=vById||{};R=attrRides(R);const pl=r=>{const v=vById[r.vehicle_id];return String(r.plate||(v&&(v.plate||v.name))||r.vehicle_id||"?").trim()};
   const D={},C={};for(const r of R){const d=String(r.driver||"").trim()||"neznámy vodič",p=pl(r);const dd=(D[d]=D[d]||{}),cc=(C[p]=C[p]||{});(dd[p]=dd[p]||[]).push(r);(cc[d]=cc[d]||[]).push(r)}
   const st=x=>{const a=agg(x),few=a.km<MINKM;return {km:a.km,l:a.lraw,cons:few?null:a.cons,ref:a.ref,few}};
   const grp=(M,key,sub)=>Object.entries(M).map(([k,by])=>Object.assign({[key]:k,[sub]:Object.entries(by).map(([s,x])=>Object.assign({k:s},st(x))).sort((a,b)=>b.km-a.km)},st([].concat(...Object.values(by))))).sort((a,b)=>b.km-a.km);
   return {drivers:grp(D,"n","cars"),cars:grp(C,"p","drivers")}}
 const dcCons=x=>x.few?"málo dát":x.cons?n1(x.cons):"–";
 function dcAi(R,vById){return dcBreak(R,vById).drivers.map(d=>({vodic:d.n,km:Math.round(d.km),litre:Math.round(d.l),l_100km:d.few?"málo dát":d.cons?+d.cons.toFixed(1):null,malo_dat:d.few,natankovane_l:Math.round(d.ref),auta:d.cars.map(c=>({auto:c.k,km:Math.round(c.km),litre:Math.round(c.l),l_100km:c.few?"málo dát":c.cons?+c.cons.toFixed(1):null,natankovane_l:Math.round(c.ref)}))}))}
-function fuelGap(F){const T=agg(F.rides);if(T.l<200)return null;const CO=Object.assign({diesel:1.952},F.cfg.costs||{}),gap=T.l-T.ref,p=gap/T.l;return {l:T.l,ref:T.ref,gap,p,eur:gap*CO.diesel}}
-function fleetAlerts(F){const out=[],now=Date.now(),avg=fleetCons(F.rides);
-  const G=fuelGap(F);if(G&&G.p>0.10)out.push(["r",`Rozdiel natankovanej a spotrebovanej nafty: spotrebované ${n0(G.l)} l, natankované ${n0(G.ref)} l → rozdiel ${n0(G.gap)} l (${Math.round(G.p*100)} %) ≈ ${n0(G.eur)} € · stupeň VYSOKÝ · skontroluj tankovania mimo karty, vlastnú nádrž na dvore alebo odčerpávanie`]);
-  for(const v of F.veh){const nm=v.plate||v.name||v.id;
-    if(v.gps_at&&now-new Date(v.gps_at)>24*3600e3)out.push(["w",`${nm}: bez signálu ${ago(v.gps_at)}`]);
+// ===== pomocné: vodič, ŠPZ, nádrž na dvore, priradenie tankovania =====
+const pkey=p=>String(p||"").replace(/[^A-Za-z0-9]/g,"").toUpperCase();
+const realDrv=d=>{d=String(d||"").trim();return !!d&&!/^tacho/i.test(d)&&d.toLowerCase()!=="neznámy vodič"};
+const drvName=d=>String(d||"").trim()||"neznámy vodič";
+const ymKey=d=>d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0");
+const ymd=d=>d.toLocaleDateString("sv-SE");
+const monName=m=>new Date(m+"-15").toLocaleDateString("sk-SK",{month:"long"});
+// tankovanie z karty patrí vodičovi, ktorý bol na aute v čase tankovania (jazda bez vodiča / TACHO → najbližšia jazda s vodičom do 24 h)
+function refDrv(r,byV){if(realDrv(r.driver))return drvName(r.driver);const t=new Date(r.start_at)-0;let best=null,bd=864e5;for(const x of byV[r.vehicle_id]||[]){if(!realDrv(x.driver))continue;const d=Math.abs(new Date(x.start_at)-t);if(d<=bd){bd=d;best=x}}return best?drvName(best.driver):drvName(r.driver)}
+function attrRides(R){const byV={};for(const r of R)(byV[r.vehicle_id]=byV[r.vehicle_id]||[]).push(r);const out=[];
+  for(const r of R){if(+r.refuel_l>0){const d=refDrv(r,byV);if(d!==drvName(r.driver)){out.push(Object.assign({},r,{refuel_l:0,refuel_eur:0}));out.push({ride_id:r.ride_id+"~ref",vehicle_id:r.vehicle_id,plate:r.plate,driver:d,start_at:r.start_at,distance:0,fuel_consumed:0,refuel_l:r.refuel_l,refuel_eur:r.refuel_eur,_ph:1});continue}}out.push(r)}return out}
+// výdaj z nádrže na dvore patrí vodičovi zo záznamu, inak vodičovi, ktorý v ten deň jazdil na aute
+function yardDrv(y,R){if(String(y.driver||"").trim())return String(y.driver).trim();const t=new Date(y.day+"T12:00")-0;let best=null,bd=2*864e5;for(const x of R){if(!realDrv(x.driver)||pkey(x.plate)!==pkey(y.plate))continue;const d=Math.abs(new Date(x.start_at)-t);if(d<=bd){bd=d;best=x}}return best?drvName(best.driver):"neznámy vodič"}
+// bilancia nádrže na dvore: (posledný zadaný stav + nákupy − výdaje) − aktuálny stav
+function yardBal(Y){if(!Y||!Y.length)return null;const S=[...Y].sort((a,b)=>a.day<b.day?-1:a.day>b.day?1:a.id-b.id);let st0=null,i0=-1;S.forEach((y,i)=>{if(y.kind==="stav"){st0=+y.tank_after||0;i0=i}});
+  let nk=0,vy=0;S.slice(i0+1).forEach(y=>{if(y.kind==="nakup")nk+=+y.liters||0;if(y.kind==="vydaj")vy+=+y.liters||0});
+  let cur=null;for(let i=S.length-1;i>=0;i--){if(S[i].tank_after!=null&&S[i].tank_after!==""){cur=+S[i].tank_after;break}}
+  const base=(st0||0)+nk,diff=cur!=null?base-vy-cur:null;return {st0,nk,vy,cur,diff,p:diff!=null&&base>0?diff/base:null,since:i0>=0?S[i0].day:null}}
+// hodnotenie vodičov za obdobie (nafta bez DPH, natankované = karta podľa vodiča v čase tankovania + výdaj z dvora)
+function drvScore(R,EV,YD,CO){const dz=CO.diesel/1.23,A=attrRides(R),D={};const g=n=>D[n]=D[n]||{n,R:[],yard:0,drops:0,cars:new Set()};
+  for(const r of A){const d=g(drvName(r.driver));d.R.push(r);if(!r._ph)d.cars.add(pkey(r.plate||r.vehicle_id))}
+  for(const y of YD)g(yardDrv(y,R)).yard+=+y.liters||0;
+  for(const e of EV)g(drvName(e.driver)).drops++;
+  const CV={};for(const r of R){const k=pkey(r.plate||r.vehicle_id);(CV[k]=CV[k]||new Set()).add(drvName(r.driver))}
+  return Object.values(D).map(d=>{const RR=d.R.filter(x=>!x._ph),a=agg(RR),ref=d.R.reduce((t,x)=>t+(+x.refuel_l||0),0),l=a.lraw,gap=l-ref-d.yard,few=a.km<MINKM;
+    return {n:d.n,km:a.km,l,cons:few?null:a.cons,ref,yard:d.yard,gap,pct:l>0?gap/l:null,eur:gap*dz,over:a.over,max:a.max,drops:d.drops,costKm:a.km>0?(l*dz+a.km*(CO.share/100)*CO.toll)/a.km:null,few,
+      multi:[...d.cars].some(k=>CV[k]&&CV[k].size>1),cars:[...new Set(RR.map(r=>String(r.plate||r.vehicle_id||"?").trim()))]}})
+  .filter(x=>x.km>0||x.ref>0||x.yard>0).sort((x,y)=>(x.few-y.few)||(y.gap-x.gap))}
+// rozdiel nafty po vozidlách za tento mesiac (iba autá s aspoň 100 km)
+function vehGap(F){const CO=Object.assign({diesel:1.952},F.cfg.costs||{}),dz=CO.diesel/1.23,mon=ymKey(new Date()),YD=(F.yard||[]).filter(y=>y.kind==="vydaj"&&String(y.day).startsWith(mon));
+  const by={};for(const r of F.mrides||[])(by[r.vehicle_id]=by[r.vehicle_id]||[]).push(r);
+  return F.veh.map(v=>{const R=by[v.id]||[],a=agg(R),yd=YD.filter(y=>pkey(y.plate)&&pkey(y.plate)===pkey(v.plate)).reduce((t,y)=>t+(+y.liters||0),0);
+    const dk={};for(const r of R){const n=drvName(r.driver);dk[n]=(dk[n]||0)+(+r.distance||0)}const drs=Object.entries(dk).sort((x,y)=>y[1]-x[1]);
+    const l=a.lraw,gap=l-a.ref-yd;return {v,pl:v.plate||v.name||v.id,km:a.km,l,card:a.ref,yd,gap,p:l>0?gap/l:null,eur:gap*dz,drs,multi:drs.length>1}}).filter(x=>x.km>=MINKM)}
+function fuelGap(F){const T=agg(F.rides);if(T.lraw<200)return null;const CO=Object.assign({diesel:1.952},F.cfg.costs||{}),s0=ymd(F.since),yd=(F.yard||[]).filter(y=>y.kind==="vydaj"&&String(y.day)>=s0).reduce((t,y)=>t+(+y.liters||0),0),ref=T.ref+yd,gap=T.lraw-ref,p=gap/T.lraw;return {l:T.lraw,ref,yd,gap,p,eur:gap*CO.diesel/1.23}}
+function fleetAlerts(F){const out=[],now=Date.now(),avg=fleetCons(F.rides),PK=new Set(((F.cfg.parked||{}).ids)||[]),mon=ymKey(new Date());
+  const G=fuelGap(F);if(G&&G.p>0.10)out.push(["r",`Rozdiel nafty – celá flotila: spotrebované ${n0(G.l)} l, natankované ${n0(G.ref)} l${G.yd?` (z toho výdaj z dvora ${n0(G.yd)} l)`:""} → rozdiel ${n0(G.gap)} l (${Math.round(G.p*100)} %) ≈ ${n0(G.eur)} € bez DPH · stupeň VYSOKÝ · skontroluj tankovania mimo karty, vlastnú nádrž na dvore alebo odčerpávanie`]);
+  // rozdiel nafty po vozidlách (mesiac, aspoň 100 km, nad 15 %)
+  for(const x of vehGap(F).filter(x=>x.card>0&&x.p!=null&&x.p>0.15).sort((a,b)=>b.gap-a.gap))
+    out.push(["r",`Rozdiel nafty ${x.pl}: vodič ${x.drs.slice(0,2).map(d=>d[0]).join(", ")}${x.drs.length>2?" a ďalší":""} · ${n0(x.km)} km · spotrebované ${n0(x.l)} l, natankované ${n0(x.card+x.yd)} l (karta ${n0(x.card)}${x.yd?` + dvor ${n0(x.yd)}`:""}) → rozdiel ${n0(x.gap)} l (${Math.round(x.p*100)} %) ≈ ${n0(x.eur)} € bez DPH · stupeň VYSOKÝ${x.multi?" · viac vodičov na aute, rozdiel orientačný":""} · ${monName(mon)}`]);
+  // nádrž na dvore
+  const YB=yardBal(F.yard);if(YB&&YB.p!=null&&Math.abs(YB.p)>0.03)out.push(["r",`Nádrž na dvore nesedí: ${YB.st0!=null?`stav ${n0(YB.st0)} l + `:""}nakúpené ${n0(YB.nk)} l − vydané ${n0(YB.vy)} l − stav nádrže ${n0(YB.cur)} l = rozdiel ${n0(YB.diff)} l (${n1(YB.p*100)} %) · stupeň VYSOKÝ`]);
+  // sync polôh
+  const act=F.veh.filter(v=>!PK.has(v.id)),lastG=Math.max(0,...act.map(v=>v.gps_at?new Date(v.gps_at)-0:0)),lastW=Math.max(0,...act.map(v=>v.updated_at?new Date(v.updated_at)-0:0));
+  if(act.length&&now-lastG>30*60e3&&act.some(v=>(+v.speed||0)>3||+v.ign===1||!v.in_yard))out.push(["w",`Sync polôh nezapísal novú polohu viac ako 30 min: najnovšia poloha ${lastG?ago(lastG):"žiadna"}${lastW&&now-lastW<10*60e3?" · sync beží, ale Commander posiela staré polohy (autá stoja alebo jednotky spia)":" · synchronizácia nezapisuje – pozri 🩺 Diagnostika v Nastaveniach"} · stupeň STREDNÝ`]);
+  for(const v of F.veh){const nm=v.plate||v.name||v.id,park=PK.has(v.id);
+    if(!park&&(!v.gps_at||now-new Date(v.gps_at)>24*3600e3))out.push(["w",`Auto bez signálu viac ako 24 h: ${nm} · ${v.gps_at?Math.floor((now-new Date(v.gps_at))/3600e3)+" h bez signálu":"zatiaľ žiadna poloha"}`]);
+    // jazda bez vodiča (TACHO- / neznámy vodič) za mesiac
+    const MR=(F.mrides||[]).filter(r=>r.vehicle_id===v.id&&!realDrv(r.driver)&&+r.distance>0).sort((a,b)=>new Date(a.start_at)-new Date(b.start_at)),nk=MR.reduce((t,r)=>t+(+r.distance||0),0);
+    if(nk>20){const days=[...new Set(MR.map(r=>new Date(r.start_at).toLocaleDateString("sk-SK",{day:"numeric",month:"numeric"})))];out.push(["w",`Jazda bez vodiča: ${nm} · ${n0(nk)} km bez priradeného vodiča (TACHO / neznámy) za ${monName(mon)} · dni ${days.slice(0,12).join(", ")}${days.length>12?" …":""} · stupeň STREDNÝ`])}
     const R=F.rides.filter(r=>r.vehicle_id===v.id),a=agg(R);
-    if(!R.length){out.push(["b",`${nm}: žiadne jazdy ani tankovanie v tomto období`]);continue}
+    if(!R.length){if(!park)out.push(["b",`${nm}: žiadne jazdy ani tankovanie v tomto období`]);continue}
     if(a.km<MINKM&&a.lraw>0)out.push(["w",`${nm}: málo dát (${n0(a.km)} km, ${n0(a.lraw)} l) – skontrolovať GPS modul / dáta`]);
     if(avg&&a.km>=MINKM&&a.cons&&a.lkm>100&&a.cons>avg*1.2)out.push(["r",`${nm}: vysoká spotreba ${n1(a.cons)} l/100 km (priemer flotily ${n1(avg)})`]);
     if(a.over)out.push(["w",`${nm}: ${a.over}× rýchlosť nad 90 km/h (max ${a.max} km/h)`]);
     if(a.priv)out.push(["b",`${nm}: ${a.priv} súkromných jázd`]);
     // úbytok paliva medzi jazdami bez tankovania (stojace auto)
     const S=[...R].sort((x,y)=>new Date(x.start_at)-new Date(y.start_at));
-    for(let i=1;i<S.length;i++){const p=S[i-1],c=S[i];if(p.fuel_stop&&c.fuel_start&&+p.fuel_stop-+c.fuel_start>=25&&!(+c.refuel_l))out.push(["r",`${nm}: pokles paliva o ${n0(+p.fuel_stop-+c.fuel_start)} l počas státia (${new Date(p.stop_at).toLocaleString("sk-SK",{day:"numeric",month:"numeric",hour:"2-digit",minute:"2-digit"})} → ${new Date(c.start_at).toLocaleTimeString("sk-SK",{hour:"2-digit",minute:"2-digit"})}) – skontrolovať`])}
+    for(let i=1;i<S.length;i++){const p=S[i-1],c=S[i];if(p.fuel_stop&&c.fuel_start&&+p.fuel_stop-+c.fuel_start>=25&&!(+c.refuel_l))out.push(["r",`${nm}: pokles paliva o ${n0(+p.fuel_stop-+c.fuel_start)} l počas státia (${new Date(p.stop_at).toLocaleString("sk-SK",{day:"numeric",month:"numeric",hour:"2-digit",minute:"2-digit"})} → ${new Date(c.start_at).toLocaleTimeString("sk-SK",{hour:"2-digit",minute:"2-digit"})})${p.driver?" · "+p.driver:""} – skontrolovať`])}
   }
   return out}
+// autá s jazdou nad 100 km za mesiac, ale bez tankovania z karty
+function offCard(F){return vehGap(F).filter(x=>x.card<=0).sort((a,b)=>b.km-a.km)}
+function offCardHTML(F){const L=offCard(F);if(!L.length)return "";return `<div class="xal"><div class="xai w"><span>⛽</span><div><b>Tankuje mimo karty alebo chýbajú dáta · ${L.length} ${L.length===1?"auto":L.length<5?"autá":"áut"}</b><small>${L.map(x=>`<b>${esc(x.pl)}</b> ${n0(x.km)} km · spotrebované ${n0(x.l)} l · z karty 0 l${x.yd?` · výdaj z dvora ${n0(x.yd)} l`:""}${x.drs[0]?" · "+esc(x.drs[0][0]):""}`).join("<br>")}</small><small>Auto jazdilo nad ${MINKM} km a nemá za ${esc(monName(ymKey(new Date())))} žiadne tankovanie z karty – zapíš výdaj z nádrže na dvore alebo over karty.</small></div></div></div>`}
+// ================= NÁDRŽ NA DVORE (vlastná nafta) =================
+const YK={nakup:"🛢️ Nákup",vydaj:"⛽ Výdaj",stav:"📏 Stav nádrže"};
+function yardDashHTML(F){const YB=yardBal(F.yard);if(!F.yard)return "";if(!YB)return `<div class="card"><div class="t">🛢️ Nádrž na dvore</div><div class="s">Zatiaľ bez záznamov. Zapíš počiatočný stav nádrže, nákupy nafty a každý výdaj do auta – bilancia sa spočíta sama.</div><div class="btns"><button type="button" class="pri" data-fsec="yard">Otvoriť evidenciu</button></div></div>`;
+  const bad=YB.p!=null&&Math.abs(YB.p)>0.03;
+  return `<div class="card"><div class="t">🛢️ Bilancia nádrže na dvore${YB.since?` · od ${esc(new Date(YB.since+"T12:00").toLocaleDateString("sk-SK"))}`:""}</div>
+    <div class="ybal"><div><small>${YB.st0!=null?"stav + nákup":"nakúpené"}</small><b>${n0((YB.st0||0)+YB.nk)} l</b></div><div><small>vydané</small><b>${n0(YB.vy)} l</b></div><div><small>stav nádrže</small><b>${YB.cur!=null?n0(YB.cur)+" l":"–"}</b></div><div class="${YB.diff==null?"":bad?"bad":"ok"}"><small>rozdiel</small><b>${YB.diff!=null?n0(YB.diff)+" l · "+n1(YB.p*100)+" %":"zadaj stav"}</b></div></div>
+    <div class="s">${bad?"<b style='color:#ff8a9b'>Rozdiel je nad 3 % – nafta z nádrže chýba alebo nie je zapísaný výdaj.</b> ":""}Bilancia = ${YB.st0!=null?"zadaný stav + ":""}nakúpená nafta − výdaj − aktuálny stav nádrže.</div><div class="btns"><button type="button" data-fsec="yard">Evidencia nádrže</button></div></div>`}
+function vYard(F){let h=`<h2>Nádrž na dvore</h2>`;if(!F.yard)return h+`<div class="card"><div class="s">Evidencia sa zapína – databáza sa aktualizuje automaticky do pár minút. Potom obnov stránku.</div></div>`;
+  const today=ymd(new Date()),drivers=[...new Set((F.mrides||[]).concat(F.rides).map(r=>r.driver).filter(realDrv))].sort((a,b)=>a.localeCompare(b,"sk"));
+  h+=yardDashHTML(F);
+  h+=`<form class="card f" id="fYard"><div class="w t">Nový záznam</div>
+    <label class="w">Typ<select name="kind" id="yKind"><option value="vydaj">⛽ Výdaj do auta</option><option value="nakup">🛢️ Nákup nafty do nádrže</option><option value="stav">📏 Stav nádrže (meranie / inventúra)</option></select></label>
+    <label>Dátum<input type="date" name="day" value="${today}" max="${today}" required></label>
+    <label class="yv">ŠPZ<select name="plate"><option value="">– vyber auto –</option>${F.veh.map(v=>v.plate||v.name).filter(Boolean).sort().map(p=>`<option>${esc(p)}</option>`).join("")}</select></label>
+    <label class="w yv">Vodič<input name="driver" list="yDrv" placeholder="meno vodiča (ako v Commanderi)" autocomplete="off"><datalist id="yDrv">${drivers.map(d=>`<option value="${esc(d)}">`).join("")}</datalist></label>
+    <label class="yl">Litre<input name="liters" inputmode="decimal" placeholder="napr. 250"></label>
+    <label>Stav nádrže po zápise (l)<input name="tank" inputmode="decimal" placeholder="napr. 3 400"></label>
+    <label class="yn" hidden>Cena €/l bez DPH<input name="price" inputmode="decimal" placeholder="nepovinné"></label>
+    <label class="w">Poznámka<input name="note" placeholder="nepovinné (dodací list, faktúra…)"></label>
+    <div class="w btns"><button class="pri" type="submit">Uložiť záznam</button></div>
+    <div class="w s">Výdaj: ŠPZ, vodič, litre a stav nádrže po výdaji. Nákup: koľko litrov prišlo do nádrže. Stav: odmeraný stav – bilancia sa počíta od posledného zadaného stavu. Výdaj sa pripočíta autu a vodičovi ako natankovaná nafta.</div></form>`;
+  const L=F.yard.slice(0,80);
+  h+=`<div class="card"><div class="t">Záznamy (${F.yard.length})</div>${L.length?L.map(y=>`<div class="row"><span><b>${YK[y.kind]||esc(y.kind)}</b> · ${esc(new Date(y.day+"T12:00").toLocaleDateString("sk-SK"))}${y.kind!=="stav"?` · <b class="num">${n0(y.liters)} l</b>`:""}${y.plate?" · "+esc(y.plate):""}${y.driver?" · "+esc(y.driver):""}${y.tank_after!=null?` · stav ${n0(y.tank_after)} l`:""}${y.price?` · ${String(y.price).replace(".",",")} €/l`:""}${y.note?`<br><small class="s">${esc(y.note)}</small>`:""}</span><button type="button" class="out dng" data-ydel="${y.id}" aria-label="Zmazať">×</button></div>`).join(""):`<div class="s">Zatiaľ žiadne záznamy.</div>`}</div>`;
+  return h}
+document.addEventListener("change",e=>{if(e.target.id!=="yKind")return;const f=e.target.form,k=e.target.value;f.querySelectorAll(".yv").forEach(x=>x.hidden=k!=="vydaj");f.querySelectorAll(".yn").forEach(x=>x.hidden=k!=="nakup");f.querySelectorAll(".yl").forEach(x=>x.hidden=k==="stav")});
+document.addEventListener("submit",async e=>{if(e.target.id!=="fYard")return;e.preventDefault();const fd=new FormData(e.target),k=fd.get("kind"),L=num(fd.get("liters")),T=String(fd.get("tank")||"").trim()?num(fd.get("tank")):null;
+  if(k!=="stav"&&!(L>0)){toast("Zadaj litre.");return}if(k==="stav"&&T==null){toast("Zadaj stav nádrže v litroch.");return}if(k==="vydaj"&&!fd.get("plate")){toast("Vyber ŠPZ auta.");return}
+  const row={day:fd.get("day")||ymd(new Date()),kind:k,liters:k==="stav"?0:L,tank_after:T,plate:k==="vydaj"?String(fd.get("plate")||"").trim()||null:null,driver:k==="vydaj"?String(fd.get("driver")||"").trim()||null:null,price:k==="nakup"&&String(fd.get("price")||"").trim()?num(fd.get("price")):null,note:String(fd.get("note")||"").trim()||null};
+  const b=e.target.querySelector("button[type=submit]");busy(b,true);const r=await sb.from("yard_fuel").insert(row);busy(b,false);if(r.error){toast("Chyba: "+r.error.message,6000);return}STATE.fleet=null;loadPay.p=null;if(STATE.pay)STATE.pay.mon=null;renderStaff();toast("Záznam uložený.")},true);
 function vFleet(){const F=STATE.fleet;if(!F)return `<div class="card"><div class="s">Načítavam flotilu…</div></div>`;
   if(F.err)return `<div class="card"><div class="t">Flotila ešte nie je zapnutá</div><div class="s">Spusti raz SQL zo stránky flotila.html.</div><a class="btn pri" href="flotila.html">Zapnúť flotilu</a></div>`;
   const per=[["1","Dnes"],["7","7 dní"],["30","30 dní"],["m","Tento mesiac"]];
@@ -631,24 +717,33 @@ function vFleet(){const F=STATE.fleet;if(!F)return `<div class="card"><div class
   let h=`<div class="card"><div class="btns seg2">${per.map(p=>`<button type="button" data-fper="${p[0]}" aria-pressed="${FPER===p[0]}">${p[1]}</button>`).join("")}</div></div>`;
   const A=agg(F.rides);A.cons=fleetCons(F.rides);
   const CO=Object.assign({diesel:1.952,toll:0.2677,share:100,fixed:80000,rate:1.5},F.cfg.costs||{});
-  const dBez=CO.diesel/1.23,realP=A.ref>0&&A.refe>0?A.refe/A.ref:null,useP=realP||dBez;
-  const fuelEur=A.l*useP,tollEur=A.km*(CO.share/100)*CO.toll,tot=fuelEur+tollEur;
-  const nd=new Date(),dim=new Date(nd.getFullYear(),nd.getMonth()+1,0).getDate(),days=FPER==="m"?dim:FPER==="1"?1:+FPER;
-  const OWN=ROLE==="owner",fx=OWN?CO.fixed*days/dim:0,pay=OWN&&FPER==="m"&&STATE.pay&&STATE.pay.mon===PMON&&PMON===(nd.getFullYear()+"-"+String(nd.getMonth()+1).padStart(2,"0"))?(STATE.payTot||0):null;
-  const all=tot+fx+(pay||0),f3=x=>x.toFixed(3).replace(".",",");
-  if(OWN){const rv=A.km*CO.rate;STATE.aiKpi={obdobie:FPER,km:Math.round(A.km),jazd:A.n,nafta_l:Math.round(A.l),spotreba_l_100:A.cons?+A.cons.toFixed(1):null,nafta_eur:Math.round(fuelEur),myto_eur:Math.round(tollEur),pevne_eur:Math.round(fx),mzdy_eur:pay!=null?Math.round(pay):null,naklady_spolu_eur:Math.round(all),obrat_eur:Math.round(rv),zisk_eur:pay!=null?Math.round(rv-all):null,zisk_poznamka:pay!=null?"":"chýbajú mzdy – zisk sa nedá spočítať",natankovane_l:Math.round(A.ref),natankovane_eur:Math.round(A.refe),nafta_eur_s_dph_cena_z_nastaveni:Math.round(A.l*CO.diesel),cena_nafty:CO.diesel,myto_km:CO.toll,myto_podiel_pct:CO.share,sadzba_km:CO.rate,pevne_mesiac:CO.fixed,flotila_po_vodicoch:dcAi(F.rides,Object.fromEntries(F.veh.map(v=>[v.id,v])))}}
+  // nafta v nákladoch a zisku = spotrebované litre × cena bez DPH (cena s DPH / 1,23) – jedna hodnota všade
+  const dBez=CO.diesel/1.23;
+  const fuelEur=A.l*dBez,fuelVat=A.l*CO.diesel,tollEur=A.km*(CO.share/100)*CO.toll,tot=fuelEur+tollEur;
+  const nd=new Date(),dim=new Date(nd.getFullYear(),nd.getMonth()+1,0).getDate(),curM=FPER==="m",dd=nd.getDate(),days=curM?dd:FPER==="1"?1:+FPER;
+  const OWN=ROLE==="owner",MK=ymKey(nd),fx=OWN?CO.fixed*days/dim:0,fxFull=OWN?(curM?CO.fixed:fx):0,pay=OWN&&curM&&STATE.pay&&STATE.pay.mon===PMON&&PMON===MK?(STATE.payTot||0):null;
+  const revReal=OWN&&curM&&F.cfg.rev&&+F.cfg.rev[MK]>0?+F.cfg.rev[MK]:null,rv=revReal!=null?revReal:A.km*CO.rate;
+  const revNote=revReal!=null?"obrat zadaný z faktúr":"Obrat je odhad z nastavenej sadzby €/km, nie z faktúr";
+  const all=tot+fx+(pay||0),allFull=tot+fxFull+(pay||0),f3=x=>x.toFixed(3).replace(".",",");
+  const pr=rv-all,prFull=rv-allFull,sgn=x=>(x>=0?"+":"−")+n0(Math.abs(x))+" €";
+  if(OWN){const SC=drvScore(F.rides,(F.mev||[]).filter(e=>new Date(e.at)>=F.since),(F.yard||[]).filter(y=>y.kind==="vydaj"&&String(y.day)>=ymd(F.since)),CO),SM=Object.fromEntries(SC.map(x=>[x.n,x]));
+    STATE.aiKpi={obdobie:FPER,km:Math.round(A.km),jazd:A.n,nafta_l:Math.round(A.l),spotreba_l_100:A.cons?+A.cons.toFixed(1):null,nafta_eur:Math.round(fuelEur),nafta_eur_poznamka:"bez DPH (spotrebované l × cena s DPH / 1,23)",nafta_eur_s_dph:Math.round(fuelVat),myto_eur:Math.round(tollEur),
+      pevne_eur:Math.round(fx),pevne_poznamka:curM?`pomerne k dnešnému dňu (${dd}/${dim} dní)`:`${days}/${dim} mesiaca`,pevne_cely_mesiac_eur:Math.round(fxFull),mzdy_eur:pay!=null?Math.round(pay):null,naklady_spolu_eur:Math.round(all),naklady_cely_mesiac_eur:Math.round(allFull),
+      obrat_eur:Math.round(rv),obrat_zdroj:revReal!=null?"zadaný z faktúr":"odhad z nastavenej sadzby €/km, nie z faktúr",zisk_eur:pay!=null?Math.round(pr):null,zisk_cely_mesiac_eur:pay!=null&&curM?Math.round(prFull):null,zisk_poznamka:pay!=null?"zisk_eur = do dnes (pevné náklady pomerne); zisk_cely_mesiac_eur = s plnými pevnými nákladmi":"chýbajú mzdy – zisk sa nedá spočítať",
+      natankovane_l:Math.round(A.ref),cena_nafty_s_dph:CO.diesel,cena_nafty_bez_dph:+dBez.toFixed(3),myto_km:CO.toll,myto_podiel_pct:CO.share,sadzba_km:CO.rate,pevne_mesiac:CO.fixed,
+      flotila_po_vodicoch:dcAi(F.rides,Object.fromEntries(F.veh.map(v=>[v.id,v]))).map(d=>{const x=SM[d.vodic];return x?Object.assign(d,{natankovane_l:Math.round(x.ref+x.yard),natankovane_karta_l:Math.round(x.ref),vydaj_z_dvora_l:Math.round(x.yard),rozdiel_l:Math.round(x.gap),rozdiel_pct:x.pct!=null?+(x.pct*100).toFixed(1):null,rozdiel_eur_bez_dph:Math.round(x.eur),prekrocenia_90:x.over,max_rychlost:x.max||null,poklesy_paliva:x.drops,poznamka:x.multi?"viac vodičov na aute, rozdiel orientačný":null}):d})}}
   const perName={"1":"dnes","7":"posledných 7 dní","30":"posledných 30 dní","m":"tento mesiac"}[FPER];
-  const segs=[["Nafta",fuelEur,"sf"],["Mýto",tollEur,"st"]].concat(OWN?[["Pevné",fx,"sx"]]:[]).concat(pay!=null?[["Mzdy",pay,"sp"]]:[]);
+  const segs=[["Nafta bez DPH",fuelEur,"sf"],["Mýto",tollEur,"st"]].concat(OWN?[[curM?"Pevné (pomerne)":"Pevné",fx,"sx"]]:[]).concat(pay!=null?[["Mzdy",pay,"sp"]]:[]);
   // prevádzka
   h+=`<div class="xhero"><div class="xh1"><small>Prevádzka · ${esc(perName)}</small><b>${n0(A.km)}<i> km</i></b><span>${A.n} jázd · ${hm(A.sec)} za volantom</span></div>
     <div class="xring" style="--p:${A.cons?Math.min(100,A.cons/45*100):0}"><div><b>${A.cons?n1(A.cons):"–"}</b><small>l/100 km</small></div></div></div>
-  <div class="xchips"><div class="xc"><span>⛽</span><div><small>Spotreba</small><b>${n0(A.l)} l</b></div></div><div class="xc"><span>🧾</span><div><small>Natankované</small><b>${n0(A.ref)} l</b>${A.refe?`<em>${n0(A.refe)} € · ${f3(A.refe/A.ref)} €/l${A.refe/A.ref<CO.diesel/1.1?" (asi bez DPH)":""}</em>`:A.ref?"<em>cena nezadaná</em>":""}</div></div><div class="xc"><span>💶</span><div><small>Nafta SK</small><b>${f3(CO.diesel)} €</b><em>${f3(dBez)} bez DPH</em></div></div><div class="xc"><span>🛣️</span><div><small>Mýto</small><b>${CO.toll.toFixed(4).replace(".",",")}</b><em>€/km</em></div></div></div>
+  <div class="xchips"><div class="xc"><span>⛽</span><div><small>Spotreba</small><b>${n0(A.l)} l</b></div></div><div class="xc"><span>🧾</span><div><small>Natankované (karta)</small><b>${n0(A.ref)} l</b><em>${A.l?Math.round(A.ref/A.l*100)+" % spotreby":""}</em></div></div><div class="xc"><span>💶</span><div><small>Nafta bez DPH</small><b>${n0(fuelEur)} €</b><em>(s DPH ${n0(fuelVat)} €) · ${f3(dBez)} €/l</em></div></div><div class="xc"><span>🛣️</span><div><small>Mýto</small><b>${CO.toll.toFixed(4).replace(".",",")}</b><em>€/km</em></div></div></div>
   <div class="xcost"><div class="xc1"><small>${OWN?"Náklady spolu":"Nafta + mýto"} · bez DPH</small><b>${n0(OWN?all:tot)} €</b><span><b>${A.km?f3((OWN?all:tot)/A.km):"–"}&nbsp;€</b> na kilometer${OWN?` · nafta + mýto ${A.km?f3(tot/A.km):"–"} €/km`:""}</span></div>
     <div class="xbar">${segs.map(g=>`<i class="${g[2]}" style="flex:${Math.max(.001,g[1])}"></i>`).join("")}</div>
     <div class="xleg">${segs.map(g=>`<div><i class="${g[2]}"></i><span>${g[0]}</span><b>${n0(g[1])} €</b><small>${(OWN?all:tot)?Math.round(g[1]/(OWN?all:tot)*100):0} %</small></div>`).join("")}</div>
-    ${OWN&&pay==null?`<div class="xmiss"><b>Chýbajú mzdy, zisk sa nedá spočítať.</b><span>${FPER==="m"?"Mzdy sa načítavajú…":"Mzdy sa počítajú za celý mesiac."} Obrat ${n0(A.km*CO.rate)} € · náklady bez miezd ${n0(all)} €</span>${FPER==="m"?"":`<button type="button" data-fper="m">Prepnúť na Tento mesiac</button>`}</div>`:""}
-    ${OWN&&pay!=null?(()=>{const rev=A.km*CO.rate,pr=rev-all,mg=rev?pr/rev*100:0;return `<div class="xprof ${pr>=0?"ok":"bad"}"><div><small>Obrat (výkony)</small><b>${n0(rev)} €</b><span>${n0(A.km)} km × ${CO.rate.toFixed(2).replace(".",",")} €/km</span></div><div class="xpr"><small>${pr>=0?"Zisk":"Strata"}</small><b>${pr>=0?"+":"−"}${n0(Math.abs(pr))} €</b><span>marža ${n1(mg)} % · ${A.km?f3(pr/A.km):"–"} €/km</span></div></div>`})():""}
-    <div class="xnote">Nafta ${n0(A.l)} l × ${f3(useP)} €${realP?" (vaše tankovanie)":""} · mýto ${n0(A.km)} km × ${CO.share} % spoplatnených km${+CO.share>=100?" (= mýto zo všetkých km; ak jazdíte aj mimo mýtnych ciest, zníž % v Nastaveniach)":""} × ${CO.toll.toFixed(4).replace(".",",")} € · nafta s DPH by bola ${n0(A.l*CO.diesel)} €${OWN?` · pevné ${n0(CO.fixed)} €/mes.${FPER==="m"?"":" × "+days+"/"+dim+" dní"}`:""}${pay!=null?" · mzdy hrubé (odhad)":""}</div></div>`;
+    ${OWN&&pay==null?`<div class="xmiss"><b>Chýbajú mzdy, zisk sa nedá spočítať.</b><span>${curM?"Mzdy sa načítavajú…":"Mzdy sa počítajú za celý mesiac."} Obrat ${n0(rv)} € · náklady bez miezd ${n0(all)} €</span>${curM?"":`<button type="button" data-fper="m">Prepnúť na Tento mesiac</button>`}</div>`:""}
+    ${OWN&&pay!=null?(()=>{const mg=rv?pr/rv*100:0;return `<div class="xprof ${pr>=0?"ok":"bad"}"><div><small>Obrat (výkony)</small><b>${n0(rv)} €</b><span>${revReal!=null?"zadaný z faktúr":`${n0(A.km)} km × ${CO.rate.toFixed(2).replace(".",",")} €/km · odhad, nie faktúry`}</span></div><div class="xpr"><small>${pr>=0?"Zisk":"Strata"}${curM?" · do dnes (pomerne)":""}</small><b>${sgn(pr)}</b><span>marža ${n1(mg)} % · ${A.km?f3(pr/A.km):"–"} €/km</span></div></div>${curM?`<div class="xnote">Celý mesiac (plné pevné náklady ${n0(CO.fixed)} €): <b>${sgn(prFull)}</b> · do dnes pevné ${n0(fx)} € (${dd}/${dim} dní)</div>`:""}`})():""}
+    <div class="xnote">${OWN?esc(revNote)+" · ":""}Nafta ${n0(A.l)} l × ${f3(dBez)} € bez DPH = ${n0(fuelEur)} € (s DPH ${n0(fuelVat)} €) · mýto ${n0(A.km)} km × ${CO.share} % spoplatnených km${+CO.share>=100?" (= mýto zo všetkých km; ak jazdíte aj mimo mýtnych ciest, zníž % v Nastaveniach)":""} × ${CO.toll.toFixed(4).replace(".",",")} € · ${OWN?`pevné ${n0(CO.fixed)} €/mes. × ${days}/${dim} dní`:""}${pay!=null?" · mzdy hrubé (odhad)":""}</div></div>`;
   const now=Date.now(),PH=(F.cfg.phones||{});
   const telA=t=>String(t||"").replace(/[^\d+]/g,"");
   const lastBy=k=>{const m={};for(const r of F.rides){const key=r[k];if(!key)continue;if(!m[key]||new Date(r.start_at)>new Date(m[key].start_at))m[key]=r}return m};
@@ -671,7 +766,7 @@ function vFleet(){const F=STATE.fleet;if(!F)return `<div class="card"><div class
   h+=`<h2>Alarmy</h2><div class="xal"><div class="xalh"><div class="xalc ${AX.length?"on":""}"><b>${AX.length}</b><small>${AX.length?"na kontrolu":"všetko v poriadku"}</small></div>
      <div class="xals"><span class="r">${cnt("r")} vážne</span><span class="w">${cnt("w")} varovania</span><span class="b">${cnt("b")} info</span></div></div>
     ${AX.length?AX.slice(0,25).map(a=>`<div class="xai ${a.lv}"><span>${a.ic}</span><div><b>${esc(a.t)}</b><small>${a.d}${a.at?" · "+new Date(a.at).toLocaleString("sk-SK",{day:"numeric",month:"numeric",hour:"2-digit",minute:"2-digit"}):""}${a.map?` · <a class="copy" href="${a.map}" target="_blank" rel="noopener">mapa</a>`:""}</small></div></div>`).join(""):`<div class="xok">✓ Žiadne podozrivé poklesy nafty, rýchlosť ani spotreba.</div>`}
-    <div class="xalf">Stráži: pokles nafty ${FC.drop}+ l v stojacom aute · tankovanie vs. nádrž (${FC.gap}+ l) · spotreba +15 % · rýchlosť nad 90 km/h · auto bez signálu 24 h · súkromné jazdy</div></div>`;
+    <div class="xalf">Stráži: pokles nafty ${FC.drop}+ l v stojacom aute · tankovanie vs. nádrž (${FC.gap}+ l) · rozdiel nafty po autách nad 15 % (mesiac, od ${MINKM} km, € bez DPH) · nádrž na dvore nad 3 % · jazda bez vodiča nad 20 km · spotreba +20 % · rýchlosť nad 90 km/h · auto bez signálu 24 h (okrem odstavených) · sync polôh 30 min · súkromné jazdy</div></div>${offCardHTML(F)}`;
   // ===== MAPA =====
   S[cur]=h;h="";cur="map";
   const G=F.veh.filter(v=>v.lat&&v.gps_at).map(v=>({gps_lat:v.lat,gps_lon:v.lon,gps_speed:now-new Date(v.gps_at)<20*60e3?v.speed:0,old:now-new Date(v.gps_at)>6*3600e3,no:(v.plate||v.name||"").replace(/\s/g,"")}));
@@ -679,19 +774,20 @@ function vFleet(){const F=STATE.fleet;if(!F)return `<div class="card"><div class
   if(G.length)h+=`<h2>Kde sú teraz</h2><div class="xmap"><div class="xmh"><span><b>${moving}</b> ide</span><span><b>${G.length-moving}</b> stojí</span><span><b>${yard}</b> na dvore</span></div>${fleetMap(G)}<div class="s">🟢 ide · 🔵 stojí · ⚪ poloha staršia ako 6 h</div></div>`;
   // ===== POHYBY =====
   S[cur]=h;h="";cur="moves";
-  const MV=F.ev.filter(e=>!(e.kind==="fuel_drop"||e.kind==="refuel_gap")).slice(0,20);
+  const MV=F.ev.filter(e=>!(e.kind==="fuel_drop"||e.kind==="refuel_gap"||e.kind==="speed")).slice(0,20);
   if(MV.length)h+=`<h2>Pohyby</h2><div class="xtl">${MV.map(e=>`<div class="xti"><time>${new Date(e.at).toLocaleTimeString("sk-SK",{hour:"2-digit",minute:"2-digit"})}<small>${new Date(e.at).toLocaleDateString("sk-SK",{day:"numeric",month:"numeric"})}</small></time><i class="${e.kind==="depart"?"d":e.place_kind==="fuel"?"f":(e.kind==="in"||e.kind==="yard_in")?"i":"o"}"></i><span>${evTxt(e)}</span></div>`).join("")}</div>`;
   // ===== VOZIDLÁ =====
   S[cur]=h;h="";cur="veh";
-  const V=F.veh.map(v=>({v,a:agg(F.rides.filter(r=>r.vehicle_id===v.id))})).sort((x,y)=>y.a.km-x.a.km);
+  const PKS=new Set(((F.cfg.parked||{}).ids)||[]);
+  const V=F.veh.map(v=>({v,a:agg(F.rides.filter(r=>r.vehicle_id===v.id))})).sort((x,y)=>(PKS.has(x.v.id)-PKS.has(y.v.id))||(y.a.km-x.a.km));
   h+=`<h2>Vozidlá (${V.length})</h2><div class="xvl">`+V.map(({v,a})=>{const st=!v.gps_at?["bez dát","g"]:now-new Date(v.gps_at)>6*3600e3?["vypnuté","g"]:v.speed>3?["ide "+v.speed+" km/h",""]:v.ign?["stojí, motor beží","w"]:["stojí","b"];
     const tk=truckOf(v),lr=LV[v.id],drv=lr&&now-new Date(lr.stop_at||lr.start_at)<14*3600e3?lr.driver:null,dp=drv&&PH[drv];
     const open=FVEH===v.id,last=F.rides.filter(r=>r.vehicle_id===v.id).slice(0,12),tpct=v.tank?Math.min(100,v.tank/600*100):0;
-    return `<div class="xv${open?" open":""}"><button type="button" class="xvh" data-fveh="${esc(v.id)}"><span class="xpl">${esc(v.plate||v.name||v.id)}</span><span class="xvn"><b>${esc(v.name&&v.name!==v.plate?v.name:"")}</b><small>${drv?"👤 "+esc(drv):lr&&lr.driver?"naposledy "+esc(lr.driver):"vodič neznámy"}</small></span>${pill(st)}</button>
+    return `<div class="xv${open?" open":""}"><button type="button" class="xvh" data-fveh="${esc(v.id)}"><span class="xpl">${esc(v.plate||v.name||v.id)}</span><span class="xvn"><b>${esc(v.name&&v.name!==v.plate?v.name:"")}${PKS.has(v.id)?" 🅿️ odstavené":""}</b><small>${drv?"👤 "+esc(drv):lr&&lr.driver?"naposledy "+esc(lr.driver):"vodič neznámy"}</small></span>${pill(st)}</button>
       ${a.km<MINKM&&a.lraw>0?`<div class="al w" style="margin:6px 0">⚠️ Málo dát (${n0(a.km)} km, ${n0(a.lraw)} l) – skontrolovať GPS modul / dáta. Do priemeru a alarmov spotreby sa nepočíta.</div>`:""}
       <div class="xtank"><i style="width:${tpct}%"></i><span>${v.tank?n0(v.tank)+" l v nádrži":"nádrž – bez údaja"}</span></div>
       <div class="xvk"><span><small>km</small><b>${n0(a.km)}</b></span><span><small>l/100</small><b class="${a.km<MINKM?"":A.cons&&a.cons>A.cons*1.15?"bad":a.cons&&A.cons&&a.cons<A.cons*0.95?"good":""}">${consTxt(a)}</b></span><span><small>max</small><b class="${a.max>90?"bad":""}">${a.max||"–"}</b></span><span><small>tachometer</small><b>${v.odometer?n0(v.odometer):"–"}</b></span></div>
-      <div class="btns xact">${tk&&tk.phone?`<a class="btn" href="tel:${esc(telA(tk.phone))}">📞 Auto${tk.no?" č."+tk.no:""}</a>`:""}${dp?`<a class="btn lime" href="tel:${esc(telA(dp))}">📞 ${esc(drv.split(" ")[0])}</a>`:""}${v.lat?`<a class="btn" href="https://maps.google.com/?q=${v.lat},${v.lon}" target="_blank" rel="noopener">🗺️ ${esc(ago(v.gps_at))}</a>`:""}</div>
+      <div class="btns xact">${tk&&tk.phone?`<a class="btn" href="tel:${esc(telA(tk.phone))}">📞 Auto${tk.no?" č."+tk.no:""}</a>`:""}${dp?`<a class="btn lime" href="tel:${esc(telA(dp))}">📞 ${esc(drv.split(" ")[0])}</a>`:""}${v.lat?`<a class="btn" href="https://maps.google.com/?q=${v.lat},${v.lon}" target="_blank" rel="noopener">🗺️ ${esc(ago(v.gps_at))}</a>`:""}<button type="button" data-fpark="${esc(v.id)}">${PKS.has(v.id)?"✅ Zrušiť odstavenie":"🅿️ Odstavené"}</button></div>
       ${open?`<div class="sub"><b class="sth">Nádrž za 48 h</b>${STATE.tank&&STATE.tank.id===v.id?(STATE.tank.err?`<div class="s">Graf zapneš spustením <a class="copy" href="nafta.html">nafta.html</a>.</div>`:tankChart(STATE.tank.rows)):"<div class='s'>Načítavam…</div>"}
         <b class="sth">Posledné jazdy</b>${last.length?last.map(r=>`<div class="ride"><div class="r1"><b>${new Date(r.start_at).toLocaleString("sk-SK",{day:"numeric",month:"numeric",hour:"2-digit",minute:"2-digit"})}</b><span>${n1(r.distance)} km · ${hm(r.duration)}${r.avg_cons?` · ${n1(r.avg_cons)} l/100`:""}${r.max_speed?` · max ${r.max_speed}`:""}</span></div><div class="s">${esc(r.start_addr||"?")} → ${esc(r.stop_addr||"?")}${r.driver?" · "+esc(r.driver):""}${/PRIVAT/.test(r.ride_type||"")?" · súkromná":""}${r.refuel_l?` · ⛽ ${n0(r.refuel_l)} l`:""}</div></div>`).join(""):`<div class="s">Žiadne jazdy v tomto období.</div>`}</div>`:""}</div>`}).join("")+`</div>`;
   // ===== VODIČI =====
@@ -711,7 +807,7 @@ function vFleet(){const F=STATE.fleet;if(!F)return `<div class="card"><div class
   S[cur]=h;h="";cur="set";
   if(ROLE==="owner")h+=`<div class="aidiag"></div>`;
   h+=`<h2>Nastavenia flotily</h2><details class="card xset"><summary><span>⚙️</span><b>Náklady, miesta, upozornenia, ochrana nafty</b></summary>`;
-  h+=`<div class="sub"><b class="sth">💶 Cena nafty, mýto, pevné náklady</b>`+`<form class="f sub" id="fCosts"><label>Nafta €/l s DPH<input name="diesel" inputmode="decimal" value="${String(CO.diesel).replace(".",",")}"></label><label>Mýto €/km bez DPH<input name="toll" inputmode="decimal" value="${String(CO.toll).replace(".",",")}"></label>${ROLE==="owner"?`<label class="w">Sadzba na výpočet obratu €/km<input name="rate" inputmode="decimal" value="${String(CO.rate).replace(".",",")}"></label><label class="w">Pevné náklady flotily €/mesiac (leasing, poistenie, servis, odpisy…)<input name="fixed" inputmode="decimal" value="${CO.fixed}"></label>`:""}<label class="w">Podiel spoplatnených km (%) – diaľnice, rýchlostné a mýtne cesty I. triedy<input name="share" inputmode="numeric" value="${CO.share}"></label><div class="w s">Sadzby mýta podľa NV č. 418/2024 Z. z. (od 1. 7. 2025): diaľnica 5+ náprav EURO VI 0,2677 €/km, 4 nápravy 0,3002 €/km; cesty I. triedy súbežné s diaľnicou rovnako, ostatné mýtne úseky I. triedy 0,2238 €/km (4 nápravy). Odhad mýta = km × podiel × sadzba – presné mýto je na faktúre z eMýta.</div><div class="w btns"><button class="pri" type="submit">Uložiť</button></div></form>`+`</div>`;
+  h+=`<div class="sub"><b class="sth">💶 Cena nafty, mýto, pevné náklady</b>`+`<form class="f sub" id="fCosts"><label>Nafta €/l s DPH<input name="diesel" inputmode="decimal" value="${String(CO.diesel).replace(".",",")}"></label><label>Mýto €/km bez DPH<input name="toll" inputmode="decimal" value="${String(CO.toll).replace(".",",")}"></label>${ROLE==="owner"?`<label class="w">Sadzba na výpočet obratu €/km<input name="rate" inputmode="decimal" value="${String(CO.rate).replace(".",",")}"></label><label class="w">Pevné náklady flotily €/mesiac (leasing, poistenie, servis, odpisy…)<input name="fixed" inputmode="decimal" value="${CO.fixed}"></label><label class="w">Skutočný obrat ${esc(monName(ymKey(new Date())))} (z faktúr) € – prázdne = odhad zo sadzby €/km<input name="rev" inputmode="decimal" value="${F.cfg.rev&&F.cfg.rev[ymKey(new Date())]!=null?F.cfg.rev[ymKey(new Date())]:""}" placeholder="nezadané"></label>`:""}<label class="w">Podiel spoplatnených km (%) – diaľnice, rýchlostné a mýtne cesty I. triedy<input name="share" inputmode="numeric" value="${CO.share}"></label><div class="w s">Sadzby mýta podľa NV č. 418/2024 Z. z. (od 1. 7. 2025): diaľnica 5+ náprav EURO VI 0,2677 €/km, 4 nápravy 0,3002 €/km; cesty I. triedy súbežné s diaľnicou rovnako, ostatné mýtne úseky I. triedy 0,2238 €/km (4 nápravy). Odhad mýta = km × podiel × sadzba – presné mýto je na faktúre z eMýta.</div><div class="w btns"><button class="pri" type="submit">Uložiť</button></div></form>`+`</div>`;
   const NT=(F.cfg.notify||{}).topic,P=F.places;
   h+=`<div class="sub"><b class="sth">📍 Miesta s upozornením</b>`;
   if(!P)h+=`<div class="s">Miesta ešte nie sú zapnuté – spusti raz <a class="copy" href="miesta.html">miesta.html</a>.</div>`;
@@ -733,7 +829,7 @@ function vFleet(){const F=STATE.fleet;if(!F)return `<div class="card"><div class
   S[cur]=h;
   const BG="valko-flotila.jpg";
   const OWNx=ROLE==="owner",alN=AX.length,costM=OWNx?all:tot;
-  const NAV=[["dash","🏠","Dashboard",""],["perf","📊","Prevádzka a náklady",`${n0(costM)} €`],["alarm","🚨","Alarmy",alN?`${alN}`:"OK"],["map","🗺️","Kde sú autá",`${moving} ide`],["moves","🔁","Pohyby",`${MV.length}`],["veh","🚛","Vozidlá",`${F.veh.length}`],["drv","👥",OWNx?"Vodiči a mzdy":"Vodiči",OWNx&&STATE.payTot?`${n0(STATE.payTot)} €`:""],["firm","🏢","Firma VALKO",""],["set","⚙️","Nastavenia",""]];
+  const NAV=[["dash","🏠","Dashboard",""],["perf","📊","Prevádzka a náklady",`${n0(costM)} €`],["alarm","🚨","Alarmy",alN?`${alN}`:"OK"],["map","🗺️","Kde sú autá",`${moving} ide`],["moves","🔁","Pohyby",`${MV.length}`],["veh","🚛","Vozidlá",`${F.veh.length}`],["yard","🛢️","Nádrž na dvore",(()=>{const YB=yardBal(F.yard);return YB&&YB.cur!=null?`${n0(YB.cur)} l`:""})()],["drv","👥",OWNx?"Vodiči a mzdy":"Vodiči",OWNx&&STATE.payTot?`${n0(STATE.payTot)} €`:""],["firm","🏢","Firma VALKO",""],["set","⚙️","Nastavenia",""]];
   const sec=STATE.fsec||"dash";
   let o=`<div class="vhero" style="--bg:url('${BG}')"><div class="vhin"><div class="vbrand"><span>VALKO</span><i></i><span>ERNTE</span></div>
     <h1>Od poľa<br><em>až po odberateľa.</em></h1><p>ERNTE výkup · VALKO doprava · ${new Date().toLocaleDateString("sk-SK",{weekday:"long",day:"numeric",month:"long"})}</p>
@@ -742,16 +838,20 @@ function vFleet(){const F=STATE.fleet;if(!F)return `<div class="card"><div class
   if(sec==="dash"){
     if(OWNx)o+=`<div class="aidash"></div>`;
     o+=`<div class="vdash">
-      ${OWNx&&pay==null?`<button type="button" class="vd big neg" data-fper="m"><small>Zisk · ${esc(perName)}</small><b class="sm">nedá sa spočítať</b><span>${FPER==="m"?"mzdy sa načítavajú…":"chýbajú mzdy – ťukni pre Tento mesiac"} · obrat ${n0(A.km*CO.rate)} €</span></button>`:""}${OWNx&&pay!=null?(()=>{const rev=A.km*CO.rate,pr=rev-all;return `<button type="button" class="vd big ${pr>=0?"pos":"neg"}" data-fsec="perf"><small>${pr>=0?"Zisk":"Strata"} · ${esc(perName)}</small><b>${pr>=0?"+":"−"}${n0(Math.abs(pr))} €</b><span>obrat ${n0(rev)} € · náklady ${n0(all)} € · ${n0(A.km)} km</span></button>`})():`<button type="button" class="vd big" data-fsec="perf"><small>Nafta + mýto · ${esc(perName)}</small><b>${n0(costM)} €</b><span>${A.km?f3(costM/A.km):"–"} €/km · ${n0(A.km)} km</span></button>`}
+      ${OWNx&&pay==null?`<button type="button" class="vd big neg" data-fper="m"><small>Zisk · ${esc(perName)}</small><b class="sm">nedá sa spočítať</b><span>${FPER==="m"?"mzdy sa načítavajú…":"chýbajú mzdy – ťukni pre Tento mesiac"} · obrat ${n0(A.km*CO.rate)} €</span></button>`:""}${OWNx&&pay!=null?`<button type="button" class="vd big ${pr>=0?"pos":"neg"}" data-fsec="perf"><small>${pr>=0?"Zisk":"Strata"} · ${curM?"do dnes (pomerne)":esc(perName)}</small><b>${sgn(pr)}</b>${curM?`<span>celý mesiac (plné pevné náklady ${n0(CO.fixed)} €): <b class="vsub">${sgn(prFull)}</b></span>`:""}<span>obrat ${n0(rv)} € · náklady ${n0(all)} € · pevné ${curM?`pomerne ${n0(fx)} € (${dd}/${dim} dní)`:n0(fx)+" €"} · nafta bez DPH · ${n0(A.km)} km</span><span class="vnote">${revReal!=null?"✓ obrat zadaný z faktúr":"⚠ Obrat je odhad z nastavenej sadzby €/km, nie z faktúr"}</span></button>`:`<button type="button" class="vd big" data-fsec="perf"><small>Nafta + mýto · ${esc(perName)}</small><b>${n0(costM)} €</b><span>${A.km?f3(costM/A.km):"–"} €/km · ${n0(A.km)} km</span></button>`}
       <button type="button" class="vd ${alN?"red":"ok"}" data-fsec="alarm"><small>Alarmy</small><b>${alN||"✓"}</b><span>${alN?AX.filter(a=>a.lv==="r").length+" vážne":"všetko v poriadku"}</span></button>
+      <button type="button" class="vd" data-fsec="perf"><small>Nafta · bez DPH</small><b>${n0(fuelEur)}<i> €</i></b><span>(s DPH ${n0(fuelVat)} €) · ${n0(A.l)} l × ${f3(dBez)} €</span></button>
+      ${(()=>{const YB=yardBal(F.yard),bad=YB&&YB.p!=null&&Math.abs(YB.p)>0.03;return `<button type="button" class="vd${bad?" red":""}" data-fsec="yard"><small>Nádrž na dvore</small><b>${YB&&YB.cur!=null?n0(YB.cur)+"<i> l</i>":"–"}</b><span>${YB&&YB.diff!=null?`rozdiel ${n0(YB.diff)} l (${n1(YB.p*100)} %)${bad?" · nad 3 %":" · sedí"}`:F.yard?"zapíš nákup, výdaj a stav":"zapína sa…"}</span></button>`})()}
       <button type="button" class="vd" data-fsec="perf"><small>Priemerná spotreba</small><b>${A.cons?n1(A.cons):"–"}<i> l/100</i></b><span>${n0(A.l)} l nafty</span></button>
       <button type="button" class="vd" data-fsec="map"><small>Autá</small><b>${moving}<i> / ${F.veh.length}</i></b><span>na ceste · ${yard} na dvore</span></button>
       ${OWNx?`<button type="button" class="vd" data-fsec="drv"><small>Mzdy · ${esc(new Date().toLocaleDateString("sk-SK",{month:"long"}))}</small><b>${STATE.payTot?n0(STATE.payTot)+" €":"–"}</b><span>hrubé, odhad</span></button>`:""}
       <button type="button" class="vd wide" data-fsec="moves"><small>Posledný pohyb</small><b class="sm">${MV[0]?esc(MV[0].plate||""):"–"}</b><span>${MV[0]?esc((MV[0].place||"")+" · "+new Date(MV[0].at).toLocaleTimeString("sk-SK",{hour:"2-digit",minute:"2-digit"})):"zatiaľ nič"}</span></button></div>`;
+    o+=yardDashHTML(F)+offCardHTML(F);
     o+=vDrvCar(F,true);
     o+=S.map||"";
     if(OWNx&&!STATE.payTot)vPay(F,{});
   }else if(sec==="firm")o+=vFirm();
+  else if(sec==="yard")o+=vYard(F);
   else o+=S[sec]||"";
   return o}
 function vFirm(){const T=[["Ján Novák","riaditeľka","0900 000 000","meno@example.sk"],["Ján Novák","zástupkyňa riaditeľky","0900 000 000","meno@example.sk"],["Ján Novák","fakturácia","0900 000 000","meno@example.sk"],["Ján Novák","koordinátorka dopravy","0900 000 000","meno@example.sk"],["Ján Novák","koordinátor vnútroštátnej dopravy","0900 000 000","meno@example.sk"],["HR / personalistika","nábor vodičov","0900 000 000","info@valko-logistics.sk"]];
@@ -771,8 +871,10 @@ function outReg(r){const pts=[[r.lat_start,r.lon_start],[r.lat_stop,r.lon_stop]]
   if(pts.some(([la,lo])=>+la<KE_REG.latMin||+la>KE_REG.latMax||+lo<KE_REG.lonMin||+lo>KE_REG.lonMax))return true;
   return FOREIGN.test((r.start_addr||"")+" "+(r.stop_addr||""))}
 function loadPay(){const mon=PMON;if(loadPay.p&&loadPay.m===mon)return loadPay.p;loadPay.m=mon;return loadPay.p=(async()=>{const [y,m]=mon.split("-").map(Number),a=new Date(y,m-1,1),b=new Date(y,m,1);
-  const r=await sb.from("rides").select("driver,start_at,stop_at,distance,duration,fuel_consumed,refuel_l,max_speed,vehicle_id,lat_start,lon_start,lat_stop,lon_stop,start_addr,stop_addr,ride_type,plate").gte("start_at",a.toISOString()).lt("start_at",b.toISOString()).limit(10000);
-  if(PMON===mon)STATE.pay={mon,rides:r.data||[],err:r.error};loadPay.p=null})()}
+  const [r,ev,yd]=await Promise.all([sb.from("rides").select("ride_id,driver,start_at,stop_at,distance,duration,fuel_consumed,refuel_l,max_speed,vehicle_id,lat_start,lon_start,lat_stop,lon_stop,start_addr,stop_addr,ride_type,plate").gte("start_at",a.toISOString()).lt("start_at",b.toISOString()).limit(10000),
+    sb.from("fleet_events").select("driver,plate,at,liters").eq("kind","fuel_drop").gte("at",a.toISOString()).lt("at",b.toISOString()).limit(3000),
+    sb.from("yard_fuel").select("day,kind,plate,driver,liters").eq("kind","vydaj").gte("day",ymd(a)).lt("day",ymd(b)).limit(3000)]);
+  if(PMON===mon)STATE.pay={mon,rides:r.data||[],err:r.error,ev:ev.data||[],yard:yd.data||[]};loadPay.p=null})()}
 function vPay(F,X){X=X||{};if(ROLE!=="owner")return "";const P=STATE.pay;if(!P||P.mon!==PMON){loadPay().then(renderStaff);return `<h2>Mzdy vodičov</h2><div class="card"><div class="s">Načítavam…</div></div>`}
   const C=Object.assign({base:1031,inReg:80,outReg:90,minKm:10},F.cfg.pay||{});
   const hasGeo=P.rides.some(r=>r.lat_start!=null);
@@ -808,8 +910,20 @@ function vPay(F,X){X=X||{};if(ROLE!=="owner")return "";const P=STATE.pay;if(!P||
         <div class="s">🟩 kraj ${C.inReg} € · 🟪 mimo kraja ${C.outReg} € · číslo pod dňom = km</div>`:""}</div>`}).join("")||`<div class="card"><div class="s">V tomto mesiaci zatiaľ žiadne jazdy.</div></div>`}</div>
   <details class="card"><summary class="s" style="cursor:pointer">Sadzby a pravidlá</summary><div class="s">Denne ${C.inReg} € v Košickom kraji (po Prešov a Rožňavu), ${C.outReg} € mimo neho, od 1. dňa. Vodič dostane vyššie z: základ ${n0(C.base)} € alebo súčet denných. Odpracovaný deň = aspoň ${C.minKm} km. Odhad z Commandera – nie výplatná páska (bez odvodov, dovolenky, PN).</div>
     <form class="f sub" id="fPay"><label>Základ € (hrubé)<input name="base" inputmode="decimal" value="${C.base}"></label><label>Deň v kraji €<input name="inReg" inputmode="decimal" value="${C.inReg}"></label><label>Deň mimo kraja €<input name="outReg" inputmode="decimal" value="${C.outReg}"></label><label>Min. km na deň<input name="minKm" inputmode="numeric" value="${C.minKm}"></label><div class="w btns"><button class="pri" type="submit">Uložiť</button></div></form></details>`;
+  h+=vScore(F);
   h+=vDrvCar(F,false);
   return h}
+// ================= HODNOTENIE VODIČOV (zvolený mesiac, iba majiteľ) =================
+function vScore(F){const P=STATE.pay;if(ROLE!=="owner"||!P||P.mon!==PMON||P.err)return "";const CO=Object.assign({diesel:1.952,toll:0.2677,share:100},F.cfg.costs||{}),dz=CO.diesel/1.23;
+  const L=drvScore(P.rides,P.ev||[],P.yard||[],CO);if(!L.length)return "";
+  const f3=x=>x==null?"–":x.toFixed(3).replace(".",","),pc=x=>x==null?"–":n1(x*100)+" %";
+  return `<h2>Hodnotenie vodičov · ${esc(monName(PMON))} ${PMON.slice(0,4)}</h2><div class="s" style="margin:-4px 0 8px">Zoradené od najhoršieho rozdielu nafty. Nafta v € <b>bez DPH</b> (${f3(dz)} €/l = ${String(CO.diesel).replace(".",",")} € s DPH / 1,23). Natankované = karta (priradená vodičovi, ktorý bol na aute v čase tankovania) + výdaj z nádrže na dvore.</div><div class="xdl">`+
+  L.map(x=>{const lv=x.few?"":x.pct!=null&&x.pct>0.15?"r":x.pct!=null&&x.pct>0.05?"w":"";
+    return `<div class="xd scc ${lv}"><div class="dch"><b>${esc(x.n)}</b>${x.few?`<span class="dcfew">málo dát</span>`:""}<small>${x.cars.map(c=>`<b class="dcpl">${esc(c)}</b>`).join(" ")}</small></div>
+    <div class="scg"><span><small>km</small><b>${n0(x.km)}</b></span><span><small>l/100 km</small><b class="${x.few?"w":""}">${x.few?"málo dát":x.cons?n1(x.cons):"–"}</b></span><span><small>spotrebované</small><b>${n0(x.l)} l</b></span><span><small>natankované</small><b>${n0(x.ref+x.yard)} l</b></span>
+      <span><small>rozdiel l</small><b class="${lv==="r"?"bad":lv}">${n0(x.gap)} l</b></span><span><small>rozdiel %</small><b class="${lv==="r"?"bad":lv}">${pc(x.pct)}</b></span><span><small>rozdiel € bez DPH</small><b class="${lv==="r"?"bad":lv}">${n0(x.eur)} €</b></span><span><small>nafta+mýto €/km</small><b>${f3(x.costKm)}</b></span>
+      <span><small>nad 90 km/h</small><b class="${x.over?"bad":""}">${x.over}×</b></span><span><small>max km/h</small><b class="${x.max>90?"bad":""}">${x.max||"–"}</b></span><span><small>poklesy paliva</small><b class="${x.drops?"bad":""}">${x.drops}</b></span><span><small>karta / dvor</small><b>${n0(x.ref)} / ${n0(x.yard)}</b></span></div>
+    ${x.multi?`<div class="s">⚠️ viac vodičov na aute, rozdiel orientačný</div>`:""}</div>`}).join("")+`</div><div class="s">Poklesy paliva = pokles nafty pri státí (udalosti z ochrany nafty a z jázd). Rozdiel = spotrebované − natankované; kladný = chýba nafta. Pod ${MINKM} km „málo dát“ – nehodnotí sa.</div>`}
 // ================= VODIČI × AUTÁ (zvolený mesiac) =================
 function vDrvCar(F,withMon){const P=STATE.pay,mName=m=>new Date(m+"-15").toLocaleDateString("sk-SK",{month:"long"});
   const months=[...Array(6)].map((_,i)=>{const d=new Date();d.setDate(15);d.setMonth(d.getMonth()-i);return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")});
@@ -899,12 +1013,17 @@ document.addEventListener("click",async e=>{if(!ROLE)return;const t=e.target;let
   if(x=t.closest("[data-yardme]")){if(!navigator.geolocation){toast("Poloha nie je dostupná.");return}toast("Zisťujem polohu…");
     navigator.geolocation.getCurrentPosition(async p=>{await saveYard(p.coords.latitude,p.coords.longitude)},()=>toast("Polohu sa nepodarilo zistiť – povoľ ju v nastaveniach."),{enableHighAccuracy:true,timeout:15000});return}
   if(x=t.closest("[data-fveh]")){FVEH=FVEH===x.dataset.fveh?null:x.dataset.fveh;renderStaff();if(FVEH&&!(STATE.tank&&STATE.tank.id===FVEH)){await loadTank(FVEH);renderStaff()}return}
+  if(x=t.closest("[data-fpark]")){const id=x.dataset.fpark,cur=new Set((((STATE.fleet||{}).cfg||{}).parked||{}).ids||[]);if(cur.has(id))cur.delete(id);else{if(!confirm("Označiť auto ako odstavené? Nebude hlásiť chýbajúci signál ani jazdy."))return;cur.add(id)}
+    const r=await sb.from("fleet_cfg").upsert({key:"parked",value:{ids:[...cur]}});if(r.error){toast("Chyba: "+r.error.message);return}STATE.fleet=null;renderStaff();toast(cur.has(id)?"Auto je odstavené.":"Odstavenie zrušené.");return}
+  if(x=t.closest("[data-ydel]")){if(!confirm("Zmazať záznam nádrže?"))return;const r=await sb.from("yard_fuel").delete().eq("id",+x.dataset.ydel);if(r.error){toast("Chyba: "+r.error.message);return}STATE.fleet=null;renderStaff();return}
   if(x=t.closest("[data-phedit]")){STATE.phEdit=x.dataset.phedit||null;renderStaff();return}
   if(x=t.closest("[data-tpw]")){if(!confirm("Vytvoriť nové heslo pre "+x.dataset.tn+"?"))return;await teamLogin(x.dataset.tpw.replace("@tel.ernte.sk",""),x.dataset.tn,x.dataset.tr);return}
   if(x=t.closest("[data-trm]")){if(!confirm("Odobrať prístup?"))return;const r=await sb.rpc("remove_staff",{login_in:x.dataset.trm});if(r.error){toast(r.error.message);return}await loadTeam();renderStaff();return}
 });
 document.addEventListener("submit",async e=>{if(e.target.id!=="fCosts")return;e.preventDefault();const fd=new FormData(e.target);const old=(STATE.fleet&&STATE.fleet.cfg.costs)||{};const fxv=fd.get("fixed");const v={diesel:num(fd.get("diesel"))||1.952,toll:num(fd.get("toll"))||0.2677,share:Math.min(100,Math.max(0,num(fd.get("share"))||0)),fixed:fxv!=null?(num(fxv)||0):(old.fixed??80000),rate:fd.get("rate")!=null?(num(fd.get("rate"))||1.5):(old.rate??1.5)};
-  const r=await sb.from("fleet_cfg").upsert({key:"costs",value:v});if(r.error){toast("Chyba: "+r.error.message);return}STATE.fleet=null;renderStaff();toast("Uložené.")},true);
+  const r=await sb.from("fleet_cfg").upsert({key:"costs",value:v});if(r.error){toast("Chyba: "+r.error.message);return}
+  if(ROLE==="owner"&&fd.get("rev")!=null){const MK=ymKey(new Date()),rv=Object.assign({},(STATE.fleet&&STATE.fleet.cfg.rev)||{}),x=String(fd.get("rev")).trim();if(x&&num(x)>0)rv[MK]=num(x);else delete rv[MK];const r2=await sb.from("fleet_cfg").upsert({key:"rev",value:rv});if(r2.error){toast("Obrat sa neuložil: "+r2.error.message,6000);return}}
+  STATE.fleet=null;renderStaff();toast("Uložené.")},true);
 document.addEventListener("submit",async e=>{if(e.target.id!=="fTeam")return;e.preventDefault();const fd=new FormData(e.target);const b=e.target.querySelector("button");busy(b,true);await teamLogin(String(fd.get("login")).trim(),String(fd.get("name")).trim(),fd.get("role"));busy(b,false)},true);
 let ASSIGN=null,TDAY="";
 function vTrans(){if(STATE.noTrans)return `<div class="card"><div class="t">Doprava ešte nie je zapnutá</div><div class="s">Spusti raz SQL zo stránky doprava.html (Kopírovať SQL → SQL Editor → Run).</div><a class="btn pri" href="doprava.html">Otvoriť nastavenie dopravy</a></div>`;
@@ -1017,6 +1136,6 @@ document.addEventListener("submit",async e=>{if(!ROLE)return;const f=e.target,fd
 if("serviceWorker" in navigator&&location.protocol==="https:")navigator.serviceWorker.register("sw.js").catch(()=>{});
 boot();
 </script>
-<script src="ai.js?v=20261025-1700"></script>
+<script src="ai.js?v=20261026-0100"></script>
 </body>
 </html>

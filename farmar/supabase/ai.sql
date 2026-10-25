@@ -72,46 +72,76 @@ declare r jsonb; begin execute 'select to_jsonb(('||q||'))' into r; return r; ex
 revoke all on function public.ai_part(text) from public, anon, authenticated;
 
 -- mesačné KPI flotily priamo z databázy (nezávisle od aplikácie)
+-- nafta v nákladoch a zisku = spotrebované litre × cena bez DPH (cena s DPH / 1,23); pevné náklady pomerne k dnešnému dňu aj za celý mesiac
 create or replace function public.ai_fleet_kpi() returns jsonb language plpgsql stable security definer set search_path=public as $$
-declare m0 timestamptz:=date_trunc('month', now() at time zone 'Europe/Bratislava') at time zone 'Europe/Bratislava'; c jsonb; km numeric; l numeric; lok numeric; kok numeric; rl numeric; re numeric; n int; d numeric; t numeric; sh numeric; fx numeric; rt numeric; dim int; dd int;
+declare m0 timestamptz:=date_trunc('month', now() at time zone 'Europe/Bratislava') at time zone 'Europe/Bratislava'; c jsonb; km numeric; l numeric; lok numeric; kok numeric; rl numeric; re numeric; n int; d numeric; dz numeric; t numeric; sh numeric; fx numeric; rt numeric; dim int; dd int; rv numeric; rvz numeric; mz numeric; la numeric;
 begin
   select coalesce(value,'{}') into c from fleet_cfg where key='costs'; c:=coalesce(c,'{}');
-  d:=coalesce((c->>'diesel')::numeric,1.952); t:=coalesce((c->>'toll')::numeric,0.2677); sh:=coalesce((c->>'share')::numeric,100); fx:=coalesce((c->>'fixed')::numeric,80000); rt:=coalesce((c->>'rate')::numeric,1.5);
-  select count(*), coalesce(sum(distance),0), coalesce(sum(fuel_consumed) filter (where distance>0),0), coalesce(sum(refuel_l),0), coalesce(sum(refuel_eur),0) into n,km,l,rl,re from rides where start_at>=m0;
+  d:=coalesce((c->>'diesel')::numeric,1.952); dz:=d/1.23; t:=coalesce((c->>'toll')::numeric,0.2677); sh:=coalesce((c->>'share')::numeric,100); fx:=coalesce((c->>'fixed')::numeric,80000); rt:=coalesce((c->>'rate')::numeric,1.5);
+  select nullif(value->>to_char(now() at time zone 'Europe/Bratislava','YYYY-MM'),'')::numeric into rvz from fleet_cfg where key='rev';
+  select count(*), coalesce(sum(distance),0), coalesce(sum(fuel_consumed) filter (where distance>0),0), coalesce(sum(fuel_consumed),0), coalesce(sum(refuel_l),0), coalesce(sum(refuel_eur),0) into n,km,l,la,rl,re from rides where start_at>=m0;
+  rl:=rl+coalesce((select sum(liters) from yard_fuel where kind='vydaj' and day>=(m0 at time zone 'Europe/Bratislava')::date),0);
   select coalesce(sum(vl),0), coalesce(sum(vk),0) into lok,kok from (select sum(fuel_consumed) filter (where distance>0 and fuel_consumed>0) vl, sum(distance) filter (where distance>0 and fuel_consumed>0) vk, sum(distance) vtot from rides where start_at>=m0 group by vehicle_id) v where vtot>=100;
   dim:=extract(day from (date_trunc('month',now() at time zone 'Europe/Bratislava')+interval '1 month - 1 day'))::int; dd:=extract(day from now() at time zone 'Europe/Bratislava')::int;
+  rv:=coalesce(rvz,km*rt);
+  select nullif(value->>'mzdy_eur','')::numeric into mz from ai_state where key='kpi';
   return jsonb_build_object('obdobie','tento mesiac do dnes','jazd',n,'km',round(km),'nafta_l',round(l),'l_100km_flotila_bez_aut_pod_100km',case when kok>20 then round(lok/kok*100,1) end,
-    'natankovane_l',round(rl),'natankovane_eur',round(re),'natankovane_eur_za_l',case when rl>0 then round(re/rl,3) end,
-    'rozdiel_spotreba_minus_natankovane_l',round(l-rl),'rozdiel_pct',case when l>0 then round((l-rl)/l*100,1) end,'rozdiel_eur_pri_cene_z_nastaveni',round((l-rl)*d),
-    'cena_nafty_s_dph',d,'nafta_eur_s_dph',round(l*d),'nafta_eur_bez_dph',round(l*d/1.23),'myto_eur_km',t,'myto_podiel_km_pct',sh,'myto_eur',round(km*sh/100*t),
-    'nafta_s_dph_plus_myto_eur',round(l*d+km*sh/100*t),'eur_na_km_s_dph',case when km>0 then round((l*d+km*sh/100*t)/km,3) end,
-    'obrat_sadzba_eur_km',rt,'obrat_eur',round(km*rt),'pevne_naklady_mesiac',fx,'pevne_naklady_pomerne_k_dnu',round(fx*dd/dim),
-    'mzdy','počíta aplikácia (kpi_z_aplikacie), databáza ich nemá');
+    'natankovane_l',round(rl),'natankovane_karta_eur',round(re),
+    'natankovane_poznamka','karta + výdaj z nádrže na dvore','spotreba_vsetkych_jazd_l',round(la),'rozdiel_spotreba_minus_natankovane_l',round(la-rl),'rozdiel_pct',case when la>0 then round((la-rl)/la*100,1) end,'rozdiel_eur_bez_dph',round((la-rl)*dz),
+    'cena_nafty_s_dph',d,'cena_nafty_bez_dph',round(dz,3),'nafta_eur_bez_dph',round(l*dz),'nafta_eur_s_dph_len_info',round(l*d),
+    'myto_eur_km',t,'myto_podiel_km_pct',sh,'myto_eur',round(km*sh/100*t),
+    'nafta_plus_myto_eur_bez_dph',round(l*dz+km*sh/100*t),'eur_na_km_bez_dph',case when km>0 then round((l*dz+km*sh/100*t)/km,3) end,
+    'obrat_eur',round(rv),'obrat_zdroj',case when rvz is not null then 'zadaný skutočný obrat (faktúry)' else 'odhad z nastavenej sadzby '||rt||' €/km, nie z faktúr' end,
+    'pevne_naklady_mesiac',fx,'pevne_naklady_pomerne_k_dnu',round(fx*dd/dim),'dni',dd||'/'||dim,
+    'mzdy_eur',mz,
+    'zisk_do_dnes_pomerne_eur',case when mz is not null then round(rv-l*dz-km*sh/100*t-fx*dd/dim-mz) end,
+    'zisk_cely_mesiac_plne_pevne_eur',case when mz is not null then round(rv-l*dz-km*sh/100*t-fx-mz) end,
+    'zisk_poznamka',case when mz is null then 'mzdy nezadané – zisk sa nedá spočítať' else 'nafta bez DPH; do dnes = pevné náklady pomerne k dnešnému dňu' end);
 exception when others then return jsonb_build_object('chyba',SQLERRM);
 end $$;
 revoke all on function public.ai_fleet_kpi() from public, anon, authenticated;
 
--- rozpis tohto mesiaca po vodičoch a ich autách (spotreba priradená konkrétnemu vodičovi)
--- l_100km iba z jázd, ktoré majú km aj litre; pod 100 km = „málo dát“
+-- rozpis tohto mesiaca po vodičoch: km, l/100, natankované (karta podľa vodiča v čase tankovania + výdaj z dvora), rozdiel nafty, rýchlosť, poklesy paliva
 create or replace function public.ai_fleet_drivers() returns jsonb language plpgsql stable security definer set search_path=public as $$
-declare m0 timestamptz:=date_trunc('month', now() at time zone 'Europe/Bratislava') at time zone 'Europe/Bratislava'; r jsonb;
 begin
-  with p as (select coalesce(nullif(trim(driver),''),'neznámy vodič') vodic, coalesce(nullif(trim(plate),''),vehicle_id,'?') auto,
-      coalesce(sum(distance),0) km, coalesce(sum(fuel_consumed),0) l,
-      coalesce(sum(fuel_consumed) filter (where distance>0 and fuel_consumed>0),0) lok, coalesce(sum(distance) filter (where distance>0 and fuel_consumed>0),0) kok,
-      coalesce(sum(refuel_l),0) ref
-    from rides where start_at>=m0 group by 1,2),
-  d as (select vodic, sum(km) km, sum(l) l, sum(lok) lok, sum(kok) kok, sum(ref) ref,
-      jsonb_agg(jsonb_build_object('auto',auto,'km',round(km),'litre',round(l),
-        'l_100km',case when km>=100 and kok>20 then to_jsonb(round(lok/kok*100,1)) else '"málo dát"'::jsonb end,'natankovane_l',round(ref)) order by km desc) auta
-    from p group by vodic)
-  select coalesce(jsonb_agg(jsonb_build_object('vodic',vodic,'km',round(km),'litre',round(l),
-      'l_100km',case when km>=100 and kok>20 then to_jsonb(round(lok/kok*100,1)) else '"málo dát"'::jsonb end,
-      'malo_dat',km<100,'natankovane_l',round(ref),'auta',auta) order by km desc),'[]') into r from d;
-  return r;
+  return fleet_drv_stats(date_trunc('month', now() at time zone 'Europe/Bratislava') at time zone 'Europe/Bratislava', now()+interval '1 minute')->'vodici';
 exception when others then return jsonb_build_object('chyba',SQLERRM);
 end $$;
 revoke all on function public.ai_fleet_drivers() from public, anon, authenticated;
+
+-- denný súhrn pre ranný a poobedný prehľad (včera + mesiac do dnes)
+create or replace function public.ai_digest() returns jsonb language plpgsql stable security definer set search_path=public as $$
+declare tz text:='Europe/Bratislava'; td date:=(now() at time zone 'Europe/Bratislava')::date; t0 timestamptz; y0 timestamptz; m0 timestamptz; c jsonb; dz numeric; tl numeric; sh numeric; fx numeric; rt numeric; dim int;
+  pk text[]:=fleet_parked(); top jsonb; sp jsonb; dr jsonb; ns jsonb; nr jsonb; zy numeric; zp numeric; kmy numeric; ly numeric; kmp numeric; lp numeric; nal int;
+begin
+  t0:=td::timestamp at time zone tz; y0:=(td-1)::timestamp at time zone tz; m0:=date_trunc('month', td)::timestamp at time zone tz;
+  select value into c from fleet_cfg where key='costs'; c:=coalesce(c,'{}'::jsonb);
+  dz:=coalesce((c->>'diesel')::numeric,1.952)/1.23; tl:=coalesce((c->>'toll')::numeric,0.2677); sh:=coalesce((c->>'share')::numeric,100); fx:=coalesce((c->>'fixed')::numeric,80000); rt:=coalesce((c->>'rate')::numeric,1.5);
+  dim:=extract(day from (date_trunc('month',td-1)+interval '1 month - 1 day'))::int;
+  select coalesce(jsonb_agg(x),'[]') into top from (select jsonb_build_object('vodic',v->>'vodic','rozdiel_l',(v->>'rozdiel_l')::numeric,'rozdiel_pct',v->'rozdiel_pct','rozdiel_eur_bez_dph',v->'rozdiel_eur_bez_dph','km',v->'km','poznamka',v->'poznamka') x
+      from jsonb_array_elements(fleet_drv_stats(least(m0,y0), now())->'vodici') v where not (v->>'malo_dat')::boolean and (v->>'rozdiel_l')::numeric>0
+      order by (v->>'rozdiel_l')::numeric desc limit 3) q;
+  select coalesce(jsonb_agg(jsonb_build_object('vodic',drv,'pocet',n,'max_kmh',mx,'auta',au) order by n desc),'[]') into sp from
+    (select coalesce(nullif(trim(driver),''),'neznámy vodič') drv, count(*) n, max(max_speed) mx, string_agg(distinct coalesce(plate,vehicle_id),', ') au from rides where start_at>=y0 and start_at<t0 and max_speed>90 group by 1) q;
+  select coalesce(jsonb_agg(jsonb_build_object('auto',plate,'vodic',driver,'litre',liters,'kedy',to_char(at at time zone tz,'DD.MM. HH24:MI'),'miesto',place) order by at),'[]') into dr
+    from fleet_events where kind='fuel_drop' and at>=y0 and at<t0;
+  select coalesce(jsonb_agg(jsonb_build_object('auto',coalesce(plate,name,id),'hodin',case when gps_at is null then null else floor(extract(epoch from now()-gps_at)/3600) end) order by gps_at nulls first),'[]') into ns
+    from cmd_vehicles where (gps_at is null or gps_at<now()-interval '24 hours') and not (id = any(pk));
+  select coalesce(jsonb_agg(coalesce(plate,name,id) order by plate),'[]') into nr
+    from cmd_vehicles v where not (id = any(pk)) and not exists(select 1 from rides r where r.vehicle_id=v.id and r.start_at>=y0 and r.start_at<t0 and coalesce(r.distance,0)>0);
+  select coalesce(sum(distance),0), coalesce(sum(fuel_consumed),0) into kmy, ly from rides where start_at>=y0 and start_at<t0;
+  select coalesce(sum(distance),0), coalesce(sum(fuel_consumed),0) into kmp, lp from rides where start_at>=y0-interval '1 day' and start_at<y0;
+  zy:=kmy*rt-ly*dz-kmy*sh/100*tl-fx/dim; zp:=kmp*rt-lp*dz-kmp*sh/100*tl-fx/dim;
+  nal:=(select count(*) from jsonb_array_elements(top) x where (x->>'rozdiel_pct')::numeric>15)+jsonb_array_length(sp)+jsonb_array_length(dr)+jsonb_array_length(ns)+jsonb_array_length(nr);
+  return jsonb_build_object('vcera',to_char(td-1,'DD.MM.YYYY'),'nalezov',nal,
+    'top3_rozdiel_nafty_mesiac_do_dnes',top,'prekrocenia_90_vcera_po_vodicoch',sp,'poklesy_paliva_pri_stati_vcera',dr,
+    'auta_bez_signalu_nad_24h',ns,'auta_bez_jazdy_vcera',nr,'odstavene_auta',to_jsonb(pk),
+    'zisk_vcera_bez_miezd_eur',round(zy),'zisk_predvcerom_bez_miezd_eur',round(zp),'zmena_zisku_od_vcera_eur',round(zy-zp),
+    'zisk_poznamka','obrat = km × '||rt||' €/km (odhad), nafta bez DPH, mýto, pevné náklady 1/'||dim||' mesiaca na deň, bez miezd',
+    'kpi_mesiac',ai_fleet_kpi());
+exception when others then return jsonb_build_object('chyba',SQLERRM);
+end $$;
+revoke all on function public.ai_digest() from public, anon, authenticated;
 
 -- diagnostika: čo je zapnuté a kde chýbajú dáta
 create or replace function public.ai_diag() returns jsonb language plpgsql security definer set search_path=public as $$
@@ -124,13 +154,30 @@ begin
    'udalosti_podla_typu_30_dni', ai_part($q$select coalesce(jsonb_object_agg(kind,n),'{}') from (select kind,count(*) n from fleet_events where at>now()-interval '30 days' group by kind) x$q$),
    'dvor_nastaveny', ai_part($q$select exists(select 1 from fleet_cfg where key='yard') or exists(select 1 from places where kind='yard')$q$),
    'miesta', ai_part($q$select coalesce(jsonb_object_agg(kind,n),'{}') from (select kind,count(*) n from places group by kind) x$q$),
-   'miesta_s_upozornenim', ai_part('select count(*) from places where notify'),
+   'miesta_ntfy', ai_part('select count(*) from places where notify'),
+   'miesta_problemy', ai_part($q$select jsonb_build_object('spolu',count(*),'bez_problemu',count(*) filter (where pr=''),'s_problemom',count(*) filter (where pr<>''),
+       'bez_suradnic',count(*) filter (where pr like '%S%'),'mimo_oblasti',count(*) filter (where pr like '%O%'),'bez_nazvu',count(*) filter (where pr like '%N%'),
+       'nazov_bez_mesta',count(*) filter (where pr like '%M%'),'neplatny_typ',count(*) filter (where pr like '%T%'),'duplicitne',count(*) filter (where pr like '%D%'))
+     from (select p.*, concat(case when p.lat is null or p.lon is null or (p.lat=0 and p.lon=0) then 'S' end,
+        case when p.lat is not null and p.lon is not null and not (p.lat=0 and p.lon=0) and (p.lat not between 45.5 and 51 or p.lon not between 15 and 24.5) then 'O' end,
+        case when nullif(trim(p.name),'') is null then 'N' end, case when p.name ~* '^\s*slovnaft\s*$' then 'M' end,
+        case when p.kind is null or p.kind not in ('yard','buyer','fuel','other') then 'T' end,
+        case when exists(select 1 from places b where b.id<p.id and b.kind=p.kind and abs(b.lat-p.lat)<0.0005 and abs(b.lon-p.lon)<0.0007) then 'D' end) pr from places p) x$q$),
    'ntfy_tema_nastavena', ai_part($q$select coalesce((select value->>'topic' from fleet_cfg where key='notify'),'') <> ''$q$),
    'funkcie', ai_part($q$select jsonb_build_object('yard_check',to_regprocedure('public.yard_check()') is not null,'place_check',to_regprocedure('public.place_check()') is not null,'stop_check',to_regprocedure('public.stop_check()') is not null,'fuel_check',to_regprocedure('public.fuel_check()') is not null,'osm_sync',to_regprocedure('public.osm_sync()') is not null)$q$),
    'cron_ulohy', ai_part($q$select coalesce(jsonb_agg(jsonb_build_object('uloha',jobname,'zapnuta',active,'rozvrh',schedule)),'[]') from cron.job$q$),
    'cron_posledne_behy', ai_part($q$select coalesce(jsonb_agg(x),'[]') from (select j.jobname uloha, d.status, left(d.return_message,120) sprava, to_char(d.start_time at time zone 'Europe/Bratislava','DD.MM HH24:MI') kedy from cron.job_run_details d join cron.job j on j.jobid=d.jobid where d.start_time>now()-interval '15 minutes' order by d.start_time desc limit 12) x$q$),
    'cron_chyby_24h', ai_part($q$select coalesce(jsonb_agg(x),'[]') from (select j.jobname uloha, count(*) chyb, max(left(d.return_message,160)) posledna from cron.job_run_details d join cron.job j on j.jobid=d.jobid where d.status<>'succeeded' and d.start_time>now()-interval '24 hours' group by j.jobname) x$q$),
-   'commander_posledne', ai_part($q$select coalesce(jsonb_agg(x),'[]') from (select kind, to_char(max(at) at time zone 'Europe/Bratislava','DD.MM HH24:MI') posledne, max(code) filter (where at>now()-interval '1 hour') kod from cmd_log group by kind) x$q$),
+   'commander_posledne', ai_part($q$select coalesce(jsonb_agg(x),'[]') from (select kind, to_char(max(at) at time zone 'Europe/Bratislava','DD.MM HH24:MI') posledne, (array_agg(code order by at desc) filter (where done))[1] kod from cmd_log where kind<>'backfill' group by kind) x$q$),
+   'backfill', ai_part($q$select jsonb_build_object('dni_ok',count(*) filter (where code=200),'caka',count(*) filter (where code=-1),'bez_kodu_stare',count(*) filter (where code is null),'chyby',count(*) filter (where code not in (200,-1)),
+       'posledny_den',max(url) filter (where code=200),'chyba_teraz',(select msg from check_err where fn in ('cmd_rides_bf','cmd_rides') and msg is not null order by at desc limit 1)) from cmd_log where kind='backfill'$q$),
+   'sync_polohy', ai_part($q$select jsonb_build_object('zapis_posledny',to_char(max(updated_at) at time zone 'Europe/Bratislava','DD.MM HH24:MI'),'min_od_zapisu',floor(extract(epoch from now()-max(updated_at))/60),
+       'najnovsia_gps',to_char(max(gps_at) at time zone 'Europe/Bratislava','DD.MM HH24:MI'),'min_od_gps',floor(extract(epoch from now()-max(gps_at))/60),
+       'auta_v_jazde_alebo_mimo_dvora',count(*) filter (where not (id = any(fleet_parked())) and (coalesce(speed,0)>3 or coalesce(ign,0)=1 or not coalesce(in_yard,false))),
+       'posledna_davka',(select n||' polôh'||coalesce(' · '||msg,'')||' · '||to_char(ok_at at time zone 'Europe/Bratislava','HH24:MI') from check_err where fn='cmd_pos'),
+       'vysvetlenie',case when max(updated_at)<now()-interval '30 minutes' then 'sync nezapisuje – chyba synchronizácie' when max(gps_at)<now()-interval '30 minutes' then 'sync zapisuje, ale Commander nemá novšiu GPS polohu (autá stoja / jednotky spia)' else 'v poriadku' end) from cmd_vehicles$q$),
+   'odstavene_auta', ai_part($q$select coalesce(jsonb_agg(coalesce(plate,name,id)),'[]') from cmd_vehicles where id = any(fleet_parked())$q$),
+   'nadrz_dvor', ai_part('select yard_balance()'),
    'aut_spolu', ai_part('select count(*) from cmd_vehicles'),
    'auta_s_polohou_do_30_min', ai_part($q$select count(*) from cmd_vehicles where lat is not null and gps_at>now()-interval '30 minutes'$q$),
    'najnovsia_poloha', ai_part($q$select to_char(max(gps_at) at time zone 'Europe/Bratislava','DD.MM HH24:MI') from cmd_vehicles$q$),
@@ -167,6 +214,8 @@ begin
    'flotila_kpi_mesiac_z_databazy', ai_fleet_kpi(),
    'flotila_po_autach_mesiac', ai_part('select coalesce(jsonb_agg(x),''[]'') from (select coalesce(plate,vehicle_id) auto, round(sum(distance)) km, round(sum(fuel_consumed)) l, case when sum(distance)>=100 then round(100*sum(fuel_consumed)/nullif(sum(distance),0),1)::text else ''málo dát'' end l_100km, round(sum(refuel_l)) natankovane_l from rides where start_at>='||m0||'::timestamptz group by 1 order by 2 desc nulls last) x'),
    'flotila_po_vodicoch', ai_fleet_drivers(),
+   'nadrz_na_dvore', ai_part('select yard_balance()'),
+   'denny_suhrn', ai_digest(),
    'auta_teraz', ai_part($q$select jsonb_build_object('spolu',count(*),'ide',count(*) filter (where speed>3 and gps_at>now()-interval '20 min')) from cmd_vehicles$q$),
    'udalosti_7_dni', ai_part($q$select coalesce(jsonb_object_agg(kind,n),'{}') from (select kind,count(*) n from fleet_events where at>now()-interval '7 days' group by kind) x$q$),
    'posledne_alarmy_nafta', ai_part($q$select coalesce(jsonb_agg(x),'[]') from (select kind, plate, driver, to_char(at at time zone 'Europe/Bratislava','DD.MM HH24:MI') kedy from fleet_events where at>now()-interval '7 days' and kind in ('fuel_drop','refuel_gap') order by at desc limit 10) x$q$),
@@ -183,7 +232,7 @@ revoke all on function public.ai_snapshot() from public, anon, authenticated;
 create or replace function public.ai_system() returns text language sql stable as $$ select
 'Si ERNTE AI – osobný poradca a kontrolór majiteľa (Martin Vaľko) firiem ERNTE spol. s r.o. (výkup obilia a olejnín od farmárov, predaj odberateľom/na burzu) a VALKO s.r.o. (kamiónová doprava, Scania ťahače, Michalovce, dvor Medovská 46). Píš po slovensky, stručne, priamo, bez omáčok, ako skúsený obchodný riaditeľ. Používaj čísla.
 Úlohy: 1) kontroluj obchody, náklady, zisky a straty, flotilu (spotreba, krádeže nafty, prestoje) a upozorni čo je zlé a čo dobré; 2) sleduj trhy (MATIF repka/pšenica/kukurica, CBOT sója, slovenské a maďarské výkupné ceny, nafta) – na aktuálne ceny VŽDY použi web_search a uveď zdroj a dátum; 3) raď konkrétne čo má robiť (kúpiť/predať/držať, za akú cenu, komu volať, čo skontrolovať).
-Nikdy si nevymýšľaj čísla – ak údaj chýba, napíš „nezadané“ alebo „málo dát“, nikdy nie 0. Zisk = obrat − (nafta + mýto + pevné náklady + mzdy); ak chýbajú mzdy (kpi_z_aplikacie.mzdy_eur je null), napíš že zisk sa nedá presne spočítať. Autá s menej ako 100 km za mesiac majú „málo dát“ – nerátaj ich do priemernej spotreby ani alarmov. Spotrebu konkrétneho vodiča ber z flotila_po_vodicoch (vodič → autá, km, litre, l/100 km, natankované litre); vodič s menej ako 100 km za mesiac má „málo dát“ – jeho spotrebu nehodnoť. Pri technických problémoch (chýbajúce udalosti, alarmy, jazdy) použi sekciu diagnostika a povedz presne, čo je vypnuté alebo nenastavené.
+Nikdy si nevymýšľaj čísla – ak údaj chýba, napíš „nezadané“ alebo „málo dát“, nikdy nie 0. Zisk = obrat − (nafta + mýto + pevné náklady + mzdy); ak chýbajú mzdy (kpi_z_aplikacie.mzdy_eur je null), napíš že zisk sa nedá presne spočítať. Autá s menej ako 100 km za mesiac majú „málo dát“ – nerátaj ich do priemernej spotreby ani alarmov. Spotrebu konkrétneho vodiča ber z flotila_po_vodicoch (vodič → autá, km, litre, l/100 km, natankované litre = karta priradená vodičovi, ktorý bol na aute v čase tankovania + výdaj z nádrže na dvore, rozdiel nafty l/%/€ bez DPH, prekrocenia_90, max_rychlost, poklesy_paliva); vodič s menej ako 100 km za mesiac má „málo dát“ – jeho spotrebu nehodnoť; pri poznámke „viac vodičov na aute“ je rozdiel orientačný. Nafta v nákladoch a zisku = spotrebované litre × cena BEZ DPH (cena s DPH / 1,23) – pri sume vždy napíš „bez DPH“. Pevné náklady nedokončeného mesiaca sú pomerne k dnešnému dňu (zisk „do dnes“), za celý mesiac plné. Obrat je odhad z nastavenej sadzby €/km, nie z faktúr, kým nie je zadaný skutočný obrat (obrat_zdroj). Pri technických problémoch (chýbajúce udalosti, alarmy, jazdy) použi sekciu diagnostika a povedz presne, čo je vypnuté alebo nenastavené.
 PLNÉ OPRÁVNENIE: majiteľ ti dal plný prístup ku všetkému v tejto aplikácii (kód aj databáza). Úpravy aj zmeny databázy sa robia a nasadzujú automaticky – nikdy nežiadaj majiteľa, aby spúšťal SQL alebo niečo kopíroval. Ak vidíš chybu alebo chýbajúce dáta (aj v diagnostike), sám navrhni opravu ako ÚLOHU.
 ÚPRAVY APLIKÁCIE: ak majiteľ chce niečo v aplikácii opraviť, pridať alebo zmeniť, NEROB to v texte – na koniec odpovede pridaj samostatný riadok presne v tvare
 ÚLOHA: <presný a úplný popis zmeny po slovensky, aby ju programátor vedel spraviť bez ďalších otázok>
@@ -267,6 +316,29 @@ begin
   return aid;
 end $$;
 grant execute on function public.ai_report(text) to authenticated;
+
+-- ranný (5:00) a poobedný (13:00, po–pi) súhrn flotily: ak nie sú nálezy, jedna veta „bez nálezov“
+create or replace function public.ai_report_daily() returns bigint language plpgsql security definer set search_path=public as $$
+declare dg jsonb:=ai_digest(); cv jsonb; aid bigint;
+begin
+  if auth.uid() is not null and not is_owner() then raise exception 'Iba majiteľ.'; end if;
+  if dg ? 'chyba' then return ai_report(); end if;
+  if coalesce((dg->>'nalezov')::int,0)=0 then
+    insert into ai_msgs(kind,role,content) values('report','user','Súhrn flotily');
+    insert into ai_msgs(kind,role,content) values('report','assistant','✅ **Flotila '||(dg->>'vcera')||': bez nálezov.** Zmena zisku od včera (bez miezd): '||
+      case when (dg->>'zmena_zisku_od_vcera_eur')::numeric>=0 then '+' else '' end||(dg->>'zmena_zisku_od_vcera_eur')||' €.') returning id into aid;
+    return aid;
+  end if;
+  cv:=jsonb_build_array(jsonb_build_object('role','user','content',
+    'Napíš STRUČNÝ SÚHRN FLOTILY pre majiteľa na Dashboard (max ~170 slov) iba z dát DENNY_SUHRN nižšie, nič nevymýšľaj, trhy nehľadaj. Prvá veta = najdôležitejší nález. Potom krátke odrážky v tomto poradí (sekciu bez nálezu vynechaj): '||
+    '1) 3 vodiči s najväčším rozdielom nafty za mesiac do dnes – l, %, € bez DPH (pri poznámke „viac vodičov na aute“ dopíš „orientačne“); 2) nové prekročenia 90 km/h včera po vodičoch (počet, max); 3) nové poklesy paliva pri státí včera (auto, vodič, l, kedy); '||
+    '4) autá bez signálu nad 24 h (hodiny); 5) autá bez jazdy včera; 6) zmena zisku od včera (bez miezd, €). Na koniec max 2 konkrétne kroky na dnes. '||
+    'Ak niektorý vodič má rozdiel nafty nad 15 % alebo pokles paliva pri státí a v dokumenty_archiv ešte nemá upozornenie k tomu istému problému za tento mesiac, priprav mu upozornenie ako DOKUMENT.'||E'\n\nDENNY_SUHRN:\n'||dg::text));
+  insert into ai_msgs(kind,role,content) values('report','user','Súhrn flotily');
+  insert into ai_msgs(kind,role,status,convo,req_id) values('report','assistant','wait',cv,ai_post(cv)) returning id into aid;
+  return aid;
+end $$;
+revoke all on function public.ai_report_daily() from public, anon, authenticated;
 
 -- interné: vytvor GitHub úlohu (zašifrovanú) pre programátora-AI
 create or replace function public.ai_gh_issue(t uuid) returns void language plpgsql security definer set search_path=public, extensions, net as $$
@@ -481,8 +553,8 @@ begin
 end $$;
 revoke all on function public.ai_auto_sync(boolean) from public, anon, authenticated;
 
--- automaticky: každú minútu spracovanie, prehľad ráno 6:00 a poobede 14:00 (Bratislava)
+-- automaticky: každú minútu spracovanie, súhrn flotily ráno 5:00 a poobede 13:00 po–pi (čas servera UTC)
 select cron.unschedule(jobname) from cron.job where jobname in ('ai-tick','ai-rano','ai-poobede');
 select cron.schedule('ai-tick','* * * * *','select public.ai_tick()');
-select cron.schedule('ai-rano','0 5 * * *','select public.ai_report()');
-select cron.schedule('ai-poobede','0 13 * * 1-5','select public.ai_report()');
+select cron.schedule('ai-rano','0 5 * * *','select public.ai_report_daily()');
+select cron.schedule('ai-poobede','0 13 * * 1-5','select public.ai_report_daily()');
