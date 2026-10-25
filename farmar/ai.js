@@ -19,7 +19,7 @@ const CSS=`
 .aish.busy .aiorb{animation-duration:1.1s}
 .aihd h2{margin:0;font:800 1.35rem/1 var(--f-head,system-ui);letter-spacing:-.03em;background:linear-gradient(90deg,#fff,#d9ffb0 60%,#5eead4);-webkit-background-clip:text;background-clip:text;color:transparent}
 .aihd small{display:block;color:rgba(255,255,255,.6);font-size:.72rem;letter-spacing:.06em;text-transform:uppercase;margin-top:4px}
-.aihd .x{margin-left:auto;width:42px;height:42px;border-radius:50%;border:1px solid rgba(255,255,255,.2);background:rgba(255,255,255,.06);color:#fff;font-size:1.3rem;cursor:pointer}
+.aihd .airef{margin-left:auto!important;border-color:rgba(182,255,59,.55)!important;background:linear-gradient(135deg,rgba(182,255,59,.22),rgba(94,234,212,.12))!important;color:#e9ffd0!important;display:grid;place-items:center;padding:0}.aihd .airef span{font:900 1.2rem/1 system-ui;display:block}.aihd .airef.spin span{animation:aispin .8s linear infinite}.aihd .x{flex:none;width:42px;height:42px;border-radius:50%;border:1px solid rgba(255,255,255,.2);background:rgba(255,255,255,.06);color:#fff;font-size:1.3rem;cursor:pointer}
 .aitabs{display:flex;gap:6px;padding:0 16px 10px;max-width:860px;width:100%;margin:0 auto;box-sizing:border-box}
 .aitabs{gap:4px!important}.aitabs button{flex:1 1 auto;min-width:0;padding:0 3px;font-size:.7rem!important;white-space:nowrap;letter-spacing:-.01em;min-height:40px;border-radius:14px;border:1px solid rgba(255,255,255,.14);background:rgba(255,255,255,.05);color:rgba(255,255,255,.75);font:700 .82rem var(--f-head,system-ui);cursor:pointer}
 .aitabs button[aria-pressed=true]{background:linear-gradient(135deg,rgba(182,255,59,.9),rgba(94,234,212,.9));color:#06110a;border-color:transparent;box-shadow:0 0 22px rgba(182,255,59,.35)}
@@ -236,7 +236,7 @@ function view(){const el=$("aiSheet");if(!el)return;CB.length=0;el.classList.tog
   const s=el.querySelector(".aiin button");if(s)s.disabled=!!A.busy}
 
 async function openAI(){if($("aiSheet"))return;const d=document.createElement("div");d.id="aiSheet";d.className="aish";d.setAttribute("role","dialog");d.setAttribute("aria-label","ERNTE AI Podpora");
-  d.innerHTML=`<div class="aihd"><div class="aiorb"></div><div><h2>ERNTE AI</h2><small>Podpora · kontrola · trhy</small></div><button type="button" class="x" data-ai="close" aria-label="Zavrieť">×</button></div>
+  d.innerHTML=`<div class="aihd"><div class="aiorb"></div><div><h2>ERNTE AI</h2><small>Podpora · kontrola · trhy</small></div><button type="button" class="x airef" data-ai="refresh" aria-label="Obnoviť" title="Obnoviť"><span>↻</span></button><button type="button" class="x" data-ai="close" aria-label="Zavrieť" style="margin-left:8px">×</button></div>
   <div class="aitabs"></div><div class="aibody"></div>
   <div class="aichips">${["Ako sme na tom dnes?","Trhy – predať alebo držať?","Kde strácame peniaze?","Skontroluj flotilu a naftu","Čo mám dnes urobiť?"].map(q=>`<button type="button" data-aiq="${esc(q)}">${esc(q)}</button>`).join("")}</div>
   <div class="aipend" hidden></div><form class="aiin"><button type="button" class="aiplus" data-aiplus="1" aria-label="Pridať fotku alebo súbor">+</button><input type="file" id="aiFile" multiple accept="image/*,application/pdf,.pdf,.txt,.csv,.xlsx,.xls,.docx,.doc,.json,.md" hidden><textarea rows="1" placeholder="Napíš otázku alebo úlohu…" aria-label="Správa pre AI"></textarea><button type="submit" aria-label="Odoslať">➤</button></form>`;
@@ -280,7 +280,7 @@ document.addEventListener("click",e=>{const t=e.target;let x;
   if((x=t.closest("[data-aicb]"))){copyTxt(CB[+x.dataset.aicb]||"",x);return}
   if((x=t.closest("[data-aia]"))){msgAct(x.dataset.aia,x.dataset.id,x);return}
   if(!t.closest("#aiSheet")&&!t.closest(".aidash"))return;
-  if((x=t.closest("[data-ai]"))){const a=x.dataset.ai;if(a==="close")closeAI();else if(a==="rep"){if(!$("aiSheet"))openAI().then(()=>{A.tab="rep";view();report()});else report()}else if(a==="open")openAI();else if(a==="openrep"){openAI().then(()=>{A.tab="rep";view()})}else if(a==="opendocs"){openAI().then(()=>{A.tab="docs";view()})}else if(a==="openfix"){openAI().then(()=>{A.tab="fix";view()})}return}
+  if((x=t.closest("[data-ai]"))){const a=x.dataset.ai;if(a==="close")closeAI();else if(a==="refresh"){x.classList.add("spin");x.disabled=true;(async()=>{try{await sb.rpc("ai_collect")}catch(e){}PHONES=null;for(const k in STAMP)delete STAMP[k];await load();if(!PHONES)await loadPhones();view();x.classList.remove("spin");x.disabled=false;if(A.msgs.some(m=>m.status==="wait"))poll();toast("Obnovené "+new Date().toLocaleTimeString("sk-SK",{hour:"2-digit",minute:"2-digit"}))})()}else if(a==="rep"){if(!$("aiSheet"))openAI().then(()=>{A.tab="rep";view();report()});else report()}else if(a==="open")openAI();else if(a==="openrep"){openAI().then(()=>{A.tab="rep";view()})}else if(a==="opendocs"){openAI().then(()=>{A.tab="docs";view()})}else if(a==="openfix"){openAI().then(()=>{A.tab="fix";view()})}return}
   if((x=t.closest("[data-aitab]"))){A.tab=x.dataset.aitab;A.jump=true;view();return}
   if((x=t.closest("[data-aiq]"))){ask(x.dataset.aiq);return}
   if((x=t.closest("[data-aidf]"))){A.dflt=x.dataset.aidf;A.sel&&A.sel.clear();view();return}
