@@ -155,7 +155,8 @@ PLNÉ OPRÁVNENIE: majiteľ ti dal plný prístup ku všetkému v tejto aplikác
 Formát (Markdown): krátke odseky, nadpisy „## “, odrážky „- “, číslované zoznamy, tučné **takto**, tabuľky | stĺpec | stĺpec |.
 DOKUMENTY A VÝSTUPY: vieš pripraviť čokoľvek – zmluvy, kúpne a prepravné zmluvy, cenové ponuky, objednávky, listy, e-maily, upomienky, reporty, tabuľky, plány, preklady. Píš ich ako hotový dokument s nadpisom (prvý riadok „## Názov“), dátumom a údajmi firmy z prehľadu. Aplikácia pod každou tvojou odpoveďou automaticky ukáže tlačidlá Kopírovať, PDF, Word, Excel (keď sú v odpovedi tabuľky), E-mail a Zdieľať – preto nikdy nehovor, že PDF alebo súbor nevieš urobiť; povedz „ťukni PDF / Word pod odpoveďou“.
 KOPÍROVANIE: keď majiteľ chce text na skopírovanie (správa, SMS, e-mail, príspevok, údaje), daj ten text do bloku ohraničeného riadkami ``` – aplikácia k nemu pridá tlačidlo Kopírovať (dva štvorčeky). Mimo bloku napíš max 1 vetu.
-Údaje, ktoré nepoznáš (IČO odberateľa, presné adresy), nevymýšľaj – nechaj [doplniť].' $$;
+Údaje, ktoré nepoznáš (IČO odberateľa, presné adresy), nevymýšľaj – nechaj [doplniť].
+PRÍLOHY: majiteľ ti môže poslať fotky (vážne lístky, faktúry, doklady, poškodenia), PDF, Word, Excel. Prečítaj ich dôkladne, vytiahni čísla a údaje a povedz, čo s nimi spraviť.' $$;
 
 create or replace function public.ai_json(t text) returns jsonb language plpgsql immutable as $$ begin return t::jsonb; exception when others then return null; end $$;
 
@@ -176,23 +177,41 @@ end $$;
 revoke all on function public.ai_post(jsonb,text) from public, anon, authenticated;
 
 -- majiteľ pošle správu
-create or replace function public.ai_ask(q text, kpi jsonb default null) returns bigint language plpgsql security definer set search_path=public as $$
-declare cv jsonb:='[]'; r record; last text:=''; aid bigint;
+alter table ai_msgs add column if not exists att jsonb;
+alter table ai_msgs add column if not exists att_meta jsonb;
+drop function if exists public.ai_ask(text,jsonb);
+create or replace function public.ai_ask(q text, kpi jsonb default null, att jsonb default null) returns bigint language plpgsql security definer set search_path=public as $$
+declare cv jsonb:='[]'; r record; last text:=''; aid bigint; uid bigint; meta jsonb; c text;
 begin
   if not is_owner() then raise exception 'Iba majiteľ.'; end if;
-  if coalesce(trim(q),'')='' then raise exception 'Prázdna správa.'; end if;
+  if coalesce(trim(q),'')='' and att is null then raise exception 'Prázdna správa.'; end if;
+  q:=coalesce(nullif(trim(q),''),'Pozri si prílohu.');
   if kpi is not null then insert into ai_state(key,value,updated_at) values('kpi',kpi,now()) on conflict(key) do update set value=excluded.value, updated_at=now(); end if;
-  insert into ai_msgs(kind,role,content) values('chat','user',left(q,8000));
-  for r in select * from (select role, content, id from ai_msgs where kind='chat' and status='ok' order by id desc limit 16) t order by id loop
+  if att is not null and jsonb_typeof(att)='array' and jsonb_array_length(att)>0 then
+    select jsonb_agg(jsonb_build_object('name',a->>'name','kind',a->>'kind','thumb',a->>'thumb')) into meta from jsonb_array_elements(att) a;
+  else att:=null; end if;
+  insert into ai_msgs(kind,role,content,att,att_meta) values('chat','user',left(q,8000),att,meta) returning id into uid;
+  for r in select * from (select role, content, id, att_meta from ai_msgs where kind='chat' and status='ok' order by id desc limit 16) t order by id loop
     if jsonb_array_length(cv)=0 and r.role<>'user' then continue; end if;
-    if r.role=last then cv:=jsonb_set(cv, array[(jsonb_array_length(cv)-1)::text,'content'], to_jsonb((cv->-1->>'content')||E'\n\n'||r.content));
-    else cv:=cv||jsonb_build_array(jsonb_build_object('role',r.role,'content',r.content)); end if;
+    c:=r.content;
+    if r.att_meta is not null and r.id<>uid then c:=c||E'\n[prílohy: '||(select string_agg(m->>'name',', ') from jsonb_array_elements(r.att_meta) m)||']'; end if;
+    if r.role=last then cv:=jsonb_set(cv, array[(jsonb_array_length(cv)-1)::text,'content'], to_jsonb((cv->-1->>'content')||E'\n\n'||c));
+    else cv:=cv||jsonb_build_array(jsonb_build_object('role',r.role,'content',c)); end if;
     last:=r.role;
   end loop;
+  -- prílohy (obrázky, PDF, texty) k poslednej správe
+  if att is not null then
+    cv:=jsonb_set(cv, array[(jsonb_array_length(cv)-1)::text,'content'],
+      coalesce((select jsonb_agg(case a->>'kind'
+          when 'image' then jsonb_build_object('type','image','source',jsonb_build_object('type','base64','media_type',a->>'media_type','data',a->>'data'))
+          when 'pdf' then jsonb_build_object('type','document','source',jsonb_build_object('type','base64','media_type','application/pdf','data',a->>'data'),'title',a->>'name')
+          else jsonb_build_object('type','text','text','Príloha „'||coalesce(a->>'name','súbor')||'“:'||E'\n'||left(coalesce(a->>'text',''),150000)) end) from jsonb_array_elements(att) a),'[]'::jsonb)
+      ||jsonb_build_array(jsonb_build_object('type','text','text',cv->-1->>'content')));
+  end if;
   insert into ai_msgs(kind,role,status,convo,req_id) values('chat','assistant','wait',cv,ai_post(cv)) returning id into aid;
   return aid;
 end $$;
-grant execute on function public.ai_ask(text,jsonb) to authenticated;
+grant execute on function public.ai_ask(text,jsonb,jsonb) to authenticated;
 
 -- prehľad (ráno/poobede alebo na požiadanie)
 create or replace function public.ai_report(what text default null) returns bigint language plpgsql security definer set search_path=public as $$

@@ -46,6 +46,10 @@ const CSS=`
 .aitbl{overflow-x:auto;margin:8px 0;border-radius:12px;border:1px solid rgba(255,255,255,.14)}.aitbl table{border-collapse:collapse;width:100%;font-size:.82rem}.aitbl th,.aitbl td{padding:7px 9px;border-bottom:1px solid rgba(255,255,255,.08);text-align:left;white-space:nowrap}.aitbl th{background:rgba(182,255,59,.12);color:#d9ffb0}
 .aiact{display:flex;flex-wrap:wrap;gap:6px;margin-top:9px}.aiact button{display:inline-flex;align-items:center;gap:5px;min-height:30px;padding:0 10px;border-radius:10px;border:1px solid rgba(255,255,255,.18);background:rgba(255,255,255,.06);color:#e9ecff;font:600 .72rem system-ui;cursor:pointer}
 #aiprint{display:none}@media print{html.aiprinting body>*:not(#aiprint){display:none!important}html.aiprinting #aiprint{display:block!important;background:#fff}html.aiprinting,html.aiprinting body{background:#fff!important}@page{margin:16mm}}
+.aiin button.aiplus{width:46px;height:46px;flex:none;border-radius:50%;border:1px solid rgba(255,255,255,.3);background:rgba(255,255,255,.1);color:#fff;font:300 1.8rem/1 system-ui;cursor:pointer;margin-bottom:3px;box-shadow:inset 0 1px 0 rgba(255,255,255,.2);backdrop-filter:blur(12px)}
+.aipend{display:flex;gap:8px;overflow-x:auto;padding:0 16px 6px;max-width:860px;width:100%;margin:0 auto;box-sizing:border-box}.aipend[hidden]{display:none}
+.aich{position:relative;display:flex;align-items:center;gap:6px;flex:none;max-width:200px;padding:6px 36px 6px 6px;border-radius:14px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.2);font-size:.74rem}.aich img{width:40px;height:40px;object-fit:cover;border-radius:9px}.aich b{font-size:1.3rem;padding:0 4px}.aich span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.aich button{position:absolute;top:50%;transform:translateY(-50%);right:6px;width:22px;height:22px;border-radius:50%;background:rgba(0,0,0,.35)!important;border:0;background:none;color:#fff;font-size:1.1rem;cursor:pointer}
+.aiatt{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:6px}.aiatt img{width:110px;height:110px;object-fit:cover;border-radius:12px;border:1px solid rgba(255,255,255,.25)}.aiatt span{align-self:flex-start;padding:6px 10px;border-radius:10px;background:rgba(0,0,0,.25);font-size:.78rem}
 .aicard{padding:14px 15px;border-radius:20px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.14);display:grid;gap:8px}
 .aicard h3{margin:0;font:700 .95rem var(--f-head,system-ui)}.aicard .s{color:rgba(255,255,255,.6);font-size:.8rem}
 .aist{display:inline-block;padding:2px 9px;border-radius:999px;font:700 .68rem system-ui;letter-spacing:.04em;text-transform:uppercase}
@@ -106,7 +110,7 @@ async function msgAct(kind,id,btn){const x=A.msgs.find(m=>String(m.id)===String(
   if(kind==="csv"){const T=tables(x.content);const q=c=>'"'+String(c).replace(/\*\*/g,"").replace(/"/g,'""')+'"';const csv=T.map(rows=>rows.map(r=>r.map(q).join(";")).join("\r\n")).join("\r\n\r\n");return dl(fname(x,"csv"),new Blob(["﻿"+csv],{type:"text/csv;charset=utf-8"}))}
   if(kind==="mail"){location.href="mailto:?subject="+encodeURIComponent(docTitle(x.content))+"&body="+encodeURIComponent(plain(x.content).slice(0,1800));return}
   if(kind==="share"){try{await navigator.share({title:docTitle(x.content),text:plain(x.content)})}catch(e){}}}
-async function load(){const [m,t]=await Promise.all([sb.from("ai_msgs").select("id,kind,role,content,status,created_at").order("id",{ascending:false}).limit(80),sb.from("ai_tasks").select("*").order("created_at",{ascending:false}).limit(40)]);
+async function load(){const [m,t]=await Promise.all([sb.from("ai_msgs").select("id,kind,role,content,status,created_at,att_meta").order("id",{ascending:false}).limit(80),sb.from("ai_tasks").select("*").order("created_at",{ascending:false}).limit(40)]);
   if(m.error){A.ready=/ai_msgs|relation|does not exist|schema cache/i.test(m.error.message)?"setup":"err:"+m.error.message;return}
   A.ready="ok";A.msgs=(m.data||[]).reverse();A.tasks=t.data||[];badge()}
 function badge(){const b=$("aiBtn");if(!b)return;let seen=0;try{seen=+localStorage.getItem("aiSeen")||0}catch(e){}
@@ -121,7 +125,7 @@ function view(){const el=$("aiSheet");if(!el)return;CB.length=0;el.classList.tog
   else if(!A.ready)body=`<div class="aiempty"><span class="aitype"><i></i><i></i><i></i></span></div>`;
   else if(A.tab==="chat"){const C=A.msgs.filter(x=>x.kind==="chat");
     body=C.length?C.map(x=>x.status==="wait"?`<div class="aimsg a"><span class="aitype"><i></i><i></i><i></i>&nbsp;Premýšľam, kontrolujem údaje a trhy…</span></div>`:
-      `<div class="aimsg ${x.role==="user"?"u":"a"}${x.status==="err"?" err":""}">${x.role==="user"?"<p>"+esc(x.content).replace(/\n/g,"<br>")+"</p>":md(x.content)}${x.status==="err"&&/kľúč|ai\.html|401/.test(x.content||"")?`<p><a href="ai.html">Otvoriť nastavenie AI</a></p>`:""}<time>${tm(x.created_at)}</time>${acts(x)}</div>`).join(""):
+      `<div class="aimsg ${x.role==="user"?"u":"a"}${x.status==="err"?" err":""}">${x.role==="user"?attView(x.att_meta)+"<p>"+esc(x.content).replace(/\n/g,"<br>")+"</p>":md(x.content)}${x.status==="err"&&/kľúč|ai\.html|401/.test(x.content||"")?`<p><a href="ai.html">Otvoriť nastavenie AI</a></p>`:""}<time>${tm(x.created_at)}</time>${acts(x)}</div>`).join(""):
       `<div class="aiempty"><div class="aiorb" style="width:84px;height:84px"></div><b>Ahoj, som ERNTE AI.</b><span>Kontrolujem obchody, flotilu, náklady a zisk, sledujem trhy a radím, čo robiť. Napíš aj „oprav…“ alebo „pridaj…“ a aplikáciu upravím – zhrnutie nájdeš v Dashboarde.</span></div>`}
   else if(A.tab==="rep"){const R=A.msgs.filter(x=>x.kind==="report"&&x.role==="assistant").reverse();
     body=`<button type="button" class="aibig" data-ai="rep">${A.busy?"Pripravujem prehľad…":"✦ Urobiť prehľad teraz"}</button>`+(R.length?R.map(x=>`<div class="aicard"><div class="s">${tm(x.created_at)} · prehľad</div>${x.status==="wait"?`<span class="aitype"><i></i><i></i><i></i>&nbsp;Pripravujem…</span>`:`<div class="aimsg a" style="max-width:100%;background:none;border:0;padding:0;backdrop-filter:none">${md(x.content)}${acts(x)}</div>`}</div>`).join(""):`<div class="aiempty"><span>Prehľad príde automaticky každé ráno o 6:00 a v pracovné dni o 14:00.</span></div>`)}
@@ -137,7 +141,7 @@ async function openAI(){if($("aiSheet"))return;const d=document.createElement("d
   d.innerHTML=`<div class="aihd"><div class="aiorb"></div><div><h2>ERNTE AI</h2><small>Podpora · kontrola · trhy</small></div><button type="button" class="x" data-ai="close" aria-label="Zavrieť">×</button></div>
   <div class="aitabs"></div><div class="aibody"></div>
   <div class="aichips">${["Ako sme na tom dnes?","Trhy – predať alebo držať?","Kde strácame peniaze?","Skontroluj flotilu a naftu","Čo mám dnes urobiť?"].map(q=>`<button type="button" data-aiq="${esc(q)}">${esc(q)}</button>`).join("")}</div>
-  <form class="aiin"><textarea rows="1" placeholder="Napíš otázku alebo úlohu…" aria-label="Správa pre AI"></textarea><button type="submit" aria-label="Odoslať">➤</button></form>`;
+  <div class="aipend" hidden></div><form class="aiin"><button type="button" class="aiplus" data-aiplus="1" aria-label="Pridať fotku alebo súbor">+</button><input type="file" id="aiFile" multiple accept="image/*,application/pdf,.pdf,.txt,.csv,.xlsx,.xls,.docx,.doc,.json,.md" hidden><textarea rows="1" placeholder="Napíš otázku alebo úlohu…" aria-label="Správa pre AI"></textarea><button type="submit" aria-label="Odoslať">➤</button></form>`;
   document.body.appendChild(d);document.documentElement.style.overflow="hidden";A.jump=true;view();await load();A.jump=true;view();markSeen();
   if(A.msgs.some(x=>x.status==="wait"))poll()}
 function closeAI(){const d=$("aiSheet");if(d)d.remove();document.documentElement.style.overflow="";markSeen();refreshDash()}
@@ -147,15 +151,34 @@ async function poll(){clearTimeout(pollT);const t0=Date.now();
   const step=async()=>{try{await sb.rpc("ai_collect")}catch(e){}await load();view();
     if(A.msgs.some(x=>x.status==="wait")&&Date.now()-t0<7*60e3)pollT=setTimeout(step,2500);else{A.busy=null;view();markSeen();refreshDash()}};
   pollT=setTimeout(step,2000)}
-async function ask(q){q=String(q||"").trim();if(!q||A.busy)return;A.busy="chat";A.tab="chat";
-  A.msgs.push({id:1e15,kind:"chat",role:"user",content:q,status:"ok",created_at:new Date()},{id:1e15+1,kind:"chat",role:"assistant",status:"wait",created_at:new Date()});A.jump=true;view();
-  const r=await sb.rpc("ai_ask",{q,kpi:(typeof STATE!=="undefined"&&STATE.aiKpi)||null});
+// ===== PRÍLOHY: fotky, PDF, Word, Excel, text =====
+const PEND=[];const MAXB=9e6;
+function attView(meta){if(!meta||!meta.length)return "";return `<div class="aiatt">${meta.map(a=>a.thumb?`<img src="${esc(a.thumb)}" alt="${esc(a.name)}">`:`<span>${a.kind==="pdf"?"📄":a.kind==="sheet"?"📊":"📎"} ${esc(a.name)}</span>`).join("")}</div>`}
+function pendView(){const el=document.querySelector("#aiSheet .aipend");if(!el)return;el.hidden=!PEND.length;el.innerHTML=PEND.map((a,i)=>`<div class="aich">${a.thumb?`<img src="${esc(a.thumb)}" alt="">`:`<b>${a.kind==="pdf"?"📄":a.kind==="sheet"?"📊":"📎"}</b>`}<span>${esc(a.name)}</span><button type="button" data-aidel="${i}" aria-label="Odstrániť">×</button></div>`).join("")}
+const b64=buf=>{let s="",u=new Uint8Array(buf);for(let i=0;i<u.length;i+=32768)s+=String.fromCharCode.apply(null,u.subarray(i,i+32768));return btoa(s)};
+function loadLib(src,g){if(window[g])return Promise.resolve(window[g]);return new Promise((ok,no)=>{const s=document.createElement("script");s.src=src;s.onload=()=>ok(window[g]);s.onerror=no;document.head.appendChild(s)})}
+function imgTo(file,max,q){return new Promise((ok,no)=>{const u=URL.createObjectURL(file),im=new Image();im.onload=()=>{const k=Math.min(1,max/Math.max(im.width,im.height)),c=document.createElement("canvas");c.width=Math.round(im.width*k);c.height=Math.round(im.height*k);c.getContext("2d").drawImage(im,0,0,c.width,c.height);URL.revokeObjectURL(u);ok(c.toDataURL("image/jpeg",q))};im.onerror=()=>{URL.revokeObjectURL(u);no(new Error("Obrázok sa nedá načítať"))};im.src=u})}
+async function readFile(f){const n=f.name||"súbor",t=(f.type||"").toLowerCase(),ext=(n.split(".").pop()||"").toLowerCase();
+  if(t.startsWith("image/")||/^(jpe?g|png|heic|heif|webp|gif)$/.test(ext)){const d=await imgTo(f,1600,.85),th=await imgTo(f,160,.7);return {kind:"image",name:n,media_type:"image/jpeg",data:d.split(",")[1],thumb:th}}
+  if(t==="application/pdf"||ext==="pdf"){if(f.size>MAXB)throw new Error(n+": PDF je väčšie ako 9 MB");return {kind:"pdf",name:n,data:b64(await f.arrayBuffer())}}
+  if(/^(xlsx|xls)$/.test(ext)){const X=await loadLib("https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js","XLSX");const wb=X.read(await f.arrayBuffer(),{type:"array"});
+    return {kind:"sheet",name:n,text:wb.SheetNames.map(sn=>"Hárok "+sn+":\n"+X.utils.sheet_to_csv(wb.Sheets[sn],{FS:";"})).join("\n\n").slice(0,150000)}}
+  if(ext==="docx"){const M=await loadLib("https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js","mammoth");const r=await M.extractRawText({arrayBuffer:await f.arrayBuffer()});return {kind:"text",name:n,text:r.value.slice(0,150000)}}
+  if(ext==="doc")throw new Error(n+": starý formát .doc – ulož ho ako .docx alebo PDF");
+  return {kind:"text",name:n,text:(await f.text()).slice(0,150000)}}
+async function addFiles(list){for(const f of list){try{const a=await readFile(f);if(PEND.reduce((s,x)=>s+(x.data||x.text||"").length,0)+(a.data||a.text||"").length>14e6){toast("Príloh je priveľa naraz – pošli ich postupne.");break}PEND.push(a)}catch(e){toast(e.message||"Súbor sa nedá načítať")}}pendView()}
+
+async function ask(q){q=String(q||"").trim();const att=PEND.length?PEND.splice(0):null;pendView();if((!q&&!att)||A.busy)return;A.busy="chat";A.tab="chat";
+  A.msgs.push({id:1e15,kind:"chat",role:"user",content:q||"Pozri si prílohu.",att_meta:att?att.map(a=>({name:a.name,kind:a.kind,thumb:a.thumb})):null,status:"ok",created_at:new Date()},{id:1e15+1,kind:"chat",role:"assistant",status:"wait",created_at:new Date()});A.jump=true;view();
+  const r=await sb.rpc("ai_ask",Object.assign({q,kpi:(typeof STATE!=="undefined"&&STATE.aiKpi)||null},att?{att}:{}));
   if(r.error){A.busy=null;await load();A.msgs.push({id:1e15+2,kind:"chat",role:"assistant",status:"err",content:r.error.message,created_at:new Date()});view();return}
   poll()}
 async function report(){if(A.busy)return;A.busy="rep";view();const r=await sb.rpc("ai_report",{what:null});if(r.error){A.busy=null;toast("Chyba: "+r.error.message);view();return}await load();view();poll()}
 
 document.addEventListener("click",e=>{const t=e.target;let x;
   if(t.closest("#aiBtn")){openAI();return}
+  if(t.closest("[data-aiplus]")){const f=$("aiFile");if(f){f.value="";f.click()}return}
+  if((x=t.closest("[data-aidel]"))){PEND.splice(+x.dataset.aidel,1);pendView();return}
   if((x=t.closest("[data-aicb]"))){copyTxt(CB[+x.dataset.aicb]||"",x);return}
   if((x=t.closest("[data-aia]"))){msgAct(x.dataset.aia,x.dataset.id,x);return}
   if(!t.closest("#aiSheet")&&!t.closest(".aidash"))return;
@@ -163,6 +186,7 @@ document.addEventListener("click",e=>{const t=e.target;let x;
   if((x=t.closest("[data-aitab]"))){A.tab=x.dataset.aitab;A.jump=true;view();return}
   if((x=t.closest("[data-aiq]"))){ask(x.dataset.aiq);return}
   if((x=t.closest("[data-airetry]"))){x.disabled=true;x.textContent="Odosielam…";sb.rpc("ai_task_retry",{t:x.dataset.airetry}).then(async r=>{if(r.error)toast("Chyba: "+r.error.message);setTimeout(async()=>{try{await sb.rpc("ai_collect")}catch(e){}await load();view()},4000);await load();view()})}});
+document.addEventListener("change",e=>{if(e.target.id==="aiFile"&&e.target.files&&e.target.files.length)addFiles([...e.target.files])});
 document.addEventListener("submit",e=>{if(!e.target.closest(".aiin"))return;e.preventDefault();const ta=e.target.querySelector("textarea");const v=ta.value;ta.value="";ta.style.height="";ask(v)});
 document.addEventListener("input",e=>{if(e.target.matches(".aiin textarea")){e.target.style.height="auto";e.target.style.height=Math.min(140,e.target.scrollHeight)+"px"}});
 document.addEventListener("keydown",e=>{if(e.key==="Escape"&&$("aiSheet"))closeAI();if(e.key==="Enter"&&!e.shiftKey&&e.target.matches(".aiin textarea")&&window.innerWidth>700){e.preventDefault();e.target.form.requestSubmit()}});
