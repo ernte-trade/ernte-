@@ -197,8 +197,8 @@ details.trips{border-top:1px solid var(--line);padding-top:8px}details.trips sum
 .xdh{display:grid;grid-template-columns:44px 1fr;gap:12px;align-items:center}.xdn{display:grid;min-width:0}.xdn b{font:600 .98rem var(--f-head)}.xdn small{font-size:.76rem;color:var(--muted)}
 .live{display:inline-block;width:8px;height:8px;border-radius:50%;background:#b6ff3b;box-shadow:0 0 10px #b6ff3b;margin-right:6px;animation:pulse 1.6s infinite}@keyframes pulse{50%{opacity:.35}}
 .xset summary{list-style:none;cursor:pointer;display:flex;gap:10px;align-items:center}.xset summary::-webkit-details-marker{display:none}.xset summary span{width:36px;height:36px;border-radius:12px;display:grid;place-items:center;background:rgba(255,255,255,.07)}
-.vhero{position:relative;overflow:hidden;isolation:isolate;border-radius:30px;min-height:330px;display:grid;align-items:end;background:var(--bg) center 40%/cover no-repeat,#05070a;border:1px solid rgba(255,255,255,.14);box-shadow:0 30px 80px rgba(0,0,0,.6)}
-.vhero::before{content:"";position:absolute;inset:0;background:linear-gradient(180deg,rgba(5,7,10,.15) 0%,rgba(5,7,10,.55) 45%,rgba(5,7,10,.96) 100%),radial-gradient(80% 60% at 0% 100%,rgba(182,255,59,.28),transparent 60%),radial-gradient(70% 60% at 100% 0%,rgba(124,92,255,.35),transparent 60%)}
+.vhero{position:relative;overflow:hidden;isolation:isolate;border-radius:30px;min-height:330px;display:grid;align-items:end;background:var(--bg) 62% 0/auto 58% no-repeat,#05070a;border:1px solid rgba(255,255,255,.14);box-shadow:0 30px 80px rgba(0,0,0,.6)}
+.vhero::before{content:"";position:absolute;inset:0;background:linear-gradient(180deg,rgba(5,7,10,0) 0%,rgba(5,7,10,0) 40%,rgba(5,7,10,.85) 60%,#05070a 70%),radial-gradient(80% 60% at 0% 100%,rgba(182,255,59,.28),transparent 60%),radial-gradient(70% 60% at 100% 0%,rgba(124,92,255,.35),transparent 60%)}
 .vhin{position:relative;padding:22px 20px 18px;display:grid;gap:10px}
 .vbrand{display:flex;align-items:center;gap:10px;font:700 .72rem var(--f-head);letter-spacing:.32em}.vbrand i{width:6px;height:6px;border-radius:50%;background:#b6ff3b;box-shadow:0 0 12px #b6ff3b}
 .vhero h1{margin:0;font:700 clamp(1.9rem,8vw,2.8rem)/1.02 var(--f-head);letter-spacing:-.04em;text-shadow:0 4px 30px rgba(0,0,0,.6)}.vhero h1 em{font-style:normal;background:linear-gradient(90deg,#b6ff3b,#5eead4);-webkit-background-clip:text;background-clip:text;color:transparent}
@@ -219,7 +219,7 @@ details.trips{border-top:1px solid var(--line);padding-top:8px}details.trips sum
 .vcerts{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.vcerts div{padding:10px 12px;border-radius:14px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);display:grid}.vcerts b{font-size:.8rem}.vcerts small{font-size:.68rem;color:var(--muted)}.vcerts .warn{border-color:rgba(255,207,90,.5)}
 .vteam{display:grid;gap:8px}.vt{display:grid;grid-template-columns:44px 1fr auto auto;gap:10px;align-items:center;padding:10px 12px;border-radius:18px;background:var(--glass);border:1px solid var(--line)}.vt div{display:grid;min-width:0}.vt b{font-size:.88rem}.vt small{font-size:.72rem;color:var(--muted)}.vt .btn{min-height:40px;padding:0 12px}
 .vtruck{position:absolute;right:-30px;top:18px;width:110%;max-width:620px;opacity:.9;pointer-events:none;filter:drop-shadow(0 20px 40px rgba(0,0,0,.6))}
-.vhero{min-height:380px}.vhero::before{z-index:0}.vtruck{z-index:0}.vhin{z-index:1}
+.vhero{min-height:420px}.vhero::before{z-index:0}.vtruck{z-index:0}.vhin{z-index:1}
 .vnav button{position:relative;overflow:hidden;background:linear-gradient(160deg,rgba(255,255,255,.08),rgba(255,255,255,.02));border:1px solid rgba(255,255,255,.12);box-shadow:inset 0 1px 0 rgba(255,255,255,.12),0 10px 30px rgba(0,0,0,.35)}
 .vnav button::after{content:"";position:absolute;inset:auto -30% -60% auto;width:90px;height:90px;border-radius:50%;background:radial-gradient(circle,rgba(124,92,255,.35),transparent 70%);pointer-events:none}
 .vnav button span{width:38px;height:38px;border-radius:13px;display:grid;place-items:center;background:linear-gradient(135deg,rgba(182,255,59,.22),rgba(34,211,238,.18));border:1px solid rgba(255,255,255,.14);box-shadow:0 0 18px rgba(182,255,59,.2)}
@@ -622,24 +622,11 @@ function vFleet(){const F=STATE.fleet;if(!F)return `<div class="card"><div class
   h+=`<div class="sub"><b class="sth">📱 Súkromné čísla vodičov – hromadne</b><form id="fPhones" class="f"><label class="w">Vlož zoznam (z Excelu: meno a číslo v riadku)<textarea name="list" placeholder="Ján Novák	0905 123 456&#10;Ján Novák	0911 222 333"></textarea></label><div class="w btns"><button class="pri" type="submit">Uložiť čísla</button></div></form><div class="s">Mená sa spárujú s vodičmi z Commandera aj pri prehodenom poradí mena a priezviska.</div></div>`;
   h+=`</details><div class="s" style="text-align:center">Údaje z Commandera · poloha každé 2 min, jazdy každých 10 min.</div>`;
   S[cur]=h;
-  const BG="https://www.valko-logistics.sk/_next/image?url=%2Fvalko_trucks.jpg&w=1920&q=80&dpl=dpl_5DuQwbKn2mwZdbgHLVAissZ6jdba";
+  const BG="valko-fleet.jpg";
   const OWNx=ROLE==="owner",alN=AX.length,costM=OWNx?all:tot;
   const NAV=[["dash","🏠","Dashboard",""],["perf","📊","Prevádzka a náklady",`${n0(costM)} €`],["alarm","🚨","Alarmy",alN?`${alN}`:"OK"],["map","🗺️","Kde sú autá",`${moving} ide`],["moves","🔁","Pohyby",`${MV.length}`],["veh","🚛","Vozidlá",`${F.veh.length}`],["drv","👥",OWNx?"Vodiči a mzdy":"Vodiči",OWNx&&STATE.payTot?`${n0(STATE.payTot)} €`:""],["firm","🏢","Firma VALKO",""],["set","⚙️","Nastavenia",""]];
   const sec=STATE.fsec||"dash";
-  let o=`<div class="vhero" style="--bg:url('${BG}')"><svg class="vtruck" viewBox="0 0 640 260" aria-hidden="true"><defs>
-<linearGradient id="tg1" x1="0" x2="1"><stop offset="0" stop-color="#22d3ee"/><stop offset=".55" stop-color="#b6ff3b"/><stop offset="1" stop-color="#a78bfa"/></linearGradient>
-<linearGradient id="tg2" x1="0" x2="0" y1="0" y2="1"><stop offset="0" stop-color="rgba(255,255,255,.22)"/><stop offset="1" stop-color="rgba(255,255,255,.03)"/></linearGradient>
-<linearGradient id="tg3" x1="0" x2="1"><stop offset="0" stop-color="rgba(182,255,59,0)"/><stop offset="1" stop-color="rgba(182,255,59,.7)"/></linearGradient>
-<filter id="tglow" x="-20%" y="-40%" width="140%" height="180%"><feGaussianBlur stdDeviation="4" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter></defs>
-<g opacity=".55"><path d="M0 214H640" stroke="rgba(255,255,255,.18)" stroke-width="2"/><path d="M20 232H140M190 232H260M330 232H470M520 232H620" stroke="rgba(255,255,255,.12)" stroke-width="3" stroke-dasharray="26 18"/></g>
-<g stroke="url(#tg3)" stroke-width="3" stroke-linecap="round" opacity=".8"><path d="M0 120H70"/><path d="M10 150H90"/><path d="M30 178H100"/></g>
-<g filter="url(#tglow)" stroke="url(#tg1)" stroke-width="3.5" stroke-linejoin="round" stroke-linecap="round" fill="url(#tg2)">
-<path d="M96 186V112l26-34h214l12 34v74z"/><path d="M122 112h214" fill="none" opacity=".6"/><path d="M150 84v26M200 84v26M250 84v26M300 84v26" fill="none" opacity=".35"/>
-<path d="M346 186h28V96h110l40 38 26 8v44z"/><path d="M490 104l30 32h-30z" fill="rgba(34,211,238,.25)"/><path d="M380 104h96v32h-96z" fill="rgba(34,211,238,.18)"/>
-<path d="M550 168h22" fill="none"/><path d="M96 186h454" fill="none"/></g>
-<g filter="url(#tglow)" fill="#05070a" stroke="url(#tg1)" stroke-width="4"><circle cx="150" cy="196" r="20"/><circle cx="198" cy="196" r="20"/><circle cx="246" cy="196" r="20"/><circle cx="410" cy="196" r="20"/><circle cx="500" cy="196" r="20"/></g>
-<g fill="#b6ff3b"><circle cx="150" cy="196" r="5"/><circle cx="198" cy="196" r="5"/><circle cx="246" cy="196" r="5"/><circle cx="410" cy="196" r="5"/><circle cx="500" cy="196" r="5"/></g>
-<rect x="556" y="150" width="14" height="8" rx="3" fill="#fff" filter="url(#tglow)"/><text x="230" y="160" text-anchor="middle" font-family="Unbounded,Sora,sans-serif" font-weight="700" font-size="30" letter-spacing="6" fill="rgba(255,255,255,.85)">VALKO</text></svg><div class="vhin"><div class="vbrand"><span>VALKO</span><i></i><span>ERNTE</span></div>
+  let o=`<div class="vhero" style="--bg:url('${BG}')"><div class="vhin"><div class="vbrand"><span>VALKO</span><i></i><span>ERNTE</span></div>
     <h1>Od poľa<br><em>až po odberateľa.</em></h1><p>ERNTE výkup · VALKO doprava · ${new Date().toLocaleDateString("sk-SK",{weekday:"long",day:"numeric",month:"long"})}</p>
     <div class="vlive"><div><b>${moving}</b><small>ide</small></div><div><b>${G.length-moving}</b><small>stojí</small></div><div><b>${yard}</b><small>na dvore</small></div><div class="${alN?"al":""}"><b>${alN}</b><small>alarmy</small></div></div></div></div>
   <nav class="vnav">${NAV.map(n=>`<button type="button" data-fsec="${n[0]}" aria-pressed="${sec===n[0]}"${n[0]==="alarm"&&alN?` class="hot"`:""}><span>${n[1]}</span><b>${esc(n[2])}</b>${n[3]?`<small>${esc(n[3])}</small>`:""}</button>`).join("")}</nav><div id="fsecTop"></div>`;
