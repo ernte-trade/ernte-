@@ -152,6 +152,11 @@ details.trips{border-top:1px solid var(--line);padding-top:8px}details.trips sum
 .pyh2{display:grid;grid-template-columns:1fr 1fr;gap:8px}.pyh2>div{background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.12);border-radius:16px;padding:10px 12px;display:grid}.pyh2 small{font-size:.66rem;color:rgba(255,255,255,.65)}.pyh2 b{font:600 1.1rem var(--f-num)}
 .pymon{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none}.pymon button{flex:1 0 auto;min-height:40px;padding:0 10px;border-radius:999px;text-transform:capitalize}.pymon button[aria-pressed=true]{background:var(--grad);color:#06110a;border-color:transparent;box-shadow:0 6px 20px rgba(182,255,59,.3)}
 .pylist{display:grid;gap:10px}
+.dcw{display:grid;gap:10px}.dcw>summary{display:flex;align-items:baseline;gap:8px;cursor:pointer;list-style:none}.dcw>summary::-webkit-details-marker{display:none}.dcw>summary small{color:var(--muted);font-size:.78rem}.dcw>summary::after{content:"▾";margin-left:auto;color:var(--muted)}.dcw:not([open])>summary::after{content:"▸"}
+.dch{display:flex;flex-wrap:wrap;align-items:center;gap:6px 8px}.dch>small{flex-basis:100%;color:var(--muted);font-size:.76rem;display:flex;flex-wrap:wrap;gap:4px}
+.dcpl{font:600 .74rem var(--f-num);padding:2px 7px;border-radius:7px;background:rgba(255,255,255,.08);border:1px solid var(--line);white-space:nowrap}
+.dcfew{font-size:.68rem;font-weight:700;padding:2px 8px;border-radius:999px;background:rgba(255,207,90,.14);color:var(--warn)}
+.dct{display:grid}.dcr{display:grid;grid-template-columns:minmax(0,1.9fr) repeat(4,minmax(0,1fr));gap:6px;align-items:center;padding:6px 0;border-top:1px solid var(--line);font:500 .8rem var(--f-num)}.dcr.c3{grid-template-columns:minmax(0,2fr) repeat(2,minmax(0,1fr))}.dcr>span:not(:first-child){text-align:right}.dcr>span:first-child{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.dcr.hd{font:600 .62rem var(--f-ui,inherit);color:var(--muted);border-top:0;padding-top:0}.dcr .dm,.xvk b.dm{color:var(--warn);font-size:.72rem}
 .pyc{background:var(--glass);border:1px solid var(--line);border-radius:22px;padding:14px 16px;display:grid;gap:10px;backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);transition:border-color .2s}.pyc.lv{border-color:rgba(182,255,59,.35)}.pyc.open{border-color:rgba(182,255,59,.45);box-shadow:0 0 0 1px rgba(182,255,59,.15),0 20px 50px rgba(0,0,0,.4)}
 .pyt{all:unset;cursor:pointer;display:grid;grid-template-columns:44px minmax(0,1fr) auto;gap:12px;align-items:center}
 .pav{width:44px;height:44px;border-radius:14px;display:grid;place-items:center;font:700 .9rem var(--f-head);color:#06110a;background:linear-gradient(135deg,#b6ff3b,#5eead4);box-shadow:0 6px 18px rgba(182,255,59,.3)}
@@ -528,6 +533,14 @@ function agg(R){const a={km:0,l:0,lraw:0,lkm:0,sec:0,n:0,max:0,ref:0,refe:0,priv
 const MINKM=100;
 function fleetCons(R){const by={};for(const r of R)(by[r.vehicle_id]=by[r.vehicle_id]||[]).push(r);let l=0,k=0;for(const id in by){const a=agg(by[id]);if(a.km>=MINKM){l+=a.l;k+=a.lkm}}return k>20?l/k*100:null}
 const consTxt=a=>a.km<MINKM?(a.n||a.lraw?"málo dát":"–"):a.cons?n1(a.cons):"–";
+// rozpis vodič × auto: km, spotrebované l, l/100 (pod 100 km = málo dát), natankované l
+function dcBreak(R,vById){vById=vById||{};const pl=r=>{const v=vById[r.vehicle_id];return String(r.plate||(v&&(v.plate||v.name))||r.vehicle_id||"?").trim()};
+  const D={},C={};for(const r of R){const d=String(r.driver||"").trim()||"neznámy vodič",p=pl(r);const dd=(D[d]=D[d]||{}),cc=(C[p]=C[p]||{});(dd[p]=dd[p]||[]).push(r);(cc[d]=cc[d]||[]).push(r)}
+  const st=x=>{const a=agg(x),few=a.km<MINKM;return {km:a.km,l:a.lraw,cons:few?null:a.cons,ref:a.ref,few}};
+  const grp=(M,key,sub)=>Object.entries(M).map(([k,by])=>Object.assign({[key]:k,[sub]:Object.entries(by).map(([s,x])=>Object.assign({k:s},st(x))).sort((a,b)=>b.km-a.km)},st([].concat(...Object.values(by))))).sort((a,b)=>b.km-a.km);
+  return {drivers:grp(D,"n","cars"),cars:grp(C,"p","drivers")}}
+const dcCons=x=>x.few?"málo dát":x.cons?n1(x.cons):"–";
+function dcAi(R,vById){return dcBreak(R,vById).drivers.map(d=>({vodic:d.n,km:Math.round(d.km),litre:Math.round(d.l),l_100km:d.few?"málo dát":d.cons?+d.cons.toFixed(1):null,malo_dat:d.few,natankovane_l:Math.round(d.ref),auta:d.cars.map(c=>({auto:c.k,km:Math.round(c.km),litre:Math.round(c.l),l_100km:c.few?"málo dát":c.cons?+c.cons.toFixed(1):null,natankovane_l:Math.round(c.ref)}))}))}
 function fuelGap(F){const T=agg(F.rides);if(T.l<200)return null;const CO=Object.assign({diesel:1.952},F.cfg.costs||{}),gap=T.l-T.ref,p=gap/T.l;return {l:T.l,ref:T.ref,gap,p,eur:gap*CO.diesel}}
 function fleetAlerts(F){const out=[],now=Date.now(),avg=fleetCons(F.rides);
   const G=fuelGap(F);if(G&&G.p>0.10)out.push(["r",`Rozdiel natankovanej a spotrebovanej nafty: spotrebované ${n0(G.l)} l, natankované ${n0(G.ref)} l → rozdiel ${n0(G.gap)} l (${Math.round(G.p*100)} %) ≈ ${n0(G.eur)} € · stupeň VYSOKÝ · skontroluj tankovania mimo karty, vlastnú nádrž na dvore alebo odčerpávanie`]);
@@ -556,7 +569,7 @@ function vFleet(){const F=STATE.fleet;if(!F)return `<div class="card"><div class
   const nd=new Date(),dim=new Date(nd.getFullYear(),nd.getMonth()+1,0).getDate(),days=FPER==="m"?dim:FPER==="1"?1:+FPER;
   const OWN=ROLE==="owner",fx=OWN?CO.fixed*days/dim:0,pay=OWN&&FPER==="m"&&STATE.pay&&STATE.pay.mon===PMON&&PMON===(nd.getFullYear()+"-"+String(nd.getMonth()+1).padStart(2,"0"))?(STATE.payTot||0):null;
   const all=tot+fx+(pay||0),f3=x=>x.toFixed(3).replace(".",",");
-  if(OWN){const rv=A.km*CO.rate;STATE.aiKpi={obdobie:FPER,km:Math.round(A.km),jazd:A.n,nafta_l:Math.round(A.l),spotreba_l_100:A.cons?+A.cons.toFixed(1):null,nafta_eur:Math.round(fuelEur),myto_eur:Math.round(tollEur),pevne_eur:Math.round(fx),mzdy_eur:pay!=null?Math.round(pay):null,naklady_spolu_eur:Math.round(all),obrat_eur:Math.round(rv),zisk_eur:pay!=null?Math.round(rv-all):null,zisk_poznamka:pay!=null?"":"chýbajú mzdy – zisk sa nedá spočítať",natankovane_l:Math.round(A.ref),natankovane_eur:Math.round(A.refe),nafta_eur_s_dph_cena_z_nastaveni:Math.round(A.l*CO.diesel),cena_nafty:CO.diesel,myto_km:CO.toll,myto_podiel_pct:CO.share,sadzba_km:CO.rate,pevne_mesiac:CO.fixed}}
+  if(OWN){const rv=A.km*CO.rate;STATE.aiKpi={obdobie:FPER,km:Math.round(A.km),jazd:A.n,nafta_l:Math.round(A.l),spotreba_l_100:A.cons?+A.cons.toFixed(1):null,nafta_eur:Math.round(fuelEur),myto_eur:Math.round(tollEur),pevne_eur:Math.round(fx),mzdy_eur:pay!=null?Math.round(pay):null,naklady_spolu_eur:Math.round(all),obrat_eur:Math.round(rv),zisk_eur:pay!=null?Math.round(rv-all):null,zisk_poznamka:pay!=null?"":"chýbajú mzdy – zisk sa nedá spočítať",natankovane_l:Math.round(A.ref),natankovane_eur:Math.round(A.refe),nafta_eur_s_dph_cena_z_nastaveni:Math.round(A.l*CO.diesel),cena_nafty:CO.diesel,myto_km:CO.toll,myto_podiel_pct:CO.share,sadzba_km:CO.rate,pevne_mesiac:CO.fixed,flotila_po_vodicoch:dcAi(F.rides,Object.fromEntries(F.veh.map(v=>[v.id,v])))}}
   const perName={"1":"dnes","7":"posledných 7 dní","30":"posledných 30 dní","m":"tento mesiac"}[FPER];
   const segs=[["Nafta",fuelEur,"sf"],["Mýto",tollEur,"st"]].concat(OWN?[["Pevné",fx,"sx"]]:[]).concat(pay!=null?[["Mzdy",pay,"sp"]]:[]);
   // prevádzka
@@ -625,7 +638,7 @@ function vFleet(){const F=STATE.fleet;if(!F)return `<div class="card"><div class
     return `<div class="xd"><div class="xdh"><span class="pav">${esc(ini(k))}</span><span class="xdn"><b>${esc(k)}</b><small>${nowIn?`<span class="live"></span>teraz v aute <b>${esc(lr.plate||"")}</b>${v&&v.speed>3?" · ide "+v.speed+" km/h":""}`:`naposledy ${esc(lr.plate||"")} · ${esc(ago(lr.stop_at||lr.start_at))}`}</small></span></div>
       <div class="xvk"><span><small>km</small><b>${n0(a.km)}</b></span><span><small>jazdy</small><b>${a.n}</b></span><span><small>l/100</small><b class="${A.cons&&a.cons>A.cons*1.15?"bad":""}">${a.cons?n1(a.cons):"–"}</b></span><span><small>max</small><b class="${a.max>90?"bad":""}">${a.max||"–"}</b></span></div>
       ${ed?`<form class="f sub" data-phform="${esc(k)}"><label class="w">Súkromný mobil vodiča<input name="ph" inputmode="tel" value="${esc(ph||"")}" placeholder="0905 123 456"></label><div class="w btns"><button class="pri" type="submit">Uložiť</button><button type="button" data-phedit="">Zrušiť</button></div></form>`
-        :(()=>{const fp=firmPh(k,lr);return `<div class="btns xact">${fp?`<a class="btn pri" href="tel:${esc(telA(fp.ph))}">📞 Firemný${fp.no?" (č."+fp.no+")":""}</a>`:""}${ph?`<a class="btn lime" href="tel:${esc(telA(ph))}">📱 Súkromný</a><a class="btn" href="https://wa.me/${esc(telA(ph).replace(/^\+/,"").replace(/^0/,"421"))}" target="_blank" rel="noopener">WhatsApp</a>`:""}<button type="button" data-phedit="${esc(k)}">${ph?"✏️":"+ súkromný"}</button></div>`})()}</div>`}).join("")+`</div>`;}
+        :(()=>{const fp=firmPh(k,lr);return `<div class="btns xact">${fp?`<a class="btn pri" href="tel:${esc(telA(fp.ph))}">📞 Firemný${fp.no?" (č."+fp.no+")":""}</a>`:""}${ph?`<a class="btn lime" href="tel:${esc(telA(ph))}">📱 Súkromný</a><a class="btn" href="https://wa.me/${esc(telA(ph).replace(/^\+/,"").replace(/^0/,"421"))}" target="_blank" rel="noopener">WhatsApp</a>`:""}<button type="button" data-phedit="${esc(k)}">${ph?"✏️":"+ súkromný"}</button></div>`})()}</div>`}).join("")+`</div>`;h+=vDrvCar(F,true);}
 
   // ===== NASTAVENIA =====
   S[cur]=h;h="";cur="set";
@@ -668,6 +681,7 @@ function vFleet(){const F=STATE.fleet;if(!F)return `<div class="card"><div class
       <button type="button" class="vd" data-fsec="map"><small>Autá</small><b>${moving}<i> / ${F.veh.length}</i></b><span>na ceste · ${yard} na dvore</span></button>
       ${OWNx?`<button type="button" class="vd" data-fsec="drv"><small>Mzdy · ${esc(new Date().toLocaleDateString("sk-SK",{month:"long"}))}</small><b>${STATE.payTot?n0(STATE.payTot)+" €":"–"}</b><span>hrubé, odhad</span></button>`:""}
       <button type="button" class="vd wide" data-fsec="moves"><small>Posledný pohyb</small><b class="sm">${MV[0]?esc(MV[0].plate||""):"–"}</b><span>${MV[0]?esc((MV[0].place||"")+" · "+new Date(MV[0].at).toLocaleTimeString("sk-SK",{hour:"2-digit",minute:"2-digit"})):"zatiaľ nič"}</span></button></div>`;
+    o+=vDrvCar(F,true);
     o+=S.map||"";
     if(OWNx&&!STATE.payTot)vPay(F,{});
   }else if(sec==="firm")o+=vFirm();
@@ -689,9 +703,9 @@ const FOREIGN=/(Hungary|Maďarsko|Magyar|Ukrajin|Ukraine|Poľsko|Poland|Česk|Cz
 function outReg(r){const pts=[[r.lat_start,r.lon_start],[r.lat_stop,r.lon_stop]].filter(p=>p[0]!=null);
   if(pts.some(([la,lo])=>+la<KE_REG.latMin||+la>KE_REG.latMax||+lo<KE_REG.lonMin||+lo>KE_REG.lonMax))return true;
   return FOREIGN.test((r.start_addr||"")+" "+(r.stop_addr||""))}
-async function loadPay(){const [y,m]=PMON.split("-").map(Number),a=new Date(y,m-1,1),b=new Date(y,m,1);
-  const r=await sb.from("rides").select("driver,start_at,stop_at,distance,duration,fuel_consumed,max_speed,vehicle_id,lat_start,lon_start,lat_stop,lon_stop,start_addr,stop_addr,ride_type,plate").gte("start_at",a.toISOString()).lt("start_at",b.toISOString()).limit(10000);
-  STATE.pay={mon:PMON,rides:r.data||[],err:r.error}}
+function loadPay(){const mon=PMON;if(loadPay.p&&loadPay.m===mon)return loadPay.p;loadPay.m=mon;return loadPay.p=(async()=>{const [y,m]=mon.split("-").map(Number),a=new Date(y,m-1,1),b=new Date(y,m,1);
+  const r=await sb.from("rides").select("driver,start_at,stop_at,distance,duration,fuel_consumed,refuel_l,max_speed,vehicle_id,lat_start,lon_start,lat_stop,lon_stop,start_addr,stop_addr,ride_type,plate").gte("start_at",a.toISOString()).lt("start_at",b.toISOString()).limit(10000);
+  if(PMON===mon)STATE.pay={mon,rides:r.data||[],err:r.error};loadPay.p=null})()}
 function vPay(F,X){X=X||{};if(ROLE!=="owner")return "";const P=STATE.pay;if(!P||P.mon!==PMON){loadPay().then(renderStaff);return `<h2>Mzdy vodičov</h2><div class="card"><div class="s">Načítavam…</div></div>`}
   const C=Object.assign({base:1031,inReg:80,outReg:90,minKm:10},F.cfg.pay||{});
   const hasGeo=P.rides.some(r=>r.lat_start!=null);
@@ -727,7 +741,23 @@ function vPay(F,X){X=X||{};if(ROLE!=="owner")return "";const P=STATE.pay;if(!P||
         <div class="s">🟩 kraj ${C.inReg} € · 🟪 mimo kraja ${C.outReg} € · číslo pod dňom = km</div>`:""}</div>`}).join("")||`<div class="card"><div class="s">V tomto mesiaci zatiaľ žiadne jazdy.</div></div>`}</div>
   <details class="card"><summary class="s" style="cursor:pointer">Sadzby a pravidlá</summary><div class="s">Denne ${C.inReg} € v Košickom kraji (po Prešov a Rožňavu), ${C.outReg} € mimo neho, od 1. dňa. Vodič dostane vyššie z: základ ${n0(C.base)} € alebo súčet denných. Odpracovaný deň = aspoň ${C.minKm} km. Odhad z Commandera – nie výplatná páska (bez odvodov, dovolenky, PN).</div>
     <form class="f sub" id="fPay"><label>Základ € (hrubé)<input name="base" inputmode="decimal" value="${C.base}"></label><label>Deň v kraji €<input name="inReg" inputmode="decimal" value="${C.inReg}"></label><label>Deň mimo kraja €<input name="outReg" inputmode="decimal" value="${C.outReg}"></label><label>Min. km na deň<input name="minKm" inputmode="numeric" value="${C.minKm}"></label><div class="w btns"><button class="pri" type="submit">Uložiť</button></div></form></details>`;
+  h+=vDrvCar(F,false);
   return h}
+// ================= VODIČI × AUTÁ (zvolený mesiac) =================
+function vDrvCar(F,withMon){const P=STATE.pay,mName=m=>new Date(m+"-15").toLocaleDateString("sk-SK",{month:"long"});
+  const months=[...Array(6)].map((_,i)=>{const d=new Date();d.setDate(15);d.setMonth(d.getMonth()-i);return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")});
+  let h=`<h2>Vodiči a autá · ${esc(mName(PMON))} ${PMON.slice(0,4)}</h2>`+(withMon?`<div class="pymon">${months.map(m=>`<button type="button" data-pmon="${m}" aria-pressed="${m===PMON}">${esc(mName(m).slice(0,3))}</button>`).join("")}</div>`:"");
+  if(!P||P.mon!==PMON){loadPay().then(renderStaff);return h+`<div class="card"><div class="s">Načítavam…</div></div>`}
+  if(P.err)return h+`<div class="card"><div class="s">Jazdy sa nepodarilo načítať: ${esc(P.err.message||"chyba")}</div></div>`;
+  const B=dcBreak(P.rides,Object.fromEntries((F.veh||[]).map(v=>[v.id,v])));
+  if(!B.drivers.length)return h+`<div class="card"><div class="s">V tomto mesiaci zatiaľ žiadne jazdy.</div></div>`;
+  const few=`<span class="dcfew">málo dát</span>`,pl=p=>`<b class="dcpl">${esc(p)}</b>`;
+  h+=`<details class="card dcw" open><summary><b>👤 Podľa vodičov</b><small>${B.drivers.length} vodičov</small></summary><div class="xdl">`+B.drivers.map(d=>`<div class="xd"><div class="dch"><b>${esc(d.n)}</b>${d.few?few:""}<small>${d.cars.map(c=>pl(c.k)).join(" ")}</small></div>
+    <div class="xvk"><span><small>km</small><b>${n0(d.km)}</b></span><span><small>spotreba (l)</small><b>${n0(d.l)}</b></span><span><small>l/100</small><b class="${d.few?"dm":""}">${dcCons(d)}</b></span><span><small>tankované (l)</small><b>${n0(d.ref)}</b></span></div>
+    ${d.cars.length?`<div class="dct"><div class="dcr hd"><span>ŠPZ</span><span>km</span><span>l</span><span>l/100</span><span>⛽ l</span></div>${d.cars.map(c=>`<div class="dcr"><span><b>${esc(c.k)}</b></span><span>${n0(c.km)}</span><span>${n0(c.l)}</span><span class="${c.few?"dm":""}">${dcCons(c)}</span><span>${n0(c.ref)}</span></div>`).join("")}</div>`:""}</div>`).join("")+`</div></details>`;
+  h+=`<details class="card dcw" open><summary><b>🚛 Podľa áut</b><small>${B.cars.length} áut</small></summary><div class="xdl">`+B.cars.map(c=>`<div class="xd"><div class="dch">${pl(c.p)}<small>${n0(c.km)} km · ${dcCons(c)}${c.few?"":" l/100"} · ${c.drivers.length} ${c.drivers.length===1?"vodič":c.drivers.length<5?"vodiči":"vodičov"}</small></div>
+    <div class="dct"><div class="dcr c3 hd"><span>Vodič</span><span>km</span><span>l/100</span></div>${c.drivers.map(d=>`<div class="dcr c3"><span>${esc(d.k)}</span><span>${n0(d.km)}</span><span class="${d.few?"dm":""}">${dcCons(d)}</span></div>`).join("")}</div></div>`).join("")+`</div></details>`;
+  return h+`<div class="s">Spotreba = litre z Commandera za jazdy daného vodiča v danom aute. l/100 len z jázd, ktoré majú km aj litre; pod ${MINKM} km je „málo dát“ a nehodnotí sa.</div>`}
 document.addEventListener("click",e=>{const x=e.target.closest("[data-pmon]");if(!x)return;PMON=x.dataset.pmon;PDRV=null;renderStaff()});
 document.addEventListener("click",e=>{const x=e.target.closest("[data-pdrv]");if(!x)return;PDRV=PDRV===x.dataset.pdrv?null:x.dataset.pdrv;renderStaff()});
 document.addEventListener("submit",async e=>{if(e.target.id!=="fPay")return;e.preventDefault();const fd=new FormData(e.target);const v={base:num(fd.get("base"))||1031,inReg:num(fd.get("inReg"))||80,outReg:num(fd.get("outReg"))||90,minKm:num(fd.get("minKm"))||10};

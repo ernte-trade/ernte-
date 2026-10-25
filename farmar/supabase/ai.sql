@@ -56,6 +56,28 @@ exception when others then return jsonb_build_object('chyba',SQLERRM);
 end $$;
 revoke all on function public.ai_fleet_kpi() from public, anon, authenticated;
 
+-- rozpis tohto mesiaca po vodičoch a ich autách (spotreba priradená konkrétnemu vodičovi)
+-- l_100km iba z jázd, ktoré majú km aj litre; pod 100 km = „málo dát“
+create or replace function public.ai_fleet_drivers() returns jsonb language plpgsql stable security definer set search_path=public as $$
+declare m0 timestamptz:=date_trunc('month', now() at time zone 'Europe/Bratislava') at time zone 'Europe/Bratislava'; r jsonb;
+begin
+  with p as (select coalesce(nullif(trim(driver),''),'neznámy vodič') vodic, coalesce(nullif(trim(plate),''),vehicle_id,'?') auto,
+      coalesce(sum(distance),0) km, coalesce(sum(fuel_consumed),0) l,
+      coalesce(sum(fuel_consumed) filter (where distance>0 and fuel_consumed>0),0) lok, coalesce(sum(distance) filter (where distance>0 and fuel_consumed>0),0) kok,
+      coalesce(sum(refuel_l),0) ref
+    from rides where start_at>=m0 group by 1,2),
+  d as (select vodic, sum(km) km, sum(l) l, sum(lok) lok, sum(kok) kok, sum(ref) ref,
+      jsonb_agg(jsonb_build_object('auto',auto,'km',round(km),'litre',round(l),
+        'l_100km',case when km>=100 and kok>20 then to_jsonb(round(lok/kok*100,1)) else '"málo dát"'::jsonb end,'natankovane_l',round(ref)) order by km desc) auta
+    from p group by vodic)
+  select coalesce(jsonb_agg(jsonb_build_object('vodic',vodic,'km',round(km),'litre',round(l),
+      'l_100km',case when km>=100 and kok>20 then to_jsonb(round(lok/kok*100,1)) else '"málo dát"'::jsonb end,
+      'malo_dat',km<100,'natankovane_l',round(ref),'auta',auta) order by km desc),'[]') into r from d;
+  return r;
+exception when others then return jsonb_build_object('chyba',SQLERRM);
+end $$;
+revoke all on function public.ai_fleet_drivers() from public, anon, authenticated;
+
 -- diagnostika: čo je zapnuté a kde chýbajú dáta
 create or replace function public.ai_diag() returns jsonb language plpgsql security definer set search_path=public as $$
 declare m0 text:=quote_literal((date_trunc('month', now() at time zone 'Europe/Bratislava') at time zone 'Europe/Bratislava')::text);
@@ -103,6 +125,7 @@ begin
    'nove_poziadavky', ai_part($q$select coalesce(jsonb_agg(x),'[]') from (select r.kind typ, f.name farmar, r.com, r.tons, r.price, r.pickup_date, r.note, r.created_at::date from requests r join farmers f on f.id=r.farmer_id where r.status='nova' order by r.created_at desc limit 15) x$q$),
    'flotila_kpi_mesiac_z_databazy', ai_fleet_kpi(),
    'flotila_po_autach_mesiac', ai_part('select coalesce(jsonb_agg(x),''[]'') from (select coalesce(plate,vehicle_id) auto, round(sum(distance)) km, round(sum(fuel_consumed)) l, case when sum(distance)>=100 then round(100*sum(fuel_consumed)/nullif(sum(distance),0),1)::text else ''málo dát'' end l_100km, round(sum(refuel_l)) natankovane_l from rides where start_at>='||m0||'::timestamptz group by 1 order by 2 desc nulls last) x'),
+   'flotila_po_vodicoch', ai_fleet_drivers(),
    'auta_teraz', ai_part($q$select jsonb_build_object('spolu',count(*),'ide',count(*) filter (where speed>3 and gps_at>now()-interval '20 min')) from cmd_vehicles$q$),
    'udalosti_7_dni', ai_part($q$select coalesce(jsonb_object_agg(kind,n),'{}') from (select kind,count(*) n from fleet_events where at>now()-interval '7 days' group by kind) x$q$),
    'posledne_alarmy_nafta', ai_part($q$select coalesce(jsonb_agg(x),'[]') from (select kind, plate, driver, to_char(at at time zone 'Europe/Bratislava','DD.MM HH24:MI') kedy from fleet_events where at>now()-interval '7 days' and kind in ('fuel_drop','refuel_gap') order by at desc limit 10) x$q$),
@@ -118,7 +141,7 @@ revoke all on function public.ai_snapshot() from public, anon, authenticated;
 create or replace function public.ai_system() returns text language sql stable as $$ select
 'Si ERNTE AI – osobný poradca a kontrolór majiteľa (Martin Vaľko) firiem ERNTE spol. s r.o. (výkup obilia a olejnín od farmárov, predaj odberateľom/na burzu) a VALKO s.r.o. (kamiónová doprava, Scania ťahače, Michalovce, dvor Medovská 46). Píš po slovensky, stručne, priamo, bez omáčok, ako skúsený obchodný riaditeľ. Používaj čísla.
 Úlohy: 1) kontroluj obchody, náklady, zisky a straty, flotilu (spotreba, krádeže nafty, prestoje) a upozorni čo je zlé a čo dobré; 2) sleduj trhy (MATIF repka/pšenica/kukurica, CBOT sója, slovenské a maďarské výkupné ceny, nafta) – na aktuálne ceny VŽDY použi web_search a uveď zdroj a dátum; 3) raď konkrétne čo má robiť (kúpiť/predať/držať, za akú cenu, komu volať, čo skontrolovať).
-Nikdy si nevymýšľaj čísla – ak údaj chýba, napíš „nezadané“ alebo „málo dát“, nikdy nie 0. Zisk = obrat − (nafta + mýto + pevné náklady + mzdy); ak chýbajú mzdy (kpi_z_aplikacie.mzdy_eur je null), napíš že zisk sa nedá presne spočítať. Autá s menej ako 100 km za mesiac majú „málo dát“ – nerátaj ich do priemernej spotreby ani alarmov. Pri technických problémoch (chýbajúce udalosti, alarmy, jazdy) použi sekciu diagnostika a povedz presne, čo je vypnuté alebo nenastavené.
+Nikdy si nevymýšľaj čísla – ak údaj chýba, napíš „nezadané“ alebo „málo dát“, nikdy nie 0. Zisk = obrat − (nafta + mýto + pevné náklady + mzdy); ak chýbajú mzdy (kpi_z_aplikacie.mzdy_eur je null), napíš že zisk sa nedá presne spočítať. Autá s menej ako 100 km za mesiac majú „málo dát“ – nerátaj ich do priemernej spotreby ani alarmov. Spotrebu konkrétneho vodiča ber z flotila_po_vodicoch (vodič → autá, km, litre, l/100 km, natankované litre); vodič s menej ako 100 km za mesiac má „málo dát“ – jeho spotrebu nehodnoť. Pri technických problémoch (chýbajúce udalosti, alarmy, jazdy) použi sekciu diagnostika a povedz presne, čo je vypnuté alebo nenastavené.
 ÚPRAVY APLIKÁCIE: ak majiteľ chce niečo v aplikácii opraviť, pridať alebo zmeniť, NEROB to v texte – na koniec odpovede pridaj samostatný riadok presne v tvare
 ÚLOHA: <presný a úplný popis zmeny po slovensky, aby ju programátor vedel spraviť bez ďalších otázok>
 (jeden riadok na jednu zmenu). Povedz mu, že úprava bude hotová spravidla do hodiny a zhrnutie uvidí v Dashboarde. Aplikácia: ERNTE Trade & Logistic (záložky Požiadavky, Cenník, Doprava, Flotila, Obchody, Farmári, Počasie, Tím; Flotila má Dashboard, Prevádzka a náklady, Alarmy, Mapa, Pohyby, Vozidlá, Vodiči a mzdy, Miesta, Nastavenia).
