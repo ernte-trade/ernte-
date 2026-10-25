@@ -108,7 +108,8 @@ function docHTML(x){const d=new Date(x.created_at).toLocaleDateString("sk-SK",{d
   const hd=fm==="valko"?`<div class="aidoc-h vk"><img src="valko-logo.png" alt="VALKO"><div><b>VALKO s.r.o.</b><small>Medzinárodná kamiónová doprava · Zbudza 141, 072 23<br>IČO: 53 365 241 · IČ DPH: SK2121345424 · ${esc(d)}</small></div></div>`
     :`<div class="aidoc-h"><img src="logo.png" alt="ERNTE"><div><b>ERNTE spol. s r.o.</b><small>Zbudza 141, 072 23 · ${esc(d)}</small></div></div>`;
   return `<div class="aidoc">${hd}${placeStamp(md(body),stampFor(x,body))}</div>`}
-function placeStamp(h,st){if(!st)return h;const re=/(<p>[^]*?(konateľ|Vaľko)[^]*?<\/p>)/i;return re.test(h)?h.replace(re,"$1"+st):h+st}
+function placeStamp(h,st){if(!st)return h;const P=h.split(/(?=<p>)/);let i=-1;for(let k=P.length-1;k>=0;k--){if(/Vaľko|konateľ\b|konateľ,|konateľ </i.test(P[k].split("</p>")[0])){i=k;break}}
+  if(i<0)return h+st;const end=P[i].indexOf("</p>")+4;P[i]=P[i].slice(0,end)+st+P[i].slice(end);return P.join("")}
 // pečiatka s podpisom – uložená len v databáze (nie verejne), vidí iba majiteľ
 const STAMP={};
 async function loadStamps(){try{const r=await sb.from("ai_state").select("key,value").like("key","stamp_%");for(const x of (r.data||[]))STAMP[x.key.slice(6)]=x.value}catch(e){}}
