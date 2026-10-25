@@ -40,6 +40,12 @@ const CSS=`
 .aiin textarea:focus{border-color:rgba(182,255,59,.7);box-shadow:0 0 0 3px rgba(182,255,59,.15)}
 .aiin button{width:52px;height:52px;flex:none;border-radius:50%;border:0;cursor:pointer;font-size:1.25rem;color:#06110a;background:linear-gradient(135deg,#b6ff3b,#5eead4);box-shadow:0 0 24px rgba(182,255,59,.5)}
 .aiin button:disabled{opacity:.4;box-shadow:none}
+.aicode{position:relative;margin:8px 0;border-radius:14px;background:rgba(0,0,0,.45);border:1px solid rgba(255,255,255,.14)}.aicode pre{margin:0;padding:38px 12px 12px;white-space:pre-wrap;word-break:break-word;font:500 .86rem/1.45 ui-monospace,Menlo,monospace;color:#e9ecff}
+.aicp{position:absolute;top:6px;right:6px;display:inline-flex;align-items:center;gap:5px;min-height:28px;padding:0 10px;border-radius:9px;border:1px solid rgba(255,255,255,.2);background:rgba(255,255,255,.08);color:#fff;font:600 .72rem system-ui;cursor:pointer}.aicp.ok,.aiact button.ok{background:rgba(182,255,59,.25);border-color:rgba(182,255,59,.6)}
+.aimsg code{font:500 .85em ui-monospace,Menlo,monospace;background:rgba(255,255,255,.1);padding:1px 5px;border-radius:5px}.aimsg .aih{margin:10px 0 6px;font:700 1rem var(--f-head,system-ui)}.aimsg ol{margin:4px 0 8px;padding-left:20px}
+.aitbl{overflow-x:auto;margin:8px 0;border-radius:12px;border:1px solid rgba(255,255,255,.14)}.aitbl table{border-collapse:collapse;width:100%;font-size:.82rem}.aitbl th,.aitbl td{padding:7px 9px;border-bottom:1px solid rgba(255,255,255,.08);text-align:left;white-space:nowrap}.aitbl th{background:rgba(182,255,59,.12);color:#d9ffb0}
+.aiact{display:flex;flex-wrap:wrap;gap:6px;margin-top:9px}.aiact button{display:inline-flex;align-items:center;gap:5px;min-height:30px;padding:0 10px;border-radius:10px;border:1px solid rgba(255,255,255,.18);background:rgba(255,255,255,.06);color:#e9ecff;font:600 .72rem system-ui;cursor:pointer}
+#aiprint{display:none}@media print{html.aiprinting body>*:not(#aiprint){display:none!important}html.aiprinting #aiprint{display:block!important;background:#fff}html.aiprinting,html.aiprinting body{background:#fff!important}@page{margin:16mm}}
 .aicard{padding:14px 15px;border-radius:20px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.14);display:grid;gap:8px}
 .aicard h3{margin:0;font:700 .95rem var(--f-head,system-ui)}.aicard .s{color:rgba(255,255,255,.6);font-size:.8rem}
 .aist{display:inline-block;padding:2px 9px;border-radius:999px;font:700 .68rem system-ui;letter-spacing:.04em;text-transform:uppercase}
@@ -62,13 +68,44 @@ const st=document.createElement("style");st.textContent=CSS;document.head.append
 
 const A={open:false,tab:"chat",msgs:[],tasks:[],busy:null,ready:null};
 const tm=d=>new Date(d).toLocaleString("sk-SK",{day:"numeric",month:"numeric",hour:"2-digit",minute:"2-digit"});
-function md(t){const L=String(t||"").split("\n");let h="",ul=false,tasks=[];
-  const il=s=>esc(s).replace(/\*\*(.+?)\*\*/g,"<b>$1</b>").replace(/\[([^\]]+)\]\((https?:[^)\s]+)\)/g,'<a href="$2" target="_blank" rel="noopener">$1</a>').replace(/(^|[\s(])(https?:\/\/[^\s<)]+)/g,'$1<a href="$2" target="_blank" rel="noopener">$2</a>');
-  for(const raw of L){const l=raw.trim();const tk=l.match(/^\**ÚLOHA:\**\s*(.+)$/);if(tk){tasks.push(tk[1]);continue}
-    if(/^[-•*]\s+/.test(l)){if(!ul){h+="<ul>";ul=true}h+="<li>"+il(l.replace(/^[-•*]\s+/,""))+"</li>";continue}
-    if(ul){h+="</ul>";ul=false}if(!l)continue;h+="<p>"+il(l.replace(/^#+\s*/,""))+"</p>"}
-  if(ul)h+="</ul>";for(const x of tasks)h+=`<div class="aitask"><span>🛠</span><div><b>Úloha pre úpravu aplikácie</b><br>${esc(x)}</div></div>`;return h}
-
+const CB=[];const ICO_COPY='<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="12" height="12" rx="2.5"/><path d="M5 15H4.5A1.5 1.5 0 0 1 3 13.5v-9A1.5 1.5 0 0 1 4.5 3h9A1.5 1.5 0 0 1 15 4.5V5"/></svg>';
+function il(s){return esc(s).replace(/`([^`]+)`/g,'<code>$1</code>').replace(/\*\*(.+?)\*\*/g,"<b>$1</b>").replace(/(^|[^*])\*([^*\s][^*]*)\*/g,"$1<i>$2</i>").replace(/\[([^\]]+)\]\((https?:[^)\s]+)\)/g,'<a href="$2" target="_blank" rel="noopener">$1</a>').replace(/(^|[\s(])(https?:\/\/[^\s<)]+)/g,'$1<a href="$2" target="_blank" rel="noopener">$2</a>')}
+function cells(l){return l.replace(/^\s*\|/,"").replace(/\|\s*$/,"").split("|").map(c=>c.trim())}
+function md(t){const L=String(t||"").split("\n");let h="",lst=null,tasks=[],i=0;
+  const close=()=>{if(lst){h+=`</${lst}>`;lst=null}};
+  while(i<L.length){const raw=L[i],l=raw.trim();
+    if(/^```/.test(l)){close();const buf=[];i++;while(i<L.length&&!/^```/.test(L[i].trim())){buf.push(L[i]);i++}i++;const k=CB.push(buf.join("\n"))-1;
+      h+=`<div class="aicode"><button type="button" class="aicp" data-aicb="${k}" aria-label="Kopírovať">${ICO_COPY}<span>Kopírovať</span></button><pre>${esc(buf.join("\n"))}</pre></div>`;continue}
+    if(/^\|.*\|\s*$/.test(l)&&i+1<L.length&&/^\|?\s*:?-{2,}/.test(L[i+1].trim())){close();const head=cells(l);i+=2;const rows=[];while(i<L.length&&/^\|.*\|\s*$/.test(L[i].trim())){rows.push(cells(L[i].trim()));i++}
+      h+=`<div class="aitbl"><table><thead><tr>${head.map(c=>`<th>${il(c)}</th>`).join("")}</tr></thead><tbody>${rows.map(r=>`<tr>${r.map(c=>`<td>${il(c)}</td>`).join("")}</tr>`).join("")}</tbody></table></div>`;continue}
+    const tk=l.match(/^\**ÚLOHA:\**\s*(.+)$/);if(tk){tasks.push(tk[1]);i++;continue}
+    let m;
+    if((m=l.match(/^(#{1,4})\s+(.+)$/))){close();h+=`<h${Math.min(4,m[1].length+2)} class="aih">${il(m[2])}</h${Math.min(4,m[1].length+2)}>`;i++;continue}
+    if(/^[-•*]\s+/.test(l)){if(lst!=="ul"){close();h+="<ul>";lst="ul"}h+="<li>"+il(l.replace(/^[-•*]\s+/,""))+"</li>";i++;continue}
+    if((m=l.match(/^\d+[.)]\s+(.+)$/))){if(lst!=="ol"){close();h+="<ol>";lst="ol"}h+="<li>"+il(m[1])+"</li>";i++;continue}
+    close();if(l)h+="<p>"+il(l)+"</p>";i++}
+  close();for(const x of tasks)h+=`<div class="aitask"><span>🛠</span><div><b>Úloha pre úpravu aplikácie</b><br>${esc(x)}</div></div>`;return h}
+function plain(t){return String(t||"").split("\n").filter(l=>!/^\s*\**ÚLOHA:/.test(l)&&!/^```/.test(l.trim())).join("\n").replace(/\*\*(.+?)\*\*/g,"$1").replace(/^#+\s+/gm,"").trim()}
+function tables(t){const L=String(t||"").split("\n"),out=[];for(let i=0;i<L.length;i++){if(/^\|.*\|\s*$/.test(L[i].trim())&&i+1<L.length&&/^\|?\s*:?-{2,}/.test(L[i+1].trim())){const rows=[cells(L[i].trim())];i+=2;while(i<L.length&&/^\|.*\|\s*$/.test(L[i].trim())){rows.push(cells(L[i].trim()));i++}out.push(rows)}}return out}
+function acts(x){if(x.role!=="assistant"||x.status!=="ok")return "";const hasT=tables(x.content).length;
+  return `<div class="aiact"><button type="button" data-aia="copy" data-id="${x.id}">${ICO_COPY}<span>Kopírovať</span></button><button type="button" data-aia="pdf" data-id="${x.id}">📄<span>PDF</span></button><button type="button" data-aia="doc" data-id="${x.id}">📝<span>Word</span></button>${hasT?`<button type="button" data-aia="csv" data-id="${x.id}">📊<span>Excel</span></button>`:""}<button type="button" data-aia="mail" data-id="${x.id}">✉️<span>E-mail</span></button>${navigator.share?`<button type="button" data-aia="share" data-id="${x.id}">⤴<span>Zdieľať</span></button>`:""}</div>`}
+async function copyTxt(t,btn){try{await navigator.clipboard.writeText(t)}catch(e){const ta=document.createElement("textarea");ta.value=t;ta.style.position="fixed";ta.style.opacity="0";document.body.appendChild(ta);ta.select();try{document.execCommand("copy")}catch(_){}ta.remove()}
+  if(btn){const sp=btn.querySelector("span"),o=sp?sp.textContent:"";btn.classList.add("ok");if(sp)sp.textContent="Skopírované ✓";setTimeout(()=>{btn.classList.remove("ok");if(sp)sp.textContent=o},1800)}}
+function docTitle(t){const f=String(t||"").split("\n").map(l=>l.replace(/^#+\s*/,"").replace(/\*\*/g,"").trim()).find(Boolean)||"ERNTE";return f.slice(0,70)}
+function docHTML(x){const d=new Date(x.created_at).toLocaleDateString("sk-SK",{day:"numeric",month:"long",year:"numeric"});
+  return `<div class="aidoc"><div class="aidoc-h"><img src="logo.png" alt="ERNTE"><div><b>ERNTE spol. s r.o. · VALKO s.r.o.</b><small>Zbudza 141, 072 23 · ${esc(d)}</small></div></div>${md(x.content)}</div>`}
+const DOCCSS=`.aidoc{font:12pt/1.5 Georgia,"Times New Roman",serif;color:#111}.aidoc-h{display:flex;gap:14px;align-items:center;border-bottom:2px solid #8bc34a;padding-bottom:10px;margin-bottom:16px}.aidoc-h img{height:46px}.aidoc-h b{display:block;font:700 13pt Arial,sans-serif}.aidoc-h small{color:#555;font:9pt Arial,sans-serif}.aidoc h3,.aidoc h4{font-family:Arial,sans-serif;margin:14px 0 6px}.aidoc table{border-collapse:collapse;width:100%;margin:8px 0}.aidoc th,.aidoc td{border:1px solid #bbb;padding:5px 7px;text-align:left;font-size:10.5pt}.aidoc th{background:#eef5e4}.aidoc pre{white-space:pre-wrap;background:#f5f5f5;padding:8px;border-radius:4px}.aidoc .aitask,.aidoc .aicp{display:none}.aidoc a{color:#111}.aidoc th,.aidoc td,.aidoc pre,.aidoc p,.aidoc li,.aidoc b{color:#111!important}.aidoc th{background:#eef5e4!important}.aidoc .aicode{background:#f5f5f5!important;border:1px solid #ccc!important}.aidoc .aicode pre{padding:10px!important;font:10.5pt/1.45 Menlo,Consolas,monospace!important}.aidoc .aitbl{border:0!important;overflow:visible}`;
+function dl(name,blob){const u=URL.createObjectURL(blob),a=document.createElement("a");a.href=u;a.download=name;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(u),4000)}
+function fname(x,ext){return (docTitle(x.content).normalize("NFD").replace(/[̀-ͯ]/g,"").replace(/[^A-Za-z0-9]+/g,"-").replace(/^-|-$/g,"").slice(0,40)||"ERNTE")+"."+ext}
+async function msgAct(kind,id,btn){const x=A.msgs.find(m=>String(m.id)===String(id));if(!x)return;
+  if(kind==="copy")return copyTxt(plain(x.content),btn);
+  if(kind==="pdf"){let p=$("aiprint");if(!p){p=document.createElement("div");p.id="aiprint";document.body.appendChild(p)}p.innerHTML=`<style>${DOCCSS}</style>`+docHTML(x);const t=document.title;document.title=docTitle(x.content);document.documentElement.classList.add("aiprinting");
+    setTimeout(()=>{window.print();setTimeout(()=>{document.documentElement.classList.remove("aiprinting");document.title=t},800)},150);return}
+  if(kind==="doc"){const html=`<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word"><head><meta charset="utf-8"><title>${esc(docTitle(x.content))}</title><style>${DOCCSS}</style></head><body>${docHTML(x).replace('src="logo.png"','src="'+location.href.replace(/[^/]*$/,"")+'logo.png"')}</body></html>`;
+    return dl(fname(x,"doc"),new Blob(["﻿"+html],{type:"application/msword"}))}
+  if(kind==="csv"){const T=tables(x.content);const q=c=>'"'+String(c).replace(/\*\*/g,"").replace(/"/g,'""')+'"';const csv=T.map(rows=>rows.map(r=>r.map(q).join(";")).join("\r\n")).join("\r\n\r\n");return dl(fname(x,"csv"),new Blob(["﻿"+csv],{type:"text/csv;charset=utf-8"}))}
+  if(kind==="mail"){location.href="mailto:?subject="+encodeURIComponent(docTitle(x.content))+"&body="+encodeURIComponent(plain(x.content).slice(0,1800));return}
+  if(kind==="share"){try{await navigator.share({title:docTitle(x.content),text:plain(x.content)})}catch(e){}}}
 async function load(){const [m,t]=await Promise.all([sb.from("ai_msgs").select("id,kind,role,content,status,created_at").order("id",{ascending:false}).limit(80),sb.from("ai_tasks").select("*").order("created_at",{ascending:false}).limit(40)]);
   if(m.error){A.ready=/ai_msgs|relation|does not exist|schema cache/i.test(m.error.message)?"setup":"err:"+m.error.message;return}
   A.ready="ok";A.msgs=(m.data||[]).reverse();A.tasks=t.data||[];badge()}
@@ -76,7 +113,7 @@ function badge(){const b=$("aiBtn");if(!b)return;let seen=0;try{seen=+localStora
   const n=A.msgs.filter(x=>x.role==="assistant"&&x.kind!=="chat"&&x.status==="ok"&&x.id>seen).length;let e=b.querySelector("em");if(n){if(!e){e=document.createElement("em");b.appendChild(e)}e.textContent=n}else if(e)e.remove()}
 function markSeen(){const mx=Math.max(0,...A.msgs.map(x=>x.id));try{localStorage.setItem("aiSeen",mx)}catch(e){}badge()}
 
-function view(){const el=$("aiSheet");if(!el)return;el.classList.toggle("busy",!!A.busy);
+function view(){const el=$("aiSheet");if(!el)return;CB.length=0;el.classList.toggle("busy",!!A.busy);
   const tabs=[["chat","💬 Chat"],["rep","📊 Prehľady"],["fix","🛠 Úpravy"]];
   let body="";
   if(A.ready==="setup")body=`<div class="aiempty"><div class="aiorb" style="width:72px;height:72px"></div><b>AI Podpora ešte nie je zapnutá</b><span>Raz spusti nastavenie – vložíš kľúč a SQL ako pri Commanderi.</span><a class="aibig" style="display:flex;align-items:center;justify-content:center;padding:0 24px;text-decoration:none" href="ai.html">Zapnúť AI Podporu</a></div>`;
@@ -84,10 +121,10 @@ function view(){const el=$("aiSheet");if(!el)return;el.classList.toggle("busy",!
   else if(!A.ready)body=`<div class="aiempty"><span class="aitype"><i></i><i></i><i></i></span></div>`;
   else if(A.tab==="chat"){const C=A.msgs.filter(x=>x.kind==="chat");
     body=C.length?C.map(x=>x.status==="wait"?`<div class="aimsg a"><span class="aitype"><i></i><i></i><i></i>&nbsp;Premýšľam, kontrolujem údaje a trhy…</span></div>`:
-      `<div class="aimsg ${x.role==="user"?"u":"a"}${x.status==="err"?" err":""}">${x.role==="user"?"<p>"+esc(x.content).replace(/\n/g,"<br>")+"</p>":md(x.content)}${x.status==="err"&&/kľúč|ai\.html|401/.test(x.content||"")?`<p><a href="ai.html">Otvoriť nastavenie AI</a></p>`:""}<time>${tm(x.created_at)}</time></div>`).join(""):
+      `<div class="aimsg ${x.role==="user"?"u":"a"}${x.status==="err"?" err":""}">${x.role==="user"?"<p>"+esc(x.content).replace(/\n/g,"<br>")+"</p>":md(x.content)}${x.status==="err"&&/kľúč|ai\.html|401/.test(x.content||"")?`<p><a href="ai.html">Otvoriť nastavenie AI</a></p>`:""}<time>${tm(x.created_at)}</time>${acts(x)}</div>`).join(""):
       `<div class="aiempty"><div class="aiorb" style="width:84px;height:84px"></div><b>Ahoj, som ERNTE AI.</b><span>Kontrolujem obchody, flotilu, náklady a zisk, sledujem trhy a radím, čo robiť. Napíš aj „oprav…“ alebo „pridaj…“ a aplikáciu upravím – zhrnutie nájdeš v Dashboarde.</span></div>`}
   else if(A.tab==="rep"){const R=A.msgs.filter(x=>x.kind==="report"&&x.role==="assistant").reverse();
-    body=`<button type="button" class="aibig" data-ai="rep">${A.busy?"Pripravujem prehľad…":"✦ Urobiť prehľad teraz"}</button>`+(R.length?R.map(x=>`<div class="aicard"><div class="s">${tm(x.created_at)} · prehľad</div>${x.status==="wait"?`<span class="aitype"><i></i><i></i><i></i>&nbsp;Pripravujem…</span>`:`<div class="aimsg a" style="max-width:100%;background:none;border:0;padding:0;backdrop-filter:none">${md(x.content)}</div>`}</div>`).join(""):`<div class="aiempty"><span>Prehľad príde automaticky každé ráno o 6:00 a v pracovné dni o 14:00.</span></div>`)}
+    body=`<button type="button" class="aibig" data-ai="rep">${A.busy?"Pripravujem prehľad…":"✦ Urobiť prehľad teraz"}</button>`+(R.length?R.map(x=>`<div class="aicard"><div class="s">${tm(x.created_at)} · prehľad</div>${x.status==="wait"?`<span class="aitype"><i></i><i></i><i></i>&nbsp;Pripravujem…</span>`:`<div class="aimsg a" style="max-width:100%;background:none;border:0;padding:0;backdrop-filter:none">${md(x.content)}${acts(x)}</div>`}</div>`).join(""):`<div class="aiempty"><span>Prehľad príde automaticky každé ráno o 6:00 a v pracovné dni o 14:00.</span></div>`)}
   else{const T=A.tasks,SN={nova:"čaká na odoslanie",odoslana:"odoslaná · robí sa",hotova:"hotové",chyba:"chyba – neodoslané"};
     body=T.length?T.map(t=>`<div class="aicard"><div style="display:flex;gap:8px;align-items:center"><span class="aist ${t.status}">${SN[t.status]||t.status}</span><span class="s">${tm(t.created_at)}${t.done_at?" → "+tm(t.done_at):""}</span></div><h3>${esc(t.text)}</h3>${t.status==="chyba"?`<button type="button" class="aibig" data-airetry="${esc(t.id)}" style="min-height:44px">↻ Skúsiť znova</button>`:""}${t.report?`<div class="aimsg a" style="max-width:100%;background:none;border:0;padding:0;backdrop-filter:none">${md(t.report)}</div>`:""}</div>`).join(""):
       `<div class="aiempty"><span>Zatiaľ žiadne úpravy. V chate napíš napr. „pridaj do Obchodov export do Excelu“.</span></div>`}
@@ -119,6 +156,8 @@ async function report(){if(A.busy)return;A.busy="rep";view();const r=await sb.rp
 
 document.addEventListener("click",e=>{const t=e.target;let x;
   if(t.closest("#aiBtn")){openAI();return}
+  if((x=t.closest("[data-aicb]"))){copyTxt(CB[+x.dataset.aicb]||"",x);return}
+  if((x=t.closest("[data-aia]"))){msgAct(x.dataset.aia,x.dataset.id,x);return}
   if(!t.closest("#aiSheet")&&!t.closest(".aidash"))return;
   if((x=t.closest("[data-ai]"))){const a=x.dataset.ai;if(a==="close")closeAI();else if(a==="rep"){if(!$("aiSheet"))openAI().then(()=>{A.tab="rep";view();report()});else report()}else if(a==="open")openAI();else if(a==="openrep"){openAI().then(()=>{A.tab="rep";view()})}else if(a==="openfix"){openAI().then(()=>{A.tab="fix";view()})}return}
   if((x=t.closest("[data-aitab]"))){A.tab=x.dataset.aitab;A.jump=true;view();return}
