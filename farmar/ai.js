@@ -78,7 +78,40 @@ const CSS=`
 .aidash .fx{display:grid;gap:6px;margin-top:10px}.aidash .fx div{display:flex;gap:8px;font-size:.82rem;padding:8px 10px;border-radius:12px;background:rgba(182,255,59,.10);border:1px solid rgba(182,255,59,.3)}
 .aidash .row{display:flex;gap:8px;margin-top:12px}.aidash .row button{flex:1;min-height:42px;border-radius:14px;border:1px solid rgba(255,255,255,.2);background:rgba(255,255,255,.08);color:#fff;font:700 .8rem system-ui;cursor:pointer}
 .aidash .row button.p{background:linear-gradient(135deg,#b6ff3b,#5eead4);color:#06110a;border:0}
-@media (max-width:460px){.aibtn{padding:0 11px 0 8px;font-size:.74rem;gap:6px}.aibtn i{width:16px;height:16px}}`;
+@media (max-width:460px){.aibtn{padding:0 11px 0 8px;font-size:.74rem;gap:6px}.aibtn i{width:16px;height:16px}}
+/* ===== sklo – diamant (zdieľaný dizajn) – iba obrazovka, nie PDF/tlač/Word ===== */
+.aish{background:radial-gradient(60% 40% at 92% 0%,rgba(34,211,238,.22),transparent 70%),radial-gradient(55% 40% at 0% 40%,rgba(139,92,246,.24),transparent 70%),radial-gradient(50% 30% at 70% 100%,rgba(226,240,255,.10),transparent 70%),linear-gradient(160deg,#0b1020,#141c33);color:#f1f5ff}
+.aish::before{background:linear-gradient(115deg,transparent 0 40%,rgba(255,255,255,.03) 40.3%,transparent 41%)}
+.aihd h2{background:linear-gradient(90deg,#fff,#a5f3fc 55%,#c4b5fd);-webkit-background-clip:text;background-clip:text;color:transparent;font-weight:800}
+.aish .aitabs{position:relative;padding:6px;margin-bottom:8px;width:calc(100% - 32px);border-radius:20px;border:1px solid rgba(255,255,255,.18);background:linear-gradient(180deg,rgba(255,255,255,.10),rgba(255,255,255,.04));-webkit-backdrop-filter:blur(18px) saturate(160%);backdrop-filter:blur(18px) saturate(160%);box-shadow:inset 0 1px 0 rgba(255,255,255,.3)}
+.aish .aitabs button{border-color:transparent;background:transparent;box-shadow:none;color:rgba(241,245,255,.72);-webkit-backdrop-filter:none;backdrop-filter:none;min-height:40px}
+.aish .aitabs button[aria-pressed=true]{background:linear-gradient(135deg,rgba(34,211,238,.32),rgba(139,92,246,.30));color:#fff;border-color:rgba(165,243,252,.55);box-shadow:inset 0 1px 0 rgba(255,255,255,.45),0 0 18px rgba(34,211,238,.3)}
+.aish .aimsg{position:relative;overflow:hidden}
+.aish .aimsg::before{content:"";position:absolute;left:0;right:0;top:0;height:1px;background:linear-gradient(90deg,transparent,rgba(255,255,255,.55) 25%,rgba(210,245,255,.9) 50%,rgba(255,255,255,.55) 75%,transparent);pointer-events:none}
+.aish .aimsg.a{background:linear-gradient(180deg,rgba(255,255,255,.10),rgba(255,255,255,.05));border:1px solid rgba(255,255,255,.18);-webkit-backdrop-filter:blur(18px) saturate(160%);backdrop-filter:blur(18px) saturate(160%);box-shadow:inset 0 1px 0 rgba(255,255,255,.25),0 12px 30px rgba(2,6,23,.35)}
+.aish .aimsg.u{background:linear-gradient(135deg,rgba(34,211,238,.38),rgba(139,92,246,.42));border:1px solid rgba(165,243,252,.4);box-shadow:inset 0 1px 0 rgba(255,255,255,.35),0 10px 28px rgba(34,211,238,.18)}
+.aish .aimsg a{color:#a5f3fc}.aish .aimsg time{color:rgba(241,245,255,.55)}
+.aish .aicode{background:rgba(8,12,26,.55);border:1px solid rgba(255,255,255,.18);box-shadow:inset 0 1px 0 rgba(255,255,255,.18)}
+.aish .aicp,.aish .aiact button,.aish .aidf button,.aish .aichips button{border-radius:12px;border:1px solid rgba(255,255,255,.24);background:linear-gradient(135deg,rgba(255,255,255,.14),rgba(255,255,255,.04));box-shadow:inset 0 1px 0 rgba(255,255,255,.3);color:#f1f5ff;min-height:36px;-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px)}
+.aish .aiact button{min-height:36px;padding:0 12px;font-weight:700}.aish .aiact button span{white-space:nowrap}
+.aish .aicp{min-height:30px}
+.aish .aicp.ok,.aish .aiact button.ok{background:rgba(52,211,153,.25);border-color:rgba(52,211,153,.6)}
+.aish .aidf button[aria-pressed=true]{background:linear-gradient(135deg,rgba(34,211,238,.32),rgba(139,92,246,.30));border-color:rgba(165,243,252,.55);color:#fff}
+.aish .aitbl{border-color:rgba(255,255,255,.18)}.aish .aitbl th{background:rgba(34,211,238,.14);color:#cffafe;position:sticky;top:0}
+.aish .aidoccard,.aish .aicard{position:relative;overflow:hidden;border-radius:20px;border:1px solid rgba(255,255,255,.18);background:linear-gradient(180deg,rgba(255,255,255,.10),rgba(255,255,255,.05));-webkit-backdrop-filter:blur(18px) saturate(160%);backdrop-filter:blur(18px) saturate(160%);box-shadow:inset 0 1px 0 rgba(255,255,255,.28),0 12px 30px rgba(2,6,23,.35)}
+.aish .aidoccard.n{border-color:rgba(248,113,113,.5);background:linear-gradient(150deg,rgba(248,113,113,.14),rgba(255,255,255,.04))}
+.aish .aidi{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.14)}
+.aish .aidt b{white-space:normal;overflow-wrap:anywhere}
+.aish .aist2.n{background:rgba(248,113,113,.22);color:#fecaca}.aish .aist2.o{background:rgba(34,211,238,.18);color:#a5f3fc}.aish .aist2.v{background:rgba(52,211,153,.2);color:#a7f3d0}
+.aish .aisel button{border-radius:14px;background:linear-gradient(135deg,rgba(255,255,255,.14),rgba(255,255,255,.04));box-shadow:inset 0 1px 0 rgba(255,255,255,.3)}
+.aish .aisel button.p,.aish .aibig,.aiin button:not(.aiplus){background:linear-gradient(135deg,#22d3ee,#8b5cf6);color:#fff;box-shadow:inset 0 1px 0 rgba(255,255,255,.4),0 0 22px rgba(34,211,238,.35)}
+.aiin textarea{background:linear-gradient(135deg,rgba(255,255,255,.09),rgba(255,255,255,.03)),rgba(11,16,32,.7);border-color:rgba(255,255,255,.22)}
+.aiin textarea:focus{border-color:rgba(34,211,238,.7);box-shadow:0 0 0 3px rgba(34,211,238,.16)}
+.aitask{background:linear-gradient(135deg,rgba(52,211,153,.14),rgba(34,211,238,.08));border-color:rgba(52,211,153,.4)}
+.aidash{border-color:rgba(255,255,255,.2);background:linear-gradient(180deg,rgba(255,255,255,.10),rgba(255,255,255,.05)),linear-gradient(150deg,rgba(139,92,246,.22),rgba(34,211,238,.10));box-shadow:inset 0 1px 0 rgba(255,255,255,.3),0 18px 44px rgba(2,6,23,.45)}
+.aidash .row button.p{background:linear-gradient(135deg,#22d3ee,#8b5cf6);color:#fff}
+@media (prefers-reduced-motion:reduce){.aish,.aiorb,.aibtn i{animation:none!important}}
+@media print{.aish{display:none!important}}`;
 const st=document.createElement("style");st.textContent=CSS;document.head.appendChild(st);
 
 const A={open:false,tab:"chat",msgs:[],tasks:[],busy:null,ready:null};

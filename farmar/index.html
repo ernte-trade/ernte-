@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>ERNTE Farmár</title>
 <meta name="color-scheme" content="dark">
-<meta name="theme-color" content="#05070a">
+<meta name="theme-color" content="#0b1020">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -14,7 +14,7 @@
 <link rel="apple-touch-icon" href="icon-180.png">
 <link rel="icon" type="image/png" href="icon-192.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Unbounded:wght@500;600;700&family=Sora:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
 /* ERNTE – sklo, žiara, profesionálna typografia. Tmavá nočná scéna s farebnou žiarou, sklenené karty, Unbounded nadpisy + Sora text + Plex Mono čísla. */
 :root{
@@ -288,6 +288,363 @@ details.trips{border-top:1px solid var(--line);padding-top:8px}details.trips sum
 .xprof.bad .xpr{background:linear-gradient(150deg,rgba(239,68,68,.55),rgba(190,24,93,.25));border-color:rgba(255,107,129,.8);box-shadow:inset 0 1px 0 rgba(255,255,255,.2),0 0 30px rgba(255,80,100,.4)}.xprof.bad .xpr b{color:#fff;text-shadow:0 0 18px rgba(255,80,100,.9)}
 @media (prefers-reduced-motion:reduce){.toast,button{transition:none}}
 </style>
+<style id="ds-diamant">
+/* ===== ERNTE dizajnový systém „sklo – diamant“ (zdieľané premenné a komponenty pre všetky záložky) ===== */
+:root{
+  --ds-bg1:#0b1020;--ds-bg2:#141c33;--ds-r:20px;--ds-r-sm:14px;
+  --ds-glass:rgba(255,255,255,.07);--ds-glass-hi:rgba(255,255,255,.10);--ds-glass-lo:rgba(255,255,255,.05);--ds-edge:rgba(255,255,255,.18);--ds-edge-hi:rgba(255,255,255,.55);
+  --ds-blur:blur(18px) saturate(160%);--ds-shadow:0 16px 40px rgba(2,6,23,.45);--ds-fallback:rgba(20,28,51,.92);
+  --ds-ok:#34d399;--ds-warn:#fbbf24;--ds-bad:#f87171;--ds-acc:#22d3ee;--ds-gray:#94a3b8;
+  --ds-ink:#f1f5ff;--ds-muted:#a7b1c6;--ds-stick:0px;
+  --bg:#0b1020;--ink:#f1f5ff;--muted:#a7b1c6;--warn:#fbbf24;--bad:#f87171;--blue:#22d3ee;--line:rgba(255,255,255,.10);--line2:rgba(255,255,255,.18);
+  --glass:rgba(255,255,255,.07);--field:rgba(255,255,255,.07);
+  --f-head:"Inter",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;--f-ui:"Inter",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;--f-num:"Inter",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+}
+html{background:var(--ds-bg1)}
+body{background:transparent;font-variant-numeric:tabular-nums;font-feature-settings:"tnum" 1,"cv11" 1}
+body::before{content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;
+  background:radial-gradient(42% 32% at 88% 4%,rgba(34,211,238,.20),transparent 70%),radial-gradient(38% 30% at 6% 38%,rgba(139,92,246,.22),transparent 70%),radial-gradient(34% 26% at 72% 92%,rgba(226,240,255,.10),transparent 70%),linear-gradient(160deg,var(--ds-bg1) 0%,var(--ds-bg2) 100%)}
+header.top h1{font-weight:800;letter-spacing:-.02em}
+h2{font:800 .72rem var(--f-head);letter-spacing:.16em;background:linear-gradient(90deg,#a5f3fc,#c4b5fd);-webkit-background-clip:text;background-clip:text;color:transparent}
+.card .t,.prow .t,.pnm b,.xdn b{font-weight:700;letter-spacing:-.01em}
+.num,.row b,.kpi b,.kb b,.xvk b,.vk b,.yfb b,.dcr{font-variant-numeric:tabular-nums}
+
+/* --- sklenená karta (zdieľaný komponent) --- */
+.card,.kb,.vd,.xv,.xd,.pyc,.xc,.xmap,.xtl,.vfirm,.vt,.ds-g,.ds-kpi,.ds-tile,.ds-trow,.ds-fc{
+  position:relative;overflow:hidden;overflow:clip;border-radius:var(--ds-r);border:1px solid var(--ds-edge);
+  background:linear-gradient(180deg,var(--ds-glass-hi),var(--ds-glass) 38%,var(--ds-glass-lo));
+  -webkit-backdrop-filter:var(--ds-blur);backdrop-filter:var(--ds-blur);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.28),inset 0 -1px 0 rgba(255,255,255,.04),var(--ds-shadow);
+  transition:transform .25s cubic-bezier(.2,.8,.2,1),box-shadow .25s ease,border-color .25s ease}
+/* diamantová horná hrana */
+.card::before,.kb::before,.vd::before,.xv::before,.xd::before,.pyc::before,.xc::before,.xmap::before,.xtl::before,.vfirm::before,.vt::before,.ds-g::before,.ds-kpi::before,.ds-tile::before,.ds-trow::before,.ds-fc::before{
+  content:"";position:absolute;left:0;right:0;top:0;height:1px;pointer-events:none;z-index:1;
+  background:linear-gradient(90deg,transparent 2%,rgba(255,255,255,.55) 22%,rgba(210,245,255,.95) 50%,rgba(255,255,255,.55) 78%,transparent 98%)}
+/* lesk – diagonálny prechod 600 ms */
+.card::after,.kb::after,.vd::after,.xv::after,.xd::after,.pyc::after,.xc::after,.xmap::after,.xtl::after,.vfirm::after,.vt::after,.ds-g::after,.ds-kpi::after,.ds-tile::after,.ds-trow::after,.ds-fc::after{
+  content:"";position:absolute;top:0;bottom:0;left:-60%;width:45%;pointer-events:none;z-index:1;opacity:0;
+  background:linear-gradient(100deg,transparent,rgba(255,255,255,.16) 45%,rgba(200,240,255,.22) 50%,rgba(255,255,255,.16) 55%,transparent);transform:skewX(-18deg)}
+@keyframes ds-shine{0%{left:-60%;opacity:1}100%{left:130%;opacity:1}}
+@media (hover:hover){
+ .card:hover,.kb:hover,.vd:hover,.xv:hover,.xd:hover,.pyc:hover,.xc:hover,.vt:hover,.ds-kpi:hover,.ds-tile:hover,.ds-trow:hover,.ds-fc:hover{transform:translateY(-2px);border-color:rgba(255,255,255,.28);box-shadow:inset 0 1px 0 rgba(255,255,255,.34),0 22px 50px rgba(2,6,23,.55),0 0 0 1px rgba(34,211,238,.06)}
+ .card:hover::after,.kb:hover::after,.vd:hover::after,.xv:hover::after,.xd:hover::after,.pyc:hover::after,.xc:hover::after,.vt:hover::after,.ds-kpi:hover::after,.ds-tile:hover::after,.ds-trow:hover::after,.ds-fc:hover::after{animation:ds-shine .6s ease-out}}
+.vd:active,.kb:active,.xc:active,.ds-kpi:active,.ds-tile:active{transform:translateY(-1px) scale(.99)}
+.vd:active::after,.kb:active::after,.ds-kpi:active::after,.ds-tile:active::after,.xvh:active~*::after{animation:ds-shine .6s ease-out}
+/* vnorené sklo bez ďalšieho rozmazania (výkon na mobile) */
+.card .card,.card .xd,.card .xv,.card .vt,.card .kb,.xdl .xd,.dsc .xd,.card .ds-kpi,.card .ds-tile,.ds-kpis .ds-kpi{-webkit-backdrop-filter:none;backdrop-filter:none}
+.card .xd,.dsc .xd{background:rgba(255,255,255,.045)}
+.card{border-radius:var(--ds-r)}
+/* chrámené ostrovy (vlastné tmavé pozadie) ponechané */
+.vd.big{background:radial-gradient(100% 140% at 100% 0%,rgba(52,211,153,.30),transparent 55%),linear-gradient(160deg,#10241f,#0b1020);border-color:rgba(52,211,153,.4)}
+.vd.big.neg{background:radial-gradient(100% 140% at 100% 0%,rgba(248,113,113,.34),transparent 55%),linear-gradient(160deg,#2a1018,#0b1020);border-color:rgba(248,113,113,.5)}
+.vd.big b{background:linear-gradient(90deg,#fff,#a7f3d0);-webkit-background-clip:text;background-clip:text;color:transparent}
+.vd.red{border-color:rgba(248,113,113,.55);box-shadow:inset 0 1px 0 rgba(255,255,255,.25),0 0 26px rgba(248,113,113,.22)}.vd.red b{color:#fca5a5}.vd.ok b{color:var(--ds-ok)}
+
+/* --- stavové farby --- */
+.good{color:var(--ds-ok)!important}.bad{color:var(--ds-bad)!important}
+.pill{background:rgba(52,211,153,.14);color:#6ee7b7;border-color:rgba(52,211,153,.45);font:700 .7rem var(--f-ui);letter-spacing:.01em;padding:4px 11px}
+.pill.w{background:rgba(251,191,36,.13);color:#fcd34d;border-color:rgba(251,191,36,.45)}
+.pill.r{background:rgba(248,113,113,.13);color:#fca5a5;border-color:rgba(248,113,113,.5)}
+.pill.b{background:rgba(34,211,238,.13);color:#67e8f9;border-color:rgba(34,211,238,.45)}
+.pill.g{background:rgba(148,163,184,.12);color:#cbd5e1;border-color:rgba(148,163,184,.35)}
+.dcfew,.ds-few{display:inline-block;font:italic 600 .7rem var(--f-ui);padding:2px 8px;border-radius:999px;background:rgba(148,163,184,.12);color:#cbd5e1}
+.dcr .dm,.xvk b.dm,.ds-na{color:var(--ds-gray)!important;font-style:italic;font-weight:500}
+
+/* --- tlačidlá a vstupy (štýl rýchleho hesla) --- */
+button,.btn{border-radius:14px;border:1px solid rgba(255,255,255,.24);background:linear-gradient(135deg,rgba(255,255,255,.14),rgba(255,255,255,.04));
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.30),0 6px 18px rgba(2,6,23,.30);color:var(--ink);font-weight:700;-webkit-backdrop-filter:blur(12px) saturate(160%);backdrop-filter:blur(12px) saturate(160%)}
+@media (hover:hover){button:hover,.btn:hover{border-color:rgba(34,211,238,.55);box-shadow:inset 0 1px 0 rgba(255,255,255,.4),0 0 22px rgba(34,211,238,.18)}}
+button.pri,.btn.pri{background:linear-gradient(135deg,#22d3ee,#8b5cf6);color:#fff;border-color:rgba(255,255,255,.25);box-shadow:inset 0 1px 0 rgba(255,255,255,.4),0 8px 26px rgba(34,211,238,.28);text-shadow:0 1px 2px rgba(0,0,0,.25)}
+button.lime,.btn.lime{background:linear-gradient(135deg,#34d399,#22d3ee);color:#04121a;border-color:transparent;box-shadow:inset 0 1px 0 rgba(255,255,255,.45),0 8px 24px rgba(52,211,153,.28)}
+button.dng{color:#fca5a5;border-color:rgba(248,113,113,.45);background:linear-gradient(135deg,rgba(248,113,113,.14),rgba(248,113,113,.04))}
+input,select,textarea{background:linear-gradient(135deg,rgba(255,255,255,.09),rgba(255,255,255,.03));border:1px solid rgba(255,255,255,.22);box-shadow:inset 0 1px 0 rgba(255,255,255,.12);border-radius:14px}
+input:focus,select:focus,textarea:focus{border-color:rgba(34,211,238,.7);box-shadow:0 0 0 3px rgba(34,211,238,.16),inset 0 1px 0 rgba(255,255,255,.15);outline:none}
+select option{background:#141c33}
+input::placeholder,textarea::placeholder{color:rgba(167,177,198,.75);font-style:italic}
+button:focus-visible,.btn:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible,.pwg:focus-visible{outline:2px solid var(--ds-acc);outline-offset:2px}
+.tabs button,.vnav button,.lsw button,.aich button,.hx,.copy,.xvh,.pyt,.veh .vh,button.dr,.vd,.vnav button{-webkit-backdrop-filter:none;backdrop-filter:none}
+.copy{background:none;border:0;box-shadow:none;color:var(--ds-acc)}
+.xvh,.pyt,.veh .vh,button.dr{box-shadow:none}
+.vd{box-shadow:inset 0 1px 0 rgba(255,255,255,.28),var(--ds-shadow)}
+
+/* --- hlavná navigácia: sklenená lišta s posuvným zvýraznením --- */
+.tabs{position:sticky;padding:6px;gap:4px;border-radius:22px;border:1px solid var(--ds-edge);margin-top:4px;
+  background:linear-gradient(180deg,rgba(255,255,255,.10),rgba(255,255,255,.04)),rgba(11,16,32,.55);-webkit-backdrop-filter:var(--ds-blur);backdrop-filter:var(--ds-blur);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.3),0 14px 34px rgba(2,6,23,.45)}
+.tabs button{position:relative;z-index:1;background:transparent;border:1px solid transparent;box-shadow:none;color:var(--muted);min-height:44px;border-radius:16px;padding:0 14px;gap:7px;transition:color .25s ease}
+.tabs button[aria-pressed=true]{background:transparent;color:#fff;box-shadow:none;border-color:transparent}
+.tabs .ti{font-size:1.02rem;line-height:1}.tabs .tl{white-space:nowrap}
+.tabs .cnt{background:var(--ds-bad);box-shadow:0 0 12px rgba(248,113,113,.7);font:800 .66rem var(--f-ui)}
+.ds-ind{position:absolute;left:0;top:0;z-index:0;border-radius:16px;pointer-events:none;width:0;height:0;
+  background:linear-gradient(135deg,rgba(34,211,238,.32),rgba(139,92,246,.30));border:1px solid rgba(165,243,252,.55);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.45),0 0 22px rgba(34,211,238,.30);transition:transform .38s cubic-bezier(.2,.8,.2,1),width .38s cubic-bezier(.2,.8,.2,1),height .38s ease}
+@media (max-width:760px){
+  .tabs{position:fixed;left:0;right:0;bottom:0;top:auto;z-index:1500;margin:0;border-radius:22px 22px 0 0;border-bottom:0;padding:6px 8px calc(6px + env(safe-area-inset-bottom,0px));
+    background:linear-gradient(180deg,rgba(255,255,255,.10),rgba(255,255,255,.03)),rgba(11,16,32,.78)}
+  .tabs button{flex:1 0 auto;min-width:68px;min-height:54px;flex-direction:column;gap:2px;padding:4px 8px;font-size:.66rem;letter-spacing:.01em}
+  .tabs .ti{font-size:1.2rem}
+  .tabs .cnt{position:absolute;top:2px;right:6px;padding:0 6px;font-size:.6rem;line-height:16px}
+  body.ds-bn{padding-bottom:calc(92px + env(safe-area-inset-bottom,0px))}
+  body.ds-bn .toast{bottom:calc(96px + env(safe-area-inset-bottom,0px))}
+  .ds-ind{border-radius:16px}
+}
+@media (min-width:761px){:root{--ds-stick:64px}}
+
+/* --- podzáložky Flotily: sklenená lišta s posuvným zvýraznením --- */
+.vnav{position:relative;display:flex;grid-template-columns:none;gap:4px;overflow-x:auto;scrollbar-width:none;padding:6px;border-radius:22px;border:1px solid var(--ds-edge);
+  background:linear-gradient(180deg,rgba(255,255,255,.10),rgba(255,255,255,.04));-webkit-backdrop-filter:var(--ds-blur);backdrop-filter:var(--ds-blur);box-shadow:inset 0 1px 0 rgba(255,255,255,.3),var(--ds-shadow)}
+.vnav::-webkit-scrollbar{display:none}
+.vnav button{flex:none;z-index:1;min-height:62px;min-width:86px;padding:8px 12px;border-radius:16px;background:transparent;border:1px solid transparent;box-shadow:none;justify-items:center;text-align:center;gap:2px;overflow:visible}
+.vnav button::after{content:none}
+.vnav button span{width:auto;height:auto;background:none;border:0;box-shadow:none;font-size:1.15rem;line-height:1.1}
+.vnav button b{font:700 .74rem/1.15 var(--f-ui);white-space:nowrap;color:var(--muted)}
+.vnav button small{font:700 .66rem var(--f-ui);color:var(--ds-acc);white-space:nowrap}
+.vnav button[aria-pressed=true]{background:transparent;border-color:transparent;box-shadow:none}.vnav button[aria-pressed=true] b{color:#fff}
+.vnav button.hot{border-color:rgba(248,113,113,.45);box-shadow:0 0 16px rgba(248,113,113,.18)}.vnav button.hot small{color:#fca5a5}.vnav button.hot span{background:none}
+.vnav button:active{transform:scale(.97)}
+
+/* --- KPI karty so sparkline --- */
+.ds-kpis{display:grid;grid-template-columns:repeat(auto-fill,minmax(158px,1fr));gap:10px}
+@media (max-width:420px){.ds-kpis{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.ds-kpi{display:grid;align-content:start;gap:3px;padding:12px 14px 10px;min-width:0;border-radius:18px}
+.ds-kpi>small{font:700 .64rem var(--f-ui);letter-spacing:.09em;text-transform:uppercase;color:var(--muted);overflow-wrap:anywhere}
+.ds-kpi>b{font:800 1.45rem/1.1 var(--f-num);letter-spacing:-.02em;font-variant-numeric:tabular-nums;overflow-wrap:anywhere}
+.ds-kpi>b i{font-style:normal;font-size:.72rem;font-weight:600;color:var(--muted);margin-left:2px}
+.ds-kpi>em{font-style:normal;font-size:.72rem;color:var(--muted);line-height:1.35;overflow-wrap:anywhere}
+.ds-kpi>svg{display:block;width:100%;height:28px;margin-top:4px;overflow:visible}
+.ds-kpi.ok{box-shadow:inset 0 2px 0 rgba(52,211,153,.75),inset 0 1px 0 rgba(255,255,255,.28),var(--ds-shadow)}.ds-kpi.ok>b{color:#6ee7b7}
+.ds-kpi.warn{box-shadow:inset 0 2px 0 rgba(251,191,36,.8),inset 0 1px 0 rgba(255,255,255,.28),var(--ds-shadow)}.ds-kpi.warn>b{color:#fcd34d}
+.ds-kpi.bad{box-shadow:inset 0 2px 0 rgba(248,113,113,.85),inset 0 1px 0 rgba(255,255,255,.28),0 0 26px rgba(248,113,113,.18),var(--ds-shadow)}.ds-kpi.bad>b{color:#fca5a5}
+.ds-kpi.acc{box-shadow:inset 0 2px 0 rgba(34,211,238,.75),inset 0 1px 0 rgba(255,255,255,.28),var(--ds-shadow)}
+.ds-kpi.na>b{color:var(--ds-gray);font-style:italic;font-weight:600;font-size:1.05rem}
+.ds-kpi.wide{grid-column:span 2}
+@media (max-width:420px){.ds-kpi>b{font-size:1.22rem}}
+
+/* --- alarmy: sklenené dlaždice so svietiacim okrajom --- */
+.xal{background:linear-gradient(180deg,rgba(255,255,255,.08),rgba(255,255,255,.04)),rgba(11,16,32,.5);border:1px solid var(--ds-edge);border-radius:24px;-webkit-backdrop-filter:var(--ds-blur);backdrop-filter:var(--ds-blur);box-shadow:inset 0 1px 0 rgba(255,255,255,.28),var(--ds-shadow)}
+.xai{position:relative;border-radius:16px;border:1px solid rgba(255,255,255,.12);border-left:3px solid;background:linear-gradient(90deg,rgba(255,255,255,.07),rgba(255,255,255,.03));grid-template-columns:38px minmax(0,1fr)}
+.xai>span{width:38px;height:38px;border-radius:12px;display:grid;place-items:center;font-size:1.1rem;background:rgba(255,255,255,.06)}
+.xai.r{border-left-color:var(--ds-bad);box-shadow:-4px 0 18px -6px rgba(248,113,113,.9),inset 6px 0 18px -10px rgba(248,113,113,.7);background:linear-gradient(90deg,rgba(248,113,113,.12),rgba(255,255,255,.03))}.xai.r>span{background:rgba(248,113,113,.18)}
+.xai.w{border-left-color:var(--ds-warn);box-shadow:-4px 0 18px -6px rgba(251,191,36,.85),inset 6px 0 18px -10px rgba(251,191,36,.6);background:linear-gradient(90deg,rgba(251,191,36,.10),rgba(255,255,255,.03))}.xai.w>span{background:rgba(251,191,36,.16)}
+.xai.b{border-left-color:var(--ds-acc);box-shadow:-4px 0 18px -6px rgba(34,211,238,.8),inset 6px 0 18px -10px rgba(34,211,238,.55);background:linear-gradient(90deg,rgba(34,211,238,.09),rgba(255,255,255,.03))}.xai.b>span{background:rgba(34,211,238,.15)}
+.xai div,.xai small{min-width:0;overflow-wrap:anywhere}
+.xals .r{color:#fca5a5;border-color:rgba(248,113,113,.5)}.xals .w{color:#fcd34d;border-color:rgba(251,191,36,.5)}.xals .b{color:#67e8f9;border-color:rgba(34,211,238,.5)}
+.al{border-radius:14px}.al.r{background:rgba(248,113,113,.10);border-color:var(--ds-bad);box-shadow:-3px 0 14px -6px rgba(248,113,113,.8)}.al.w{background:rgba(251,191,36,.08);border-color:var(--ds-warn)}.al.b{background:rgba(34,211,238,.08);border-color:var(--ds-acc)}
+
+/* --- tabuľky: sklenené riadky, sticky hlavička, na mobile karty --- */
+.dcr{border-top:1px solid rgba(255,255,255,.07);padding:7px 6px;border-radius:10px}
+.dcr:not(.hd):nth-child(even){background:rgba(255,255,255,.03)}
+.dcr.hd{position:sticky;top:var(--ds-stick);z-index:2;padding:7px 6px;background:rgba(20,28,51,.92);border-radius:10px;text-transform:uppercase;letter-spacing:.06em}
+.ds-worst{border-color:rgba(248,113,113,.55)!important;box-shadow:inset 0 1px 0 rgba(255,255,255,.25),0 0 26px rgba(248,113,113,.2)!important}
+@media (max-width:520px){
+  .dct .dcr.hd{display:none}
+  .dct .dcr:not(.hd){grid-template-columns:repeat(2,minmax(0,1fr));gap:4px 10px;padding:9px 10px;margin-top:6px;border:1px solid rgba(255,255,255,.10);background:rgba(255,255,255,.04)}
+  .dct .dcr:not(.hd)>span:first-child{grid-column:1/-1;white-space:normal;font-weight:700}
+  .dct .dcr:not(.hd)>span:not(:first-child){display:flex;justify-content:space-between;gap:6px;text-align:right}
+  .dct .dcr:not(.hd)>span[data-l]:not(:first-child)::before{content:attr(data-l);color:var(--muted);font:600 .64rem var(--f-ui);text-transform:uppercase;letter-spacing:.04em;text-align:left}
+}
+.xvk span,.vk span,.yfb span{background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.07);min-width:0}
+.xvk b,.vk b{overflow-wrap:anywhere}
+
+/* --- mapa: svietiace body, sklenená bublina --- */
+.lpin i{background:#60a5fa;box-shadow:0 0 0 4px rgba(96,165,250,.28),0 0 14px #60a5fa}
+.lpin.mv i{background:#34d399;box-shadow:0 0 0 4px rgba(52,211,153,.3),0 0 16px #34d399;animation:ds-pulse 2s ease-in-out infinite}
+.lpin.old i{background:#94a3b8;box-shadow:0 0 0 4px rgba(148,163,184,.22);animation:none}
+@keyframes ds-pulse{50%{box-shadow:0 0 0 7px rgba(52,211,153,.12),0 0 22px #34d399}}
+.lmap{border-radius:18px;border:1px solid var(--ds-edge);box-shadow:inset 0 1px 0 rgba(255,255,255,.2)}
+.leaflet-popup{position:absolute;text-align:center;margin-bottom:16px}
+.leaflet-popup-content-wrapper{text-align:left;border-radius:14px;color:#f1f5ff;border:1px solid rgba(255,255,255,.22);background:rgba(20,28,51,.82);-webkit-backdrop-filter:blur(14px) saturate(160%);backdrop-filter:blur(14px) saturate(160%);box-shadow:inset 0 1px 0 rgba(255,255,255,.3),0 10px 30px rgba(0,0,0,.5)}
+.leaflet-popup-content{margin:9px 12px;font:600 12px/1.45 var(--f-ui);white-space:nowrap}.leaflet-popup-content b{color:#fff}
+.leaflet-popup-tip-container{width:20px;height:10px;position:absolute;left:50%;margin-left:-10px;overflow:hidden;pointer-events:none}
+.leaflet-popup-tip{width:10px;height:10px;padding:1px;margin:-6px auto 0;transform:rotate(45deg);background:rgba(20,28,51,.9);border:1px solid rgba(255,255,255,.2)}
+.leaflet-container a.leaflet-popup-close-button{display:none}
+.xmh span{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1)}
+.ds-leg{display:flex;flex-wrap:wrap;gap:6px 14px;font-size:.76rem;color:var(--muted)}.ds-leg i{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:6px;vertical-align:-1px}
+
+/* --- spoločné riadky/čipy --- */
+.ds-chips{display:grid;grid-template-columns:repeat(auto-fill,minmax(112px,1fr));gap:6px}
+.ds-chip{display:grid;gap:1px;padding:8px 10px;border-radius:12px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.08);min-width:0}
+.ds-chip small{font:600 .62rem var(--f-ui);letter-spacing:.05em;text-transform:uppercase;color:var(--muted)}
+.ds-chip b{font:800 .98rem var(--f-num);overflow-wrap:anywhere}.ds-chip b.pos{color:var(--ds-ok)}.ds-chip b.neg{color:var(--ds-bad)}.ds-chip b.na{color:var(--ds-gray);font-style:italic;font-weight:600}
+.ds-chip.ow{border-color:rgba(139,92,246,.35);background:rgba(139,92,246,.08)}
+.ds-hd{display:flex;align-items:center;gap:10px;min-width:0}.ds-hd>.ds-ttl{flex:1;min-width:0;display:grid}.ds-hd>.ds-ttl b{font:700 1rem var(--f-head);overflow-wrap:anywhere}.ds-hd>.ds-ttl small{color:var(--muted);font-size:.76rem;overflow-wrap:anywhere}.ds-hd>.pill{flex:none}
+.ds-av{flex:none;width:42px;height:42px;border-radius:14px;display:grid;place-items:center;font:800 .88rem var(--f-ui);color:#04121a;background:linear-gradient(135deg,#a5f3fc,#c4b5fd);box-shadow:inset 0 1px 0 rgba(255,255,255,.6),0 6px 18px rgba(34,211,238,.25)}
+.ds-ic{flex:none;width:42px;height:42px;border-radius:14px;display:grid;place-items:center;font-size:1.2rem;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.14)}
+.pav{background:linear-gradient(135deg,#a5f3fc,#c4b5fd);color:#04121a;box-shadow:0 6px 18px rgba(34,211,238,.25)}
+
+/* --- Doprava: karty / tabuľka --- */
+.ds-trips{display:grid;gap:10px}
+.ds-trow{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:10px 12px;padding:14px 16px;align-items:start}
+.ds-trow>*{min-width:0}
+.ds-trow .c-route{grid-column:1/-1;grid-row:2}.ds-trow .c-st{grid-column:1/-1;grid-row:1;justify-self:start;display:flex;align-items:center;gap:8px}
+.ds-trow .c-route b{display:block;font:700 1rem var(--f-head);overflow-wrap:anywhere}
+.ds-trow .c-route .rt{display:flex;flex-wrap:wrap;align-items:center;gap:4px 8px;margin-top:4px;font-size:.84rem;color:var(--ink)}
+.ds-trow .c-route .rt i{font-style:normal;color:var(--ds-acc);font-weight:800}
+.ds-trow .c-route .rt span{overflow-wrap:anywhere}
+.ds-trow .c-route small,.ds-trow small.s2{display:block;color:var(--muted);font-size:.74rem;margin-top:3px;overflow-wrap:anywhere}
+.ds-trow .c-nums{grid-column:1/-1;display:grid;grid-template-columns:repeat(auto-fill,minmax(96px,1fr));gap:6px}
+.ds-trow .c-edit{grid-column:1/-1;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr) auto;gap:8px;align-items:end}
+.ds-trow .c-edit label{font-size:.7rem}.ds-trow .c-edit select,.ds-trow .c-edit input{min-height:44px;padding:8px 11px;font-size:.92rem}
+.ds-trow .c-edit button{min-height:44px}
+.ds-trow details.c-more{grid-column:1/-1;border-top:1px solid var(--line);padding-top:8px}
+.ds-trow details.c-more summary{cursor:pointer;font-size:.8rem;font-weight:700;color:var(--ds-acc);min-height:32px;display:flex;align-items:center}
+.ds-trow details.c-more .g{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:8px;margin-top:6px}
+.ds-trow.zr{opacity:.7}
+.ds-th{display:none}
+@media (max-width:520px){.ds-trow .c-edit{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}.ds-trow .c-edit label:first-child{grid-column:1/-1}}
+@media (min-width:1000px){
+  body.ds-tab-trans .wrap{max-width:1180px}
+  .ds-trips.tbl{gap:0;border-radius:var(--ds-r);border:1px solid var(--ds-edge);overflow:clip;background:linear-gradient(180deg,var(--ds-glass-hi),var(--ds-glass));-webkit-backdrop-filter:var(--ds-blur);backdrop-filter:var(--ds-blur);box-shadow:inset 0 1px 0 rgba(255,255,255,.28),var(--ds-shadow)}
+  .ds-trips.tbl .ds-th,.ds-trips.tbl .ds-trow{display:grid;grid-template-columns:62px minmax(0,2.3fr) minmax(0,1.3fr) 64px 72px 96px minmax(0,1.6fr);gap:10px;align-items:center}
+  .ds-trips.tbl .ds-th{position:sticky;top:var(--ds-stick);z-index:3;padding:10px 16px;background:rgba(20,28,51,.94);font:700 .64rem var(--f-ui);letter-spacing:.08em;text-transform:uppercase;color:var(--muted);border-bottom:1px solid var(--ds-edge)}
+  .ds-trips.tbl .ds-trow{border-radius:0;border:0;border-bottom:1px solid rgba(255,255,255,.07);background:transparent;box-shadow:none;-webkit-backdrop-filter:none;backdrop-filter:none;padding:10px 16px;overflow:visible}
+  .ds-trips.tbl .ds-trow:nth-of-type(odd){background:rgba(255,255,255,.025)}
+  .ds-trips.tbl .ds-trow::before,.ds-trips.tbl .ds-trow::after{content:none}
+  .ds-trips.tbl .ds-trow:hover{transform:none;background:rgba(34,211,238,.06)}
+  .ds-trips.tbl .ds-trow>*{grid-column:auto!important;grid-row:auto!important}
+  .ds-trips.tbl .c-time{display:block!important}
+  .ds-trips.tbl .c-st{justify-self:start;display:grid;justify-items:start;gap:4px}.ds-trips.tbl .ds-trip-ed{display:inline-flex}
+  .ds-trips.tbl .c-nums{display:contents}
+  .ds-trips.tbl .c-nums .ds-chip{background:none;border:0;padding:0;text-align:right}.ds-trips.tbl .c-nums .ds-chip small{display:none}
+  .ds-trips.tbl .c-route small.veh{display:none}
+  .ds-trips.tbl .c-veh{display:block!important}
+  .ds-trips.tbl .c-edit{grid-column:1/-1!important;grid-template-columns:minmax(0,1fr) minmax(0,1fr) auto;display:none}
+  .ds-trips.tbl .ds-trow.op .c-edit{display:grid}.ds-trips.tbl .ds-trow:not(.op) details.c-more{display:none}
+  .ds-trips.tbl details.c-more{grid-column:1/-1!important}
+  .ds-trips.tbl.no-own .ds-th,.ds-trips.tbl.no-own .ds-trow{grid-template-columns:62px minmax(0,2.4fr) minmax(0,1.4fr) 70px minmax(0,1.4fr)}
+}
+.c-time,.c-veh{display:none}
+.c-time b{font:800 .95rem var(--f-num)}.c-time small{display:block;color:var(--muted);font-size:.68rem}
+.c-veh b{font-weight:700}.c-veh small{display:block;color:var(--muted);font-size:.72rem;overflow-wrap:anywhere}
+.ds-trip-ed{all:unset;cursor:pointer;color:var(--ds-acc);font:700 .74rem var(--f-ui);display:none;min-height:32px;align-items:center}
+
+/* --- Cenník: dlaždice --- */
+.ds-ptiles{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px}
+.ds-tile{display:grid;gap:6px;padding:12px 14px;border-radius:18px;color:var(--ink);min-width:0}
+.ds-tile .pn{font:700 .8rem var(--f-ui);color:var(--muted);overflow-wrap:anywhere}
+.ds-tile .pv{display:flex;align-items:baseline;gap:6px}
+.ds-tile .pv input{font:800 1.55rem/1 var(--f-num);letter-spacing:-.02em;padding:6px 8px;min-height:48px;background:rgba(255,255,255,.05);border-color:rgba(255,255,255,.14);font-variant-numeric:tabular-nums}
+.ds-tile .pv input:placeholder-shown{font:italic 600 1rem var(--f-ui);color:var(--ds-gray)}
+.ds-tile .pv i{font-style:normal;font:700 .72rem var(--f-ui);color:var(--muted);flex:none}
+.ds-tile.emp{border-style:dashed;border-color:rgba(148,163,184,.4)}.ds-tile.emp .pn::after{content:" · nezadané";font-style:italic;color:var(--ds-gray);font-weight:500}
+.ds-valid{display:grid;gap:5px;padding:12px 14px;border-radius:16px;border:1px solid rgba(255,255,255,.14);background:rgba(255,255,255,.04)}
+.ds-valid small{font-size:.76rem;font-weight:700}
+.ds-valid.w{border-color:rgba(251,191,36,.6);background:rgba(251,191,36,.08)}.ds-valid.w small,.ds-valid.w{color:#fcd34d}
+.ds-valid.r{border-color:rgba(248,113,113,.65);background:rgba(248,113,113,.09)}.ds-valid.r small,.ds-valid.r{color:#fca5a5}
+.ds-valid.ok small{color:var(--ds-ok)}
+
+/* --- Farmári --- */
+.ds-search{position:relative}.ds-search input{padding-left:42px}.ds-search::before{content:"🔎";position:absolute;left:14px;bottom:13px;font-size:1rem;opacity:.75;pointer-events:none}
+.ds-fc{display:grid;gap:10px;padding:14px 16px}
+.ds-meta{display:flex;flex-wrap:wrap;gap:6px}
+.ds-meta>*{display:inline-flex;align-items:center;gap:5px;padding:4px 10px;border-radius:999px;font:600 .74rem var(--f-ui);background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);color:var(--ink);text-decoration:none;max-width:100%;overflow-wrap:anywhere}
+.ds-meta a{color:#a5f3fc;border-color:rgba(34,211,238,.35)}
+
+/* --- Počasie --- */
+.ds-wx{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:8px}
+.ds-wd{display:grid;gap:4px;padding:12px;border-radius:18px;min-width:0;align-content:start}
+.ds-wd .dn{font:700 .8rem var(--f-ui);text-transform:capitalize}.ds-wd .di{font-size:1.7rem;line-height:1.1}
+.ds-wd .tt{font:800 1.2rem var(--f-num)}.ds-wd .tt span{color:var(--muted);font-weight:600;font-size:.9rem}
+.ds-wd .bar{margin:2px 0}
+.ds-wd small{font-size:.72rem;color:var(--muted);display:flex;justify-content:space-between;gap:6px}
+.ds-wd small b{color:var(--ink);font-weight:700}.ds-wd small{flex-wrap:wrap}.ds-wd small b{margin-left:auto;text-align:right}.ds-wd .bar{display:block;flex:none;width:100%}
+.card .out,.sub .out,.row .out{width:auto!important;min-width:0;padding:0 14px!important;border-radius:12px!important;min-height:40px}.card .out .ot{display:inline}
+.ds-wd.today{border-color:rgba(34,211,238,.75);box-shadow:inset 0 1px 0 rgba(255,255,255,.35),0 0 0 1px rgba(34,211,238,.35),0 0 26px rgba(34,211,238,.25)}
+.ds-wd.w{border-color:rgba(251,191,36,.6)}.ds-wd.r{border-color:rgba(248,113,113,.7)}
+.ds-warns{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:8px}
+.ds-wn{display:grid;grid-template-columns:38px minmax(0,1fr);gap:10px;align-items:center;padding:10px 12px;border-radius:16px;border:1px solid;border-left-width:3px}
+.ds-wn>span{font-size:1.3rem;text-align:center}.ds-wn b{display:block;font-size:.88rem}.ds-wn small{font-size:.74rem;color:var(--ink);opacity:.85}
+.ds-wn.w{border-color:rgba(251,191,36,.55);background:rgba(251,191,36,.09);box-shadow:-4px 0 16px -6px rgba(251,191,36,.8)}.ds-wn.w b{color:#fcd34d}
+.ds-wn.r{border-color:rgba(248,113,113,.6);background:rgba(248,113,113,.10);box-shadow:-4px 0 16px -6px rgba(248,113,113,.85)}.ds-wn.r b{color:#fca5a5}
+.wxh{background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);border-radius:16px}
+.wxh:first-child{background:rgba(34,211,238,.12);border-color:rgba(34,211,238,.6)}
+.bar i{background:linear-gradient(90deg,#22d3ee,#34d399,#fbbf24);box-shadow:0 0 10px rgba(34,211,238,.35)}
+
+/* --- Tím --- */
+.ds-team{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:10px}
+
+/* --- svetlé prvky z predošlého dizajnu zladené --- */
+.seg2 button[aria-pressed=true],.pymon button[aria-pressed=true]{background:linear-gradient(135deg,rgba(34,211,238,.35),rgba(139,92,246,.32));color:#fff;border-color:rgba(165,243,252,.55);box-shadow:inset 0 1px 0 rgba(255,255,255,.4),0 0 18px rgba(34,211,238,.25)}
+.lsw button.on{background:linear-gradient(135deg,#22d3ee,#8b5cf6);color:#fff}
+.hbtn,.rbtn{min-height:40px}
+.xring{background:conic-gradient(#22d3ee calc(var(--p)*1%),rgba(255,255,255,.08) 0);box-shadow:0 0 30px rgba(34,211,238,.3)}.xring b{color:#a5f3fc}
+.ds-theme{min-height:40px;width:40px;padding:0;border-radius:50%;font-size:1rem}
+.hrow{align-items:center}
+
+/* --- fallback bez backdrop-filter --- */
+@supports not ((-webkit-backdrop-filter:blur(1px)) or (backdrop-filter:blur(1px))){
+  .card,.kb,.vd,.xv,.xd,.pyc,.xc,.xmap,.xtl,.vfirm,.vt,.ds-g,.ds-kpi,.ds-tile,.ds-trow,.ds-fc,.tabs,.vnav,.xal,.leaflet-popup-content-wrapper{background:var(--ds-fallback)}
+}
+/* --- menej pohybu --- */
+@media (prefers-reduced-motion:reduce){
+  .card::after,.kb::after,.vd::after,.xv::after,.xd::after,.pyc::after,.xc::after,.xmap::after,.xtl::after,.vfirm::after,.vt::after,.ds-g::after,.ds-kpi::after,.ds-tile::after,.ds-trow::after,.ds-fc::after{display:none;animation:none!important}
+  .card,.kb,.vd,.xv,.xd,.pyc,.xc,.vt,.ds-kpi,.ds-tile,.ds-trow,.ds-fc,.ds-ind,.tabs button{transition:none!important;transform:none!important}
+  .lpin.mv i,.live{animation:none}
+}
+/* --- tlač: biela, bez skla --- */
+@media print{
+  html,body{background:#fff!important}body::before{display:none!important}
+  *{-webkit-backdrop-filter:none!important;backdrop-filter:none!important;animation:none!important}
+  .tabs,.vnav,.toast,.hrow{display:none!important}
+}
+
+/* ===== SVETLÝ REŽIM ===== */
+html[data-theme=light]{--ds-bg1:#eef3fb;--ds-bg2:#dde6f4;--bg:#eef3fb;--ink:#0f172a;--muted:#475569;--line:rgba(15,23,42,.10);--line2:rgba(15,23,42,.18);
+  --ds-glass:rgba(255,255,255,.55);--ds-glass-hi:rgba(255,255,255,.72);--ds-glass-lo:rgba(255,255,255,.5);--ds-edge:rgba(255,255,255,.85);--ds-shadow:0 12px 32px rgba(30,41,59,.12);--ds-fallback:rgba(248,250,255,.96);
+  --ds-ok:#047857;--ds-warn:#b45309;--ds-bad:#b91c1c;--ds-acc:#0e7490;--ds-gray:#64748b;--ds-ink:#0f172a;--ds-muted:#475569;--glass:rgba(255,255,255,.55);--field:rgba(255,255,255,.7);color-scheme:light}
+html[data-theme=light] body{color:var(--ink)}
+html[data-theme=light] body::before{background:radial-gradient(42% 32% at 88% 4%,rgba(34,211,238,.25),transparent 70%),radial-gradient(38% 30% at 6% 38%,rgba(139,92,246,.18),transparent 70%),radial-gradient(34% 26% at 72% 92%,rgba(255,255,255,.9),transparent 70%),linear-gradient(160deg,#eef3fb,#dde6f4)}
+html[data-theme=light] h2{background:linear-gradient(90deg,#0e7490,#6d28d9);-webkit-background-clip:text;background-clip:text;color:transparent}
+html[data-theme=light] :is(.card,.kb,.vd,.xv,.xd,.pyc,.xc,.xmap,.xtl,.vfirm,.vt,.ds-g,.ds-kpi,.ds-tile,.ds-trow,.ds-fc){box-shadow:inset 0 1px 0 #fff,var(--ds-shadow);border-color:rgba(255,255,255,.9)}
+html[data-theme=light] :is(.card,.kb,.vd,.xv,.xd,.pyc,.xc,.xmap,.xtl,.vfirm,.vt,.ds-g,.ds-kpi,.ds-tile,.ds-trow,.ds-fc)::before{background:linear-gradient(90deg,transparent,#fff 30%,#fff 70%,transparent)}
+html[data-theme=light] .card .xd,html[data-theme=light] .dsc .xd,html[data-theme=light] .xvk span,html[data-theme=light] .vk span,html[data-theme=light] .yfb span,html[data-theme=light] .ds-chip,html[data-theme=light] .xmh span{background:rgba(255,255,255,.55);border-color:rgba(15,23,42,.08)}
+html[data-theme=light] .tabs,html[data-theme=light] .vnav{background:rgba(255,255,255,.62);border-color:rgba(255,255,255,.9);box-shadow:inset 0 1px 0 #fff,0 10px 28px rgba(30,41,59,.14)}
+html[data-theme=light] .tabs button[aria-pressed=true],html[data-theme=light] .vnav button[aria-pressed=true] b{color:#0f172a}
+html[data-theme=light] .ds-ind{background:linear-gradient(135deg,rgba(34,211,238,.28),rgba(139,92,246,.22));border-color:rgba(14,116,144,.35);box-shadow:inset 0 1px 0 #fff,0 6px 18px rgba(14,116,144,.18)}
+html[data-theme=light] .vnav button small{color:#0e7490}
+html[data-theme=light] :is(button,.btn):not(.pri):not(.lime):not(.dng):not([data-tab]):not([data-fsec]):not(.xvh):not(.pyt):not(.vd):not(.copy):not(.ds-trip-ed){background:linear-gradient(135deg,rgba(255,255,255,.85),rgba(255,255,255,.5));border-color:rgba(15,23,42,.14);color:#0f172a;box-shadow:inset 0 1px 0 #fff,0 4px 12px rgba(30,41,59,.08)}
+html[data-theme=light] .tabs button,html[data-theme=light] .vnav button,html[data-theme=light] .xvh,html[data-theme=light] .pyt,html[data-theme=light] .vd,html[data-theme=light] .copy,html[data-theme=light] .ds-trip-ed{background:transparent!important;box-shadow:none!important;border-color:transparent}
+html[data-theme=light] .vd{background:rgba(255,255,255,.6)!important;border-color:#fff!important;box-shadow:inset 0 1px 0 #fff,var(--ds-shadow)!important}
+html[data-theme=light] .aidash{background:radial-gradient(90% 120% at 100% 0%,rgba(34,211,238,.25),transparent 60%),linear-gradient(150deg,#1e1b4b,#0b1020)!important;border-color:rgba(255,255,255,.3)!important}
+html[data-theme=light] .vd.big{background:radial-gradient(100% 140% at 100% 0%,rgba(52,211,153,.30),transparent 55%),linear-gradient(160deg,#10241f,#0b1020)!important;color:#fff}
+html[data-theme=light] .vd.big.neg{background:radial-gradient(100% 140% at 100% 0%,rgba(248,113,113,.34),transparent 55%),linear-gradient(160deg,#2a1018,#0b1020)!important}
+html[data-theme=light] .vd.big span,html[data-theme=light] .vd.big small{color:rgba(255,255,255,.8)}
+html[data-theme=light] .vd.red b{color:#b91c1c}
+html[data-theme=light] button.dng{color:#b91c1c;border-color:rgba(185,28,28,.35);background:rgba(255,255,255,.7)}
+html[data-theme=light] input,html[data-theme=light] select,html[data-theme=light] textarea{background:rgba(255,255,255,.8);border-color:rgba(15,23,42,.16);color:#0f172a;box-shadow:inset 0 1px 2px rgba(15,23,42,.06)}
+html[data-theme=light] select option{background:#fff;color:#0f172a}
+html[data-theme=light] input::placeholder{color:#64748b}
+html[data-theme=light] .pill{background:rgba(4,120,87,.10);color:#047857;border-color:rgba(4,120,87,.35)}
+html[data-theme=light] .pill.w{background:rgba(180,83,9,.10);color:#92400e;border-color:rgba(180,83,9,.35)}
+html[data-theme=light] .pill.r{background:rgba(185,28,28,.08);color:#b91c1c;border-color:rgba(185,28,28,.35)}
+html[data-theme=light] .pill.b{background:rgba(14,116,144,.10);color:#0e7490;border-color:rgba(14,116,144,.35)}
+html[data-theme=light] .pill.g,html[data-theme=light] .dcfew,html[data-theme=light] .ds-few{background:rgba(100,116,139,.10);color:#475569;border-color:rgba(100,116,139,.3)}
+html[data-theme=light] .ds-kpi.ok>b,html[data-theme=light] .ds-chip b.pos{color:#047857}html[data-theme=light] .ds-kpi.warn>b{color:#92400e}html[data-theme=light] .ds-kpi.bad>b,html[data-theme=light] .ds-chip b.neg{color:#b91c1c}
+html[data-theme=light] .xai{background:rgba(255,255,255,.6)}html[data-theme=light] .xai b{color:#0f172a}
+html[data-theme=light] .xal{background:rgba(255,255,255,.55);border-color:#fff}html[data-theme=light] .xalc small,html[data-theme=light] .xalf{color:#475569}
+html[data-theme=light] .xals .r{color:#b91c1c}html[data-theme=light] .xals .w{color:#92400e}html[data-theme=light] .xals .b{color:#0e7490}
+html[data-theme=light] .xalc b{color:#047857}html[data-theme=light] .xalc.on b{color:#b91c1c}
+html[data-theme=light] .dcr.hd,html[data-theme=light] .ds-trips.tbl .ds-th{background:rgba(241,245,252,.96)}
+html[data-theme=light] .prow .num,html[data-theme=light] .box b,html[data-theme=light] .xmh b,html[data-theme=light] .aimsg b{color:#0f172a;text-shadow:none}
+html[data-theme=light] .box.w,html[data-theme=light] .dsn{color:#92400e}
+html[data-theme=light] .pwg{color:#0f172a;border-color:rgba(15,23,42,.14);background:linear-gradient(135deg,rgba(255,255,255,.9),rgba(255,255,255,.55));text-shadow:none}html[data-theme=light] .pwg small{color:#475569}html[data-theme=light] .pwg.ok .pwv{color:#047857}
+html[data-theme=light] .hbtn{color:#3730a3;background:rgba(255,255,255,.7)}html[data-theme=light] .rbtn,html[data-theme=light] .topref{color:#065f46;background:rgba(255,255,255,.7)}
+html[data-theme=light] .pban.w b{color:#92400e}html[data-theme=light] .pban.r b{color:#991b1b}html[data-theme=light] .pban span{color:#334155}
+html[data-theme=light] .hero{color:#0f172a}html[data-theme=light] .hero b{color:#0f172a}html[data-theme=light] .hero small{color:#334155}
+html[data-theme=light] .ds-valid.w,html[data-theme=light] .ds-valid.w small{color:#92400e}html[data-theme=light] .ds-valid.r,html[data-theme=light] .ds-valid.r small{color:#b91c1c}
+html[data-theme=light] .ds-wn.w b{color:#92400e}html[data-theme=light] .ds-wn.r b{color:#b91c1c}
+html[data-theme=light] .ds-meta>*{background:rgba(255,255,255,.7);border-color:rgba(15,23,42,.1);color:#0f172a}html[data-theme=light] .ds-meta a{color:#0e7490}
+html[data-theme=light] .xc>span,html[data-theme=light] .ds-ic{background:rgba(255,255,255,.7)}
+html[data-theme=light] .seg2 button[aria-pressed=true],html[data-theme=light] .pymon button[aria-pressed=true]{color:#0f172a!important;background:linear-gradient(135deg,rgba(34,211,238,.3),rgba(139,92,246,.22))!important}
+html[data-theme=light] .wxh:first-child{background:rgba(34,211,238,.15)}html[data-theme=light] .wxh em,html[data-theme=light] .wxd .dr{color:#0e7490}
+html[data-theme=light] .xvn small,html[data-theme=light] .xti time small{color:#475569}
+html[data-theme=light] .dcpl{background:rgba(255,255,255,.8)}
+html[data-theme=light] .tabs .cnt{color:#fff}
+html[data-theme=light] .xtank span{color:#0f172a}
+html[data-theme=light] .klest{color:#92400e}
+html[data-theme=light] :is(.xhero,.xcost,.pyhero,.xloss,.vhero,.vd.big,.aidash,.hbox){--ink:#f1f5ff;--muted:#a7b1c6;color:#f1f5ff}
+</style>
+<script>try{if(localStorage.getItem('ernte-theme')==='light')document.documentElement.dataset.theme='light'}catch(e){}</script>
 </head>
 <body>
 <div class="wrap">
@@ -415,7 +772,7 @@ function baseLayers(map,sat){const osm=L.tileLayer("https://tile.openstreetmap.o
 function lmapHTML(pts,cls){return `<div class="lmap ${cls||""}" data-pts="${esc(JSON.stringify(pts))}"></div>`}
 function initMaps(root){const els=[...(root||document).querySelectorAll(".lmap:not(.ok)")];if(!els.length)return;needL().then(()=>{for(const el of els){if(el.classList.contains("ok"))continue;el.classList.add("ok");
   const P=JSON.parse(el.dataset.pts||"[]");const m=L.map(el,{zoomControl:true,attributionControl:true,scrollWheelZoom:false});baseLayers(m);
-  const ms=P.map(p=>L.marker([p.lat,p.lon],{icon:L.divIcon({className:"",html:`<div class="lpin${p.mv?" mv":""}${p.old?" old":""}"><i></i><span>${esc(p.label||"")}</span></div>`,iconSize:[0,0]})}).addTo(m).bindTooltip?.(p.tip||"",{direction:"top"}));
+  const ms=P.map(p=>L.marker([p.lat,p.lon],{icon:L.divIcon({className:"",html:`<div class="lpin${p.mv?" mv":""}${p.old?" old":""}"><i></i><span>${esc(p.label||"")}</span></div>`,iconSize:[0,0]})}).addTo(m));ms.forEach((mk,i)=>{if(P[i].tip&&mk.bindPopup)mk.bindPopup(P[i].tip,{closeButton:false,maxWidth:260})});
   if(P.length===1)m.setView([P[0].lat,P[0].lon],12);else if(P.length)m.fitBounds(L.latLngBounds(P.map(p=>[p.lat,p.lon])).pad(.25));else m.setView([48.755,21.915],8);
   setTimeout(()=>m.invalidateSize(),150)}}).catch(()=>{els.forEach(e=>e.innerHTML='<div style="padding:20px;color:#9aa3b8">Mapa sa nenačítala.</div>')})}
 // radar zrážok – Leaflet + RainViewer
@@ -445,11 +802,18 @@ function wxCard(){if(!WXD)return `<div class="card"><div class="s">Načítavam p
   const H=WXD.hourly,D=WXD.daily,now=Date.now();let i0=H.time.findIndex(t=>new Date(t).getTime()>now-3600e3);if(i0<0)i0=0;
   const hrs=H.time.slice(i0,i0+24).map((t,k)=>{const i=i0+k,w=WMO(H.weather_code[i]);return `<div class="wxh"><small>${new Date(t).getHours()}:00</small><span>${w[0]}</span><b>${Math.round(H.temperature_2m[i])}°</b><em>${H.precipitation[i]>0?H.precipitation[i].toFixed(1)+" mm":(H.precipitation_probability[i]??0)+" %"}</em></div>`}).join("");
   const tmin=Math.min(...D.temperature_2m_min),tmax=Math.max(...D.temperature_2m_max),rng=Math.max(1,tmax-tmin);
-  const days=D.time.map((t,i)=>{const w=WMO(D.weather_code[i]),d=new Date(t+"T12:00");const nm=i===0?"Dnes":i===1?"Zajtra":d.toLocaleDateString("sk-SK",{weekday:"short",day:"numeric",month:"numeric"});
-    const a=(D.temperature_2m_min[i]-tmin)/rng*100,b=(D.temperature_2m_max[i]-tmin)/rng*100;
-    return `<div class="wxd"><span class="dn">${esc(nm)}</span><span class="di" title="${w[1]}">${w[0]}</span><span class="dr">${D.precipitation_sum[i]>0?D.precipitation_sum[i].toFixed(1)+" mm":"–"} · ${D.precipitation_probability_max[i]??0} %</span><span class="dt"><b class="lo">${Math.round(D.temperature_2m_min[i])}°</b><i class="bar"><i style="left:${a}%;right:${100-b}%"></i></i><b>${Math.round(D.temperature_2m_max[i])}°</b></span></div>`}).join("");
-  return `<div class="card wx"><div class="row"><span class="t">📍 ${esc(WXLOC.name)}</span><button type="button" class="out" data-wxloc>Moja poloha</button></div>
-    <div class="wxhs">${hrs}</div><div class="wxds">${days}</div><div class="t" style="margin-top:6px">🛰️ Radar zrážok</div><div class="rdbox" id="radarBox"></div>
+  const W=D.wind_speed_10m_max||[],WN=[],LV={};
+  const dName=(t,i)=>i===0?"Dnes":i===1?"Zajtra":new Date(t+"T12:00").toLocaleDateString("sk-SK",{weekday:"short",day:"numeric",month:"numeric"});
+  D.time.forEach((t,i)=>{const r=D.precipitation_sum[i]||0,pp=D.precipitation_probability_max[i]??0,tm=D.temperature_2m_min[i],wd=W[i]||0,nm=dName(t,i),add=(lv,ic,tt,tx)=>{WN.push([lv,ic,tt,tx]);if(lv==="r"||!LV[i])LV[i]=lv};
+    if(r>=10||(r>=3&&pp>=80))add(r>=25?"r":"w","🌧️","Dážď · "+nm,r.toFixed(1).replace(".",",")+" mm · "+pp+" %");
+    if(tm<=0)add(tm<=-5?"r":"w","🥶","Mráz · "+nm,"v noci "+Math.round(tm)+" °C");
+    if(wd>=40)add(wd>=60?"r":"w","💨","Vietor · "+nm,"až "+Math.round(wd)+" km/h")});
+  const days=D.time.map((t,i)=>{const w=WMO(D.weather_code[i]),a=(D.temperature_2m_min[i]-tmin)/rng*100,b=(D.temperature_2m_max[i]-tmin)/rng*100;
+    return `<div class="ds-wd ds-g${i===0?" today":""}${LV[i]?" "+LV[i]:""}"><span class="dn">${esc(dName(t,i))}</span><span class="di" title="${w[1]}">${w[0]}</span><span class="tt">${Math.round(D.temperature_2m_max[i])}°<span> / ${Math.round(D.temperature_2m_min[i])}°</span></span><i class="bar"><i style="left:${a}%;right:${100-b}%"></i></i><small><span>💧 zrážky</span><b>${D.precipitation_sum[i]>0?D.precipitation_sum[i].toFixed(1).replace(".",",")+" mm":"–"} · ${D.precipitation_probability_max[i]??0} %</b></small><small><span>💨 vietor</span><b>${W[i]!=null?Math.round(W[i])+" km/h":"–"}</b></small></div>`}).join("");
+  return `<div class="card wx"><div class="row"><span class="t">📍 ${esc(WXLOC.name)}</span><button type="button" class="out" data-wxloc>Moja poloha</button></div><div class="wxhs">${hrs}</div></div>
+    ${WN.length?`<h2>Upozornenia</h2><div class="ds-warns">${WN.map(x=>`<div class="ds-wn ${x[0]}"><span aria-hidden="true">${x[1]}</span><div><b>${esc(x[2])}</b><small>${esc(x[3])}</small></div></div>`).join("")}</div>`:""}
+    <h2>Najbližších 7 dní</h2><div class="ds-wx">${days}</div>
+    <div class="card"><div class="t">🛰️ Radar zrážok</div><div class="rdbox" id="radarBox"></div>
     <div class="s" style="font-size:.7rem">Predpoveď: Open-Meteo · <a class="copy" style="font-size:.7rem" href="https://www.pocasieradar.sk/" target="_blank" rel="noopener">Radar zrážok – pocasieradar.sk</a></div></div>`}
 document.addEventListener("click",e=>{if(!e.target.closest("[data-wxloc]"))return;if(!navigator.geolocation){toast("Poloha nie je dostupná.");return}
   toast("Zisťujem polohu…");navigator.geolocation.getCurrentPosition(async p=>{WXLOC={name:"Moja poloha",lat:+p.coords.latitude.toFixed(3),lon:+p.coords.longitude.toFixed(3)};try{localStorage.setItem("ernte-wxloc",JSON.stringify(WXLOC))}catch(x){}await loadWx(true);rerender()},()=>toast("Polohu sa nepodarilo zistiť – povoľte ju v nastaveniach."),{timeout:10000})});
@@ -527,6 +891,7 @@ async function startStaff(){$("refBtn").hidden=false;await loadStaff();renderSta
 async function loadStaff(){const [f,p,s,d,r]=await Promise.all([sb.from("farmers").select("*").order("name"),sb.from("prices").select("*"),sb.from("settings").select("key,value"),
   sb.from("deals").select("*").order("created_at",{ascending:false}),sb.from("requests").select("*").order("created_at",{ascending:false}).limit(200)]);
   try{const [tk,tr]=await Promise.all([sb.from("trucks").select("*").order("no"),sb.from("trips").select("*").order("day",{ascending:false}).limit(300)]);STATE.trucks=tk.data||[];STATE.trips=tr.data||[];STATE.noTrans=!!tk.error}catch(e){STATE.trucks=[];STATE.trips=[];STATE.noTrans=true}
+  try{const own=ROLE==="owner",q=[sb.from("trip_route").select("*").limit(3000)];if(own)q.push(sb.from("trip_fin").select("*").limit(3000),sb.from("deal_fin").select("*").limit(3000));const X=await Promise.all(q),M=(r,k)=>Object.fromEntries(((r&&r.data)||[]).map(x=>[x[k],x]));STATE.troute=M(X[0],"trip_id");STATE.tfin=own?M(X[1],"trip_id"):{};STATE.dfin=own?M(X[2],"deal_id"):{}}catch(e){STATE.troute={};STATE.tfin={};STATE.dfin={}}
   STATE.farmers=f.data||[];STATE.prices=p.data||[];STATE.settings=Object.fromEntries((s.data||[]).map(x=>[x.key,x.value]));STATE.deals=d.data||[];STATE.reqs=r.data||[]}
 const fName=id=>{const f=STATE.farmers.find(x=>x.id===id);return f?f.name:"?"};
 // ===== NÁPOVEDA „Ako to funguje“ =====
@@ -599,6 +964,60 @@ function priceBanner(){const v=((STATE.settings||{}).pricelist||{}).valid;
   if(end<new Date())return `<div class="pban r"><b>Cenník vypršal ${esc(dSK(v))}</b><span>Farmári vidia neaktuálne ceny – obnov ho v záložke Cenník.</span></div>`;
   if(d<=7)return `<div class="pban w"><b>Cenník platí do ${esc(dSK(v))}, obnov ho</b><span>${d<1?"Platí už len dnes.":d===1?"Platí ešte zajtra.":"Zostáva "+d+" "+(d<5?"dni":"dní")+"."}</span></div>`;
   return ""}
+// ===== DIZAJN „sklo – diamant“: zdieľané pomocné funkcie (iba vzhľad) =====
+const TICO={req:"📥",price:"💶",trans:"🚚",fleet:"🚛",deals:"🤝",farm:"👨‍🌾",wx:"🌦️",team:"👥"};
+const dsF2=x=>Number.isFinite(+x)?(+x).toLocaleString("sk-SK",{minimumFractionDigits:2,maximumFractionDigits:2}):"–";
+const dsSg=x=>(x>=0?"+":"−")+Math.round(Math.abs(x)).toLocaleString("sk-SK");
+const dsSg2=x=>(x>=0?"+":"−")+dsF2(Math.abs(x));
+const dsIni=n=>String(n||"").split(/\s+/).filter(w=>w&&!/\.$/.test(w)&&/^[\p{L}]/u.test(w)).map(w=>w[0]).slice(0,2).join("").toUpperCase()||"•";
+const dsChip=(l,v,cls,ow)=>`<span class="ds-chip${ow?" ow":""}"><small>${l}</small><b class="${cls||""}">${v}</b></span>`;
+function dsSpark(arr,col){const v=(arr||[]).map(x=>x==null||!isFinite(x)?null:+x),ok=v.filter(x=>x!=null);if(ok.length<2)return "";
+  const mn=Math.min(...ok),mx=Math.max(...ok),rg=mx-mn||1,n=v.length-1||1;let pts=[];v.forEach((x,i)=>{if(x!=null)pts.push([(i/n*100).toFixed(1),(25-(x-mn)/rg*21).toFixed(1)])});
+  const id="sp"+Math.random().toString(36).slice(2,8),line=pts.map(q=>q.join(",")).join(" ");
+  return `<svg viewBox="0 0 100 28" preserveAspectRatio="none" aria-hidden="true"><defs><linearGradient id="${id}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${col}" stop-opacity=".35"/><stop offset="1" stop-color="${col}" stop-opacity="0"/></linearGradient></defs><polygon points="${pts[0][0]},28 ${line} ${pts[pts.length-1][0]},28" fill="url(#${id})"/><polyline points="${line}" fill="none" stroke="${col}" stroke-width="1.8" vector-effect="non-scaling-stroke" stroke-linejoin="round" stroke-linecap="round"/></svg>`}
+function dsKpi(label,val,note,st,series,col){return `<div class="ds-kpi ${st||""}"><small>${label}</small><b>${val}</b>${note?`<em>${note}</em>`:""}${series?dsSpark(series,col||"#22d3ee"):""}</div>`}
+// denné rady pre sparkline (km, l/100, nafta €, mýto €)
+function dsDaily(R,since,CO){const d0=new Date(since);d0.setHours(0,0,0,0);const n=Math.max(1,Math.round((Date.now()-d0)/864e5)+1),km=Array(n).fill(0),l=Array(n).fill(0),lk=Array(n).fill(0);
+  for(const r of R||[]){const t=new Date(r.start_at);t.setHours(0,0,0,0);const i=Math.round((t-d0)/864e5);if(i<0||i>=n)continue;const d=+r.distance||0;km[i]+=d;if(r.fuel_consumed&&d>0){l[i]+=+r.fuel_consumed;lk[i]+=d}}
+  const pb=(+CO.diesel||1.952)/1.23;return {km,cons:l.map((x,i)=>lk[i]>20?x/lk[i]*100:null),fuel:l.map(x=>x*pb),toll:km.map(x=>x*(+CO.share||0)/100*(+CO.toll||0))}}
+// Doprava: km, obrat a marža prepravy (marža = obrat − nafta bez DPH − mýto)
+function dsTripCalc(t){const r=(STATE.troute||{})[t.id]||{},fi=(STATE.tfin||{})[t.id]||{};
+  const km=r.km!=null&&r.km!==""?+r.km:null,rev=fi.revenue!=null&&fi.revenue!==""?+fi.revenue:null;
+  const F=STATE.fleet,CO=Object.assign({diesel:1.952,toll:0.2677,share:100},(F&&F.cfg&&F.cfg.costs)||{});let cons=null,est=true;
+  if(F&&!F.err){const tk=(STATE.trucks||[]).find(x=>x.no===t.truck_no),nz=s=>String(s||"").replace(/\s/g,"").toUpperCase();
+    const v=tk&&(F.veh||[]).find(v=>v.id===tk.cmd_id||nz(v.plate)===nz(tk.spz));
+    if(v){const a=agg(F.rides.filter(x=>x.vehicle_id===v.id));if(a.km>=MINKM&&a.cons){cons=a.cons;est=false}}if(cons==null)cons=fleetCons(F.rides)}
+  const cost=km!=null&&cons!=null?km*cons/100*(+CO.diesel/1.23)+km*(+CO.share/100)*(+CO.toll):null;
+  return {km,rev,cons,est,cost,mg:rev!=null&&cost!=null?rev-cost:null,dest:r.dest||"",ekm:rev!=null&&km?rev/km:null}}
+function dsTripRow(t,OWN){const x=dsTripCalc(t),fr=STATE.farmers.find(f=>f.id===t.farmer_id)||{},d=STATE.deals.find(y=>y.id===t.deal_id);
+  const fact=t.status==="vylozene"&&d&&["fakturacia","zaplateny"].includes(d.status);
+  const SC={naplanovana:"b",na_ceste:"w",nakladka:"w",nalozene:"w",vylozene:"",zrusena:"r"};
+  const st=fact?["fakturovaná","g"]:[(TST[t.status]||[t.status])[0],SC[t.status]??"g"];
+  const from=String(fr.addr||"").split(",")[0].trim()||"farma",op=STATE.tOpen===t.id,ed=v=>v!=null?String(v).replace(".",","):"";
+  const mgH=x.rev==null?`<b class="na">nezadané</b>`:x.km==null?`<b class="na">zadaj km</b>`:x.mg==null?`<b class="na">počítam…</b>`:`<b class="${x.mg>=0?"pos":"neg"}">${dsSg(x.mg)} €</b>`;
+  return `<form class="ds-trow${t.status==="zrusena"?" zr":""}${op?" op":""}" data-tedit="${esc(t.id)}">
+  <div class="c-time"><b>${esc(t.time||"–")}</b><small>${esc(dSK(t.day))}</small></div>
+  <div class="c-route"><b>${esc(fName(t.farmer_id))}</b><div class="rt"><span>${esc(from)}</span><i>→</i><span>${x.dest?esc(x.dest):`<em class="ds-na">kam – nezadané</em>`}</span></div>
+    <small class="veh">🕒 ${esc(t.time||"–")} · 🚛 č.${esc(t.truck_no)} · ${esc(t.spz||"")} · ${esc(t.driver||"bez vodiča")}</small>${d?`<small>${esc(d.no)} · ${esc(comName(d.com))}${t.netto!=null?" · "+fmt(t.netto,1)+" t":""}</small>`:t.netto!=null?`<small>${fmt(t.netto,1)} t</small>`:""}</div>
+  <div class="c-veh"><b>č.${esc(t.truck_no)} · ${esc(t.spz||"")}</b><small>${esc(t.driver||"bez vodiča")}</small></div>
+  <div class="c-nums">${dsChip("km",x.km!=null?n0(x.km):"–",x.km==null?"na":"")}${OWN?dsChip("€/km",x.ekm!=null?dsF2(x.ekm):"–",x.ekm==null?"na":"",1)+`<span class="ds-chip ow"><small>Marža</small>${mgH}</span>`:""}</div>
+  <div class="c-st">${pill(st)}<button type="button" class="ds-trip-ed" data-tedop="${esc(t.id)}">${op?"✕ zavrieť":"✏️ upraviť"}</button></div>
+  <div class="c-edit"><label>Stav<select name="status">${Object.keys(TST).map(k=>`<option value="${k}"${t.status===k?" selected":""}>${esc(TST[k][0])}</option>`).join("")}</select></label><label>Netto t (vážny lístok)<input name="netto" inputmode="decimal" value="${ed(t.netto)}"></label><button type="submit">Uložiť</button></div>
+  <details class="c-more"><summary>📍 Kam, km${OWN?", obrat":""}</summary><div class="g"><label>Kam (vykládka)<input name="dest" value="${esc(x.dest)}" placeholder="napr. Sklad Medovská"></label><label>km<input name="km" inputmode="decimal" value="${ed(x.km)}"></label>${OWN?`<label>Obrat € bez DPH<input name="rev" inputmode="decimal" value="${ed(x.rev)}"></label>`:""}</div>${OWN&&x.km!=null&&x.cons?`<div class="s">Náklad: ${n0(x.km)} km × ${n1(x.cons)} l/100${x.est?" (priemer flotily)":""} × nafta bez DPH + mýto = <b>${n0(x.cost)} €</b></div>`:""}</details>
+  </form>`}
+const DSI={};
+function dsAfter(){try{const B=document.body;B.className=B.className.replace(/\bds-tab-\S+/g,"").trim();if(typeof TAB!=="undefined")B.classList.add("ds-tab-"+TAB);
+  B.classList.toggle("ds-bn",!!document.querySelector("#app>.tabs"));
+  document.querySelectorAll(".tabs,.vnav").forEach(nav=>{const k=nav.classList.contains("tabs")?"t":"v";let ind=nav.querySelector(":scope>.ds-ind");if(!ind){ind=document.createElement("span");ind.className="ds-ind";ind.setAttribute("aria-hidden","true");nav.prepend(ind)}
+    const a=nav.querySelector('button[aria-pressed="true"]');if(!a){ind.style.opacity="0";return}ind.style.opacity="1";
+    const r={x:a.offsetLeft,y:a.offsetTop,w:a.offsetWidth,h:a.offsetHeight},pv=DSI[k],set=q=>{ind.style.transform=`translate(${q.x}px,${q.y}px)`;ind.style.width=q.w+"px";ind.style.height=q.h+"px"};
+    if(pv){ind.style.transition="none";set(pv);void ind.offsetWidth;ind.style.transition=""}set(r);DSI[k]=r;
+    if(nav.scrollWidth>nav.clientWidth+2){const sl=a.offsetLeft-(nav.clientWidth-a.offsetWidth)/2;nav.scrollLeft=Math.max(0,sl)}});
+  document.querySelectorAll(".dct").forEach(t=>{const hd=t.querySelector(".dcr.hd");if(!hd)return;const L=[...hd.children].map(s=>s.textContent);t.querySelectorAll(".dcr:not(.hd)").forEach(r=>[...r.children].forEach((c,i)=>{if(!c.dataset.l)c.dataset.l=L[i]||""}))});
+}catch(e){}}
+let DSRZ=0;window.addEventListener("resize",()=>{clearTimeout(DSRZ);DSRZ=setTimeout(()=>{for(const k in DSI)delete DSI[k];dsAfter()},150)});
+document.addEventListener("click",e=>{const th=e.target.closest("[data-dstheme]");if(th){const L=document.documentElement.dataset.theme!=="light";if(L)document.documentElement.dataset.theme="light";else delete document.documentElement.dataset.theme;try{localStorage.setItem("ernte-theme",L?"light":"dark")}catch(x){}th.textContent=L?"🌙":"☀️";const m=document.querySelector('meta[name="color-scheme"]');if(m)m.content=L?"light":"dark";return}
+  const op=e.target.closest("[data-tedop]");if(op){STATE.tOpen=STATE.tOpen===op.dataset.tedop?null:op.dataset.tedop;renderStaff()}});
 function renderStaff(){const nNew=STATE.reqs.filter(r=>r.status==="nova").length;
   let tabs=[["req",`Požiadavky${nNew?` <span class="cnt">${nNew}</span>`:""}`],["price","Cenník"],["trans",`Doprava${(STATE.reqs||[]).filter(r=>r.kind==="transport"&&r.status==="nova").length?` <span class="cnt">${STATE.reqs.filter(r=>r.kind==="transport"&&r.status==="nova").length}</span>`:""}`],["deals","Obchody"],["farm","Farmári"],["wx","Počasie"]];
   if(ROLE==="owner"||ROLE==="dispatch")tabs.splice(3,0,["fleet","Flotila"]);
@@ -606,23 +1025,26 @@ function renderStaff(){const nNew=STATE.reqs.filter(r=>r.status==="nova").length
   if(ROLE==="dispatch")tabs=tabs.filter(t=>["req","trans","fleet","wx"].includes(t[0]));
   if(ROLE==="invoice")tabs=tabs.filter(t=>t[0]!=="fleet");
   if(!tabs.some(t=>t[0]===TAB))TAB=tabs[0][0];
-  let h=`<nav class="tabs">${tabs.map(t=>`<button type="button" data-tab="${t[0]}" aria-pressed="${TAB===t[0]}">${t[1]}</button>`).join("")}</nav>`;
-  h+=`<div class="hrow">${helpBtn(TAB)}</div>`;
+  let h=`<nav class="tabs" aria-label="Hlavná navigácia">${tabs.map(t=>{const lb=String(t[1]).split(' <span class="cnt">');return `<button type="button" data-tab="${t[0]}" aria-pressed="${TAB===t[0]}"><span class="ti" aria-hidden="true">${TICO[t[0]]||"•"}</span><span class="tl">${lb[0]}</span>${lb[1]?'<span class="cnt">'+lb[1]:""}</button>`}).join("")}</nav>`;
+  h+=`<div class="hrow"><button type="button" class="ds-theme" data-dstheme aria-label="Prepnúť svetlý / tmavý režim" title="Svetlý / tmavý režim">${document.documentElement.dataset.theme==="light"?"🌙":"☀️"}</button>${helpBtn(TAB)}</div>`;
   if(tabs.some(t=>t[0]==="price")&&(TAB==="price"||TAB==="req"))h+=priceBanner();
-  if(TAB==="wx"&&!WXD)loadWx().then(renderStaff);if(TAB==="fleet"&&!STATE.fleet)loadFleet().then(renderStaff);if(TAB==="team"&&!STATE.staff)loadTeam().then(renderStaff);h+=({req:vReq,price:vPrice,trans:vTrans,deals:vDeals,farm:vFarm,wx:wxCard,fleet:vFleet,team:vTeam})[TAB]();if(TAB==="req")h+=pwCard();$("app").innerHTML=h;mountR()}
+  if(TAB==="wx"&&!WXD)loadWx().then(renderStaff);if(TAB==="fleet"&&!STATE.fleet)loadFleet().then(renderStaff);if(TAB==="team"&&!STATE.staff)loadTeam().then(renderStaff);h+=({req:vReq,price:vPrice,trans:vTrans,deals:vDeals,farm:vFarm,wx:wxCard,fleet:vFleet,team:vTeam})[TAB]();if(TAB==="req")h+=pwCard();$("app").innerHTML=h;mountR();dsAfter()}
 function vReq(){const R=STATE.reqs;if(!R.length)return `<div class="card"><div class="s">Zatiaľ žiadne požiadavky od farmárov.</div></div>`;
-  const ord=[...R.filter(r=>r.status==="nova"),...R.filter(r=>r.status!=="nova")];
+  const ord=[...R.filter(r=>r.status==="nova"),...R.filter(r=>r.status!=="nova")],OWN=ROLE==="owner",RI={sell:"🌾",transport:"🚚",agree:"✍️",message:"💬"};
   return ord.map(r=>{const fr=STATE.farmers.find(x=>x.id===r.farmer_id)||{},d=r.deal_id?STATE.deals.find(x=>x.id===r.deal_id):null;
-    return `<div class="card"><div class="row"><span class="t">${esc(RKIND[r.kind])}</span>${pill(RST[r.status]||[r.status])}</div>
-    <div><b>${esc(fr.name||"?")}</b> <span class="s">· ${esc(dtSK(r.created_at))}</span></div>
-    <div class="s">${[r.com&&comName(r.com),r.tons&&fmt(r.tons)+" t",r.price&&fmt(r.price)+" €/t",d&&"zmluva "+d.no,r.trucks&&r.trucks+" kamión(y)",r.pickup_date&&"od "+dSK(r.pickup_date)+(r.pickup_time?" "+r.pickup_time:""),r.place].filter(Boolean).map(esc).join(" · ")}</div>
+    const com=r.com||(d&&d.com),tons=r.tons!=null?+r.tons:d?+d.tons:null,buy=r.price!=null?+r.price:d?+d.price:null,df=OWN&&d?(STATE.dfin||{})[d.id]:null,sell=df&&df.sell_price!=null?+df.sell_price:null;
+    const ch=[];if(com)ch.push(dsChip("Plodina",esc(comName(com))));if(tons!=null&&isFinite(tons))ch.push(dsChip("Množstvo",fmt(tons)+" t"));if(buy!=null&&isFinite(buy))ch.push(dsChip("Nákup",fmt(buy)+" €/t"));
+    if(OWN&&buy!=null&&(r.kind==="sell"||d)){ch.push(dsChip("Predaj",sell!=null?fmt(sell)+" €/t":"nezadané",sell!=null?"":"na",1));if(sell!=null){const m=sell-buy;ch.push(dsChip("Marža €/t",dsSg2(m),m>=0?"pos":"neg",1));if(tons!=null)ch.push(dsChip("Marža spolu",dsSg(m*tons)+" €",m>=0?"pos":"neg",1))}}
+    return `<div class="card"><div class="ds-hd"><span class="ds-ic" aria-hidden="true">${RI[r.kind]||"📩"}</span><span class="ds-ttl"><b>${esc(RKIND[r.kind]||r.kind)}</b><small>${esc(fr.name||"?")} · ${esc(dtSK(r.created_at))}</small></span>${pill(RST[r.status]||[r.status])}</div>
+    ${ch.length?`<div class="ds-chips">${ch.join("")}</div>`:""}
+    ${(()=>{const s=[d&&"zmluva "+d.no,r.trucks&&r.trucks+" kamión(y)",r.pickup_date&&"od "+dSK(r.pickup_date)+(r.pickup_time?" "+r.pickup_time:""),r.place].filter(Boolean).map(esc).join(" · ");return s?`<div class="s">${s}</div>`:""})()}
     ${r.note?`<div class="s">„${esc(r.note)}“</div>`:""}
     ${r.reply?`<div class="s">Odpoveď: ${esc(r.reply)}${r.handled_by?" ("+esc(r.handled_by)+")":""}</div>`:""}
-    <div class="btns">${fr.phone?`<a class="btn" href="tel:${esc(String(fr.phone).replace(/\s/g,""))}">Volať</a>`:""}
+    <div class="btns">${fr.phone?`<a class="btn" href="tel:${esc(String(fr.phone).replace(/\s/g,""))}">📞 Volať</a>`:""}
       ${r.status==="nova"&&r.kind==="sell"?`<button type="button" class="lime" data-mkdeal="${esc(r.id)}">Vytvoriť obchod</button>`:""}
       ${r.status==="nova"&&r.kind==="agree"&&d?`<button type="button" class="lime" data-sign="${esc(r.id)}">Zmluva podpísaná</button>`:""}
       ${r.status==="nova"?`<button type="button" class="pri" data-done="${esc(r.id)}">Vybavené</button><button type="button" class="dng" data-rej="${esc(r.id)}">Zamietnuť</button>`:""}</div></div>`}).join("")}
-function fleetMap(G){return lmapHTML(G.map(k=>({lat:+k.gps_lat,lon:+k.gps_lon,label:String(k.no),mv:(+k.gps_speed||0)>3,old:!!k.old})))}
+function fleetMap(G){return lmapHTML(G.map(k=>({lat:+k.gps_lat,lon:+k.gps_lon,label:String(k.no),mv:(+k.gps_speed||0)>3,old:!!k.old,tip:k.tip||""})))}
 
 // ================= FLOTILA (Commander) =================
 let FPER="m",FVEH=null;
@@ -834,9 +1256,9 @@ function vFleet(){const F=STATE.fleet;if(!F)return `<div class="card"><div class
     <div class="xalf">Stráži: pokles nafty ${FC.drop}+ l v stojacom aute · možné prečerpanie medzi autami (pokles 30+ l a iné auto do 300 m a 3 h +30 l bez karty a dvora) · tankovanie vs. nádrž (rozdiel nad 20 l a 5 %) · rozdiel nafty po autách nad 15 % (cena ${f3(dBez)} €/l bez DPH) · tankovanie mimo karty · jazda bez vodiča nad 20 km · spotreba +20 % · rýchlosť nad 90 km/h · aktívne auto (300+ km za 7 dní) bez signálu 12 h · auto bez signálu 24 h (okrem odstavených) · sync polôh · súkromné jazdy</div></div>`;
   // ===== MAPA =====
   S[cur]=h;h="";cur="map";
-  const G=F.veh.filter(v=>v.lat&&v.gps_at).map(v=>({gps_lat:v.lat,gps_lon:v.lon,gps_speed:now-new Date(v.gps_at)<20*60e3?v.speed:0,old:now-new Date(v.gps_at)>6*3600e3,no:(v.plate||v.name||"").replace(/\s/g,"")}));
+  const G=F.veh.filter(v=>v.lat&&v.gps_at).map(v=>{const sp=now-new Date(v.gps_at)<20*60e3?v.speed:0,hh=Math.floor((now-new Date(v.gps_at))/3600e3),old=hh>=24,lr=LV[v.id];return {gps_lat:v.lat,gps_lon:v.lon,gps_speed:sp,old,no:(v.plate||v.name||"").replace(/\s/g,""),tip:`<b>${esc(v.plate||v.name||"")}</b><br>${old?"⚪ bez signálu "+hh+" h":sp>3?"🟢 ide "+sp+" km/h":"🔵 stojí"} · ${esc(ago(v.gps_at))}${lr&&lr.driver?"<br>👤 "+esc(lr.driver):""}`}});
   const moving=F.veh.filter(v=>v.gps_at&&now-new Date(v.gps_at)<20*60e3&&v.speed>3).length,yard=F.veh.filter(v=>v.in_yard).length;
-  if(G.length)h+=`<h2>Kde sú teraz</h2><div class="xmap"><div class="xmh"><span><b>${moving}</b> ide</span><span><b>${G.length-moving}</b> stojí</span><span><b>${yard}</b> na dvore</span></div>${fleetMap(G)}<div class="s">🟢 ide · 🔵 stojí · ⚪ poloha staršia ako 6 h</div></div>`;
+  if(G.length)h+=`<h2>Kde sú teraz</h2><div class="xmap"><div class="xmh"><span><b>${moving}</b> ide</span><span><b>${G.length-moving}</b> stojí</span><span><b>${yard}</b> na dvore</span></div>${fleetMap(G)}<div class="ds-leg"><span><i style="background:#34d399;box-shadow:0 0 8px #34d399"></i>ide</span><span><i style="background:#60a5fa;box-shadow:0 0 8px #60a5fa"></i>stojí</span><span><i style="background:#94a3b8"></i>bez signálu nad 24 h</span><span>· ťukni na auto pre detail</span></div></div>`;
   // ===== POHYBY =====
   S[cur]=h;h="";cur="moves";
   const MV=F.ev.filter(e=>!(e.kind==="fuel_drop"||e.kind==="refuel_gap")).slice(0,20);
@@ -916,6 +1338,16 @@ function vFleet(){const F=STATE.fleet;if(!F)return `<div class="card"><div class
   <nav class="vnav">${NAV.map(n=>`<button type="button" data-fsec="${n[0]}" aria-pressed="${sec===n[0]}"${n[0]==="alarm"&&alN?` class="hot"`:""}><span>${n[1]}</span><b>${esc(n[2])}</b>${n[3]?`<small>${esc(n[3])}</small>`:""}</button>`).join("")}</nav><div id="fsecTop"></div>`;
   if(sec==="dash"){
     if(OWNx)o+=`<div class="aidash"></div>`;
+    {const sp=dsDaily(F.rides,F.since,CO),FG=fuelGap(F),pr=OWNx&&pay!=null?rv-all:null,prF=OWNx&&pay!=null?rv-allFull:null;
+     o+=`<h2>Prehľad · ${esc(perName)}</h2><div class="ds-kpis">`+[
+      dsKpi("Kilometre",n0(A.km)+"<i>km</i>",`${A.n} jázd · ${hm(A.sec)}`,"acc",sp.km,"#22d3ee"),
+      dsKpi("Spotreba",A.cons?n1(A.cons)+"<i>l/100 km</i>":"málo dát",`${n0(A.l)} l spotrebované`,A.cons?"ok":"na",sp.cons,"#34d399"),
+      dsKpi("Nafta bez DPH",n0(fuelEur)+"<i>€</i>",`(s DPH ${n0(fuelVat)} €)`,"acc",sp.fuel,"#22d3ee"),
+      dsKpi("Mýto",n0(tollEur)+"<i>€</i>",`${CO.share} % km × ${String(CO.toll).replace(".",",")} €/km`,"acc",sp.toll,"#a78bfa"),
+      OWNx?dsKpi("Mzdy",STATE.payTot?n0(STATE.payTot)+"<i>€</i>":"–","hrubé, odhad · "+esc(new Date().toLocaleDateString("sk-SK",{month:"long"})),STATE.payTot?"acc":"na"):"",
+      OWNx?(pr==null?dsKpi("Zisk","nedá sa spočítať",FPER==="m"?"mzdy sa načítavajú…":"iba za Tento mesiac","na"):dsKpi(FPER==="m"?"Zisk do dnes":"Zisk",dsSg(pr)+"<i>€</i>",FPER==="m"?`celý mesiac ${dsSg(prF)} €`:`obrat ${n0(rv)} €`,pr>=0?"ok":"bad")):"",
+      FG?dsKpi("Rozdiel nafty",n0(FG.gap)+"<i>l</i>",`${nPct(FG.p*100)} % · ${n0(FG.eur)} € bez DPH`,FG.p>.10?"bad":FG.p>.05?"warn":"ok"):dsKpi("Rozdiel nafty","málo dát","pod 200 l spotreby","na")
+     ].join("")+`</div>`}
     o+=`<div class="vdash">
       ${OWNx&&pay==null?`<button type="button" class="vd big neg" data-fper="m"><small>Zisk · ${esc(perName)}</small><b class="sm">nedá sa spočítať</b><span>${FPER==="m"?"mzdy sa načítavajú…":"chýbajú mzdy – ťukni pre Tento mesiac"} · obrat ${n0(rv)} €</span></button>`:""}${OWNx&&pay!=null?(()=>{const pr=rv-all,prF=rv-allFull,sg=x=>(x>=0?"+":"−")+n0(Math.abs(x));return `<button type="button" class="vd big ${pr>=0?"pos":"neg"}" data-fsec="perf"><small>${pr>=0?"Zisk":"Strata"} · ${esc(perName)}${FPER==="m"?" · do dnes (pomerne)":""}</small><b>${sg(pr)} €</b>${FPER==="m"?`<em>celý mesiac (plné pevné náklady): ${sg(prF)} €</em>`:""}<span>obrat ${n0(rv)} €${rvEst?" (odhad)":""} · náklady ${n0(all)} € · ${n0(A.km)} km</span>${rvEst?`<span>${revNote}</span>`:""}</button>`})():`<button type="button" class="vd big" data-fsec="perf"><small>Nafta + mýto · ${esc(perName)}</small><b>${n0(costM)} €</b><span>${A.km?f3(costM/A.km):"–"} €/km · ${n0(A.km)} km</span></button>`}
       <button type="button" class="vd ${alN?"red":"ok"}" data-fsec="alarm"><small>Alarmy</small><b>${alN||"✓"}</b><span>${alN?AX.filter(a=>a.lv==="r").length+" vážne":"všetko v poriadku"}</span></button>
@@ -1015,7 +1447,7 @@ function vDrvScore(F,withMon){const P=STATE.pay,mName=m=>new Date(m+"-15").toLoc
   const CO=Object.assign({diesel:1.952,toll:0.2677,share:100},F.cfg.costs||{}),E=evalOf(F,P.rides,P.yf,P.ev),pb=E.p.toFixed(3).replace(".",",");
   if(!E.drivers.length)return h+`<div class="card"><div class="s">V tomto mesiaci zatiaľ žiadne jazdy.</div></div>`;
   const cls=x=>x.few||x.pct==null?"":x.pct>15?"bad":x.pct<=5?"good":"";
-  h+=`<div class="dsc">`+E.drivers.map(d=>`<div class="xd"><div class="dch"><b>${esc(d.n)}</b>${d.few?`<span class="dcfew">málo dát</span>`:""}${unkDrv(d.n)?`<span class="dcfew">bez karty vodiča</span>`:""}<small>${d.cars.filter(c=>c.km>0||c.ref>0).map(c=>`<b class="dcpl">${esc(c.c)}</b>`).join(" ")}</small></div>
+  h+=`<div class="dsc">`+E.drivers.map((d,i)=>`<div class="xd${i===0&&!d.few&&d.pct!=null&&d.pct>5?" ds-worst":""}"><div class="dch"><b>${esc(d.n)}</b>${d.few?`<span class="dcfew">málo dát</span>`:""}${unkDrv(d.n)?`<span class="dcfew">bez karty vodiča</span>`:""}<small>${d.cars.filter(c=>c.km>0||c.ref>0).map(c=>`<b class="dcpl">${esc(c.c)}</b>`).join(" ")}</small></div>
     ${d.multi&&!d.few?`<div class="dsn">⚠️ viac vodičov na aute, rozdiel orientačný</div>`:""}
     <div class="xvk"><span><small>km</small><b>${n0(d.km)}</b></span><span><small>l/100 km</small><b>${d.few?"–":d.cons?n1(d.cons):"–"}</b></span><span><small>spotrebované l</small><b>${n0(d.l)}</b></span><span><small>natankované l</small><b>${n0(d.ref)}</b>${d.ry?`<small>dvor ${n0(d.ry)}</small>`:""}</span></div>
     <div class="xvk"><span><small>rozdiel l / %</small><b class="${cls(d)}">${d.few?"–":n0(d.gap)+" · "+nPct(d.pct)+" %"}</b></span><span><small>rozdiel € bez DPH</small><b class="${cls(d)}">${d.few?"–":n0(d.eur)}</b></span><span><small>nad 90 / max</small><b class="${d.ov?"bad":""}">${d.ov}× · ${d.max||"–"}</b></span><span><small>poklesy pri státí</small><b class="${d.dr?"bad":""}">${d.dr}</b></span></div>
@@ -1126,7 +1558,9 @@ function vTeam(){const L=STATE.staff;if(!L)return `<div class="card"><div class=
   h+=`<form class="card f" id="fTeam"><div class="w t">Pridať človeka do tímu</div><label class="w">Meno<input name="name" required placeholder="napr. Ján Novák"></label><label>E-mail alebo telefón<input name="login" required autocapitalize="off" placeholder="0900 000 000"></label>
     <label>Čo môže robiť<select name="role">${Object.entries(ROLES).filter(r=>r[0]!=="owner").map(r=>`<option value="${r[0]}">${esc(r[1])}</option>`).join("")}</select></label>
     <div class="w btns"><button class="pri" type="submit">Vytvoriť prihlásenie</button></div></form>`;
-  h+=L.map(p=>`<div class="card"><div class="row"><span class="t">${esc(p.name)}</span>${pill([ROLES[p.role]||p.role,p.role==="owner"?"":"b"])}</div><div class="s">${esc(String(p.email).replace("@tel.ernte.sk"," (telefón)"))}</div>${p.role!=="owner"?`<div class="btns"><button type="button" data-tpw="${esc(p.email)}" data-tn="${esc(p.name)}" data-tr="${esc(p.role)}">Nové heslo</button><button type="button" class="dng" data-trm="${esc(p.email)}">Odobrať</button></div>`:""}</div>`).join("");
+  h+=`<h2>Tím (${L.length})</h2><div class="ds-team">`+L.map(p=>{const em=String(p.email||""),isT=em.endsWith("@tel.ernte.sk"),tel=p.phone||(isT?"+"+em.split("@")[0]:""),mail=isT?"":em;
+    return `<div class="ds-fc"><div class="ds-hd"><span class="ds-av" aria-hidden="true">${esc(dsIni(p.name))}</span><span class="ds-ttl"><b>${esc(p.name)}</b><small>${esc([mail,tel].filter(Boolean).join(" · "))}</small></span>${pill([ROLES[p.role]||p.role,p.role==="owner"?"":"b"])}</div>
+    <div class="btns">${tel?`<a class="btn lime" href="tel:${esc(String(tel).replace(/\s/g,""))}">📞 Volať</a>`:""}${mail?`<a class="btn" href="mailto:${esc(mail)}">✉️ E-mail</a>`:""}${p.role!=="owner"?`<button type="button" data-tpw="${esc(p.email)}" data-tn="${esc(p.name)}" data-tr="${esc(p.role)}">Nové heslo</button><button type="button" class="dng" data-trm="${esc(p.email)}">Odobrať</button>`:""}</div></div>`}).join("")+`</div>`;
   return h}
 // ================= RÝCHLE HESLO: sklenené tlačidlo (ťuknutie = kopírovať, podržanie = ukázať na 5 s) – heslo sa nikde nevypisuje =====
 const PWMASK="••••••••";
@@ -1178,7 +1612,9 @@ document.addEventListener("submit",async e=>{if(e.target.id!=="fTeam")return;e.p
 let ASSIGN=null,TDAY="";
 function vTrans(){if(STATE.noTrans)return `<div class="card"><div class="t">Doprava ešte nie je zapnutá</div><div class="s">Spusti raz SQL zo stránky doprava.html (Kopírovať SQL → SQL Editor → Run).</div><a class="btn pri" href="doprava.html">Otvoriť nastavenie dopravy</a></div>`;
   const R=STATE.reqs.filter(r=>r.kind==="transport"&&r.status==="nova"),T=STATE.trucks.filter(t=>t.active);
-  let h="";
+  let h="";const OWN=ROLE==="owner";
+  if(OWN&&!STATE.fleet&&!STATE._dsFl){STATE._dsFl=1;loadFleet().then(renderStaff).catch(()=>{})}
+  h+="@@KPI@@";
   h+=R.length?`<h2>Objednávky odvozu od farmárov</h2>`+R.map(r=>{const d=STATE.deals.find(x=>x.id===r.deal_id);const open=ASSIGN===r.id;
     return `<div class="card"><div class="row"><span class="t">${esc(fName(r.farmer_id))}</span>${pill(["čaká na autá","w"])}</div>
     <div class="s">${[d&&d.no,r.com&&comName(r.com),r.trucks&&r.trucks+" kamión(y)",r.pickup_date&&"od "+dSK(r.pickup_date)+(r.pickup_time?" "+r.pickup_time:""),r.place].filter(Boolean).map(esc).join(" · ")}</div>${r.note?`<div class="s">„${esc(r.note)}“</div>`:""}
@@ -1188,21 +1624,29 @@ function vTrans(){if(STATE.noTrans)return `<div class="card"><div class="t">Dopr
       <div class="w btns"><button class="pri" type="submit">Potvrdiť autá farmárovi</button><button type="button" data-assign="">Zrušiť</button></div></form>`
     :`<div class="btns"><button type="button" class="lime" data-assign="${esc(r.id)}">Prideliť autá</button><button type="button" class="dng" data-rej="${esc(r.id)}">Prerušiť / zamietnuť</button></div>`}</div>`}).join(""):"";
   const days=[...new Set(STATE.trips.map(t=>t.day))].sort().reverse();const day=TDAY||days.find(d=>d>=today())||days[0]||today();
+  {const mon=String(day).slice(0,7),TM=STATE.trips.filter(t=>String(t.day).slice(0,7)===mon&&t.status!=="zrusena"),M=TM.map(dsTripCalc),kmS=M.reduce((s,x)=>s+(x.km||0),0),nKm=M.filter(x=>x.km).length;
+   const mn=new Date(mon+"-15T12:00").toLocaleDateString("sk-SK",{month:"long",year:"numeric"});
+   const K=[dsKpi("Prepravy",String(TM.length),esc(mn),"acc"),dsKpi("Kilometre",nKm?n0(kmS)+"<i>km</i>":"nezadané",nKm?(nKm<TM.length?`km zadané pri ${nKm} z ${TM.length}`:"všetky prepravy"):"zadaj km pri preprave",nKm?"acc":"na")];
+   if(OWN){const W=M.filter(x=>x.rev!=null),rev=W.reduce((s,x)=>s+x.rev,0),MM=M.filter(x=>x.mg!=null),mkm=MM.reduce((s,x)=>s+x.km,0),mg=MM.reduce((s,x)=>s+x.mg,0);
+     K.push(dsKpi("Obrat",W.length?n0(rev)+"<i>€</i>":"nezadané",W.length?`zadaný pri ${W.length} z ${TM.length}`:"zadaj obrat pri preprave",W.length?"acc":"na"),
+       dsKpi("Priem. marža",mkm?dsF2(mg/mkm)+"<i>€/km</i>":"nezadané",mkm?`spolu ${dsSg(mg)} € · ${MM.length} prepráv`:STATE.fleet?"chýba obrat alebo km":"načítavam spotrebu…",mkm?(mg>=0?"ok":"bad"):"na"))}
+   else{const tn=TM.filter(t=>t.status==="vylozene").reduce((s,t)=>s+(+t.netto||0),0);K.push(dsKpi("Vyložené",fmt(tn,1)+"<i>t</i>","netto z vážnych lístkov","ok"))}
+   h=h.replace("@@KPI@@",`<div class="ds-kpis">${K.join("")}</div>`)}
   h+=`<h2>Jazdy</h2><div class="card"><label>Deň<input type="date" id="tDay" value="${esc(day)}"></label></div>`;
   const L=STATE.trips.filter(t=>t.day===day).sort((a,b)=>(a.time||"").localeCompare(b.time||""));
-  h+=L.length?L.map(t=>`<div class="card"><div class="row"><span class="t">${esc(fName(t.farmer_id))}</span><span class="num">${esc(t.time||"")}</span></div>
-    <div class="s">🚛 č.${esc(t.truck_no)} · ${esc(t.spz||"")} · ${esc(t.driver||"bez vodiča")}${(()=>{const d=STATE.deals.find(x=>x.id===t.deal_id);return d?" · "+esc(d.no)+" "+esc(comName(d.com)):""})()}</div>
-    <form class="f sub" data-tedit="${esc(t.id)}"><label>Stav<select name="status">${Object.keys(TST).map(k=>`<option value="${k}"${t.status===k?" selected":""}>${esc(TST[k][0])}</option>`).join("")}</select></label><label>Netto t (z vážneho lístka)<input name="netto" inputmode="decimal" value="${t.netto!=null?String(t.netto).replace(".",","):""}"></label><div class="w btns"><button type="submit">Uložiť</button></div></form></div>`).join("")
+  h+=L.length?`<div class="ds-trips tbl${OWN?"":" no-own"}"><div class="ds-th" aria-hidden="true"><span>Čas</span><span>Trasa</span><span>Auto · vodič</span><span style="text-align:right">km</span>${OWN?`<span style="text-align:right">€/km</span><span style="text-align:right">Marža</span>`:""}<span>Stav</span></div>${L.map(t=>dsTripRow(t,OWN)).join("")}</div>`
     :`<div class="card"><div class="s">Na tento deň nie sú naplánované jazdy.</div></div>`;
   const G=STATE.trucks.filter(t=>t.gps_lat&&t.gps_at).map(t=>Object.assign({},t,{old:Date.now()-new Date(t.gps_at)>6*3600e3}));
   if(G.length)h+=`<h2>Kde sú autá</h2><div class="card">${fleetMap(G)}<div class="s">Poloha z Commandera, obnovuje sa každé 2 minúty.</div></div>`;
   h+=`<h2>Autá VALKO (${T.length})</h2><div class="card">${STATE.trucks.map(t=>`<form class="trow" data-tk="${t.no}"><b>č.${t.no}</b><span>${esc(t.spz)}${t.gps_lat?`<br><a class="copy" style="font-size:.7rem" href="https://maps.google.com/?q=${t.gps_lat},${t.gps_lon}" target="_blank" rel="noopener">📍 ${esc(ago(t.gps_at))}${t.gps_speed?" · "+t.gps_speed+" km/h":""}</a>`:""}</span><input name="driver" value="${esc(t.driver||"")}" placeholder="vodič"><input name="phone" value="${esc(t.phone||"")}" placeholder="telefón"><button type="submit">Uložiť</button></form>`).join("")}</div>`;
   return h}
 function vPrice(){const P=STATE.prices,valid=((STATE.settings||{}).pricelist||{}).valid||"";
+  let vc="w",vt="Platnosť nie je zadaná";if(valid){const t0=new Date();t0.setHours(0,0,0,0);const dd=Math.round((new Date(valid+"T00:00:00")-t0)/864e5);
+    if(dd<0){vc="r";vt="Platnosť uplynula "+dSK(valid)}else if(dd<7){vc="w";vt=dd===0?"Platí už len dnes":"Do konca platnosti "+dd+" "+(dd===1?"deň":dd<5?"dni":"dní")}else{vc="ok";vt="Platí ešte "+dd+" dní"}}
   return `<form class="card f" id="fPrice"><div class="w s">Výkupné ceny FCA farma bez DPH. Prázdne = farmár komoditu nevidí. Po uložení ich hneď vidia všetci prihlásení farmári.</div>
-  ${MK.map(m=>{const p=P.find(x=>x.com===m[0]);return `<label>${esc(m[1])} €/t<input name="p_${m[0]}" inputmode="decimal" value="${p&&p.price!=null?String(p.price).replace(".",","):""}" placeholder="nezadané"></label>`}).join("")}
-  <label class="w">Platí do<input name="valid" type="date" value="${esc(valid)}"></label><div class="w btns"><button class="pri" type="submit">Uložiť a zverejniť</button></div></form>`}
-function vDeals(){const F=STATE.farmers.filter(f=>f.active),pre=DEALF||{};
+  <div class="w ds-ptiles">${MK.map(m=>{const p=P.find(x=>x.com===m[0]),has=p&&p.price!=null;return `<label class="ds-tile${has?"":" emp"}"><span class="pn">${esc(m[1])}</span><span class="pv"><input name="p_${m[0]}" inputmode="decimal" value="${has?String(p.price).replace(".",","):""}" placeholder="nezadané" aria-label="${esc(m[1])} €/t"><i>€/t</i></span></label>`}).join("")}</div>
+  <label class="w ds-valid ${vc}">Platí do<input name="valid" type="date" value="${esc(valid)}"><small>${esc(vt)}</small></label><div class="w btns"><button class="pri" type="submit">Uložiť a zverejniť</button></div></form>`}
+function vDeals(){const F=STATE.farmers.filter(f=>f.active),pre=DEALF||{},OWN=ROLE==="owner";
   let h=`<form class="card f" id="fDeal"><div class="w t">Nový obchod</div>
    <label class="w">Farmár<select name="farmer" required><option value="">– vyber –</option>${F.map(f=>`<option value="${esc(f.id)}"${pre.farmer_id===f.id?" selected":""}>${esc(f.name)}</option>`).join("")}</select></label>
    <label>Komodita<select name="com" id="dCom">${MK.map(m=>`<option value="${m[0]}"${pre.com===m[0]?" selected":""}>${esc(m[1])}</option>`).join("")}</select></label>
@@ -1211,17 +1655,20 @@ function vDeals(){const F=STATE.farmers.filter(f=>f.active),pre=DEALF||{};
    <label>Termín plnenia<input name="term" value="${esc(pre.term||"")}" placeholder="napr. 30. 11. 2026"></label>
    <label class="w">Poznámka<input name="note" value="${esc(pre.note||"")}"></label>
    <div class="w btns"><button class="pri" type="submit">Uložiť obchod</button>${DEALF?`<button type="button" data-clrdeal>Zrušiť</button>`:""}</div></form>`;
-  h+=STATE.deals.map(d=>`<div class="card"><div class="row"><span class="t">${esc(fName(d.farmer_id))}</span>${pill(DST[d.status]||[d.status])}</div>
-    <div class="s">${esc(d.no)} · ${esc(comName(d.com))} · ${fmt(d.tons)} t × ${fmt(d.price)} €/t${d.term?" · "+esc(d.term):""}</div>
-    <form class="f sub" data-dedit="${esc(d.id)}"><label>Stav<select name="status">${Object.keys(DST).map(k=>`<option value="${k}"${d.status===k?" selected":""}>${esc(DST[k][0])}</option>`).join("")}</select></label><label>Odvezené t<input name="delivered_t" inputmode="decimal" value="${String(d.delivered_t??0).replace(".",",")}"></label><div class="w btns"><button type="submit">Uložiť zmenu</button></div></form></div>`).join("");
+  h+=STATE.deals.map(d=>{const df=OWN?(STATE.dfin||{})[d.id]:null,sell=df&&df.sell_price!=null?+df.sell_price:null,m=sell!=null?sell-(+d.price):null;
+    return `<div class="card"><div class="ds-hd"><span class="ds-ic" aria-hidden="true">🤝</span><span class="ds-ttl"><b>${esc(fName(d.farmer_id))}</b><small>${esc(d.no)}${d.term?" · termín "+esc(d.term):""}</small></span>${pill(DST[d.status]||[d.status])}</div>
+    <div class="ds-chips">${dsChip("Plodina",esc(comName(d.com)))}${dsChip("Množstvo",fmt(d.tons)+" t")}${dsChip("Odvezené",fmt(d.delivered_t)+" t")}${dsChip("Nákup",fmt(d.price)+" €/t")}${OWN?dsChip("Predaj",sell!=null?fmt(sell)+" €/t":"nezadané",sell!=null?"":"na",1)+dsChip("Marža €/t",m!=null?dsSg2(m):"–",m==null?"na":m>=0?"pos":"neg",1)+dsChip("Marža spolu",m!=null?dsSg(m*(+d.tons))+" €":"–",m==null?"na":m>=0?"pos":"neg",1):""}</div>
+    <form class="f sub" data-dedit="${esc(d.id)}"><label>Stav<select name="status">${Object.keys(DST).map(k=>`<option value="${k}"${d.status===k?" selected":""}>${esc(DST[k][0])}</option>`).join("")}</select></label><label>Odvezené t<input name="delivered_t" inputmode="decimal" value="${String(d.delivered_t??0).replace(".",",")}"></label>${OWN?`<label class="w">Predajná cena €/t (vidíš iba ty)<input name="sell" inputmode="decimal" placeholder="nezadané" value="${sell!=null?String(sell).replace(".",","):""}"></label>`:""}<div class="w btns"><button type="submit">Uložiť zmenu</button></div></form></div>`}).join("");
   return h}
-function vFarm(){const q=FQ.toLowerCase(),L=STATE.farmers.filter(f=>!q||(f.name+" "+(f.email||"")).toLowerCase().includes(q));const E=EDITF==="new"?{}:STATE.farmers.find(f=>f.id===EDITF);
-  let h=`<div class="card"><div class="btns"><button type="button" class="pri" data-fedit="new">+ Pridať farmára</button></div><label>Hľadať<input id="fq" value="${esc(FQ)}" placeholder="meno alebo e-mail"></label>
-   <div class="s">„Vytvoriť prihlásenie“ vygeneruje farmárovi heslo a pripraví pozvánku – pošleš ju cez WhatsApp alebo SMS. Prihlási sa e-mailom alebo telefónom a týmto heslom.</div></div>`;
+function vFarm(){const q=FQ.toLowerCase().trim(),qd=q.replace(/\s/g,""),L=STATE.farmers.filter(f=>!q||[f.name,f.email,f.addr,f.phone].join(" ").toLowerCase().includes(q)||(qd&&String(f.ico||"").replace(/\s/g,"").includes(qd)));const E=EDITF==="new"?{}:STATE.farmers.find(f=>f.id===EDITF);
+  let h=`<div class="card"><div class="btns"><button type="button" class="pri" data-fedit="new">+ Pridať farmára</button></div><label class="ds-search">Rýchle hľadanie<input id="fq" value="${esc(FQ)}" placeholder="meno, obec alebo IČO" autocomplete="off"></label>
+   <div class="s">${q?`Nájdené: <b>${L.length}</b> z ${STATE.farmers.length}`:`${STATE.farmers.length} farmárov`} · „Vytvoriť prihlásenie“ vygeneruje farmárovi heslo a pripraví pozvánku – pošleš ju cez WhatsApp alebo SMS.</div></div>`;
   if(STATE.invite&&!STATE.invite.team)h+=inviteBox(STATE.invite,true);
   if(E)h+=farmForm(E);
-  h+=L.map(f=>`<div class="card"><div class="row"><span class="t">${esc(f.name)}</span>${!(f.email||f.phone)?pill(["bez kontaktu","w"]):f.active&&f.login?pill(["prihlásenie aktívne"]):f.active?pill(["prístup zapnutý","b"]):pill(["bez prístupu","g"])}</div><div class="s">${esc([f.email,f.phone,f.addr].filter(Boolean).join(" · "))}</div>
-    <div class="btns"><button type="button" data-fedit="${esc(f.id)}">Upraviť</button>${(f.email||f.phone)?`<button type="button" class="lime" data-mklogin="${esc(f.id)}">${f.login?"Nové heslo a pozvánka":"Vytvoriť prihlásenie"}</button>`:""}${f.active&&(f.login||f.email)?`<button type="button" class="dng" data-acc="${esc(f.id)}" data-on="0">Vypnúť prístup</button>`:""}${!f.active&&f.login?`<button type="button" data-acc="${esc(f.id)}" data-on="1">Zapnúť prístup</button>`:""}</div></div>`).join("");
+  h+=L.map(f=>{const nD=STATE.deals.filter(d=>d.farmer_id===f.id).length,ob=String(f.addr||"").split(",")[0].trim();
+    return `<div class="ds-fc"><div class="ds-hd"><span class="ds-av" aria-hidden="true">${esc(dsIni(f.name))}</span><span class="ds-ttl"><b>${esc(f.name)}</b><small>${esc([ob,f.ico&&"IČO "+f.ico].filter(Boolean).join(" · ")||"bez adresy")}</small></span>${pill(f.active?["aktívny",""]:["neaktívny","g"])}</div>
+    <div class="ds-meta">${f.email?`<a href="mailto:${esc(f.email)}" title="E-mail">✉️ ${esc(f.email)}</a>`:""}${f.phone?`<a href="tel:${esc(String(f.phone).replace(/\s/g,""))}">📞 ${esc(f.phone)}</a>`:""}<span>🤝 ${nD} ${nD===1?"obchod":nD>=2&&nD<=4?"obchody":"obchodov"}</span><span>${!(f.email||f.phone)?"⚠️ bez kontaktu":f.active&&f.login?"🔐 prihlásenie aktívne":f.active?"🔓 prístup zapnutý":"⛔ bez prístupu"}</span></div>
+    <div class="btns"><button type="button" data-fedit="${esc(f.id)}">Upraviť</button>${(f.email||f.phone)?`<button type="button" class="lime" data-mklogin="${esc(f.id)}">${f.login?"Nové heslo a pozvánka":"Vytvoriť prihlásenie"}</button>`:""}${f.active&&(f.login||f.email)?`<button type="button" class="dng" data-acc="${esc(f.id)}" data-on="0">Vypnúť prístup</button>`:""}${!f.active&&f.login?`<button type="button" data-acc="${esc(f.id)}" data-on="1">Zapnúť prístup</button>`:""}</div></div>`}).join("")||(q?`<div class="card"><div class="s">Nič sa nenašlo pre „${esc(FQ)}“.</div></div>`:"");
   return h}
 function farmForm(f){const v=k=>esc(f[k]||"");return `<form class="card f" id="fFarm" data-id="${esc(f.id||"")}"><div class="w t">${f.id?"Upraviť farmára":"Nový farmár"}</div>
   <label class="w">Názov / meno<input name="name" required value="${v("name")}"></label><label>E-mail na prihlásenie<input name="email" type="email" value="${v("email")}"></label><label>Telefón<input name="phone" value="${v("phone")}"></label>
@@ -1274,9 +1721,16 @@ document.addEventListener("submit",async e=>{if(!ROLE)return;const f=e.target,fd
     await sb.from("requests").update({status:"vybavena",reply:`Pridelené ${rows.length} auto(á) na ${dSK(fd.get("day"))}${fd.get("time")?" od "+fd.get("time"):""}.`,handled_by:ME.staffName,handled_at:new Date().toISOString()}).eq("id",r.id);
     if(r.deal_id)await sb.from("deals").update({status:"odvoz"}).eq("id",r.deal_id).in("status",["navrh","podpisany"]);
     ASSIGN=null;TDAY=fd.get("day");await loadStaff();renderStaff();toast("Autá potvrdené – farmár ich vidí.");return}
-  if(f.dataset.tedit){e.preventDefault();const n=num(fd.get("netto"));await upd("trips",f.dataset.tedit,{status:fd.get("status"),netto:Number.isFinite(n)?n:null,updated_at:new Date().toISOString()});return}
+  if(f.dataset.tedit){e.preventDefault();const n=num(fd.get("netto")),id=f.dataset.tedit,nw=new Date().toISOString();
+    if(fd.has("km")||fd.has("dest")){const km=num(fd.get("km")),ds=String(fd.get("dest")||"").trim()||null,o=(STATE.troute||{})[id]||{},nk=Number.isFinite(km)?km:null;
+      if((o.km==null?null:+o.km)!==nk||(o.dest||null)!==ds){const a=await sb.from("trip_route").upsert({trip_id:id,km:nk,dest:ds,updated_at:nw});if(a.error)toast("Trasa sa neuložila: "+a.error.message,5000)}}
+    if(ROLE==="owner"&&fd.has("rev")){const rv=num(fd.get("rev")),o=(STATE.tfin||{})[id]||{},nr=Number.isFinite(rv)?rv:null;
+      if((o.revenue==null?null:+o.revenue)!==nr){const a=await sb.from("trip_fin").upsert({trip_id:id,revenue:nr,updated_at:nw});if(a.error)toast("Obrat sa neuložil: "+a.error.message,5000)}}
+    await upd("trips",id,{status:fd.get("status"),netto:Number.isFinite(n)?n:null,updated_at:nw});return}
   if(f.dataset.tk){e.preventDefault();const {error}=await sb.from("trucks").update({driver:String(fd.get("driver")||"").trim()||null,phone:String(fd.get("phone")||"").trim()||null}).eq("no",+f.dataset.tk);if(error){toast("Chyba: "+error.message);return}await loadStaff();renderStaff();toast("Uložené.");return}
-  if(f.dataset.dedit){e.preventDefault();const dt=num(fd.get("delivered_t"));await upd("deals",f.dataset.dedit,{status:fd.get("status"),delivered_t:Number.isFinite(dt)?dt:0});return}
+  if(f.dataset.dedit){e.preventDefault();const dt=num(fd.get("delivered_t"));
+    if(ROLE==="owner"&&fd.has("sell")){const sv=num(fd.get("sell")),o=(STATE.dfin||{})[f.dataset.dedit]||{},ns=Number.isFinite(sv)?sv:null;
+      if((o.sell_price==null?null:+o.sell_price)!==ns){const a=await sb.from("deal_fin").upsert({deal_id:f.dataset.dedit,sell_price:ns,updated_at:new Date().toISOString()});if(a.error)toast("Predajná cena sa neuložila: "+a.error.message,5000)}}await upd("deals",f.dataset.dedit,{status:fd.get("status"),delivered_t:Number.isFinite(dt)?dt:0});return}
   if(f.id==="fFarm"){e.preventDefault();const row={};["name","email","phone","addr","ico","dic","icdph","iban"].forEach(k=>{const v=String(fd.get(k)||"").trim();row[k]=v||null});
     if(row.email)row.email=row.email.toLowerCase();row.active=!!fd.get("active");const id=f.dataset.id;
     const r=id?await sb.from("farmers").update(row).eq("id",id):await sb.from("farmers").insert(row);
@@ -1286,6 +1740,6 @@ document.addEventListener("submit",async e=>{if(!ROLE)return;const f=e.target,fd
 if("serviceWorker" in navigator&&location.protocol==="https:")navigator.serviceWorker.register("sw.js").catch(()=>{});
 boot();
 </script>
-<script src="ai.js?v=20261025-1959"></script>
+<script src="ai.js?v=20261025-2130"></script>
 </body>
 </html>
