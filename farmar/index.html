@@ -157,6 +157,7 @@ details.trips{border-top:1px solid var(--line);padding-top:8px}details.trips sum
 .flseg{margin-top:8px}.flseg button small{opacity:.7;font-weight:500;margin-left:2px}
 .flh{display:flex;align-items:baseline;gap:8px;font:700 .95rem var(--f-head,inherit);margin:10px 2px 0}.flh small{color:var(--muted);font-weight:500}
 .flt{display:inline-block;font-size:.66rem;font-weight:700;padding:1px 7px;border-radius:999px;margin-right:4px;vertical-align:1px;white-space:nowrap}.flt.region{background:rgba(251,191,36,.14);color:#fcd34d}.flt.eu{background:rgba(96,165,250,.16);color:#93c5fd}.flt.sluzobne{background:rgba(167,139,250,.16);color:#c4b5fd}.flt.traktory{background:rgba(52,211,153,.14);color:#6ee7b7}@media(max-width:520px){.flsegw{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.klc.lowk{box-shadow:inset 3px 0 0 #fbbf24}.lowt{font-style:normal;color:#fcd34d;font-weight:700}
 .flsegw{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;margin:12px 0 4px}.flsegw button{display:grid;justify-items:center;gap:2px;min-height:64px;padding:8px 4px;border-radius:16px;text-align:center}.flsegw button span{font-size:1.15rem;line-height:1}.flsegw button b{font-size:.8rem;line-height:1.15}.flsegw button small{font-size:.66rem;color:var(--muted)}
 .flsegw button[aria-pressed=true]{background:var(--grad);color:#06110a;border-color:transparent;box-shadow:0 6px 20px rgba(182,255,59,.3)}.flsegw button[aria-pressed=true] small{color:#06110a;opacity:.75}.flmv{display:grid;gap:4px;font-size:.75rem;color:var(--muted)}.flmv select{min-height:44px}.flmv.sm select{max-width:150px;font-size:.78rem}
 .cvi{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:6px;margin-bottom:8px}.cvi span{background:rgba(255,255,255,.05);border-radius:12px;padding:6px 9px;display:grid;min-width:0}.cvi small{font-size:.6rem;color:var(--muted)}.cvi b{font:600 .8rem var(--f-ui,inherit);overflow-wrap:anywhere}
@@ -1364,11 +1365,12 @@ function lossCalc(F,X){const {A,fuelEur,tollEur,CO,days,dim,pay,rv,rvEst}=X,pf=d
   const needKm=varKm!=null&&rate>varKm?fixP/(rate-varKm):null,needRate=km?total/km:null;
   // autá pod 1 000 km za posledných 30 dní
   const PK=parkedOf(F),k30={};for(const r of F.r30||[])k30[r.vehicle_id]=(k30[r.vehicle_id]||0)+(+r.distance||0);
-  const low=F.r30?VF.rows.map(x=>({...x,km:k30[x.id]||0,park:!!PK[x.id]})).filter(x=>x.km<1000).sort((a,b)=>b.sum-a.sum||a.km-b.km):null;
+  const allV=F.r30?VF.rows.map(x=>({...x,km:k30[x.id]||0,park:!!PK[x.id]})).sort((a,b)=>b.km-a.km):null;
+  const low=allV?allV.filter(x=>x.km<1000).sort((a,b)=>b.sum-a.sum||a.km-b.km):null;
   // nafta bez dokladu = spotreba − karta − výdaj z dvora
   const yd=yInRange(F.yf,F.since).filter(f=>f.kind==="vydaj").reduce((t,f)=>t+(+f.liters||0),0),nd=A.l-A.ref-yd;
   const E=evalOf(F,F.rides,yInRange(F.yf,F.since),F.alev),dl=E.drops.reduce((t,x)=>t+(+x.l||0),0);
-  return {items,total,km,varKm,fixP,rate,needKm,needRate,rv,rvEst,low,lowSum:low?low.reduce((t,x)=>t+x.sum,0):0,est:VF.est>0,VF,pb,
+  return {items,total,km,varKm,fixP,rate,needKm,needRate,rv,rvEst,low,allV,lowSum:low?low.reduce((t,x)=>t+x.sum,0):0,est:VF.est>0,VF,pb,
     nd:{l:nd,card:A.ref,yard:yd,used:A.l,eur:nd*pb},drop:{l:dl,n:E.drops.length,eur:dl*pb}}}
 function vLoss(L,perName){if(!L)return "";const f3=x=>x==null||!isFinite(x)?"–":x.toFixed(3).replace(".",","),f2=x=>x==null||!isFinite(x)?"–":x.toFixed(2).replace(".",","),mx=Math.max(1,...L.items.map(x=>x[1]));
   const tag=`<span class="klest">odhad</span>`;
@@ -1380,7 +1382,7 @@ function vLoss(L,perName){if(!L)return "";const f3=x=>x==null||!isFinite(x)?"–
     <div class="klb"><small>Bod zvratu · potrebná sadzba</small><b>${L.needRate!=null?f3(L.needRate)+" €/km":"–"}</b><span>pri ${n0(L.km)} km${L.needRate!=null?` · nastavená ${f2(L.rate)} €/km${L.rate>=L.needRate?" ✓":" ✗"}`:""}${!L.rvEst&&L.km?` · skutočný obrat ${f3(L.rv/L.km)} €/km`:""}</span></div>
     <div class="klb ${L.nd.l>0?"bad":""}"><small>Nafta bez dokladu</small><b>${L.nd.l>0?n0(L.nd.l)+" l":"0 l"}</b><span>${L.nd.l>0?`≈ ${n0(L.nd.eur)} € bez DPH · `:""}spotreba ${n0(L.nd.used)} − karta ${n0(L.nd.card)} − dvor ${n0(L.nd.yard)} l</span></div>
     <div class="klb ${L.drop.l>0?"bad":""}"><small>Poklesy paliva pri státí</small><b>${n0(L.drop.l)} l</b><span>${L.drop.n}× · ≈ ${n0(L.drop.eur)} € bez DPH</span></div></div>
-  ${L.low?`<div class="klw"><b class="sth">Autá pod 1 000 km za 30 dní (${L.low.length})${L.low.length?` · pevný náklad ${n0(L.lowSum)} €/mes.`:""}</b>${L.low.length?L.low.map(x=>`<div class="klc"><b class="klp">${esc(x.plate)}</b><span>${n0(x.km)} km${x.park?" · odstavené":""}</span><b>${n0(x.sum)} €/mes.</b>${x.est?tag:""}</div>`).join(""):`<div class="s">Všetky autá majú za 30 dní aspoň 1 000 km.</div>`}</div>`:""}
+  ${L.allV?`<div class="klw"><b class="sth">Všetky autá · km za 30 dní (${L.allV.length})${L.low.length?` · pod 1 000 km: ${L.low.length} · ich pevný náklad ${n0(L.lowSum)} €/mes.`:""}</b>${L.allV.length?L.allV.map(x=>`<div class="klc${x.km<1000?" lowk":""}"><b class="klp">${esc(x.plate)}</b><span>${n0(x.km)} km${x.park?" · odstavené":""}${x.km<1000?` · <em class="lowt">pod 1 000 km</em>`:""}</span><b>${n0(x.sum)} €/mes.</b>${x.est?tag:""}</div>`).join(""):`<div class="s">V tejto skupine nie sú autá.</div>`}</div>`:""}
   <div class="xnote">Pevné náklady ${L.VF.est?`${L.VF.entSum>0?"nerozpísaných áut":""} sú odhad – rovnomerné rozdelenie ${n0(L.VF.fx)} €/mes.; rozpis po vozidlách zadáš vo Flotila → Nastavenia`:"podľa rozpisu po vozidlách"}. Pevné náklady a mzdy za obdobie pomerne k počtu dní. Nafta ${f3(L.pb)} €/l bez DPH.</div></div>`}
 function vFleet(){const F0=STATE.fleet;if(!F0)return `<div class="card"><div class="s">Načítavam flotilu…</div></div>`;
   if(F0.err)return `<div class="card"><div class="t">Flotila ešte nie je zapnutá</div><div class="s">Spusti raz SQL zo stránky flotila.html.</div><a class="btn pri" href="flotila.html">Zapnúť flotilu</a></div>`;
