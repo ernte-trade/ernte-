@@ -372,6 +372,7 @@ async function fillDiag(el,run){el.classList.add("ok");
 document.addEventListener("click",e=>{const b=e.target.closest("[data-aidiag]");if(b){const el=b.closest(".aidiag");if(el)fillDiag(el,true)}});
 new MutationObserver(()=>{document.querySelectorAll(".aidiag:not(.ok)").forEach(el=>fillDiag(el,false))}).observe(document.body,{childList:true,subtree:true});
 
+window.aiAskWith=function(q,imgs){if(typeof ROLE==="undefined"||ROLE!=="owner")return;for(const im of imgs||[])PEND.push(im);openAI();setTimeout(()=>{pendView();ask(q)},350)};
 window.aiInit=function(){const b=$("aiBtn");if(!b)return;b.hidden=ROLE!=="owner";if(ROLE==="owner")load()};
 try{if(typeof ROLE!=="undefined"&&ROLE)window.aiInit()}catch(e){}
 })();
