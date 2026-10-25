@@ -1,12 +1,13 @@
--- ERNTE – tri skupiny vozidiel z Commandera: Flotila Región (sklápače), Flotila EU (ťahače), Služobné autá (osobné, dodávky, stroje)
+-- ERNTE – štyri skupiny vozidiel z Commandera: Flotila Región (sklápače), Flotila EU (ťahače), Služobné autá (osobné, dodávky), Traktory (traktory a stroje)
 -- Zaradenie podľa typu vozidla z Commandera; ručný presun v aplikácii má prednosť a už sa nemení.
 -- Služobné autá: alarm rýchlosti až nad 130 km/h (kamióny nad 90).
 alter table cmd_vehicles add column if not exists fleet_manual boolean not null default false;
 
-create or replace function public.cmd_fleet_class(acc_in text, plate_in text, id_in text, otype text) returns text language sql stable security definer set search_path=public as $$
+create or replace function public.cmd_fleet_class(acc_in text, plate_in text, id_in text, otype text, nm text) returns text language sql stable security definer set search_path=public as $$
   select case
     when lower(coalesce(otype,'')) in ('personal car','electric car','van','motorcycle','person','bicycle') then 'sluzobne'
-    when lower(coalesce(otype,'')) in ('working machine','excavator','bulldozer','roller','loader','harvestor','snow plow','wood export','tractor') then 'sluzobne'
+    when lower(coalesce(otype,'')) in ('working machine','excavator','bulldozer','roller','loader','harvestor','snow plow','wood export','tractor')
+      or coalesce(nm,'') ~* '(claas|axion|arion|xerion|lexion|john deere|fendt|new holland|zetor|valtra|kubota|deutz|massey|case ih|steyr|traktor|tractor|kombajn|manitou|merlo|jcb)' then 'traktory'
     when acc_in='eu' then 'eu'
     when exists(select 1 from trucks t where t.cmd_id=id_in or upper(regexp_replace(coalesce(t.spz,''),'[^A-Za-z0-9]','','g'))=upper(regexp_replace(coalesce(plate_in,''),'[^A-Za-z0-9]','','g'))) then 'region'
     else 'eu' end $$;
@@ -14,19 +15,19 @@ create or replace function public.cmd_fleet_class(acc_in text, plate_in text, id
 -- automatické zaradenie pri každom zápise z Commandera (okrem ručne presunutých)
 create or replace function public.cmd_vehicles_fleet_trg() returns trigger language plpgsql security definer set search_path=public as $$
 begin
-  if not coalesce(new.fleet_manual,false) and new.object_type is not null then
-    new.fleet:=cmd_fleet_class(coalesce(new.acc,'main'),new.plate,new.id,new.object_type);
+  if not coalesce(new.fleet_manual,false) and (new.object_type is not null or new.name is not null) then
+    new.fleet:=cmd_fleet_class(coalesce(new.acc,'main'),new.plate,new.id,new.object_type,concat_ws(' ',new.name,new.model));
   end if;
   return new;
 end $$;
 drop trigger if exists cmd_vehicles_fleet on cmd_vehicles;
 create trigger cmd_vehicles_fleet before insert or update on cmd_vehicles for each row execute function public.cmd_vehicles_fleet_trg();
-update cmd_vehicles set fleet=cmd_fleet_class(coalesce(acc,'main'),plate,id,object_type) where not fleet_manual and object_type is not null;
+update cmd_vehicles set fleet=cmd_fleet_class(coalesce(acc,'main'),plate,id,object_type,concat_ws(' ',name,model)) where not fleet_manual and (object_type is not null or name is not null);
 
 create or replace function public.set_vehicle_fleet(vid text, fl text) returns void language plpgsql security definer set search_path=public as $$
 begin
   if not is_fleet() then raise exception 'Iba doprava a flotila.'; end if;
-  if fl not in ('region','eu','sluzobne') then raise exception 'Neznáma skupina.'; end if;
+  if fl not in ('region','eu','sluzobne','traktory') then raise exception 'Neznáma skupina.'; end if;
   update cmd_vehicles set fleet=fl, fleet_manual=true where id=vid;
 end $$;
 revoke all on function public.set_vehicle_fleet(text,text) from public, anon;
@@ -49,7 +50,7 @@ create or replace function public.cmd_overview() returns jsonb language sql stab
     'api',(select coalesce(jsonb_agg(to_jsonb(c) order by c.acc,c.kind),'[]') from cmd_api c),
     'vozidla',(select jsonb_build_object('spolu',count(*) filter (where not coalesce(deleted,false)),
        'region',count(*) filter (where fleet='region' and not coalesce(deleted,false)),'eu',count(*) filter (where fleet='eu' and not coalesce(deleted,false)),
-       'sluzobne',count(*) filter (where fleet='sluzobne' and not coalesce(deleted,false)),
+       'sluzobne',count(*) filter (where fleet='sluzobne' and not coalesce(deleted,false)),'traktory',count(*) filter (where fleet='traktory' and not coalesce(deleted,false)),
        'bez_nazvu',count(*) filter (where plate is null and name is null and not coalesce(deleted,false)),
        'archivovane',(select count(*) from cmd_ref where kind='deleted_vehicle'),
        'podla_typu',(select coalesce(jsonb_object_agg(coalesce(t,'nezadaný'),k),'{}') from (select object_type t,count(*) k from cmd_vehicles where not coalesce(deleted,false) group by 1) q)) from cmd_vehicles),
