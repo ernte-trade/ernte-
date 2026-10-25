@@ -70,11 +70,12 @@ create or replace function public.ai_json(t text) returns jsonb language plpgsql
 
 -- interné: pošli požiadavku na Claude API
 create or replace function public.ai_post(convo jsonb, sys_extra text default '') returns bigint language plpgsql security definer set search_path=public, net as $$
-declare k text:=ai_secret('anthropic_key');
+declare k text:=regexp_replace(coalesce(ai_secret('anthropic_key'),''),'\s','','g'); md text:=(select value->>'mode' from ai_state where key='auth');
 begin
+  if k='' then k:=null; end if;
   if k is null then raise exception 'Chýba API kľúč – spusti nastavenie na stránke ai.html.'; end if;
   return net.http_post(url:='https://api.anthropic.com/v1/messages',
-    headers:=case when k like 'sk-ant-api%' then jsonb_build_object('x-api-key',k) else jsonb_build_object('Authorization','Bearer '||k) end||jsonb_build_object('anthropic-version','2023-06-01','content-type','application/json'),
+    headers:=case when coalesce(md, case when k like 'sk-ant-api%' then 'x' else 'b' end)='x' then jsonb_build_object('x-api-key',k) else jsonb_build_object('Authorization','Bearer '||k) end||jsonb_build_object('anthropic-version','2023-06-01','content-type','application/json'),
     body:=jsonb_build_object('model',coalesce((select value->>'model' from ai_state where key='model'),'claude-sonnet-5-5'),'max_tokens',3000,
       'system', ai_system()||E'\n\nAKTUÁLNE ÚDAJE FIRMY (JSON):\n'||ai_snapshot()::text||sys_extra,
       'messages',convo,
@@ -137,6 +138,12 @@ begin
       if m.created_at<now()-interval '6 minutes' then update ai_msgs set status='err', content='AI neodpovedala včas. Skús znova.' where id=m.id; end if;
       continue; end if;
     n:=n+1;
+    if r.status_code=401 and m.tries<2 then
+      insert into ai_state(key,value) values('auth',jsonb_build_object('mode',case when coalesce((select value->>'mode' from ai_state where key='auth'),case when ai_secret('anthropic_key') like 'sk-ant-api%' then 'x' else 'b' end)='x' then 'b' else 'x' end))
+        on conflict(key) do update set value=excluded.value, updated_at=now();
+      update ai_msgs set tries=tries+1, req_id=ai_post(convo) where id=m.id; continue; end if;
+    if r.status_code=401 then
+      update ai_msgs set status='err', content='Kľúč Claude nefunguje (uložený kľúč začína „'||left(coalesce(ai_secret('anthropic_key'),'?'),12)||'…“, dĺžka '||length(coalesce(ai_secret('anthropic_key'),''))||' znakov). Vytvor v Console nový kľúč a vlož ho na stránke ai.html.' where id=m.id; continue; end if;
     if r.status_code is distinct from 200 then
       update ai_msgs set status='err', content='Chyba AI ('||coalesce(r.status_code::text,'sieť')||'): '||left(coalesce(ai_json(r.content)#>>'{error,message}', r.error_msg, r.content),400) where id=m.id; continue; end if;
     j:=ai_json(r.content);
