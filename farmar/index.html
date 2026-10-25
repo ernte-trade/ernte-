@@ -1300,6 +1300,7 @@ function vFleet(){const F=STATE.fleet;if(!F)return `<div class="card"><div class
   S[cur]=h;h="";cur="find";
   h+=rideSearchHTML(F);
   S[cur]=h;h="";cur="moves";
+  h+=`<button type="button" class="pri" data-fsec="find" style="margin:6px 0 4px;min-height:46px">🔍 Hľadať záznamy – vodič, auto, deň a čas</button>`;
   const MV=F.ev.filter(e=>!(e.kind==="fuel_drop"||e.kind==="refuel_gap")).slice(0,20);
   if(MV.length)h+=`<h2>Pohyby</h2><div class="xtl">${MV.map(e=>`<div class="xti"><time>${new Date(e.at).toLocaleTimeString("sk-SK",{hour:"2-digit",minute:"2-digit"})}<small>${new Date(e.at).toLocaleDateString("sk-SK",{day:"numeric",month:"numeric"})}</small></time><i class="${e.kind==="depart"?"d":e.place_kind==="fuel"?"f":(e.kind==="in"||e.kind==="yard_in")?"i":"o"}"></i><span>${evTxt(e)}</span></div>`).join("")}</div>`;
   // ===== VOZIDLÁ =====
