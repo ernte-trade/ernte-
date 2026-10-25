@@ -1,4 +1,5 @@
 -- PRESNÁ KONTROLA NAFTY: každý pokles v nádrži medzi dvoma meraniami, keď auto nejazdilo (aj cez výpadok signálu)
+-- POZOR: fuel_balance je od 25. 10. 2026 nahradená vo fuel3.sql (prvý/posledný záznam hladiny v okne + výdaj z dvora).
 alter table fleet_events add column if not exists t_from timestamptz;
 alter table fleet_events add column if not exists t_to timestamptz;
 alter table fleet_events add column if not exists lvl_from numeric;

@@ -1,4 +1,5 @@
 -- ERNTE – udalosti flotily z jázd (rýchlosť, pokles nafty pri státí, tankovanie, príchod/odchod, odchod po státí),
+-- POZOR: krok 5 (tankovanie nesedí) je od 25. 10. 2026 nahradený vo fuel3.sql (refuel_gap_sync).
 -- výdaj nafty z vlastnej nádrže na dvore, hodnotenie vodičov, zisk mesiaca, nálezy a denný report flotily.
 alter table fleet_events add column if not exists src_key text;
 alter table fleet_events add column if not exists kmh int;
