@@ -94,7 +94,9 @@ begin
     if r.status_code=200 then
       begin
         j:=r.content::jsonb; cnt:=0;
-        if r.kind in ('vehicles','deleted') then
+        -- jedno vozidlo (vehicles/{id}) spracuj ako zoznam s jedným vozidlom
+        if r.kind='vehicle1' then j:=jsonb_build_object('vehicles',jsonb_build_array(coalesce(j->'vehicle',j))); end if;
+        if r.kind in ('vehicles','deleted','vehicle1') then
           for p in select * from jsonb_array_elements(cmd_arr(j,'vehicles')) loop
             cnt:=cnt+1;
             if r.kind='deleted' or coalesce(p->>'deleted','0')='1' then
@@ -231,6 +233,11 @@ begin
     end if;
     continue when hot;
     if not exists(select 1 from cmd_log where acc=ac and kind='vehicles' and at>now()-interval '6 hours') then perform cmd_get(ac,'vehicles',base||'vehicles',a); end if;
+    -- vozidlá, ktoré posielajú polohu, ale nie sú v hromadnom zozname: dopýtaj každé zvlášť (5 na beh, každé raz za 6 h)
+    for v in select c.id from cmd_vehicles c where coalesce(c.acc,'main')=ac and c.name is null and not coalesce(c.deleted,false)
+              and not exists(select 1 from cmd_log l where l.kind='vehicle1' and l.url=base||'vehicles/'||c.id and l.at>now()-interval '6 hours') limit 5 loop
+      perform cmd_get(ac,'vehicle1',base||'vehicles/'||v.id,a);
+    end loop;
     if not exists(select 1 from cmd_log where acc=ac and kind='deleted' and at>now()-interval '24 hours') then perform cmd_get(ac,'deleted',base||'deletedVehicles',a); end if;
     if not exists(select 1 from cmd_log where acc=ac and kind='drivers' and at>now()-interval '12 hours') then perform cmd_get(ac,'drivers',base||'drivers?limit=200&page=1',a); end if;
     if not exists(select 1 from cmd_log where acc=ac and kind='waypoints' and at>now()-interval '24 hours') then perform cmd_get(ac,'waypoints',base||'waypoints',a); end if;
@@ -258,6 +265,10 @@ begin
         on conflict(id) do update set ref=excluded.ref, n=coalesce(cmd_log.n,0)+1, at=now(), code=null;
     end loop;
   end loop;
+  -- ŠPZ z jázd pre vozidlá, ktoré ju zo zoznamu nemajú
+  update cmd_vehicles c set plate=x.plate from (select distinct on (vehicle_id) vehicle_id, plate from rides
+     where plate is not null and plate<>'' and vehicle_id in (select id from cmd_vehicles where plate is null) order by vehicle_id, start_at desc) x
+   where x.vehicle_id=c.id and c.plate is null;
   if not any_acc then return 'chýbajú prihlasovacie údaje'; end if;
   begin perform yard_check(); exception when others then null; end;
   return 'ok, spracovaných polôh: '||n||', jázd v databáze: '||(select count(*) from rides);
