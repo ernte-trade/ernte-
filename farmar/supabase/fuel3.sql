@@ -133,7 +133,7 @@ begin
   insert into tank_log(vehicle_id,at,tank,speed,ign,lat,lon)
     select id,gps_at,tank,speed,ign,lat,lon from cmd_vehicles where tank is not null and gps_at>now()-interval '30 minutes'
     on conflict do nothing;
-  delete from tank_log where at<now()-interval '14 days';
+  delete from tank_log where at<now()-interval '120 days';
   -- 2) pokles nafty v stojacom aute
   for v in select * from cmd_vehicles where tank is not null and gps_at>now()-interval '30 minutes' and coalesce(speed,0)<=3 loop
     select bool_or(coalesce(speed,0)>5) into moved from tank_log where vehicle_id=v.id and at>v.gps_at-make_interval(mins=>(c->>'win')::int);
