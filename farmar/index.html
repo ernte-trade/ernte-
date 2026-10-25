@@ -218,6 +218,14 @@ details.trips{border-top:1px solid var(--line);padding-top:8px}details.trips sum
 .vstats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px}.vstats div{text-align:center;padding:10px 4px;border-radius:14px;background:rgba(255,255,255,.05)}.vstats b{display:block;font:700 1.15rem var(--f-head);color:#d9ffb0}.vstats small{font-size:.6rem;color:var(--muted)}
 .vcerts{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.vcerts div{padding:10px 12px;border-radius:14px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);display:grid}.vcerts b{font-size:.8rem}.vcerts small{font-size:.68rem;color:var(--muted)}.vcerts .warn{border-color:rgba(255,207,90,.5)}
 .vteam{display:grid;gap:8px}.vt{display:grid;grid-template-columns:44px 1fr auto auto;gap:10px;align-items:center;padding:10px 12px;border-radius:18px;background:var(--glass);border:1px solid var(--line)}.vt div{display:grid;min-width:0}.vt b{font-size:.88rem}.vt small{font-size:.72rem;color:var(--muted)}.vt .btn{min-height:40px;padding:0 12px}
+.vtruck{position:absolute;right:-30px;top:18px;width:110%;max-width:620px;opacity:.9;pointer-events:none;filter:drop-shadow(0 20px 40px rgba(0,0,0,.6))}
+.vhero{min-height:380px}.vhero::before{z-index:0}.vtruck{z-index:0}.vhin{z-index:1}
+.vnav button{position:relative;overflow:hidden;background:linear-gradient(160deg,rgba(255,255,255,.08),rgba(255,255,255,.02));border:1px solid rgba(255,255,255,.12);box-shadow:inset 0 1px 0 rgba(255,255,255,.12),0 10px 30px rgba(0,0,0,.35)}
+.vnav button::after{content:"";position:absolute;inset:auto -30% -60% auto;width:90px;height:90px;border-radius:50%;background:radial-gradient(circle,rgba(124,92,255,.35),transparent 70%);pointer-events:none}
+.vnav button span{width:38px;height:38px;border-radius:13px;display:grid;place-items:center;background:linear-gradient(135deg,rgba(182,255,59,.22),rgba(34,211,238,.18));border:1px solid rgba(255,255,255,.14);box-shadow:0 0 18px rgba(182,255,59,.2)}
+.vnav button b{font:600 .8rem/1.15 var(--f-head);letter-spacing:-.01em}
+.vnav button.hot{border-color:rgba(255,107,129,.55);box-shadow:0 0 24px rgba(255,107,129,.25)}.vnav button.hot span{background:linear-gradient(135deg,rgba(255,107,129,.35),rgba(124,92,255,.25))}.vnav button.hot small{color:#ff8a9b}
+.vnav button[aria-pressed=true]::after{background:radial-gradient(circle,rgba(182,255,59,.45),transparent 70%)}
 @media (prefers-reduced-motion:reduce){.toast,button{transition:none}}
 </style>
 </head>
@@ -618,10 +626,23 @@ function vFleet(){const F=STATE.fleet;if(!F)return `<div class="card"><div class
   const OWNx=ROLE==="owner",alN=AX.length,costM=OWNx?all:tot;
   const NAV=[["dash","🏠","Dashboard",""],["perf","📊","Prevádzka a náklady",`${n0(costM)} €`],["alarm","🚨","Alarmy",alN?`${alN}`:"OK"],["map","🗺️","Kde sú autá",`${moving} ide`],["moves","🔁","Pohyby",`${MV.length}`],["veh","🚛","Vozidlá",`${F.veh.length}`],["drv","👥",OWNx?"Vodiči a mzdy":"Vodiči",OWNx&&STATE.payTot?`${n0(STATE.payTot)} €`:""],["firm","🏢","Firma VALKO",""],["set","⚙️","Nastavenia",""]];
   const sec=STATE.fsec||"dash";
-  let o=`<div class="vhero" style="--bg:url('${BG}')"><div class="vhin"><div class="vbrand"><span>VALKO</span><i></i><span>ERNTE</span></div>
-    <h1>Váš náklad.<br><em>Naša zodpovednosť.</em></h1><p>Flotila VALKO · ${new Date().toLocaleDateString("sk-SK",{weekday:"long",day:"numeric",month:"long"})}</p>
+  let o=`<div class="vhero" style="--bg:url('${BG}')"><svg class="vtruck" viewBox="0 0 640 260" aria-hidden="true"><defs>
+<linearGradient id="tg1" x1="0" x2="1"><stop offset="0" stop-color="#22d3ee"/><stop offset=".55" stop-color="#b6ff3b"/><stop offset="1" stop-color="#a78bfa"/></linearGradient>
+<linearGradient id="tg2" x1="0" x2="0" y1="0" y2="1"><stop offset="0" stop-color="rgba(255,255,255,.22)"/><stop offset="1" stop-color="rgba(255,255,255,.03)"/></linearGradient>
+<linearGradient id="tg3" x1="0" x2="1"><stop offset="0" stop-color="rgba(182,255,59,0)"/><stop offset="1" stop-color="rgba(182,255,59,.7)"/></linearGradient>
+<filter id="tglow" x="-20%" y="-40%" width="140%" height="180%"><feGaussianBlur stdDeviation="4" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter></defs>
+<g opacity=".55"><path d="M0 214H640" stroke="rgba(255,255,255,.18)" stroke-width="2"/><path d="M20 232H140M190 232H260M330 232H470M520 232H620" stroke="rgba(255,255,255,.12)" stroke-width="3" stroke-dasharray="26 18"/></g>
+<g stroke="url(#tg3)" stroke-width="3" stroke-linecap="round" opacity=".8"><path d="M0 120H70"/><path d="M10 150H90"/><path d="M30 178H100"/></g>
+<g filter="url(#tglow)" stroke="url(#tg1)" stroke-width="3.5" stroke-linejoin="round" stroke-linecap="round" fill="url(#tg2)">
+<path d="M96 186V112l26-34h214l12 34v74z"/><path d="M122 112h214" fill="none" opacity=".6"/><path d="M150 84v26M200 84v26M250 84v26M300 84v26" fill="none" opacity=".35"/>
+<path d="M346 186h28V96h110l40 38 26 8v44z"/><path d="M490 104l30 32h-30z" fill="rgba(34,211,238,.25)"/><path d="M380 104h96v32h-96z" fill="rgba(34,211,238,.18)"/>
+<path d="M550 168h22" fill="none"/><path d="M96 186h454" fill="none"/></g>
+<g filter="url(#tglow)" fill="#05070a" stroke="url(#tg1)" stroke-width="4"><circle cx="150" cy="196" r="20"/><circle cx="198" cy="196" r="20"/><circle cx="246" cy="196" r="20"/><circle cx="410" cy="196" r="20"/><circle cx="500" cy="196" r="20"/></g>
+<g fill="#b6ff3b"><circle cx="150" cy="196" r="5"/><circle cx="198" cy="196" r="5"/><circle cx="246" cy="196" r="5"/><circle cx="410" cy="196" r="5"/><circle cx="500" cy="196" r="5"/></g>
+<rect x="556" y="150" width="14" height="8" rx="3" fill="#fff" filter="url(#tglow)"/><text x="230" y="160" text-anchor="middle" font-family="Unbounded,Sora,sans-serif" font-weight="700" font-size="30" letter-spacing="6" fill="rgba(255,255,255,.85)">VALKO</text></svg><div class="vhin"><div class="vbrand"><span>VALKO</span><i></i><span>ERNTE</span></div>
+    <h1>Od poľa<br><em>až po odberateľa.</em></h1><p>ERNTE výkup · VALKO doprava · ${new Date().toLocaleDateString("sk-SK",{weekday:"long",day:"numeric",month:"long"})}</p>
     <div class="vlive"><div><b>${moving}</b><small>ide</small></div><div><b>${G.length-moving}</b><small>stojí</small></div><div><b>${yard}</b><small>na dvore</small></div><div class="${alN?"al":""}"><b>${alN}</b><small>alarmy</small></div></div></div></div>
-  <nav class="vnav">${NAV.map(n=>`<button type="button" data-fsec="${n[0]}" aria-pressed="${sec===n[0]}"><span>${n[1]}</span><b>${esc(n[2])}</b>${n[3]?`<small>${esc(n[3])}</small>`:""}</button>`).join("")}</nav>`;
+  <nav class="vnav">${NAV.map(n=>`<button type="button" data-fsec="${n[0]}" aria-pressed="${sec===n[0]}"${n[0]==="alarm"&&alN?` class="hot"`:""}><span>${n[1]}</span><b>${esc(n[2])}</b>${n[3]?`<small>${esc(n[3])}</small>`:""}</button>`).join("")}</nav><div id="fsecTop"></div>`;
   if(sec==="dash"){
     o+=`<div class="vdash">
       <button type="button" class="vd big" data-fsec="perf"><small>${OWNx?"Náklady spolu":"Nafta + mýto"} · ${esc(perName)}</small><b>${n0(costM)} €</b><span>${A.km?f3(costM/A.km):"–"} €/km · ${n0(A.km)} km</span></button>
@@ -754,7 +775,7 @@ async function teamLogin(login,name,role){const pw=genPw();const r=await sb.rpc(
   const who=String(r.data).endsWith("@tel.ernte.sk")?login:r.data;const tel=String(r.data).endsWith("@tel.ernte.sk")?String(r.data).split("@")[0]:"";
   STATE.invite={team:1,name,tel,txt:`Dobrý deň, tu je prístup do aplikácie ERNTE (${ROLES[role]}):\n${APP_URL}\n\nPrihlásenie: ${who}\nHeslo: ${pw}\n\nPo prihlásení si ju dajte na plochu.`};await loadTeam();renderStaff();window.scrollTo(0,0)}
 document.addEventListener("click",async e=>{if(!ROLE)return;const t=e.target;let x;
-  if(x=t.closest("[data-fsec]")){STATE.fsec=x.dataset.fsec;renderStaff();window.scrollTo({top:0,behavior:"smooth"});return}
+  if(x=t.closest("[data-fsec]")){STATE.fsec=x.dataset.fsec;renderStaff();requestAnimationFrame(()=>{const a=document.getElementById("fsecTop");if(a){const y=a.getBoundingClientRect().top+scrollY-70;window.scrollTo({top:y,behavior:"smooth"})}});return}
   if(x=t.closest("[data-fper]")){FPER=x.dataset.fper;STATE.fleet=null;renderStaff();return}
   if(x=t.closest("[data-stopmin]")){const m=+x.dataset.stopmin;const r=await sb.from("fleet_cfg").upsert({key:"stop",value:m?{min:m,on:true}:{min:+(STATE.fleet.cfg.stop||{}).min||30,on:false}});if(r.error){toast("Chyba: "+r.error.message);return}STATE.fleet=null;renderStaff();toast(m?"Upozorním po "+m+" min státia.":"Vypnuté.");return}
   if(x=t.closest("[data-plfix]")){STATE.plfix=+x.dataset.plfix;renderStaff();return}
