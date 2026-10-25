@@ -1297,8 +1297,9 @@ function vFleet(){const F=STATE.fleet;if(!F)return `<div class="card"><div class
   const moving=F.veh.filter(v=>v.gps_at&&now-new Date(v.gps_at)<20*60e3&&v.speed>3).length,yard=F.veh.filter(v=>v.in_yard).length;
   if(G.length)h+=`<h2>Kde sú teraz</h2><div class="xmap"><div class="xmh"><span><b>${moving}</b> ide</span><span><b>${G.length-moving}</b> stojí</span><span><b>${yard}</b> na dvore</span></div>${fleetMap(G)}<div class="ds-leg"><span><i style="background:#34d399;box-shadow:0 0 8px #34d399"></i>ide</span><span><i style="background:#60a5fa;box-shadow:0 0 8px #60a5fa"></i>stojí</span><span><i style="background:#94a3b8"></i>bez signálu nad 24 h</span><span>· ťukni na auto pre detail</span></div></div>`;
   // ===== POHYBY =====
-  S[cur]=h;h="";cur="moves";
+  S[cur]=h;h="";cur="find";
   h+=rideSearchHTML(F);
+  S[cur]=h;h="";cur="moves";
   const MV=F.ev.filter(e=>!(e.kind==="fuel_drop"||e.kind==="refuel_gap")).slice(0,20);
   if(MV.length)h+=`<h2>Pohyby</h2><div class="xtl">${MV.map(e=>`<div class="xti"><time>${new Date(e.at).toLocaleTimeString("sk-SK",{hour:"2-digit",minute:"2-digit"})}<small>${new Date(e.at).toLocaleDateString("sk-SK",{day:"numeric",month:"numeric"})}</small></time><i class="${e.kind==="depart"?"d":e.place_kind==="fuel"?"f":(e.kind==="in"||e.kind==="yard_in")?"i":"o"}"></i><span>${evTxt(e)}</span></div>`).join("")}</div>`;
   // ===== VOZIDLÁ =====
@@ -1368,7 +1369,7 @@ function vFleet(){const F=STATE.fleet;if(!F)return `<div class="card"><div class
   S[cur]=h;
   const BG="valko-flotila.jpg";
   const OWNx=ROLE==="owner",alN=AX.length,costM=OWNx?all:tot;
-  const NAV=[["dash","🏠","Dashboard",""],["perf","📊","Prevádzka a náklady",`${n0(costM)} €`],["alarm","🚨","Alarmy",alN?`${alN}`:"OK"],["map","🗺️","Kde sú autá",`${moving} ide`],["moves","🔁","Pohyby",`${MV.length}`],["veh","🚛","Vozidlá",`${F.veh.length}`],["drv","👥",OWNx?"Vodiči a mzdy":"Vodiči",OWNx&&STATE.payTot?`${n0(STATE.payTot)} €`:""],["yard","⛽","Nádrž dvor",F.yf&&F.yf.length?(yardBal(F.yf).bad?"⚠️ ":"")+n0(yardBal(F.yf).stav)+" l":""],["firm","🏢","Firma VALKO",""],["set","⚙️","Nastavenia",""]];
+  const NAV=[["dash","🏠","Dashboard",""],["find","🔍","Hľadať záznamy","vodič · čas"],["perf","📊","Prevádzka a náklady",`${n0(costM)} €`],["alarm","🚨","Alarmy",alN?`${alN}`:"OK"],["map","🗺️","Kde sú autá",`${moving} ide`],["moves","🔁","Pohyby",`${MV.length}`],["veh","🚛","Vozidlá",`${F.veh.length}`],["drv","👥",OWNx?"Vodiči a mzdy":"Vodiči",OWNx&&STATE.payTot?`${n0(STATE.payTot)} €`:""],["yard","⛽","Nádrž dvor",F.yf&&F.yf.length?(yardBal(F.yf).bad?"⚠️ ":"")+n0(yardBal(F.yf).stav)+" l":""],["firm","🏢","Firma VALKO",""],["set","⚙️","Nastavenia",""]];
   const sec=STATE.fsec||"dash";
   let o=`<div class="vhero" style="--bg:url('${BG}')"><div class="vhin"><div class="vbrand"><span>VALKO</span><i></i><span>ERNTE</span></div>
     <h1>Od poľa<br><em>až po odberateľa.</em></h1><p>ERNTE výkup · VALKO doprava · ${new Date().toLocaleDateString("sk-SK",{weekday:"long",day:"numeric",month:"long"})}</p>
