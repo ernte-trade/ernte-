@@ -392,9 +392,9 @@ revoke all on function public.ai_gh_sync(boolean) from public, anon, authenticat
 
 create or replace function public.ai_tick() returns void language plpgsql security definer set search_path=public as $$
 begin
-  perform ai_collect();
-  perform ai_gh_sync(extract(minute from now())::int % 5 = 0);
-  begin perform ai_auto_sync(extract(minute from now())::int % 3 = 0); exception when others then null; end;
+  begin perform ai_collect(); exception when others then insert into check_err as c(fn,msg,at) values('ai_collect',left(SQLERRM,300),now()) on conflict on constraint check_err_pkey do update set msg=excluded.msg, at=now(); end;
+  begin perform ai_gh_sync(extract(minute from now())::int % 5 = 0); exception when others then insert into check_err as c(fn,msg,at) values('ai_gh_sync',left(SQLERRM,300),now()) on conflict on constraint check_err_pkey do update set msg=excluded.msg, at=now(); end;
+  begin perform ai_auto_sync(extract(minute from now())::int % 3 = 0); exception when others then insert into check_err as c(fn,msg,at) values('ai_auto_sync',left(SQLERRM,300),now()) on conflict on constraint check_err_pkey do update set msg=excluded.msg, at=now(); end;
 end $$;
 
 -- kontroly flotily (dvor, miesta, odchod po státí, nafta) so zápisom chýb – predtým sa chyby ticho zahadzovali
