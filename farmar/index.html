@@ -232,6 +232,16 @@ details.trips{border-top:1px solid var(--line);padding-top:8px}details.trips sum
 .vnav button b{font:600 .8rem/1.15 var(--f-head);letter-spacing:-.01em}
 .vnav button.hot{border-color:rgba(255,107,129,.55);box-shadow:0 0 24px rgba(255,107,129,.25)}.vnav button.hot span{background:linear-gradient(135deg,rgba(255,107,129,.35),rgba(124,92,255,.25))}.vnav button.hot small{color:#ff8a9b}
 .vnav button[aria-pressed=true]::after{background:radial-gradient(circle,rgba(182,255,59,.45),transparent 70%)}
+.hrow{display:flex;justify-content:flex-end;margin:8px 0 2px}.hbtn{display:inline-flex;align-items:center;gap:7px;min-height:34px;padding:0 13px 0 6px;border-radius:999px;border:1px solid rgba(124,196,255,.45);background:linear-gradient(135deg,rgba(124,92,255,.22),rgba(34,211,238,.12));color:#e6f0ff;font:600 .76rem var(--f-ui,system-ui);cursor:pointer;backdrop-filter:blur(12px);box-shadow:0 0 18px rgba(124,92,255,.2)}.hbtn span{width:22px;height:22px;border-radius:50%;display:grid;place-items:center;background:linear-gradient(135deg,#7cc4ff,#a78bfa);color:#071022;font:800 .8rem system-ui}
+.hsheet{position:fixed;inset:0;z-index:3500;background:rgba(3,5,10,.6);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);display:flex;align-items:flex-end;justify-content:center;animation:hfade .2s}@keyframes hfade{from{opacity:0}}
+.hbox{width:100%;max-width:640px;max-height:88vh;overflow-y:auto;border-radius:28px 28px 0 0;padding:18px 18px calc(22px + env(safe-area-inset-bottom));background:radial-gradient(90% 50% at 100% 0%,rgba(124,92,255,.35),transparent 60%),radial-gradient(70% 40% at 0% 100%,rgba(182,255,59,.14),transparent 60%),#070a12;border:1px solid rgba(255,255,255,.16);box-shadow:0 -20px 60px rgba(0,0,0,.6);animation:hup .28s cubic-bezier(.2,.8,.2,1)}@keyframes hup{from{transform:translateY(40px)}}
+@media (min-width:700px){.hsheet{align-items:center}.hbox{border-radius:28px}}
+.hhd{display:flex;gap:12px;align-items:center}.hic{width:48px;height:48px;border-radius:16px;display:grid;place-items:center;font-size:1.5rem;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.14)}.hhd small{display:block;color:rgba(255,255,255,.55);font-size:.68rem;letter-spacing:.08em;text-transform:uppercase}.hhd b{font:800 1.4rem/1.1 var(--f-head);letter-spacing:-.03em;background:linear-gradient(90deg,#fff,#d9ffb0);-webkit-background-clip:text;background-clip:text;color:transparent}
+.hx{margin-left:auto;width:40px;height:40px;border-radius:50%;border:1px solid rgba(255,255,255,.2);background:rgba(255,255,255,.06);color:#fff;font-size:1.3rem;cursor:pointer}
+.hrole{margin:14px 0 10px;font-size:.95rem;color:#e9ecff}.hsec{display:flex;gap:11px;padding:12px 0;border-top:1px solid rgba(255,255,255,.08)}.hsec i{flex:none;width:26px;height:26px;border-radius:50%;display:grid;place-items:center;background:rgba(182,255,59,.18);color:#d9ffb0;font:800 .78rem system-ui;font-style:normal}.hsec b{font:700 .9rem var(--f-head)}.hsec p,.hdet p{margin:3px 0 0;font-size:.84rem;line-height:1.5;color:rgba(255,255,255,.78)}
+.hcur{display:block;border:1px solid rgba(182,255,59,.4);border-radius:16px;padding:12px;background:rgba(182,255,59,.08);margin-bottom:6px}.hsub{margin:14px 0 6px;font:700 .72rem system-ui;letter-spacing:.08em;text-transform:uppercase;color:rgba(255,255,255,.55)}
+.hdet{border-top:1px solid rgba(255,255,255,.08);padding:10px 0}.hdet summary{cursor:pointer;font:600 .88rem var(--f-head)}
+.hai{width:100%;margin-top:14px;min-height:50px;border-radius:16px;border:0;font:700 .9rem var(--f-head);color:#06110a;background:linear-gradient(135deg,#b6ff3b,#5eead4);cursor:pointer}
 .pban{display:grid;gap:3px;margin:10px 0;padding:13px 15px;border-radius:18px;backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px)}.pban b{font:700 .95rem var(--f-head)}.pban span{font-size:.78rem;color:rgba(255,255,255,.75)}.pban.w{background:linear-gradient(150deg,rgba(250,204,21,.22),rgba(250,204,21,.06));border:1px solid rgba(250,204,21,.55)}.pban.w b{color:#fde68a}.pban.r{background:linear-gradient(150deg,rgba(239,68,68,.32),rgba(255,107,129,.08));border:1px solid rgba(255,107,129,.6);box-shadow:0 0 24px rgba(255,80,100,.25)}.pban.r b{color:#ffd2d8}
 .xmiss{display:grid;gap:6px;margin-top:10px;padding:14px;border-radius:20px;background:linear-gradient(150deg,rgba(239,68,68,.28),rgba(255,107,129,.08));border:1px solid rgba(255,107,129,.55);box-shadow:0 0 24px rgba(255,80,100,.2)}.xmiss b{color:#ffd2d8;font:700 .98rem var(--f-head)}.xmiss span{font-size:.78rem;color:rgba(255,255,255,.75)}.xmiss button{justify-self:start;min-height:38px;padding:0 14px;border-radius:12px;border:1px solid rgba(255,255,255,.3);background:rgba(255,255,255,.1);color:#fff;font:700 .78rem system-ui;cursor:pointer}
 .xprof{display:grid;grid-template-columns:1fr 1fr;gap:8px}.xprof>div{display:grid;gap:2px;padding:14px;border-radius:20px;backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);box-shadow:inset 0 1px 0 rgba(255,255,255,.18)}
@@ -485,6 +495,62 @@ async function loadStaff(){const [f,p,s,d,r]=await Promise.all([sb.from("farmers
   try{const [tk,tr]=await Promise.all([sb.from("trucks").select("*").order("no"),sb.from("trips").select("*").order("day",{ascending:false}).limit(300)]);STATE.trucks=tk.data||[];STATE.trips=tr.data||[];STATE.noTrans=!!tk.error}catch(e){STATE.trucks=[];STATE.trips=[];STATE.noTrans=true}
   STATE.farmers=f.data||[];STATE.prices=p.data||[];STATE.settings=Object.fromEntries((s.data||[]).map(x=>[x.key,x.value]));STATE.deals=d.data||[];STATE.reqs=r.data||[]}
 const fName=id=>{const f=STATE.farmers.find(x=>x.id===id);return f?f.name:"?"};
+// ===== NÁPOVEDA „Ako to funguje“ =====
+const HELP={
+req:{t:"Požiadavky",i:"📥",r:"Všetko, čo ti farmári pošlú z aplikácie – na jednom mieste.",s:[
+ ["Odkiaľ prichádzajú","Farmár v aplikácii ťukne <b>Predať</b> pri komodite (chce predať tony za cenu z cenníka), <b>Objednať odvoz</b>, <b>Súhlasím</b> pri obchode alebo pošle <b>Správu</b>. Nová požiadavka ti hneď zasvieti s číslom na záložke."],
+ ["Čo s ňou spravíš","Pri „Chcem predať“ ťukni <b>Založiť obchod</b> – údaje sa predvyplnia do záložky Obchody. Pri odvoze naplánuj auto v Doprave. Potom požiadavku označ <b>Vybavené</b> alebo <b>Zamietnuť</b> a môžeš farmárovi napísať odpoveď – uvidí ju v aplikácii."],
+ ["Prepojenie","Požiadavka → Obchod → Doprava. ERNTE AI vidí nové požiadavky a pripomenie ti tie nevybavené."]]},
+price:{t:"Cenník",i:"💶",r:"Výkupné ceny, ktoré vidia všetci prihlásení farmári.",s:[
+ ["Ako zadávať","Ceny sú <b>€/t FCA farma bez DPH</b> (na farmárovom dvore). Prázdne pole = farmár komoditu nevidí. Vyplň <b>Platí do</b> – farmár vidí, dokedy cena platí."],
+ ["Uložiť a zverejniť","Po uložení ich farmári vidia <b>okamžite</b> a môžu ťuknúť Predať. Keď sa blíži koniec platnosti (7 dní), hore ťa upozorní žltý pás, po vypršaní červený."],
+ ["Prepojenie","ERNTE AI porovnáva tvoj cenník s burzou (MATIF, CBOT) a upozorní, keď je cena nad burzou alebo máš veľkú rezervu. Farmár nikdy nevidí burzu ani odberateľa."]]},
+trans:{t:"Doprava",i:"🚚",r:"Plánovanie odvozov od farmárov autami VALKO.",s:[
+ ["Naplánovať jazdu","Vyber farmára (a obchod), deň, čas, auto a vodiča. Farmár vidí v aplikácii, kedy príde auto, ŠPZ a vodiča."],
+ ["Stavy jazdy","Naplánovaná → auto na ceste → na nakládke → naložené → vyložené/zvážené. Farmár vidí polohu auta na mape <b>len do naloženia</b> – kam to vezieš, nevidí nikdy."],
+ ["Prepojenie","Vyložené tony sa <b>samy pripočítajú</b> k obchodu (dodané t). Polohu áut berie z Commandera."]]},
+fleet:{t:"Flotila",i:"🚛",r:"Všetko o autách VALKO z Commandera – živo, každé 2 minúty.",s:[
+ ["Dashboard","Prehľad: zisk/strata, alarmy, spotreba, autá na ceste, mzdy, posledný pohyb. Tlačidlá ťa presunú do sekcie."],
+ ["Obdobie","Hore vyber Dnes / 7 dní / 30 dní / <b>Tento mesiac</b>. Zisk sa dá spočítať len za mesiac (mzdy sú mesačné)."],
+ ["Upozornenia","Na telefón (ntfy) chodia: príchod na dvor Medovská, Agro-Somotor, čerpačky Slovnaft, odchod po státí, podozrivý pokles nafty."],
+ ["Kto vidí čo","Zisk, mzdy a pevné náklady vidíš len ty. Dispečer vidí autá, jazdy a alarmy."]]},
+deals:{t:"Obchody",i:"🤝",r:"Tvoje nákupy od farmárov – kto, čo, koľko, za koľko a dokedy.",s:[
+ ["Kedy založiť","Keď sa s farmárom dohodneš (po telefóne, osobne) alebo z jeho požiadavky „Chcem predať“. Vyplň farmára, komoditu, tony, cenu €/t FCA a termín plnenia."],
+ ["Stavy","<b>Návrh</b> (farmár vidí „čaká na podpis“ a ťukne Súhlasím) → <b>Podpísaný</b> → <b>Odvoz beží</b> → <b>Odvezený</b> → <b>Fakturácia</b> → <b>Zaplatený</b> (alebo Zrušený)."],
+ ["Prepojenie","Odvozy v Doprave sa k obchodu pripočítavajú samy. Farmár vidí svoje obchody v aplikácii – bez odberateľa a burzy. ERNTE AI z obchodov počíta maržu oproti burze a upozorní na riziká."]]},
+farm:{t:"Farmári",i:"👨‍🌾",r:"Zoznam dodávateľov a ich prístup do aplikácie.",s:[
+ ["Údaje","Meno, IČO, DIČ, IBAN, kontakt. Neaktívny farmár sa nevie prihlásiť."],
+ ["Prístup","Ťukni <b>Vytvoriť heslo</b> – farmár sa prihlási e-mailom alebo telefónnym číslom a heslom. Heslo sa zobrazí <b>iba raz</b>, pošli mu ho (SMS/WhatsApp). Nikde sa neukladá."],
+ ["Čo farmár vidí","Cenník, svoje obchody, odvozy (auto do naloženia), počasie a radar. Nikdy nevidí odberateľov, burzu, miesto vykládky ani iných farmárov."]]},
+wx:{t:"Počasie",i:"🌦️",r:"Počasie a radar zrážok pre Michalovce a okolie.",s:[
+ ["Čo ukazuje","Teraz, každú hodinu a 7 dní dopredu; radar zrážok s animáciou posledných 2 hodín."],
+ ["Na čo","Plánovanie žatvy, odvozov a nakládky – to isté vidia aj farmári."]]},
+team:{t:"Tím",i:"👥",r:"Kto z ERNTE/VALKO má prístup a čo smie.",s:[
+ ["Roly","<b>Majiteľ</b> – všetko vrátane zisku a miezd. <b>Admin</b> – obchody, cenník, farmári. <b>Dispečer</b> – požiadavky, doprava, flotila, počasie. <b>Fakturácia</b> – všetko okrem flotily."],
+ ["Pridať človeka","Zadaj e-mail, meno, rolu a heslo – môže sa hneď prihlásiť."]]}};
+const FHELP={
+dash:["Dashboard","Rýchly prehľad celej flotily a AI prehľad. Ťuknutím na dlaždicu prejdeš do detailu."],
+perf:["Prevádzka a náklady","Km, spotreba, nafta (cena podľa tvojich tankovaní alebo bez DPH), mýto (km × podiel spoplatnených km × sadzba), pevné náklady a mzdy. Obrat = km × sadzba €/km z Nastavení – je to odhad, nie faktúry. Zisk = obrat − všetky náklady; ak chýbajú mzdy, nedá sa spočítať."],
+alarm:["Alarmy","Pokles nafty v stojacom aute, tankovanie nesedí s nádržou, rozdiel natankovanej a spotrebovanej nafty (nad 10 %), vysoká spotreba, rýchlosť nad 90 km/h, auto bez signálu, súkromné jazdy, autá s málo dátami. Rozdiel nafty nie je dôkaz krádeže – over karty a výdaj z nádrže na dvore."],
+map:["Kde sú autá","Živá poloha z Commandera (zelené ide, modré stojí, sivé = poloha staršia ako 6 h). Mapu posúvaš a približuješ prstami, prepínač Mapa/Satelit."],
+moves:["Pohyby","Príchody a odchody (dvor, Agro-Somotor, čerpačky, odberatelia) a odchod po státí. Tie isté udalosti chodia ako upozornenia na telefón."],
+veh:["Vozidlá","Každé auto: stav, nádrž, km, spotreba, max rýchlosť, tachometer, vodič a tlačidlá na zavolanie. Ťukni na auto pre graf nádrže za 48 h a posledné jazdy. Pod 100 km = „málo dát“."],
+drv:["Vodiči a mzdy","Vodiči podľa jázd v Commanderi, firemný a súkromný mobil, WhatsApp. Mzda = základ 1 031 € alebo súčet diét (80 € v Košickom kraji po Prešov/Rožňavu, 90 € mimo), čo je viac; deň sa počíta od 10 km."],
+firm:["Firma VALKO","Údaje firmy, certifikáty (GMP+ s odpočtom platnosti) a kontakty tímu."],
+set:["Nastavenia","Cena nafty, mýto a podiel spoplatnených km, sadzba obratu €/km, pevné náklady, miesta s upozornením (dvor, čerpačky, odberatelia), čas státia pre upozornenie, ochrana nafty, ntfy a 🩺 Diagnostika dát."]};
+function helpBtn(k){return HELP[k]?`<button type="button" class="hbtn" data-help="${k}" aria-label="Ako to funguje"><span>?</span>Ako to funguje</button>`:""}
+function openHelp(k){const H=HELP[k];if(!H)return;let f="";if(k==="fleet"&&STATE.fsec&&FHELP[STATE.fsec]){const x=FHELP[STATE.fsec];f=`<div class="hsec hcur"><b>Práve si v: ${x[0]}</b><p>${x[1]}</p></div>`}
+  const fl=k==="fleet"?`<div class="hsub">Sekcie flotily</div>`+Object.entries(FHELP).map(([a,x])=>`<details class="hdet"><summary>${x[0]}</summary><p>${x[1]}</p></details>`).join(""):"";
+  const d=document.createElement("div");d.className="hsheet";d.id="helpSheet";d.innerHTML=`<div class="hbox" role="dialog" aria-label="Ako to funguje"><div class="hhd"><span class="hic">${H.i}</span><div><small>Ako to funguje</small><b>${H.t}</b></div><button type="button" class="hx" data-hclose="1" aria-label="Zavrieť">×</button></div>
+   <p class="hrole">${H.r}</p>${f}${H.s.map((x,i)=>`<div class="hsec"><i>${i+1}</i><div><b>${x[0]}</b><p>${x[1]}</p></div></div>`).join("")}${fl}
+   <button type="button" class="hai" data-hai="${esc(H.t)}">✦ Opýtať sa ERNTE AI na ${esc(H.t)}</button></div>`;
+  document.body.appendChild(d)}
+document.addEventListener("click",e=>{const t=e.target;let x;
+  if((x=t.closest("[data-help]"))){openHelp(x.dataset.help);return}
+  if(t.closest("[data-hclose]")||t.id==="helpSheet"){const s=$("helpSheet");if(s)s.remove();return}
+  if((x=t.closest("[data-hai]"))){const s=$("helpSheet");if(s)s.remove();const b=$("aiBtn");if(b&&!b.hidden){b.click();setTimeout(()=>{const ta=document.querySelector(".aiin textarea");if(ta){ta.value="Vysvetli mi podrobne, ako funguje "+x.dataset.hai+" v aplikácii a ako ju mám najlepšie používať.";ta.focus()}},500)}}});
+document.addEventListener("keydown",e=>{if(e.key==="Escape"){const s=$("helpSheet");if(s)s.remove()}});
+
 function priceBanner(){const v=((STATE.settings||{}).pricelist||{}).valid;
   if(!v)return `<div class="pban w"><b>Cenník nemá zadanú platnosť</b><span>Doplň dátum „Platí do“ v záložke Cenník.</span></div>`;
   const end=new Date(v+"T23:59:59"),t0=new Date();t0.setHours(0,0,0,0);const d=Math.round((new Date(v+"T00:00:00")-t0)/864e5);
@@ -499,6 +565,7 @@ function renderStaff(){const nNew=STATE.reqs.filter(r=>r.status==="nova").length
   if(ROLE==="invoice")tabs=tabs.filter(t=>t[0]!=="fleet");
   if(!tabs.some(t=>t[0]===TAB))TAB=tabs[0][0];
   let h=`<nav class="tabs">${tabs.map(t=>`<button type="button" data-tab="${t[0]}" aria-pressed="${TAB===t[0]}">${t[1]}</button>`).join("")}</nav>`;
+  h+=`<div class="hrow">${helpBtn(TAB)}</div>`;
   if(tabs.some(t=>t[0]==="price")&&(TAB==="price"||TAB==="req"))h+=priceBanner();
   if(TAB==="wx"&&!WXD)loadWx().then(renderStaff);if(TAB==="fleet"&&!STATE.fleet)loadFleet().then(renderStaff);if(TAB==="team"&&!STATE.staff)loadTeam().then(renderStaff);h+=({req:vReq,price:vPrice,trans:vTrans,deals:vDeals,farm:vFarm,wx:wxCard,fleet:vFleet,team:vTeam})[TAB]();if(TAB==="req")h+=pwCard();$("app").innerHTML=h;mountR()}
 function vReq(){const R=STATE.reqs;if(!R.length)return `<div class="card"><div class="s">Zatiaľ žiadne požiadavky od farmárov.</div></div>`;
