@@ -168,7 +168,7 @@ begin
   if k is null then raise exception 'Chýba API kľúč – spusti nastavenie na stránke ai.html.'; end if;
   return net.http_post(url:='https://api.anthropic.com/v1/messages',
     headers:=case when coalesce(md, case when k like 'sk-ant-api%' then 'x' else 'b' end)='x' then jsonb_build_object('x-api-key',k) else jsonb_build_object('Authorization','Bearer '||k) end||jsonb_build_object('anthropic-version','2023-06-01','content-type','application/json'),
-    body:=jsonb_build_object('model',coalesce((select value->>'model' from ai_state where key='model'),'claude-sonnet-5-5'),'max_tokens',3000,
+    body:=jsonb_build_object('model',coalesce((select value->>'model' from ai_state where key='model'),'claude-sonnet-5-5'),'max_tokens',8000,
       'system', ai_system()||E'\n\nAKTUÁLNE ÚDAJE FIRMY (JSON):\n'||ai_snapshot()::text||sys_extra,
       'messages',convo,
       'tools',jsonb_build_array(jsonb_build_object('type','web_search_20250305','name','web_search','max_uses',5))),
@@ -280,12 +280,14 @@ begin
       update ai_msgs set status='err', content='Chyba AI ('||coalesce(r.status_code::text,'sieť')||'): '||left(coalesce(ai_json(r.content)#>>'{error,message}', r.error_msg, r.content),400) where id=m.id; continue; end if;
     j:=ai_json(r.content);
     if j is null then update ai_msgs set status='err', content='AI vrátila neplatnú odpoveď.' where id=m.id; continue; end if;
-    if j->>'stop_reason'='pause_turn' and m.tries<4 then
+    if (j->>'stop_reason'='pause_turn' or (j->>'stop_reason'='max_tokens' and not exists(select 1 from jsonb_array_elements(j->'content') b where b->>'type'='text' and length(b->>'text')>200))) and m.tries<6 then
       update ai_msgs set tries=tries+1, convo=convo||jsonb_build_array(jsonb_build_object('role','assistant','content',j->'content')),
         req_id=ai_post(convo||jsonb_build_array(jsonb_build_object('role','assistant','content',j->'content'))) where id=m.id;
       continue; end if;
     select string_agg(b->>'text','') into txt from jsonb_array_elements(j->'content') b where b->>'type'='text';
-    txt:=coalesce(nullif(trim(txt),''),'(bez odpovede)');
+    if nullif(trim(txt),'') is null then
+      update ai_msgs set status='err', content='AI nedokončila odpoveď ('||coalesce(j->>'stop_reason','?')||'). Skús to znova – ťukni Urobiť prehľad / pošli otázku ešte raz.' where id=m.id; continue; end if;
+    if j->>'stop_reason'='max_tokens' then txt:=txt||E'\n\n_(odpoveď bola dlhá a skrátila sa – napíš „pokračuj“)_'; end if;
     for ln in select (regexp_matches(txt, '^\s*\**ÚLOHA:\**\s*(.+)$', 'gm'))[1] loop
       insert into ai_tasks(text,msg_id) values(trim(ln),m.id) returning id into tid;
       perform ai_gh_issue(tid);
