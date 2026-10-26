@@ -78,7 +78,7 @@ begin
      'state',case when coalesce(v.kg,0)/1000<c.tons*(1-pct/100) then 'short' when coalesce(v.kg,0)/1000>c.tons*(1+pct/100) then 'over' else 'ok' end)
      order by c.buyer, c.com, c.no),'[]')
    from buy_contracts c left join lateral (select sum(net_kg) kg, count(*) n, max(day) ld from deliveries d
-     where xl_norm(d.buyer)=xl_norm(c.buyer) and d.com=c.com and (c.d0 is null or d.day>=c.d0) and (c.d1 is null or d.day<=c.d1)) v on true);
+     where xl_norm(d.buyer) like xl_norm(c.buyer)||'%' and d.com=c.com and (c.d0 is null or d.day>=c.d0) and (c.d1 is null or d.day<=c.d1)) v on true);
 end $$;
 revoke all on function public.buy_contracts_status() from public, anon; grant execute on function public.buy_contracts_status() to authenticated;
 select settle_reallocate();

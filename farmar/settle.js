@@ -52,7 +52,7 @@ async function savePaste(b){const P=Z.paste;if(!P.data||!P.data.length)return;bu
   else{r=await sb.from("wheat_prices").upsert(P.data.map(x=>({...x,updated_at:new Date().toISOString()})));busy(b,false);if(r.error){toast("Chyba: "+r.error.message,7000);return}toast(`✓ Ceny pšenice pre ${P.data.length} zmlúv uložené.`)}
   P.txt="";P.prev=null;P.data=null;Z.C=null;Z.rep=null;renderStaff()}
 // --- zúčtovanie farmára ---
-function farmHTML(){const F=(STATE.farmers||[]).filter(f=>f.code||f.src==="excel").sort((a,b)=>a.name.localeCompare(b.name,"sk")),q=nz(Z.fq);
+function farmHTML(){const F=(STATE.farmers||[]).filter(f=>String(f.name||"").trim()).sort((a,b)=>String(a.name).localeCompare(String(b.name),"sk")),q=nz(Z.fq);
   const C=Z.C&&!Z.C.err?Z.C:null,K=C?C.contracts||[]:[],coms=[...new Set(K.map(k=>k.com))];
   if(C&&K.length){if(!coms.includes(Z.com))Z.com=coms[0];const KC=K.filter(k=>k.com===Z.com);if(!KC.some(k=>k.id===Z.deal))Z.deal=(KC.find(k=>k.remain_t>0.01)||KC[0]).id}
   let h=`<div class="card f zform"><div class="w t">Zúčtovanie dodávateľa</div>
@@ -106,15 +106,15 @@ function pdfHTML(F,k,L,forFarmer){const T=L.reduce((a,x)=>(a.g+=+x.gross_kg||0,a
   <div class="hd"><div><h1>ERNTE spol. s r.o.</h1><small>Zbudza 141, 072 23 · IČO 52 341 356 · +421 918 449 991 · jana.valkova@ernte.sk</small></div><div style="text-align:right"><b>Zúčtovanie ${esc(comName(k.com))} 2026</b><small>Zmluva ${esc(k.no)} · ${esc(per)}</small><small>Vystavené ${new Date().toLocaleDateString("sk-SK")}</small></div></div>
   <div><b>Dodávateľ:</b> ${esc(F.name)}${F.code?" ("+esc(F.code)+")":""}${F.addr?" · "+esc(F.addr):""}</div>
   <div class="k"><div><small>Zmluva</small><b>${fmt(k.tons,0)} t</b></div><div><small>Cena</small><b>${k.com==="psenica_p"&&k.wheat_bands?"podľa kvality":fmt(k.price)+" €/t"}</b></div><div><small>Fakturačná váha</small><b>${fmt(T.w/1000,3)} t</b></div><div><small>Fakturovať</small><b>${fmt(T.e)} €</b></div>
-   <div><small>Netto váha</small><b>${fmt(T.g/1000,3)} t</b></div><div><small>Po čistení</small><b>${fmt(T.c/1000,3)} t</b></div><div><small>Čistenie / sušenie</small><b>${fmt(T.cc)} / ${fmt(T.dc)} ${L[0]&&L[0].kg_mode?"kg":"€"}</b></div><div><small>Dodať / prebytok</small><b>${fmt(k.remain_t,2)} t</b></div></div>
+   <div><small>Netto váha</small><b>${fmt(T.g/1000,3)} t</b></div><div><small>Po čistení</small><b>${fmt(T.c/1000,3)} t</b></div><div><small>Čistenie / sušenie</small><b>${fmt(T.cc)} / ${fmt(T.dc)} ${L[0]&&L[0].kg_mode?"kg":"€"}</b></div><div><small>${k.remain_t<0?"Prebytok":"Zostáva dodať"}</small><b>${fmt(Math.abs(k.remain_t),2)} t</b></div></div>
   <table><thead><tr><th>Dátum</th><th>Lístok</th><th>ŠPZ</th><th>Netto kg</th><th>Nečist. %</th><th>Po čistení kg</th><th>Vlhkosť %</th><th>Po sušení kg</th><th>Čistenie</th><th>Sušenie</th><th>Cena €/t</th><th>Fakt. kg</th><th>Suma €</th></tr></thead>
   <tbody>${L.map(x=>`<tr><td>${esc(dSK(x.day))}</td><td>${esc(x.ticket)}</td><td>${esc(x.plate||"")}</td><td>${fmt(x.gross_kg,0)}</td><td>${x.impurity_pct!=null?fmt(x.impurity_pct,2):"–"}</td><td>${fmt(x.clean_kg,0)}</td><td>${x.moisture_pct!=null?fmt(x.moisture_pct,1):"–"}</td><td>${fmt(x.dry_kg,0)}</td><td>${fmt(x.clean_cost,2)}</td><td>${fmt(x.dry_cost,2)}</td><td>${x.price!=null?fmt(x.price):"–"}</td><td>${fmt(x.invoice_kg,0)}</td><td>${x.invoice_eur!=null?fmt(x.invoice_eur):"–"}</td></tr>`).join("")}</tbody>
   <tfoot><tr><td colspan="3">Spolu (${L.length} lístkov)</td><td>${fmt(T.g,0)}</td><td></td><td>${fmt(T.c,0)}</td><td></td><td></td><td>${fmt(T.cc,2)}</td><td>${fmt(T.dc,2)}</td><td></td><td>${fmt(T.w,0)}</td><td>${fmt(T.e)}</td></tr></tfoot></table>
-  <div class="ft">Norma vlhkosti ${fmt(L[0]?L[0].norm:14,1)} %. Čistenie sa účtuje pri nečistotách, sušenie za každé % nad normu. Ceny bez DPH. Konečná suma podľa faktúry.</div>
+  <div class="ft">Norma vlhkosti ${fmt(L[0]?L[0].norm:14,1)} %. Čistenie sa účtuje pri nečistotách, sušenie za každé % nad normu. Tolerancia zmluvy ±${fmt(k.tol_pct??5,0)} % (${fmt(tolOf(k),2)} t) – ${esc(tolSt(k)[1])}. Ceny bez DPH. Konečná suma podľa faktúry.</div>
   <div class="pb"><button onclick="print()" style="font-size:15px;padding:10px 18px">🖨️ Tlačiť / uložiť ako PDF</button></div></body></html>`}
 function openPdf(html){const w=window.open("","_blank");if(!w){toast("Povoľ vyskakovacie okná pre tlač.");return}w.document.write(html);w.document.close();setTimeout(()=>{try{w.focus();w.print()}catch(e){}},500)}
 // --- prehľady ---
-const BST={ok:"✅ Splnená v tolerancii",short:"⚠️ Chýba",over:"⚠️ Nad toleranciu"};
+const BST={ok:"Splnená v tolerancii",short:"Chýba",over:"Nad toleranciu"};
 function bcHTML(){const B=Z.bc;if(!B){sb.rpc("buy_contracts_status").then(r=>{Z.bc=r.error?{err:r.error.message}:r.data||[];renderStaff()});return `<div class="card"><div class="s">Načítavam odberateľské zmluvy…</div></div>`}
   if(B.err)return `<div class="card"><div class="s">${/buy_contracts/.test(B.err)?"Odberateľské zmluvy sa zapnú po aktualizácii databázy (pár minút).":esc(B.err)}</div></div>`;
   const buyers=[...new Set((Z.rep&&Z.rep.buyer||[]).map(x=>x.buyer).filter(Boolean))];
@@ -157,8 +157,8 @@ document.addEventListener("click",async e=>{if(typeof ROLE==="undefined"||ROLE!=
   if(x=t.closest("[data-zsave]")){await savePaste(x);return}
   if(x=t.closest("[data-zfarm]")){Z.farm=x.dataset.zfarm;Z.C=null;Z.L={};Z.open=null;Z.com="";Z.deal="";if(!Z.farm)Z.fq="";renderStaff();return}
   if(x=t.closest("[data-zopen]")){const id=x.dataset.zopen;Z.open=Z.open===id?null:id;renderStaff();if(Z.open&&!Z.L[id]){await loadL(id);renderStaff()}return}
-  if(x=t.closest("[data-zpdf]")){const id=x.dataset.zpdf,k=Z.C.contracts.find(y=>y.id===id);const L=periodOf(Z.L[id]||await loadL(id));openPdf(pdfHTML(Z.C.farmer,k,L));return}
-  if(x=t.closest("[data-zwa]")){const k=Z.C.contracts.find(y=>y.id===x.dataset.zwa),F=Z.C.farmer,tel=String(F.phone||"").replace(/\D/g,"").replace(/^00/,"").replace(/^0/,"421");
+  if(x=t.closest("[data-zpdf]")){const id=x.dataset.zpdf,k=Z.C&&Z.C.contracts.find(y=>y.id===id);if(!k)return;const L=periodOf(Z.L[id]||await loadL(id));openPdf(pdfHTML(Z.C.farmer,k,L));return}
+  if(x=t.closest("[data-zwa]")){const k=Z.C&&Z.C.contracts.find(y=>y.id===x.dataset.zwa),F=Z.C&&Z.C.farmer;if(!k||!F)return;const tel=String(F.phone||"").replace(/\D/g,"").replace(/^00/,"").replace(/^0/,"421");
     const PL=periodOf(Z.L[k.id]||[]),PS=sumL(PL);const txt=`Dobrý deň, zúčtovanie ERNTE – zmluva ${k.no} (${comName(k.com)})${Z.d0||Z.d1?` za obdobie ${Z.d0?dSK(Z.d0):"…"} – ${Z.d1?dSK(Z.d1):"…"}`:""}:\nLístkov: ${PL.length}\nFakturačná váha: ${fmt(PS.w/1000,3)} t\nFakturovať: ${fmt(PS.e)} € bez DPH\nZmluva: ${fmt(k.delivered_t,2)} t dodané z ${fmt(k.tons,0)} t\n\nPodrobnosti a všetky lístky vidíte v aplikácii ERNTE: ${APP_URL}`;
     window.open(`https://wa.me/${tel}?text=${encodeURIComponent(txt)}`,"_blank","noopener");return}
   if(t.closest("[data-zrep]")){Z.rep=null;Z.bc=null;renderStaff();return}
@@ -167,13 +167,13 @@ document.addEventListener("click",async e=>{if(typeof ROLE==="undefined"||ROLE!=
 document.addEventListener("change",e=>{if(e.target.id==="zcom"){Z.com=e.target.value;Z.deal="";renderStaff();return}if(e.target.id==="zdeal"){Z.deal=e.target.value;renderStaff();return}
   if(e.target.id==="zd0"||e.target.id==="zd1"){Z[e.target.id.slice(1)]=e.target.value;Z.rep=null;if(Z.sec==="farm"){renderStaff();return}Z.L={};if(Z.open&&Z.C)loadL(Z.open).then(renderStaff);else renderStaff()}
   if(e.target.id==="zfq"){const v=nz(e.target.value),f=(STATE.farmers||[]).find(x=>nz(x.name)===v||nz(x.code)===v);if(f){Z.farm=f.id;Z.fq=f.name;Z.C=null;Z.L={};Z.com="";Z.deal="";renderStaff()}}});
-document.addEventListener("input",e=>{if(e.target.id==="zfq"){Z.fq=e.target.value;clearTimeout(e.target._t);e.target._t=setTimeout(()=>{if(Z.farm)return;renderStaff();const i=document.getElementById("zfq");if(i){i.focus();i.setSelectionRange(i.value.length,i.value.length)}},300)}
+document.addEventListener("input",e=>{if(e.target.id==="zfq"){Z.fq=e.target.value;if(Z.farm&&Z.C&&Z.C.farmer&&nz(Z.fq)!==nz(Z.C.farmer.name)){Z.farm="";Z.C=null;Z.L={};Z.com="";Z.deal=""}clearTimeout(e.target._t);e.target._t=setTimeout(()=>{if(Z.farm)return;renderStaff();const i=document.getElementById("zfq");if(i){i.focus();i.setSelectionRange(i.value.length,i.value.length)}},300)}
   if(e.target.id==="zpTxt")Z.paste.txt=e.target.value});
-document.addEventListener("submit",async e=>{if(e.target.id!=="fZbc")return;e.preventDefault();e.stopPropagation();const d=new FormData(e.target),t=num(d.get("tons"));if(!(t>0)){toast("Zadaj množstvo v t.");return}
+document.addEventListener("submit",async e=>{if(e.target.id!=="fZbc")return;e.preventDefault();e.stopPropagation();const fm=e.target;if(fm._b)return;const d=new FormData(fm),t=num(d.get("tons"));if(!(t>0)){toast("Zadaj množstvo v t.");return}if(!String(d.get("buyer")||"").trim()){toast("Zadaj odberateľa.");return}fm._b=1;
   const r=await sb.from("buy_contracts").insert({buyer:String(d.get("buyer")).trim(),com:d.get("com"),no:d.get("no")||null,tons:t,price:isFinite(num(d.get("price")))?num(d.get("price")):null,d0:d.get("d0")||null,d1:d.get("d1")||null});
-  if(r.error){toast("Chyba: "+r.error.message);return}Z.bc=null;toast("✓ Zmluva pridaná – dodané sa spočítalo automaticky.");renderStaff()},true);
+  fm._b=0;if(r.error){toast("Chyba: "+r.error.message);return}Z.bc=null;toast("✓ Zmluva pridaná – dodané sa spočítalo automaticky.");renderStaff()},true);
 document.addEventListener("submit",async e=>{if(e.target.id!=="fZr")return;e.preventDefault();e.stopPropagation();const d=new FormData(e.target),R=Object.assign({},Z.rules);R.norm=Object.assign({},R.norm);
-  for(const k of Object.keys(R.norm)){const v=num(d.get("n_"+k));if(isFinite(v))R.norm[k]=v}for(const k of ["clean","dry","broken_limit","tol_pct","tol_buy_pct"]){const v=num(d.get(k));if(isFinite(v))R[k]=v}
+  for(const k of Object.keys(R.norm)){const v=num(d.get("n_"+k));if(isFinite(v))R.norm[k]=v}for(const k of ["clean","dry","broken_limit","tol_pct","tol_buy_pct"]){const v=num(d.get(k));if(isFinite(v)&&v>=0)R[k]=/^tol/.test(k)?Math.min(v,50):v}
   R.kg_mode=String(d.get("kg_mode")||"").split(",").map(s=>s.trim()).filter(Boolean);R.tol0=String(d.get("tol0")||"").split(",").map(s=>s.trim()).filter(Boolean);
   const r=await sb.from("settle_rules").upsert({key:"main",value:R,updated_at:new Date().toISOString()});if(r.error){toast("Chyba: "+r.error.message);return}Z.rules=R;Z.C=null;Z.L={};Z.rep=null;Z.bc=null;toast("✓ Uložené – všetky zmluvy farmárov aj odberateľov sa automaticky prepočítali.");renderStaff()},true);
 // záložka iba pre majiteľa
