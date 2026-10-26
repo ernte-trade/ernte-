@@ -14,7 +14,7 @@ const MOB=[42,56]; // dni: upozornenie / porušenie (8 týždňov)
 async function load(){if(H.busy)return;H.busy=true;const q=[];
   if(ROLE==="owner")q.push(sb.rpc("risk_position").then(r=>{H.risk=r.error?{err:r.error.message}:r.data}));
   if(can("fleet"))q.push(sb.rpc("fleet_mobility").then(r=>{H.mob=r.error?{err:r.error.message}:r.data||[]}),sb.rpc("fleet_co2").then(r=>{H.co2=r.error?null:r.data}));
-  if(canAny("req","deals"))q.push(sb.from("price_targets").select("*").order("created_at",{ascending:false}).limit(300).then(r=>{H.tg=r.error?{err:r.error.message}:r.data||[]}));
+  if(canAny("price_view","deals"))q.push(sb.from("price_targets").select("*").order("created_at",{ascending:false}).limit(300).then(r=>{H.tg=r.error?{err:r.error.message}:r.data||[]}));
   if(canAny("deals_qty","deals","remain")&&!window.OPSDATA)q.push(sb.rpc("ops_deals").then(r=>{window.OPSDATA=r.error?[]:r.data||[]}));
   await Promise.all(q.map(p=>p.catch(()=>{})));H.busy=false;H.at=Date.now();if(TAB==="home")renderStaff()}
 window.hubReload=()=>{H.at=0;window.OPSDATA=null;load()};
@@ -39,11 +39,11 @@ window.vHome=function(){if(!H.at&&!H.busy)setTimeout(load,0);
   if(can("req"))tl.push(tile("📥","Nové požiadavky",String(nNew),auto?`🎯 ${auto} automaticky`:"od farmárov",nNew?"w":"","req"));
   if(canAny("deals_qty","deals","remain"))tl.push(tile("🚚","Zostáva vyviezť",fmt(left,0)+" t",`${O.filter(d=>+d.left_t>0).length} obchodov`,"","deals"));
   if(canAny("trans","assign"))tl.push(tile("🗓️","Jazdy dnes",String(T.length),T.length?T.slice(0,2).map(t=>esc(t.spz||"")).join(", "):"nič naplánované","","trans"));
-  if(canAny("req","deals"))tl.push(tile("🎯","Cieľové ceny farmárov",String(tgA.length),tgH.length?`${tgH.length} dosiahnutých za 7 dní`:"čakajú na vašu cenu","",""+"tg"));
+  if(canAny("price_view","deals"))tl.push(tile("🎯","Cieľové ceny farmárov",String(tgA.length),tgH.length?`${tgH.length} dosiahnutých za 7 dní`:"čakajú na vašu cenu","",""+"tg"));
   if(can("fleet")&&H.co2)tl.push(tile("🌍","CO₂ flotily · mesiac",fmt(H.co2.co2_t_wtw,1)+" t",`${fmt(H.co2.g_km,0)} g/km · ${fmt(H.co2.km,0)} km`,"","co2"));
   if(tl.length)h+=`<div class="hbg">${tl.join("")}</div>`;
   if(ROLE==="owner")h+=riskHTML();
-  if(canAny("req","deals"))h+=tgHTML(TG);
+  if(canAny("price_view","deals"))h+=tgHTML(TG);
   if(can("fleet"))h+=mobHTML();
   if(ROLE==="owner")h+=dueHTML();
   return h+`</div>`};
