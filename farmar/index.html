@@ -1041,7 +1041,7 @@ async function startStaff(){$("refBtn").hidden=false;camStatus();await loadStaff
   sb.channel("staff-req").on("postgres_changes",{event:"INSERT",schema:"public",table:"requests"},async p=>{await loadStaff();renderStaff();const fr=STATE.farmers.find(x=>x.id===p.new.farmer_id);toast("Nová požiadavka: "+(fr?fr.name:"")+" – "+RKIND[p.new.kind],6000);try{navigator.vibrate&&navigator.vibrate(200)}catch(x){}}).subscribe();
   document.addEventListener("visibilitychange",()=>{if(!document.hidden)loadStaff().then(renderStaff)})}
 async function loadStaff(){const [f,p,s,d,r]=await Promise.all([sb.from("farmers").select("*").order("name"),sb.from("prices").select("*"),sb.from("settings").select("key,value"),
-  sb.from("deals").select("*").order("created_at",{ascending:false}),sb.from("requests").select("*").order("created_at",{ascending:false}).limit(200)]);
+  sb.from("deals").select("*").order("created_at",{ascending:false}),reqPrice()?sb.from("requests").select("*").order("created_at",{ascending:false}).limit(200):sb.rpc("requests_staff",{lim:200}).then(x=>x.error?sb.from("requests").select("*").order("created_at",{ascending:false}).limit(200):x)]);
   try{const [tk,tr]=await Promise.all([sb.from("trucks").select("*").order("no"),sb.from("trips").select("*").order("day",{ascending:false}).limit(300)]);STATE.trucks=tk.data||[];STATE.trips=tr.data||[];STATE.noTrans=!!tk.error}catch(e){STATE.trucks=[];STATE.trips=[];STATE.noTrans=true}
   try{const own=ROLE==="owner",q=[sb.from("trip_route").select("*").limit(3000)];if(own)q.push(sb.from("trip_fin").select("*").limit(3000),sb.from("deal_fin").select("*").limit(3000));const X=await Promise.all(q),M=(r,k)=>Object.fromEntries(((r&&r.data)||[]).map(x=>[x[k],x]));STATE.troute=M(X[0],"trip_id");STATE.tfin=own?M(X[1],"trip_id"):{};STATE.dfin=own?M(X[2],"deal_id"):{}}catch(e){STATE.troute={};STATE.tfin={};STATE.dfin={}}
   STATE.farmers=f.data||[];STATE.prices=p.data||[];STATE.settings=Object.fromEntries((s.data||[]).map(x=>[x.key,x.value]));STATE.deals=d.data||[];STATE.reqs=r.data||[]}
@@ -2646,7 +2646,7 @@ function farmForm(f){const v=k=>esc(f[k]||"");return `<form class="card f" id="f
 document.addEventListener("click",async e=>{if(!ROLE)return;const t=e.target,g=s=>t.closest(s);let x;
   if(x=g("[data-tab]")){TAB=x.dataset.tab;renderStaff();window.scrollTo(0,0);return}
   if(x=g("[data-done]")||g("[data-rej]")){const id=x.dataset.done||x.dataset.rej,rej=!!x.dataset.rej;const reply=prompt(rej?"Dôvod pre farmára (uvidí ho):":"Odpoveď pre farmára (nepovinné, uvidí ju):",rej?"":"Ozveme sa telefonicky.");if(reply===null)return;
-    await upd("requests",id,{status:rej?"zamietnuta":"vybavena",reply:reply||null,handled_by:ME.staffName,handled_at:new Date().toISOString()});return}
+    await reqHandle(id,rej?"zamietnuta":"vybavena",reply);return}
   if(x=g("[data-mkdeal]")){const r=STATE.reqs.find(y=>y.id===x.dataset.mkdeal);DEALF={farmer_id:r.farmer_id,com:r.com,tons:r.tons,price:r.price,note:r.note||"",fromReq:r.id};TAB="deals";renderStaff();window.scrollTo(0,0);return}
   if(x=g("[data-clrdeal]")){DEALF=null;renderStaff();return}
   if(x=g("[data-sign]")){const r=STATE.reqs.find(y=>y.id===x.dataset.sign);busy(x,true);const a=await sb.from("deals").update({status:"podpisany",signed_at:new Date().toISOString()}).eq("id",r.deal_id);
@@ -2669,6 +2669,11 @@ document.addEventListener("click",async e=>{if(!ROLE)return;const t=e.target,g=s
 });
 document.addEventListener("input",e=>{if(e.target.id==="fq"){FQ=e.target.value;const p=e.target.selectionStart;renderStaff();const i=$("fq");i.focus();i.setSelectionRange(p,p)}});
 document.addEventListener("change",e=>{if(e.target.id==="tDay"){TDAY=e.target.value;renderStaff();return}if(e.target.id==="dCom"){const p=STATE.prices.find(x=>x.com===e.target.value);if(p&&p.price!=null)$("dPrice").value=String(p.price).replace(".",",")}});
+// požiadavky: ceny vidí iba majiteľ a ľudia s cenníkom / obchodmi s cenami; ostatní vybavujú cez bezpečnú funkciu
+function reqPrice(){return ROLE==="owner"||(typeof can==="function"&&(can("price_view")||can("deals")))}
+async function reqHandle(id,status,reply,quiet){if(reqPrice()){const {error}=await sb.from("requests").update({status,reply:reply||null,handled_by:ME.staffName,handled_at:new Date().toISOString()}).eq("id",id);if(error){toast("Chyba: "+error.message,5000);return false}}
+  else{const {error}=await sb.rpc("requests_handle",{p_id:id,p_status:status,p_reply:reply||null});if(error){toast("Chyba: "+error.message,5000);return false}}
+  if(!quiet){await loadStaff();renderStaff();toast("Uložené.")}return true}
 async function upd(tbl,id,patch){const {error}=await sb.from(tbl).update(patch).eq("id",id);if(error){toast("Chyba: "+error.message,5000);return false}await loadStaff();renderStaff();toast("Uložené.");return true}
 document.addEventListener("submit",async e=>{if(!ROLE)return;const f=e.target,fd=new FormData(f);
   if(f.id==="fPrice"){e.preventDefault();const b=f.querySelector("button");busy(b,true);const now=new Date().toISOString();
@@ -2685,7 +2690,7 @@ document.addEventListener("submit",async e=>{if(!ROLE)return;const f=e.target,fd
     const b=f.querySelector("button[type=submit]");busy(b,true);
     const rows=nos.map(n=>{const t=STATE.trucks.find(y=>y.no===n);return {farmer_id:r.farmer_id,deal_id:r.deal_id,request_id:r.id,truck_no:n,spz:t.spz,driver:t.driver,driver_phone:t.phone,day:fd.get("day"),time:fd.get("time")||null,note:fd.get("note")||null,gps_farmer:fd.get("gps")==="on"}});
     let a=await sb.from("trips").insert(rows);if(a.error&&/gps_farmer/.test(a.error.message)){rows.forEach(x=>delete x.gps_farmer);a=await sb.from("trips").insert(rows)}if(a.error){busy(b,false);toast("Chyba: "+a.error.message,6000);return}
-    await sb.from("requests").update({status:"vybavena",reply:`Pridelené ${rows.length} auto(á) na ${dSK(fd.get("day"))}${fd.get("time")?" od "+fd.get("time"):""}.`,handled_by:ME.staffName,handled_at:new Date().toISOString()}).eq("id",r.id);
+    await reqHandle(r.id,"vybavena",`Pridelené ${rows.length} auto(á) na ${dSK(fd.get("day"))}${fd.get("time")?" od "+fd.get("time"):""}.`,true);
     if(r.deal_id)await sb.from("deals").update({status:"odvoz"}).eq("id",r.deal_id).in("status",["navrh","podpisany"]);
     ASSIGN=null;TDAY=fd.get("day");await loadStaff();renderStaff();toast("Autá potvrdené – farmár ich vidí.");return}
   if(f.dataset.tedit){e.preventDefault();const n=num(fd.get("netto")),id=f.dataset.tedit,nw=new Date().toISOString();
