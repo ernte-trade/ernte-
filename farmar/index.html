@@ -2736,6 +2736,16 @@ document.addEventListener("submit",async e=>{if(!ROLE)return;const f=e.target,fd
 });
 
 if("serviceWorker" in navigator&&location.protocol==="https:")navigator.serviceWorker.register("sw.js").catch(()=>{});
+// automatická aktualizácia: keď vyjde nová verzia aplikácie, po návrate do aplikácie sa sama obnoví; počas práce ukáže dlaždicu „Obnoviť“
+(function(){const sig=t=>[...String(t).matchAll(/<script src="([^"]+\?v=[^"]+)"/g)].map(m=>m[1]).sort().join("|");
+  const cur=[...document.scripts].map(x=>x.getAttribute("src")||"").filter(x=>/\?v=/.test(x)).sort().join("|");let pend=false;
+  const busyUI=()=>!!document.querySelector("form :focus,#sgMod,#obMod,#caMod,#aiSheet:not([hidden]),.cammod:not([hidden])");
+  function tile(){if(document.getElementById("updTile"))return;const b=document.createElement("button");b.id="updTile";b.type="button";b.textContent="💎 Nová verzia aplikácie – ťuknite pre obnovenie";
+    b.style.cssText="position:fixed;left:50%;transform:translateX(-50%);top:calc(env(safe-area-inset-top) + 10px);z-index:10050;max-width:92vw;padding:12px 18px;border:0;border-radius:18px;font:800 .95rem system-ui;color:#fff;background:linear-gradient(135deg,#ff3d9a,#7c5cff 50%,#22d3ee);box-shadow:0 0 0 2px rgba(255,255,255,.6),0 0 30px rgba(255,61,154,.6)";
+    b.onclick=()=>location.reload();document.body.appendChild(b)}
+  async function chk(fromVis){if(!cur)return;try{const t=await (await fetch("index.html?u="+Date.now(),{cache:"no-store"})).text(),n=sig(t);if(n&&n!==cur){pend=true;if(fromVis&&!busyUI())location.reload();else tile()}}catch(e){}}
+  setTimeout(()=>chk(false),8000);setInterval(()=>{if(!document.hidden)chk(false)},120e3);
+  document.addEventListener("visibilitychange",()=>{if(!document.hidden)chk(true)})})();
 if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",()=>boot());else boot();
 
 // výber farmára v Novom obchode (vyhľadávanie namiesto dlhého zoznamu)
