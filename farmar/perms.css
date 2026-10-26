@@ -113,3 +113,5 @@ body.ds-tab-calc .hrow{display:none}
 .ftc{display:grid;gap:10px}.fti{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:10px 12px;border-radius:14px;border:1px solid rgba(182,255,59,.4);background:rgba(182,255,59,.07)}.fti>div{display:grid;gap:2px;min-width:0}.fti small{color:var(--muted)}.fti.ok{border-color:rgba(52,211,153,.55)}.fti button{width:44px;min-height:44px;flex:none;padding:0}
 html.big .hbt .hbv{font-size:max(2rem,32px)}html.big .hali b{font-size:max(1.05rem,17.5px)}html.big .hbt .hbl{font-size:max(.9rem,15px)}
 .hsec{display:block!important}.hsec>*:not(summary){max-width:100%}.hsec>summary{margin-bottom:0}.hsec[open]>summary{margin-bottom:12px}
+.fdc{display:grid;gap:8px}.fdi{border:1px solid var(--line2);border-radius:14px;background:rgba(255,255,255,.035);padding:0}.fdi>summary{list-style:none;cursor:pointer;display:grid;grid-template-columns:auto 1fr auto;gap:8px;align-items:center;padding:11px 12px}.fdi>summary::-webkit-details-marker{display:none}.fdi>.s{padding:0 12px 11px}.fdi small{color:var(--muted)}
+.hrt td,.hrt th{white-space:nowrap}.hrt table{min-width:760px}

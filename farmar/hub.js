@@ -48,16 +48,17 @@ window.vHome=function(){if(!H.at&&!H.busy)setTimeout(load,0);
   if(ROLE==="owner")h+=dueHTML();
   return h+`</div>`};
 // ---- POZÍCIA A RIZIKO ----
-function riskHTML(){const R=H.risk;let h=`<details class="card hsec" id="hs-risk" open><summary><span>📊</span><b>Pozícia a riziko</b><small>nakúpené vs. predané · ocenenie voči burze · iba ty</small></summary>`;
+function riskHTML(){const R=H.risk;let h=`<details class="card hsec" id="hs-risk" open><summary><span>📊</span><b>Pozícia a riziko</b><small>nákupné vs. predajné zmluvy · vážne lístky · ocenenie voči burze · iba ty</small></summary>`;
   if(R===undefined)return h+`<div class="s">Načítavam…</div></details>`;if(!R||typeof R!=="object")return h+`<div class="s">Zapne sa po aktualizácii databázy (pár minút).</div></details>`;if(R.err)return h+`<div class="s">${/risk_position/.test(R.err)?"Zapne sa po aktualizácii databázy (pár minút).":esc(R.err)}</div></details>`;
   const M=R.market||{},rows=R.rows||[];if(!rows.length)return h+`<div class="s">Žiadne otvorené obchody.</div></details>`;
-  let tot={un:0,lock:0,mtm:0,s10:0};
-  const tr=rows.map(x=>{const sym=MKB[x.com],bz=sym&&M[sym]?+M[sym].eur_t:null,un=+x.unsold_t||0,mtm=bz!=null&&x.avg_buy_unsold!=null?(bz-x.avg_buy_unsold)*un:null;
-    tot.un+=un;tot.lock+=+x.margin_locked||0;if(mtm!=null)tot.mtm+=mtm;tot.s10+=un*10;
-    return `<tr><td><b>${esc(comName(x.com))}</b><small>${x.n} obch.</small></td><td>${fmt(x.tons,0)} t<small>Ø ${fmt(x.avg_buy)} €</small></td><td>${x.sold_t?fmt(x.sold_t,0)+" t":"–"}<small>${x.avg_sell?"Ø "+fmt(x.avg_sell)+" €":""}</small></td><td class="${un>0?"wn":""}">${fmt(un,0)} t<small>${x.avg_buy_unsold?"Ø "+fmt(x.avg_buy_unsold)+" €":""}</small></td><td class="${(+x.margin_locked||0)>=0?"ps":"ng"}">${x.margin_locked!=null?fmt(x.margin_locked,0)+" €":"–"}</td><td>${bz!=null?fmt(bz,2)+" €":"–"}<small>${bz!=null?esc(M[sym].contract||""):""}</small></td><td class="${mtm==null?"":mtm>=0?"ps":"ng"}">${mtm!=null?(mtm>=0?"+":"")+fmt(mtm,0)+" €":"–"}</td></tr>`}).join("");
-  h+=`<div class="hrk"><div class="${tot.un>0?"wn":""}"><small>Nepredané (otvorená pozícia)</small><b>${fmt(tot.un,0)} t</b></div><div class="${tot.lock>=0?"ps":"ng"}"><small>Zamknutá marža (predané)</small><b>${fmt(tot.lock,0)} €</b></div><div class="${tot.mtm>=0?"ps":"ng"}"><small>Nepredané vs. burza dnes</small><b>${tot.mtm>=0?"+":""}${fmt(tot.mtm,0)} €</b></div><div class="wn"><small>Ak burza klesne o 10 €/t</small><b>−${fmt(tot.s10,0)} €</b></div></div>
-   <div class="hrt"><table><thead><tr><th>Plodina</th><th>Nakúpené</th><th>Predané</th><th>Nepredané</th><th>Marža</th><th>Burza</th><th>vs. burza</th></tr></thead><tbody>${tr}</tbody></table></div>
-   <div class="s">Predané = obchody so zadanou predajnou cenou. „vs. burza“ = (burza − Ø nákup nepredaných) × nepredané tony – orientačné, bez dopravy a bázy. Odporúčanie: nepredané tony nad ~500 t na plodinu zaisti predajom alebo kontraktom.</div></details>`;
+  const T={bt:0,st:0,pos:0,real:0,lock:0,mtm:0,tk:0};
+  const tr=rows.map(x=>{const sym=MKB[x.com],bz=sym&&M[sym]?+M[sym].eur_t:null,pos=x.pos_t!=null?+x.pos_t:(+x.unsold_t||0),mtm=bz!=null&&x.avg_buy!=null&&pos>0?(bz-x.avg_buy)*pos:null;
+    T.bt+=+x.tons||0;T.st+=+x.sold_t||0;T.pos+=pos;T.real+=+x.margin_real||0;T.lock+=+x.margin_locked||0;T.tk+=+x.tickets_t||0;if(mtm!=null)T.mtm+=mtm;
+    return `<tr><td><b>${esc(comName(x.com))}</b><small>${x.n||0} zmlúv</small></td><td>${fmt(x.tons,0)} t<small>Ø ${x.avg_buy!=null?fmt(x.avg_buy):"–"} €</small></td><td>${x.sold_t?fmt(x.sold_t,0)+" t":"–"}<small>${x.avg_sell?"Ø "+fmt(x.avg_sell)+" €":""}</small></td><td class="${pos>0?"wn":pos<0?"ng":""}">${pos>0?"+":""}${fmt(pos,0)} t<small>${pos>0?"nepredané":pos<0?"predané naviac":"kryté"}</small></td><td>${fmt(x.tickets_t||0,0)} t<small>${x.tk_buy?fmt(x.tk_buy)+" → "+fmt(x.tk_sell):""}</small></td><td class="${(+x.margin_real||0)>=0?"ps":"ng"}">${x.margin_real!=null?fmt(x.margin_real,0)+" €":"–"}<small>${x.tickets_t>0&&x.margin_real!=null?fmt(x.margin_real/x.tickets_t,2)+" €/t":""}</small></td><td>${bz!=null?fmt(bz,2)+" €":"–"}</td><td class="${mtm==null?"":mtm>=0?"ps":"ng"}">${mtm!=null?(mtm>=0?"+":"")+fmt(mtm,0)+" €":"–"}</td></tr>`}).join("");
+  const imp=R.import;
+  h+=`<div class="hrk"><div class="ps"><small>Realizovaná marža (vážne lístky)</small><b>${fmt(T.real,0)} €</b></div><div class="${T.pos>0?"wn":T.pos<0?"ng":""}"><small>Otvorená pozícia (nákup − predaj)</small><b>${T.pos>0?"+":""}${fmt(T.pos,0)} t</b></div><div class="ps"><small>Zamknutá marža zo zmlúv</small><b>${fmt(T.lock,0)} €</b></div><div class="wn"><small>Ak burza klesne o 10 €/t</small><b>−${fmt(Math.max(0,rows.reduce((s,x)=>s+Math.max(0,+x.pos_t||0),0))*10,0)} €</b></div></div>
+   <div class="hrt"><table><thead><tr><th>Plodina</th><th>Nakúpené</th><th>Predané</th><th>Pozícia</th><th>Dodané (lístky)</th><th>Marža</th><th>Burza</th><th>Pozícia vs. burza</th></tr></thead><tbody>${tr}</tbody></table></div>
+   <div class="s">Nakúpené = nákupné zmluvy s farmármi · Predané = predajné zmluvy (Agro-Somotor) · Pozícia + = nakúpené, ešte nepredané (riziko poklesu ceny), − = predané viac, než je nakúpené (treba dokúpiť) · Marža = (predaj − nákup) × čistá váha z vážnych lístkov, bez dopravy a réžie.${imp?` · Excel nahraný ${esc(new Date(imp.at).toLocaleString("sk-SK",{day:"numeric",month:"numeric",hour:"2-digit",minute:"2-digit"}))} (${imp.listky} lístkov, ${imp.zmluvy} zmlúv)`:""}</div></details>`;
   return h}
 // ---- CIEĽOVÉ CENY ----
 function tgHTML(TG){if(!Array.isArray(TG))return "";const A=TG.filter(t=>t.active).sort((a,b)=>{const fa=fpOf(a.com),fb=fpOf(b.com);return (a.target-(fa||0))-(b.target-(fb||0))});
@@ -105,4 +106,30 @@ try{Object.assign(HELP,{home:{t:"Prehľad",i:"🏠",r:"Všetko dôležité na je
  ["Cieľové ceny farmárov","Farmár si nastaví cenu, za ktorú chce predať. Vidíš, koľko ton by si získal, keby si cenu zdvihol o 5 alebo 10 €/t. Keď ju dosiahneš, požiadavka na predaj vznikne sama."],
  ["Balík mobility","Každé auto sa musí aspoň raz za 8 týždňov vrátiť na prevádzku. Aplikácia počíta dni od posledného príjazdu na dvor."],
  ["CO₂","Uhlíková stopa flotily za mesiac podľa skutočne spotrebovanej nafty (3,24 kg CO₂e/l, well-to-wheel) – argument pre Bunge a odberateľov."]]}})}catch(e){}
+
+// ===== VÁŽNE LÍSTKY (z Excelu / váhy) =====
+let DV=null,DVQ="",DVN=60;
+function dvLoad(){DV=undefined;sb.rpc("deliveries_staff").then(r=>{DV=r.error?{err:r.error.message}:r.data||[];if(TAB==="deals")renderStaff()})}
+function dvCard(){if(!canAny("deals","deals_qty","remain"))return "";if(DV===null)setTimeout(dvLoad,0);
+  let h=`<details class="card hsec" id="hs-dv"${DVQ?" open":""}><summary><span>⚖️</span><b>Vážne lístky</b><small>každá dodávka od farmára – čistá váha, nečistoty, ŠPZ, obchod</small></summary>`;
+  if(!Array.isArray(DV))return h+`<div class="s">${DV&&DV.err?"Zapne sa po aktualizácii databázy (pár minút).":"Načítavam…"}</div></details>`;
+  const q=String(DVQ).toLowerCase(),L=DV.filter(d=>!q||[d.ticket,d.farmer_name,d.plate,d.deal_no,comName(d.com)].join(" ").toLowerCase().includes(q));
+  const sum=L.reduce((s,d)=>s+(+d.net_kg||0),0)/1000;
+  h+=`<div class="f"><label class="w">Hľadať (farmár, lístok, ŠPZ, zmluva)<input id="dvQ" value="${esc(DVQ)}" placeholder="napr. VSK alebo MI680FU"></label></div>
+   <div class="s"><b>${L.length}</b> lístkov · spolu <b>${fmt(sum,1)} t</b> čistej váhy</div>
+   <div class="hrt"><table><thead><tr><th>Dátum</th><th>Farmár</th><th>Komodita</th><th>Čistá váha</th><th>Nečist.</th><th>ŠPZ</th><th>Zmluva</th>${can("deals")?"<th>Nákup €/t</th>":""}</tr></thead><tbody>${L.slice(0,DVN).map(d=>`<tr><td>${esc(dSK(d.day))}<small>${esc(d.ticket)}</small></td><td>${esc(d.farmer_name||"")}</td><td>${esc(comName(d.com))}</td><td>${fmt((+d.net_kg||0)/1000,3)} t</td><td>${d.impurity_pct!=null?fmt(d.impurity_pct,2)+" %":"–"}</td><td>${esc(d.plate||"")}</td><td class="${d.deal_no?"":"wn"}">${esc(d.deal_no||"bez zmluvy")}</td>${can("deals")?`<td>${d.buy_price!=null?fmt(d.buy_price):"<span class=wn>chýba</span>"}</td>`:""}</tr>`).join("")}</tbody></table></div>
+   ${L.length>DVN?`<div class="btns"><button type="button" data-dvmore="1">Zobraziť ďalších ${Math.min(200,L.length-DVN)}</button></div>`:""}
+   ${L.some(d=>!d.deal_no)?`<div class="s">⚠️ ${L.filter(d=>!d.deal_no).length} lístkov nemá nákupnú zmluvu – doplň zmluvu farmárovi v Exceli alebo tu v Obchodoch.</div>`:""}</details>`;
+  return h}
+const _vd2=window.vDeals;window.vDeals=function(){return _vd2.apply(this,arguments)+dvCard()};
+document.addEventListener("input",e=>{if(e.target.id!=="dvQ")return;DVQ=e.target.value;DVN=60;clearTimeout(e.target._t);e.target._t=setTimeout(()=>{renderStaff();const i=document.getElementById("dvQ");if(i){i.focus();i.setSelectionRange(i.value.length,i.value.length)}},350)});
+document.addEventListener("click",e=>{if(e.target.closest("[data-dvmore]")){DVN+=200;renderStaff()}});
+// farmár: moje dodávky (digitálne vážne lístky)
+let FD;function fdLoad(){FD=null;sb.rpc("my_deliveries").then(r=>{FD=r.error?[]:r.data||[];renderFarmer()})}
+function farmDelivHTML(){if(typeof FARMER==="undefined"||!FARMER||(window.fcan&&!fcan("f_deals")&&!fcan("f_remain")))return "";if(FD===undefined){fdLoad();return ""}if(!FD||!FD.length)return "";
+  const by={};for(const d of FD){const k=d.com;by[k]=(by[k]||0)+(+d.net_kg||0)/1000}
+  return `<h2>⚖️ Moje dodávky – vážne lístky</h2><div class="card fdc"><div class="ops-k">${Object.entries(by).slice(0,3).map(([k,t])=>`<div><small>${esc(comName(k))}</small><b>${fmt(t,1)} t</b></div>`).join("")}</div>
+   ${FD.slice(0,40).map(d=>`<details class="fdi"><summary><b>${esc(dSK(d.day))}</b><span>${esc(comName(d.com))} · <b class="num">${fmt((+d.net_kg||0)/1000,3)} t</b></span><small>${esc(d.plate||"")}</small></summary><div class="s">Lístok ${esc(d.ticket)} · hrubá ${fmt((+d.gross_kg||0)/1000,3)} t · nečistoty ${d.impurity_pct!=null?fmt(d.impurity_pct,2)+" %":"–"}${d.buy_price!=null?" · cena "+fmt(d.buy_price)+" €/t":""}${d.deal_no?" · zmluva "+esc(d.deal_no):""}${d.quality?"<br>Rozbor: "+esc(d.quality):""}</div></details>`).join("")}
+   ${FD.length>40?`<div class="s">…a ďalších ${FD.length-40} lístkov.</div>`:""}</div>`}
+const _fn2=window.farmNotesHTML;window.farmNotesHTML=function(){return farmDelivHTML()+(_fn2?_fn2.apply(this,arguments):"")};
 })();
