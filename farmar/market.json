@@ -1,0 +1,505 @@
+{
+  "fx": {
+    "date": "2026-10-22",
+    "huf": 366.43,
+    "src": "ECB referenčné kurzy",
+    "uah": 50.43,
+    "uahDate": "2026-10-23",
+    "uahSrc": "NBU oficiálny kurz",
+    "uahUrl": "https://minfin.com.ua/ua/2026/10/22/184069122/",
+    "url": "https://www.ecb.europa.eu/stats/policy_and_exchange_rates/euro_reference_exchange_rates/html/index.en.html",
+    "usd": 1.1205
+  },
+  "rows": [
+    {
+      "c": "repka",
+      "date": "2026-10-21",
+      "kind": "burza",
+      "market": "Euronext (MATIF) repka",
+      "note": "",
+      "orig": "485,75 €/t",
+      "place": "FOB sklady Euronext (Moselle/Rouen)",
+      "price": 485.75,
+      "quality": "olej 40 %, vlhkosť 9 %, nečistoty 2 % (štandard kontraktu)",
+      "src": "ahdb",
+      "term": "nov 2026"
+    },
+    {
+      "c": "repka",
+      "date": "2026-10-21",
+      "kind": "burza",
+      "market": "Euronext (MATIF) repka",
+      "note": "",
+      "orig": "540,25 €/t",
+      "place": "FOB sklady Euronext",
+      "price": 540.25,
+      "quality": "olej 40 %, vlhkosť 9 %, nečistoty 2 %",
+      "src": "ahdb",
+      "term": "feb 2027"
+    },
+    {
+      "c": "repka",
+      "date": "2026-10-04",
+      "kind": "fyzický",
+      "market": "Maďarsko – repkové semeno",
+      "note": "",
+      "orig": "197 575,94 Ft/t",
+      "place": "hazai termelői ár, bez DPH a dopravy",
+      "price": 539.19,
+      "quality": "štandard AKI",
+      "src": "aki",
+      "term": "spot (40. týždeň)"
+    },
+    {
+      "c": "repka",
+      "date": "2026-10-15",
+      "kind": "fyzický",
+      "market": "Ukrajina – repka 42 % olej",
+      "note": "",
+      "orig": "0,46 €/kg",
+      "place": "FCA Odesa",
+      "price": 460,
+      "quality": "olej 42 %",
+      "src": "cmbrape2",
+      "term": "spot"
+    },
+    {
+      "c": "lo",
+      "date": "2026-10-04",
+      "kind": "fyzický",
+      "market": "Maďarsko – slnečnica (ipari mag)",
+      "note": "",
+      "orig": "203 197,31 Ft/t",
+      "place": "hazai termelői ár, bez DPH a dopravy",
+      "price": 554.53,
+      "quality": "LO, štandard AKI",
+      "src": "aki",
+      "term": "spot (40. týždeň)"
+    },
+    {
+      "c": "lo",
+      "date": "2026-10-16",
+      "kind": "fyzický",
+      "market": "Ukrajina – slnečnica čierna 98 %",
+      "note": "",
+      "orig": "0,567 €/kg",
+      "place": "FOB Odesa",
+      "price": 567,
+      "quality": "čistota 98 %",
+      "src": "cmbsun2",
+      "term": "spot"
+    },
+    {
+      "c": "lo",
+      "date": "2026-10-15",
+      "kind": "fyzický",
+      "market": "Bulharsko – slnečnica čierna",
+      "note": "",
+      "orig": "0,44 €/kg",
+      "place": "FCA Sofia",
+      "price": 440,
+      "quality": "čierna",
+      "src": "cmbsun",
+      "term": "spot"
+    },
+    {
+      "c": "ho",
+      "date": "2026-09-06",
+      "kind": "fyzický",
+      "market": "Maďarsko – slnečnica HO",
+      "note": "staršie dáta – novšia HO cena nebola dostupná",
+      "orig": "211 362 Ft/t",
+      "place": "hazai termelői ár, bez DPH a dopravy",
+      "price": 576.81,
+      "quality": "HO (vysokoolejová)",
+      "src": "aki36",
+      "term": "spot (36. týždeň)"
+    },
+    {
+      "c": "ho",
+      "date": "2026-09-06",
+      "kind": "fyzický",
+      "market": "Maďarsko – slnečnica LO (na porovnanie HO prémie)",
+      "note": "HO prémia v tom týždni: 56.65 €/t",
+      "orig": "190 604 Ft/t",
+      "place": "hazai termelői ár, bez DPH a dopravy",
+      "price": 520.16,
+      "quality": "LO",
+      "src": "aki36",
+      "term": "spot (36. týždeň)"
+    },
+    {
+      "c": "soja",
+      "date": "2026-10-21",
+      "kind": "burza",
+      "market": "CBOT sója",
+      "note": "",
+      "orig": "1 244,00 ¢/bu",
+      "place": "Chicago / Illinois River",
+      "price": 407.94,
+      "quality": "US No. 2 Yellow (štandard kontraktu)",
+      "src": "ahdb",
+      "term": "nov 2026"
+    },
+    {
+      "c": "soja",
+      "date": "2026-10-04",
+      "kind": "fyzický",
+      "market": "Maďarsko – sójové bôby",
+      "note": "",
+      "orig": "177 572,90 Ft/t",
+      "place": "hazai termelői ár, bez DPH a dopravy",
+      "price": 484.6,
+      "quality": "štandard AKI",
+      "src": "aki",
+      "term": "spot (40. týždeň)"
+    },
+    {
+      "c": "psenica_p",
+      "date": "2026-10-21",
+      "kind": "burza",
+      "market": "Euronext (MATIF) pšenica potravinárska",
+      "note": "",
+      "orig": "232,75 €/t",
+      "place": "FOB Rouen / Dunkerque",
+      "price": 232.75,
+      "quality": "N-látky 11 %, vlhkosť 15 %, obj. hm. 76 kg/hl (štandard kontraktu)",
+      "src": "ahdb",
+      "term": "dec 2026"
+    },
+    {
+      "c": "psenica_p",
+      "date": "2026-10-21",
+      "kind": "burza",
+      "market": "Euronext (MATIF) pšenica potravinárska",
+      "note": "",
+      "orig": "232,50 €/t",
+      "place": "FOB Rouen / Dunkerque",
+      "price": 232.5,
+      "quality": "štandard kontraktu",
+      "src": "ahdb",
+      "term": "mar 2027"
+    },
+    {
+      "c": "psenica_p",
+      "date": "2026-10-04",
+      "kind": "fyzický",
+      "market": "Maďarsko – potravinárska pšenica",
+      "note": "",
+      "orig": "75 346,44 Ft/t",
+      "place": "hazai termelői ár, bez DPH a dopravy",
+      "price": 205.62,
+      "quality": "štandard AKI",
+      "src": "aki",
+      "term": "spot (40. týždeň)"
+    },
+    {
+      "c": "psenica_p",
+      "date": "2026-10-18",
+      "kind": "fyzický",
+      "market": "Slovensko – potravinárska pšenica",
+      "note": "",
+      "orig": "203,02 €/t",
+      "place": "Bratislava, miesto produkcie",
+      "price": 203.02,
+      "quality": "potravinárska (EK: milling wheat)",
+      "src": "ecapi",
+      "term": "spot (12.–18. 10.)"
+    },
+    {
+      "c": "psenica_k",
+      "date": "2026-09-06",
+      "kind": "fyzický",
+      "market": "Maďarsko – kŕmna pšenica",
+      "note": "staršie dáta",
+      "orig": "73 198 Ft/t",
+      "place": "hazai termelői ár, bez DPH a dopravy",
+      "price": 199.76,
+      "quality": "kŕmna",
+      "src": "aki36",
+      "term": "spot (36. týždeň)"
+    },
+    {
+      "c": "psenica_k",
+      "date": "2026-10-11",
+      "kind": "fyzický",
+      "market": "Slovensko – kŕmna pšenica",
+      "note": "neaktualizované, zdroj nedostupný (EK pre SK neuvádza kŕmnu pšenicu)",
+      "orig": "170,26 €/t",
+      "place": "Bratislava, miesto produkcie",
+      "price": 170.26,
+      "quality": "kŕmna",
+      "src": "ec",
+      "term": "spot (5.–11. 10.)"
+    },
+    {
+      "c": "jacmen_k",
+      "date": "2026-10-04",
+      "kind": "fyzický",
+      "market": "Maďarsko – kŕmny jačmeň",
+      "note": "",
+      "orig": "66 948,31 Ft/t",
+      "place": "hazai termelői ár, bez DPH a dopravy",
+      "price": 182.7,
+      "quality": "kŕmny",
+      "src": "aki",
+      "term": "spot (40. týždeň)"
+    },
+    {
+      "c": "jacmen_k",
+      "date": "2026-10-15",
+      "kind": "fyzický",
+      "market": "Ukrajina – kŕmny jačmeň",
+      "note": "",
+      "orig": "0,14 €/kg",
+      "place": "FCA Kyjev",
+      "price": 140,
+      "quality": "kŕmny",
+      "src": "cmbbar2",
+      "term": "spot"
+    },
+    {
+      "c": "jacmen_s",
+      "date": "2026-10-18",
+      "kind": "fyzický",
+      "market": "Slovensko – sladovnícky jačmeň",
+      "note": "",
+      "orig": "191,67 €/t",
+      "place": "Bratislava, miesto produkcie",
+      "price": 191.67,
+      "quality": "sladovnícky (EK: malting barley)",
+      "src": "ecapi",
+      "term": "spot (12.–18. 10.)"
+    },
+    {
+      "c": "kukurica",
+      "date": "2026-10-21",
+      "kind": "burza",
+      "market": "Euronext (MATIF) kukurica",
+      "note": "",
+      "orig": "291,25 €/t",
+      "place": "FOB Bordeaux / Dunkerque",
+      "price": 291.25,
+      "quality": "štandard kontraktu",
+      "src": "ahdb",
+      "term": "nov 2026"
+    },
+    {
+      "c": "kukurica",
+      "date": "2026-10-21",
+      "kind": "burza",
+      "market": "Euronext (MATIF) kukurica",
+      "note": "",
+      "orig": "268,50 €/t",
+      "place": "FOB Bordeaux / Dunkerque",
+      "price": 268.5,
+      "quality": "štandard kontraktu",
+      "src": "ahdb",
+      "term": "mar 2027"
+    },
+    {
+      "c": "kukurica",
+      "date": "2026-10-04",
+      "kind": "fyzický",
+      "market": "Maďarsko – kŕmna kukurica",
+      "note": "",
+      "orig": "88 188,98 Ft/t",
+      "place": "hazai termelői ár, bez DPH a dopravy",
+      "price": 240.67,
+      "quality": "kŕmna",
+      "src": "aki",
+      "term": "spot (40. týždeň)"
+    },
+    {
+      "c": "kukurica",
+      "date": "2026-10-11",
+      "kind": "fyzický",
+      "market": "Ukrajina – kŕmna kukurica",
+      "note": "",
+      "orig": "63 075 Ft/t",
+      "place": "CPT ukrajinský prístav",
+      "price": 172.13,
+      "quality": "kŕmna",
+      "src": "aki",
+      "term": "spot (41. týždeň)"
+    },
+    {
+      "c": "cirok",
+      "date": "2026-10-15",
+      "kind": "fyzický",
+      "market": "Ukrajina – cirok biely/červený 98 %",
+      "note": "",
+      "orig": "0,25 €/kg",
+      "place": "FCA Odesa",
+      "price": 250,
+      "quality": "čistota 98 %",
+      "src": "cmbsor",
+      "term": "spot"
+    },
+    {
+      "c": "kukurica",
+      "chop": true,
+      "date": "2026-10-22",
+      "kind": "fyzický",
+      "market": "Ukrajina – kukurica, AGRO BROKER",
+      "note": "DPH neuvedená",
+      "orig": "193 USD/t",
+      "place": "DAP Čop (železnica)",
+      "price": 172.24,
+      "quality": "neuvedená",
+      "src": "at_corn",
+      "term": "spot"
+    },
+    {
+      "c": "kukurica",
+      "chop": true,
+      "date": "2026-10-22",
+      "kind": "fyzický",
+      "market": "Ukrajina – kukurica, RO AGRO TRADE",
+      "note": "DPH neuvedená; UAH ceny ukr. obchodníkov môžu byť s ukr. DPH",
+      "orig": "7 500 UAH/t",
+      "place": "Batyovo (Батьово), Zakarpatská obl.",
+      "price": 148.72,
+      "quality": "neuvedená",
+      "src": "at_corn",
+      "term": "spot"
+    },
+    {
+      "c": "kukurica",
+      "chop": true,
+      "date": "2026-10-21",
+      "kind": "fyzický",
+      "market": "Ukrajina – kukurica, RAMBURS",
+      "note": "DPH neuvedená; Agrotender uvádza lokalitu „Угорщина, Батьово“",
+      "orig": "160 USD/t",
+      "place": "Batyovo (Батьово)",
+      "price": 142.79,
+      "quality": "neuvedená",
+      "src": "at_corn",
+      "term": "spot"
+    },
+    {
+      "c": "soja",
+      "chop": true,
+      "date": "2026-10-22",
+      "kind": "fyzický",
+      "market": "Maďarsko – sója, Ost-West Kft",
+      "note": "DPH neuvedená",
+      "orig": "446 USD/t",
+      "place": "Záhony (prechod oproti Čopu)",
+      "price": 398.04,
+      "quality": "neuvedená",
+      "src": "at_soy",
+      "term": "spot"
+    },
+    {
+      "c": "soja",
+      "chop": true,
+      "date": "2026-10-22",
+      "kind": "fyzický",
+      "market": "Maďarsko – sója, Ost-West Kft",
+      "note": "DPH neuvedená",
+      "orig": "426 USD/t",
+      "place": "Batyovo (Батьево)",
+      "price": 380.19,
+      "quality": "neuvedená",
+      "src": "at_soy",
+      "term": "spot"
+    },
+    {
+      "c": "soja",
+      "chop": true,
+      "date": "2026-09-30",
+      "kind": "fyzický",
+      "market": "Ukrajina – sója, Almeida Group",
+      "note": "staršia cena; DPH neuvedená",
+      "orig": "345 USD/t",
+      "place": "Čop, Južný MP",
+      "price": 307.9,
+      "quality": "neuvedená",
+      "src": "at_soy",
+      "term": "spot"
+    },
+    {
+      "c": "lo",
+      "chop": true,
+      "date": "2026-09-30",
+      "kind": "fyzický",
+      "market": "Ukrajina – slnečnica, Almeida Group",
+      "note": "staršia cena; DPH neuvedená; UAH ceny môžu byť s ukr. DPH",
+      "orig": "21 000 UAH/t",
+      "place": "Čop, Južný MP",
+      "price": 416.42,
+      "quality": "neuvedená (pravdepodobne LO, typ neuvedený)",
+      "src": "at_sun",
+      "term": "spot"
+    }
+  ],
+  "sources": {
+    "ahdb": {
+      "name": "AHDB – Euronext/CME futures",
+      "url": "https://ahdb.org.uk/futuresPrices"
+    },
+    "aki": {
+      "name": "AKI PÁIR (HU) cez Agroinform",
+      "url": "https://www.agroinform.hu/termeny-es-tap-arak"
+    },
+    "aki36": {
+      "name": "AKI PÁIR (HU) cez AgrárUnió",
+      "url": "https://www.agrarunio.hu/arfigyelo/10954-termenyarak"
+    },
+    "at_corn": {
+      "name": "Agrotender – kukurica (nákupné ceny obchodníkov)",
+      "url": "https://agrotender.com.ua/traders/region_ukraine/kukuruza"
+    },
+    "at_soy": {
+      "name": "Agrotender – sója (nákupné ceny obchodníkov)",
+      "url": "https://agrotender.com.ua/traders/region_ukraine/soya"
+    },
+    "at_sun": {
+      "name": "Agrotender – slnečnica (nákupné ceny obchodníkov)",
+      "url": "https://agrotender.com.ua/traders/region_ukraine/podsolnechnik"
+    },
+    "c3": {
+      "name": "Commodity3 – sladovnícky jačmeň FR",
+      "url": "https://www.commodity3.com/physical/grainsfrmalt/grains-malting-barley-french"
+    },
+    "cmbbar": {
+      "name": "CMB News – jačmeň",
+      "url": "https://commodity-board.com/barley-market-stuck-in-neutral-as-black-sea-risks-collide-with-weak-demand"
+    },
+    "cmbbar2": {
+      "name": "CMB News – jačmeň (16. 10.)",
+      "url": "https://commodity-board.com/barley-market-holds-steady-as-black-sea-pressure-meets-ample-eu-supply"
+    },
+    "cmbrape": {
+      "name": "CMB News – repka",
+      "url": "https://commodity-board.com/rapeseed-market-holds-firm-as-futures-curve-flattens-and-eu-imports-slow"
+    },
+    "cmbsor": {
+      "name": "CMB News – cirok",
+      "url": "https://commodity-board.com/eu-demand-lifts-ukrainian-sorghum-but-logistics-eat-the-margin"
+    },
+    "cmbsun": {
+      "name": "CMB News – slnečnica",
+      "url": "https://commodity-board.com/sunflower-seeds-under-pressure-while-oil-stays-supported-by-black-sea-risks"
+    },
+    "cmbsun2": {
+      "name": "CMB News – slnečnica (21. 10.)",
+      "url": "https://commodity-board.com/sunflower-market-mild-harvest-dip-firm-risks-beneath-the-surface"
+    },
+    "ec": {
+      "name": "EK – trhové observatórium (cez IndexBox)",
+      "url": "https://www.indexbox.io/blog/eu-cereals-prices-mixed-in-mid-october-2026-weekly-data/"
+    },
+    "ecapi": {
+      "name": "EK – Agri-food data portal (týždenné ceny obilnín)",
+      "url": "https://api.tech.ec.europa.eu/agrifood/api/cereal/prices?beginDate=01%2F10%2F2026&endDate=22%2F10%2F2026&memberStateCodes=SK"
+    },
+    "cmbrape2": {
+      "name": "CMB News – repka (22. 10.)",
+      "url": "https://commodity-board.com/rapeseed-pressured-by-soy-complex-and-canola-as-matif-hits-late-august-lows"
+    }
+  },
+  "updatedAt": "2026-10-23T07:17:30+02:00"
+}

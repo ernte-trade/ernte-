@@ -789,6 +789,7 @@ html[data-theme=light] .ftbl th{color:#0f172a}html[data-theme=light] .fdban{colo
 .rdel{min-width:40px;min-height:40px;padding:0;border-radius:10px}
 </style>
 <script>try{if(localStorage.getItem('ernte-theme')==='light')document.documentElement.dataset.theme='light'}catch(e){}</script>
+<link rel="stylesheet" href="perms.css?v=20261026-0800">
 </head>
 <body>
 <div class="wrap">
@@ -985,28 +986,30 @@ function tripRow(t){const d=new Date(t.day+"T12:00").toLocaleDateString("sk-SK",
   return `<div class="trip"><div class="tr1"><b>${esc(d)}${t.time?" · "+esc(t.time):""}</b>${pill(TST[t.status]||[t.status])}</div><div class="tr2">🚛 <b>${esc(t.spz||"auto VALKO")}</b>${t.driver?" · "+esc(t.driver):""}${t.driver_phone&&!["vylozene","zrusena"].includes(t.status)?` · <a class="copy" href="tel:${esc(String(t.driver_phone).replace(/\s/g,""))}">volať vodiča</a>`:""}</div>${t.netto!=null?`<div class="tr2">Netto: <b class="num">${fmt(t.netto,3)} t</b></div>`:""}${t.note?`<div class="s">${esc(t.note)}</div>`:""}${(()=>{const q=(STATE.pos||[]).find(x=>x.trip_id===t.id);return q&&q.lat?`<div class="tr2">📍 Poloha auta ${esc(ago(q.at))}${q.speed?` · ${q.speed} km/h`:""}</div>`+miniMap(+q.lat,+q.lon,t.spz||"auto"):""})()}</div>`}
 function renderFarmer(){const F=FARMER,P=MK.map(m=>STATE.prices.find(x=>x.com===m[0])).filter(Boolean),valid=((STATE.settings||{}).pricelist||{}).valid,c=contact();
   let h=`<div class="hero"><small>Prihlásený dodávateľ</small><b>${esc(F.name)}</b><small>${esc(ME.email)}</small></div>`;
-  h+=`<h2>Výkupné ceny · FCA farma, bez DPH</h2>`;
+  if(window.bigBtn)h+=`<div class="hrow">${bigBtn()}</div>`;
+  if((!window.fcan||fcan("f_prices"))){h+=`<h2>Výkupné ceny · FCA farma, bez DPH</h2>`;
   h+=P.length?`<div class="card">${P.map(p=>`<div class="prow">${comImg(p.com)}<div><div class="t">${esc(comName(p.com))}</div><div class="s">${esc(specLine(p.com))}</div></div><b class="num">${fmt(p.price)} €/t</b>
-      ${SELL===p.com?"":`<button type="button" class="lime sell" data-sell="${esc(p.com)}">Predať</button>`}
+      ${SELL===p.com||(window.fcan&&!fcan("f_sell"))?"":`<button type="button" class="lime sell" data-sell="${esc(p.com)}">Predať</button>`}
       ${SELL===p.com?`<form class="f sub" id="fSell"><div class="w"><b>Predať ${esc(comName(p.com))} za ${fmt(p.price)} €/t</b></div><label>Koľko ton?<input name="tons" inputmode="decimal" required placeholder="napr. 100"></label><label>Odkedy môžeme odviezť?<input name="date" type="date" min="${today()}"></label><label class="w">Poznámka (nepovinné)<input name="note" placeholder="napr. vlhkosť, miesto skladu"></label><div class="w btns"><button class="pri" type="submit">Odoslať ERNTE</button><button type="button" data-sell="">Zrušiť</button></div></form>`:""}</div>`).join("")}
       <div class="s">${valid?`Ceny platia do ${esc(dSK(valid))}. `:""}Ťuknite na <b>Predať</b>, napíšte tony a odošlite. ERNTE sa vám ozve.</div><div class="s" style="font-size:.66rem;opacity:.7">Ilustračné fotografie: Wikimedia Commons</div></div>`
-    :`<div class="card"><div class="s">Cenník práve pripravujeme.</div></div>`;
+    :`<div class="card"><div class="s">Cenník práve pripravujeme.</div></div>`;}
   const R=STATE.reqs;
   if(R.length){h+=`<h2>Moje požiadavky</h2><div class="card">${R.slice(0,8).map(r=>`<div class="row"><span><b style="font-family:var(--f-ui)">${esc(RKIND[r.kind])}</b>${r.com?" · "+esc(comName(r.com)):""}${r.tons?" · "+fmt(r.tons)+" t":""}</span>${pill(RST[r.status]||[r.status])}</div><div class="s" style="margin-top:-6px">${esc(dtSK(r.created_at))}${r.reply?" · ERNTE: "+esc(r.reply):""}</div>`).join("")}</div>`}
-  h+=`<h2>Počasie · 24 hodín a 7 dní</h2>`+wxCard();
+  if((!window.fcan||fcan("f_wx")))h+=`<h2>Počasie · 24 hodín a 7 dní</h2>`+wxCard();
   const up=(STATE.trips||[]).filter(t=>!["vylozene","zrusena"].includes(t.status));
-  if(up.length)h+=`<h2>Doprava VALKO · naplánované autá</h2><div class="card">${up.map(tripRow).join("")}</div>`;
-  h+=`<h2>Moje obchody</h2>`;
+  if(up.length&&(!window.fcan||fcan("f_trucks")))h+=`<h2>Doprava VALKO · naplánované autá</h2><div class="card">${up.map(tripRow).join("")}</div>`;
+  if((!window.fcan||fcan("f_deals")||fcan("f_remain"))){h+=`<h2>Moje obchody</h2>`;
   h+=STATE.deals.length?STATE.deals.map(d=>{const left=Math.max(0,(+d.tons||0)-(+d.delivered_t||0));const waitAgree=STATE.reqs.some(r=>r.kind==="agree"&&r.deal_id===d.id&&r.status==="nova");
     return `<div class="card">${comImg(d.com,"cban")}<div class="row"><span class="t">${esc(comName(d.com))}</span>${pill(DST[d.status]||[d.status])}</div>
-      <div class="s">Zmluva ${esc(d.no)} · ${fmt(d.price)} €/t FCA${d.term?" · do "+esc(d.term):""}</div>
+      <div class="s">Zmluva ${esc(d.no)}${(!window.fcan||fcan("f_deals"))?` · ${fmt(d.price)} €/t FCA`:""}${d.term?" · do "+esc(d.term):""}</div>
       <div class="kpis"><div class="kpi"><small>Dohodnuté</small><b>${fmt(d.tons)} t</b></div><div class="kpi"><small>Odvezené</small><b>${fmt(d.delivered_t)} t</b></div><div class="kpi"><small>Zostáva</small><b>${fmt(left)} t</b></div></div>
       ${d.note?`<div class="s">Pozn.: ${esc(d.note)}</div>`:""}
       ${(STATE.trips||[]).filter(t=>t.deal_id===d.id).length?`<details class="trips"><summary>Jazdy (${(STATE.trips||[]).filter(t=>t.deal_id===d.id).length})</summary>${(STATE.trips||[]).filter(t=>t.deal_id===d.id).map(tripRow).join("")}</details>`:""}
       <div class="btns">${d.status==="navrh"?(waitAgree?`<span class="pill w">súhlas odoslaný</span>`:`<button type="button" class="pri" data-agree="${esc(d.id)}">Súhlasím so zmluvou</button>`):""}
-        ${["podpisany","odvoz"].includes(d.status)&&left>0&&ORDER!==d.id?`<button type="button" class="lime" data-order="${esc(d.id)}">Objednať odvoz</button>`:""}</div>
+        ${["podpisany","odvoz"].includes(d.status)&&left>0&&ORDER!==d.id&&(!window.fcan||fcan("f_transport"))?`<button type="button" class="lime" data-order="${esc(d.id)}">Objednať odvoz</button>`:""}</div>
       ${ORDER===d.id?`<form class="f sub" id="fOrder" data-deal="${esc(d.id)}"><div class="w"><b>Objednávka odvozu VALKO</b></div><label>Počet kamiónov<input name="trucks" inputmode="numeric" value="${Math.max(1,Math.ceil(left/25))}"></label><label>Deň<input name="date" type="date" min="${today()}" required></label><label>Od koľkej<input name="time" type="time" value="07:00"></label><label>Miesto nakládky<input name="place" placeholder="sklad farmy"></label><label class="w">Poznámka<input name="note"></label><div class="w btns"><button class="pri" type="submit">Odoslať objednávku</button><button type="button" data-order="">Zrušiť</button></div></form>`:""}
-    </div>`}).join(""):`<div class="card"><div class="s">Zatiaľ nemáte žiadny obchod. Keď si vyberiete cenu a ťuknete na Predať, ERNTE vám pripraví zmluvu.</div></div>`;
+    </div>`}).join(""):`<div class="card"><div class="s">Zatiaľ nemáte žiadny obchod. Keď si vyberiete cenu a ťuknete na Predať, ERNTE vám pripraví zmluvu.</div></div>`;}
+  if(window.farmNotesHTML)h+=farmNotesHTML();
   h+=`<h2>Kontakt ERNTE</h2><div class="card"><div class="row"><span>Telefón</span><a class="copy" href="tel:${esc(String(c.phone||"").replace(/\s/g,""))}">${esc(c.phone)}</a></div><div class="row"><span>E-mail</span><a class="copy" href="mailto:${esc(c.email)}">${esc(c.email)}</a></div></div>`;
   h+=pwCard()+installHint();
   $("app").innerHTML=h;mountR()}
@@ -1268,7 +1271,7 @@ function priceBanner(){const v=((STATE.settings||{}).pricelist||{}).valid;
   if(d<=7)return `<div class="pban w"><b>Cenník platí do ${esc(dSK(v))}, obnov ho</b><span>${d<1?"Platí už len dnes.":d===1?"Platí ešte zajtra.":"Zostáva "+d+" "+(d<5?"dni":"dní")+"."}</span></div>`;
   return ""}
 // ===== DIZAJN „sklo – diamant“: zdieľané pomocné funkcie (iba vzhľad) =====
-const TICO={req:"📥",price:"💶",trans:"🚚",fleet:"🚛",deals:"🤝",farm:"👨‍🌾",wx:"🌦️",team:"👥"};
+const TICO={req:"📥",price:"💶",trans:"🚚",fleet:"🚛",deals:"🤝",farm:"👨‍🌾",wx:"🌦️",team:"👥",calc:"🧮"};
 const dsF2=x=>Number.isFinite(+x)?(+x).toLocaleString("sk-SK",{minimumFractionDigits:2,maximumFractionDigits:2}):"–";
 const dsSg=x=>(x>=0?"+":"−")+Math.round(Math.abs(x)).toLocaleString("sk-SK");
 const dsSg2=x=>(x>=0?"+":"−")+dsF2(Math.abs(x));
@@ -1323,15 +1326,16 @@ document.addEventListener("click",e=>{const th=e.target.closest("[data-dstheme]"
   const op=e.target.closest("[data-tedop]");if(op){STATE.tOpen=STATE.tOpen===op.dataset.tedop?null:op.dataset.tedop;renderStaff()}});
 function renderStaff(){const nNew=STATE.reqs.filter(r=>r.status==="nova").length;
   let tabs=[["req",`Požiadavky${nNew?` <span class="cnt">${nNew}</span>`:""}`],["price","Cenník"],["trans",`Doprava${(STATE.reqs||[]).filter(r=>r.kind==="transport"&&r.status==="nova").length?` <span class="cnt">${STATE.reqs.filter(r=>r.kind==="transport"&&r.status==="nova").length}</span>`:""}`],["deals","Obchody"],["farm","Farmári"],["wx","Počasie"]];
-  if(ROLE==="owner"||ROLE==="dispatch")tabs.splice(3,0,["fleet","Flotila"]);
+  if(typeof tabOK==="function"){tabs.splice(3,0,["fleet","Flotila"]);tabs.splice(5,0,["calc","Kalkulačka"]);if(ROLE==="owner")tabs.push(["team","Tím"]);tabs=tabs.filter(t=>tabOK(t[0]));if(!tabs.length)tabs=[["wx","Počasie"]]}
+  else{if(ROLE==="owner"||ROLE==="dispatch")tabs.splice(3,0,["fleet","Flotila"]);
   if(ROLE==="owner")tabs.push(["team","Tím"]);
   if(ROLE==="dispatch")tabs=tabs.filter(t=>["req","trans","fleet","wx"].includes(t[0]));
-  if(ROLE==="invoice")tabs=tabs.filter(t=>t[0]!=="fleet");
+  if(ROLE==="invoice")tabs=tabs.filter(t=>t[0]!=="fleet")}
   if(!tabs.some(t=>t[0]===TAB))TAB=tabs[0][0];
   let h=`<nav class="tabs" aria-label="Hlavná navigácia">${tabs.map(t=>{const lb=String(t[1]).split(' <span class="cnt">');return `<button type="button" data-tab="${t[0]}" aria-pressed="${TAB===t[0]}"><span class="ti" aria-hidden="true">${TICO[t[0]]||"•"}</span><span class="tl">${lb[0]}</span>${lb[1]?'<span class="cnt">'+lb[1]:""}</button>`}).join("")}</nav>`;
-  h+=`<div class="hrow"><button type="button" class="ds-theme" data-dstheme aria-label="Prepnúť svetlý / tmavý režim" title="Svetlý / tmavý režim">${document.documentElement.dataset.theme==="light"?"🌙":"☀️"}</button>${helpBtn(TAB)}</div>`;
+  h+=`<div class="hrow"><button type="button" class="ds-theme" data-dstheme aria-label="Prepnúť svetlý / tmavý režim" title="Svetlý / tmavý režim">${document.documentElement.dataset.theme==="light"?"🌙":"☀️"}</button>${window.bigBtn?bigBtn():""}${helpBtn(TAB)}</div>`;
   if(tabs.some(t=>t[0]==="price")&&(TAB==="price"||TAB==="req"))h+=priceBanner();
-  if(TAB==="wx"&&!WXD)loadWx().then(renderStaff);if(TAB==="fleet"&&!STATE.fleet)loadFleet().then(renderStaff);if(TAB==="team"&&!STATE.staff)loadTeam().then(renderStaff);h+=({req:vReq,price:vPrice,trans:vTrans,deals:vDeals,farm:vFarm,wx:wxCard,fleet:vFleet,team:vTeam})[TAB]();if(TAB==="req")h+=pwCard();$("app").innerHTML=h;mountR();dsAfter()}
+  if(TAB==="wx"&&!WXD)loadWx().then(renderStaff);if(TAB==="fleet"&&!STATE.fleet)loadFleet().then(renderStaff);if(TAB==="team"&&!STATE.staff)loadTeam().then(renderStaff);h+=({req:vReq,price:vPrice,trans:vTrans,deals:vDeals,farm:vFarm,wx:wxCard,fleet:vFleet,team:vTeam,calc:()=>window.vCalc?vCalc():""})[TAB]();if(TAB==="req")h+=pwCard();$("app").innerHTML=h;mountR();dsAfter()}
 function vReq(){const R=STATE.reqs;if(!R.length)return `<div class="card"><div class="s">Zatiaľ žiadne požiadavky od farmárov.</div></div>`;
   const ord=[...R.filter(r=>r.status==="nova"),...R.filter(r=>r.status!=="nova")],OWN=ROLE==="owner",RI={sell:"🌾",transport:"🚚",agree:"✍️",message:"💬"};
   return ord.map(r=>{const fr=STATE.farmers.find(x=>x.id===r.farmer_id)||{},d=r.deal_id?STATE.deals.find(x=>x.id===r.deal_id):null;
@@ -1634,13 +1638,13 @@ const FNAV=[["dash","🏠","Prehľad"],["fuel","⛽","Nafta"],["alarm","🚨","A
 const FOLD={perf:["money"],loss:["money"],find:["map","find"],moves:["map","moves"],places:["map","places"],yard:["fuel","yard"],cams:["fuel","cams"],cmd:["set","cmd"],firm:["set","firm"],diag:["set","main"],
   prehlad:["dash"],nafta:["fuel"],alarmy:["alarm"],peniaze:["money"],vodici:["drv"],vozidla:["veh"],mapa:["map"],nastavenia:["set"],pohyby:["map","moves"],miesta:["map","places"],kamery:["fuel","cams"],commander:["set","cmd"]};
 const FSUB={fuel:[["main","⛽ Nafta"],["yard","🛢️ Nádrž dvor"],["cams","📹 Kamery dvor"]],map:[["map","🗺️ Mapa"],["moves","🔁 Pohyby"],["places","📍 Miesta"],["find","🔍 Hľadať"]],set:[["main","⚙️ Nastavenia"],["cmd","📡 Commander"],["firm","🏢 Firma VALKO"]]};
-const fsub=k=>{const s=(STATE.fsub||{})[k],L=FSUB[k];return L?(L.some(x=>x[0]===s)?s:L[0][0]):""};
+const fsub=k=>{const s=(STATE.fsub||{})[k],L=FSUB[k]&&window.subOK?FSUB[k].filter(x=>subOK(k,x[0])):FSUB[k];return L&&L.length?(L.some(x=>x[0]===s)?s:L[0][0]):""};
 function fsecGo(k,sub){k=String(k||"dash");const o=FOLD[k];let s=k,u=sub;if(o){s=o[0];u=u||o[1]}if(s!=="set"&&!FNAV.some(n=>n[0]===s))s="dash";STATE.fsec=s;
   if(u){STATE.fsub=STATE.fsub||{};STATE.fsub[s]=u}
   try{history.replaceState(null,"","#flotila/"+s+(FSUB[s]&&fsub(s)!==FSUB[s][0][0]?"/"+fsub(s):""))}catch(e){}}
 function fsecFromHash(){const m=/^#(?:flotila|fleet)(?:\/([a-z]+))?(?:\/([a-z]+))?/i.exec(location.hash||"");if(!m)return false;fsecGo((m[1]||"dash").toLowerCase(),m[2]&&m[2].toLowerCase());return true}
 const camVis=()=>STATE.fsec==="fuel"&&fsub("fuel")==="cams";
-const fswHTML=sec=>`<div class="fsw" role="tablist">${FSUB[sec].map(x=>`<button type="button" data-fsub="${sec}:${x[0]}" aria-pressed="${fsub(sec)===x[0]}">${x[1]}</button>`).join("")}</div>`;
+const fswHTML=sec=>`<div class="fsw" role="tablist">${FSUB[sec].filter(x=>!window.subOK||subOK(sec,x[0])).map(x=>`<button type="button" data-fsub="${sec}:${x[0]}" aria-pressed="${fsub(sec)===x[0]}">${x[1]}</button>`).join("")}</div>`;
 // auto na servise / odstavené: bez alarmov a mimo priemerov
 const srvOf=F=>(F&&F.cfg&&F.cfg.service)||{};
 const offOf=F=>Object.assign({},parkedOf(F),Object.fromEntries(Object.keys(srvOf(F)).map(k=>[k,true])));
@@ -2031,7 +2035,8 @@ function vFleet(){const F0=STATE.fleet;if(!F0)return `<div class="card"><div cla
   S[cur]=h;
   const BG="valko-flotila.jpg";
   const OWNx=ROLE==="owner",alN=AXO.length,costM=OWNx?all:tot;
-  const sec=STATE.fsec&&(STATE.fsec==="set"||FNAV.some(n=>n[0]===STATE.fsec))?STATE.fsec:(FOLD[STATE.fsec]?(fsecGo(STATE.fsec),STATE.fsec):"dash");
+  let sec=STATE.fsec&&(STATE.fsec==="set"||FNAV.some(n=>n[0]===STATE.fsec))?STATE.fsec:(FOLD[STATE.fsec]?(fsecGo(STATE.fsec),STATE.fsec):"dash");
+  if(window.secOK&&!secOK(sec)){const ok=FNAV.find(n=>secOK(n[0]));sec=ok?ok[0]:"dash";STATE.fsec=sec}
   const FST=F0.fst,FD=window.FDS,pr=OWNx&&pay!=null?rv-all:null,prF=OWNx&&pay!=null?rv-allFull:null;
   const bal=FST?((FPER==="1"||FPER==="7")?FST.bilancia_7:FST.bilancia_30)||[]:null;
   const unx=bal?bal.reduce((s,b)=>{const l=+b.nevysvetleny_ubytok_l||0;return b.nevysvetleny_ubytok_eur_bez_dph!=null&&l>30?{l:s.l+l,eur:s.eur+(+b.nevysvetleny_ubytok_eur_bez_dph||0),n:s.n+1}:s},{l:0,eur:0,n:0}):null;
@@ -2047,7 +2052,7 @@ function vFleet(){const F0=STATE.fleet;if(!F0)return `<div class="card"><div cla
   let o=`<div class="vhero" style="--bg:url('${BG}')"><div class="vhin"><div class="vbrand"><span>VALKO</span><i></i><span>ERNTE</span></div>
     <h1>Od poľa<br><em>až po odberateľa.</em></h1><p>ERNTE výkup · VALKO doprava · ${new Date().toLocaleDateString("sk-SK",{weekday:"long",day:"numeric",month:"long"})}</p>
     <div class="vlive"><div><b>${moving}</b><small>ide</small></div><div><b>${G.length-moving}</b><small>stojí</small></div><div><b>${yard}</b><small>na dvore</small></div><div class="${alN?"al":""}"><b>${alN}</b><small>alarmy</small></div></div></div></div>
-  <div class="vnavw"><nav class="vnav" aria-label="Flotila">${FNAV.map(n=>`<button type="button" data-fsec="${n[0]}" aria-pressed="${sec===n[0]}"${(n[0]==="alarm"||n[0]==="fuel")&&BD[n[0]]?` class="hot"`:""}><span>${n[1]}</span><b>${esc(n[2])}</b>${bdg(BD[n[0]])}</button>`).join("")}</nav><button type="button" class="vgear" data-fsec="set" aria-pressed="${sec==="set"}" aria-label="Nastavenia flotily" title="Nastavenia">⚙️${bdg(BD.set)}</button></div>${FSEG}<div id="fsecTop"></div>`;
+  <div class="vnavw"><nav class="vnav" aria-label="Flotila">${FNAV.filter(n=>!window.secOK||secOK(n[0])).map(n=>`<button type="button" data-fsec="${n[0]}" aria-pressed="${sec===n[0]}"${(n[0]==="alarm"||n[0]==="fuel")&&BD[n[0]]?` class="hot"`:""}><span>${n[1]}</span><b>${esc(n[2])}</b>${bdg(BD[n[0]])}</button>`).join("")}</nav>${!window.secOK||secOK("set")?`<button type="button" class="vgear" data-fsec="set" aria-pressed="${sec==="set"}" aria-label="Nastavenia flotily" title="Nastavenia">⚙️${bdg(BD.set)}</button>`:""}</div>${!window.fleetAll||fleetAll()?FSEG:""}<div id="fsecTop"></div>`;
   if(sec==="dash"){
     o+=banner;if(OWNx)o+=rateWarnHTML();
     o+=`<div class="qbar" role="toolbar" aria-label="Rýchle akcie">${[["todo","🔴","Čo riešiť dnes",1],["vyzva","📄","Pripraviť výzvu vodičovi",OWNx],["fuelm","⛽","Kontrola nafty mesiaca",1],["report","📊","Report mesiaca",1],["ai","🤖","Spýtaj sa AI",OWNx]].filter(x=>x[3]).map(x=>`<button type="button" data-qa="${x[0]}"><span>${x[1]}</span><b>${x[2]}</b></button>`).join("")}</div>`;
@@ -2568,7 +2573,7 @@ function vTrans(){if(STATE.noTrans)return `<div class="card"><div class="t">Dopr
     <div class="s">${[d&&d.no,r.com&&comName(r.com),r.trucks&&r.trucks+" kamión(y)",r.pickup_date&&"od "+dSK(r.pickup_date)+(r.pickup_time?" "+r.pickup_time:""),r.place].filter(Boolean).map(esc).join(" · ")}</div>${r.note?`<div class="s">„${esc(r.note)}“</div>`:""}
     ${open?`<form class="f sub" id="fAssign" data-req="${esc(r.id)}"><div class="w s">Vyber autá:</div><div class="w tgrid">${T.map(t=>`<label class="tchk"><input type="checkbox" name="tk" value="${t.no}"><span><b>č.${t.no} · ${esc(t.spz)}</b><small>${esc(t.driver||"bez vodiča")}</small></span></label>`).join("")}</div>
       <label>Deň<input name="day" type="date" required value="${esc(r.pickup_date||today())}"></label><label>Od koľkej<input name="time" type="time" value="${esc(r.pickup_time||"07:00")}"></label>
-      <label class="w">Poznámka pre farmára (nepovinné)<input name="note" placeholder="napr. príjazd cez dvor"></label>
+      ${!window.can||can("farmer_gps")?`<label class="w pck"><input type="checkbox" name="gps" checked><span>📍 Farmár uvidí polohu auta cestou na nakládku<small>vykládku a odberateľa nikdy nevidí</small></span></label>`:""}<label class="w">Poznámka pre farmára (nepovinné)<input name="note" placeholder="napr. príjazd cez dvor"></label>
       <div class="w btns"><button class="pri" type="submit">Potvrdiť autá farmárovi</button><button type="button" data-assign="">Zrušiť</button></div></form>`
     :`<div class="btns"><button type="button" class="lime" data-assign="${esc(r.id)}">Prideliť autá</button><button type="button" class="dng" data-rej="${esc(r.id)}">Prerušiť / zamietnuť</button></div>`}</div>`}).join(""):"";
   const days=[...new Set(STATE.trips.map(t=>t.day))].sort().reverse();const day=TDAY||days.find(d=>d>=today())||days[0]||today();
@@ -2650,7 +2655,7 @@ document.addEventListener("click",async e=>{if(!ROLE)return;const t=e.target,g=s
     else usePhone=!f.email;
     const pw=genPw();busy(x,true);const r=await sb.rpc("set_farmer_password",{fid:f.id,pw,use_phone:usePhone});busy(x,false);
     if(r.error){toast("Nepodarilo sa: "+r.error.message,7000);return}
-    const who=usePhone?f.phone:f.email;const txt=`Dobrý deň, ERNTE má pre vás aplikáciu s výkupnými cenami, vašimi obchodmi a počasím:\n${APP_URL}\n\nPrihlásenie: ${who}\nHeslo: ${pw}\n\nPo prihlásení si ju dajte na plochu (Zdieľať → Pridať na plochu).`,pwv=pw;
+    const who=usePhone?f.phone:f.email;const txt=`Dobrý deň, ERNTE má pre vás aplikáciu s výkupnými cenami, vašimi obchodmi a počasím:\n${APP_URL}\n\nPrihlasovacie meno: ${who}\nJednorazový kód: ${pw}\n\nPo prvom prihlásení si nastavíte vlastný PIN (kód potom prestane platiť). PIN nikomu neposielajte.\nAplikáciu si dajte na plochu (Zdieľať → Pridať na plochu).`,pwv=pw;
     const tel=String(f.phone||"").replace(/\D/g,"").replace(/^00/,"").replace(/^0/,"421");
     STATE.invite={name:f.name,txt,tel,pw:pwv};await loadStaff();renderStaff();window.scrollTo(0,0);return}
   if(x=g("[data-copyinv]")){try{await navigator.clipboard.writeText(STATE.invite.txt);toast("Správa skopírovaná.")}catch(er){toast("Kopírovanie sa nepodarilo – pošli cez WhatsApp/SMS.",4000)}return}
@@ -2675,8 +2680,8 @@ document.addEventListener("submit",async e=>{if(!ROLE)return;const f=e.target,fd
     DEALF=null;await loadStaff();renderStaff();toast("Obchod "+row.no+" uložený. Farmár ho vidí.");return}
   if(f.id==="fAssign"){e.preventDefault();const r=STATE.reqs.find(y=>y.id===f.dataset.req),nos=fd.getAll("tk").map(Number);if(!nos.length){toast("Vyber aspoň jedno auto.");return}
     const b=f.querySelector("button[type=submit]");busy(b,true);
-    const rows=nos.map(n=>{const t=STATE.trucks.find(y=>y.no===n);return {farmer_id:r.farmer_id,deal_id:r.deal_id,request_id:r.id,truck_no:n,spz:t.spz,driver:t.driver,driver_phone:t.phone,day:fd.get("day"),time:fd.get("time")||null,note:fd.get("note")||null}});
-    const a=await sb.from("trips").insert(rows);if(a.error){busy(b,false);toast("Chyba: "+a.error.message,6000);return}
+    const rows=nos.map(n=>{const t=STATE.trucks.find(y=>y.no===n);return {farmer_id:r.farmer_id,deal_id:r.deal_id,request_id:r.id,truck_no:n,spz:t.spz,driver:t.driver,driver_phone:t.phone,day:fd.get("day"),time:fd.get("time")||null,note:fd.get("note")||null,gps_farmer:fd.get("gps")==="on"}});
+    let a=await sb.from("trips").insert(rows);if(a.error&&/gps_farmer/.test(a.error.message)){rows.forEach(x=>delete x.gps_farmer);a=await sb.from("trips").insert(rows)}if(a.error){busy(b,false);toast("Chyba: "+a.error.message,6000);return}
     await sb.from("requests").update({status:"vybavena",reply:`Pridelené ${rows.length} auto(á) na ${dSK(fd.get("day"))}${fd.get("time")?" od "+fd.get("time"):""}.`,handled_by:ME.staffName,handled_at:new Date().toISOString()}).eq("id",r.id);
     if(r.deal_id)await sb.from("deals").update({status:"odvoz"}).eq("id",r.deal_id).in("status",["navrh","podpisany"]);
     ASSIGN=null;TDAY=fd.get("day");await loadStaff();renderStaff();toast("Autá potvrdené – farmár ich vidí.");return}
@@ -2697,8 +2702,9 @@ document.addEventListener("submit",async e=>{if(!ROLE)return;const f=e.target,fd
 });
 
 if("serviceWorker" in navigator&&location.protocol==="https:")navigator.serviceWorker.register("sw.js").catch(()=>{});
-boot();
+if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",()=>boot());else boot();
 </script>
 <script src="ai.js?v=20261026-0600"></script>
+<script src="perms.js?v=20261026-0800"></script>
 </body>
 </html>
