@@ -85,19 +85,20 @@ function loadsHTML(o,mode){const L=o.loads||[];if(!L.length)return "";
       <div class="w btns"><button class="lime">${mode==="sup"?(T.lang==="hu"?"✓ Megrakva":"✓ Naložené"):mode==="buy"?"✓ Prevzaté":"💾 Uložiť váženie"}</button></div></form></details>`:""}</div>`}).join("")}</div>`}
 
 // ================= ZAMESTNANCI (ERNTE / VALKO) =================
-async function loadStaffT(){const r=await sb.rpc("trus_staff");T.d=r.error?{err:errMsg(r)}:r.data;if(T.d&&T.d.own){const u=await sb.rpc("trus_users_list");T.d.users=u.error?null:(u.data||[])}if(typeof TAB!=="undefined"&&TAB==="trus")renderStaff()}
+async function loadStaffT(){const r=await sb.rpc("trus_staff");T.d=r.error?{err:errMsg(r)}:r.data;if(T.d&&T.d.own){const u=await sb.rpc("trus_users_list");T.d.users=u.error?null:(u.data||[]);try{const l=await sb.from("trus_partners").select("id,lang");for(const x of (l.data||[])){const p=(T.d.partners||[]).find(y=>y.id===x.id);if(p)p.lang=x.lang}}catch(x){}}if(typeof TAB!=="undefined"&&TAB==="trus")renderStaff()}
 window.trusNew=()=>T.d&&!T.d.err?(T.d.orders||[]).filter(o=>o.status==="nahlasene").length:0;
 window.vTrus=function(){const D=T.d;if(!D){loadStaffT();return `<div class="card"><div class="s">Načítavam kurací trus…</div></div>`}
   if(D.err)return `<div class="card"><div class="s">${e(D.err)}</div></div>`;
   const nw=(D.orders||[]).filter(o=>o.status==="nahlasene").length,run=(D.orders||[]).filter(o=>["schvalene","na_ceste"].includes(o.status)).length;
   const SEC=[["vyv","🚛","Vývozy a autá",nw?`${nw} na schválenie · ${run} v behu`:`${run} v behu · nahlásenia od dodávateľa`]];
   if(D.price)SEC.push(["fak","🧾","Fakturácia","podklady: Baromfi → ERNTE · VALKO → ERNTE · ERNTE → BPS"],["cen","💶","Cenník pre odberateľa","21 miest nakládky · trus + doprava €/t"]);
+  if(D.own)SEC.splice(1,0,["pri","🔑","Prístupy firiem a jazyk","Baromfi a BPS · vytvoriť prístup · čo kto vidí · 🇸🇰 SK / 🇭🇺 HU"]);
   if(D.own)SEC.push(["eko","📊","Ekonomika trás","úplné náklady súpravy · zisk · stratové trasy"],["nas","⚙️","Nastavenia a partneri","ceny · km trás · prihlásenia Baromfi a BPS"]);
   let h=`<div class="zt trz"><h2>🐔 Kurací trus ${T.sec?`<button type="button" class="ztb" data-trsec="">← späť</button>`:""}</h2>`;
   if(!T.sec)return h+`<div class="trflow"><span>🇭🇺 Baromfi Kft<small>nahlási vývoz</small></span><i>→</i><span>🚛 VALKO<small>schváli · ŠPZ</small></span><i>→</i><span>🏭 BPS Kamenica<small>vidí termín, tony, cenu</small></span><i>→</i><span>🧾 ERNTE<small>fakturácia</small></span></div>
     <div class="zgrid">${SEC.map(s=>`<button type="button" class="zbtn" data-trsec="${s[0]}"><span>${s[1]}</span><b>${s[2]}${s[0]==="vyv"&&nw?` <em class="acnt">${nw} nové</em>`:""}</b><small>${e(s[3])}</small></button>`).join("")}</div>
     <div class="s">🔒 Baromfi vidí iba výkupnú cenu a svoje vývozy. BPS vidí iba predajnú cenu, dopravu a svoje dodávky – nie dodávateľa ani nákup. VALKO dispečing vidí autá a miesta, bez cien.</div></div>`;
-  if(T.sec==="vyv")h+=ordersHTML(D);else if(T.sec==="fak"&&D.price)h+=fakHTML(D);else if(T.sec==="cen"&&D.price)h+=cenHTML(D);else if(T.sec==="eko"&&D.own)h+=ekoHTML(D);else if(T.sec==="nas"&&D.own)h+=nasHTML(D);
+  if(T.sec==="vyv")h+=ordersHTML(D);else if(T.sec==="fak"&&D.price)h+=fakHTML(D);else if(T.sec==="cen"&&D.price)h+=cenHTML(D);else if(T.sec==="eko"&&D.own)h+=ekoHTML(D);else if(T.sec==="nas"&&D.own)h+=nasHTML(D);else if(T.sec==="pri"&&D.own)h+=priHTML(D);
   return h+`</div>`};
 function ordersHTML(D){const O=D.orders||[],F={open:o=>OPEN.includes(o.status),nahlasene:o=>o.status==="nahlasene",dorucene:o=>o.status==="dorucene",all:()=>true},L=O.filter(F[T.flt]||F.open);
   const op=O.filter(F.open),tp=op.reduce((s,o)=>s+(+(o.sum&&o.sum.tons_plan)||0),0),tr=op.reduce((s,o)=>s+(+o.trucks_n||0),0);
@@ -155,7 +156,7 @@ function nasHTML(D){const C=D.cfg||{},P=D.partners||[],S=D.sites||[];const fld=(
   <div class="card"><div class="t">🤝 Partneri a prihlásenia</div>${P.map(p=>`<form class="f trpf" data-trp="${e(p.id)}"><div class="w row"><b>${p.kind==="dodavatel"?"🇭🇺 Dodávateľ":"🏭 Koncový odberateľ"}</b>${p.login?`<span class="pill">prihlásenie: ${e(p.login)}</span>`:`<span class="pill w">bez prihlásenia</span>`}</div>
     <label class="w">Názov<input name="name" value="${e(p.name)}" required></label><label class="w">Adresa<input name="addr" value="${e(p.addr||"")}"></label><label>IČO<input name="ico" value="${e(p.ico||"")}"></label><label>DIČ<input name="dic" value="${e(p.dic||"")}"></label><label>IČ DPH<input name="ic_dph" value="${e(p.ic_dph||"")}"></label>
     <label>Kontaktná osoba<input name="contact" value="${e(p.contact||"")}"></label><label>Telefón<input name="phone" value="${e(p.phone||"")}"></label><label>E-mail<input name="email" type="email" value="${e(p.email||"")}"></label>
-    <div class="w btns"><button>💾 Uložiť údaje firmy</button></div></form>${usersHTML(p,D)}`).join("")}</div>
+    <div class="w btns"><button>💾 Uložiť údaje firmy</button><button type="button" class="lime" data-trsec="pri">🔑 Prístupy a jazyk</button></div></form>`).join("")}</div>
   <div class="card"><div class="t">📍 Trasy – miesta nakládky (km jedným smerom)</div><div class="s">Po overení km v MKD navigácii zaškrtni „overené“. Mýto otočky € a vlastná cena €/km sú nepovinné – prázdne = model.</div>
    <div class="trsites">${S.map(s=>`<form class="f trsf" data-trs="${e(s.id)}"><label class="w"><b>${e(s.name)}</b><small>${f2(s.calc.km,0)} km otočka · ${f2(s.calc.full_km,2)} €/km náklad</small></label>
     <label>Km tam<input name="km_one_way" inputmode="decimal" value="${e(s.km_one_way)}"></label><label>Mýto otočka €<input name="toll_eur" inputmode="decimal" value="${s.toll_eur!=null?e(s.toll_eur):""}" placeholder="${f2(s.calc.toll,0)}"></label>
@@ -173,7 +174,7 @@ function huDom(root){if(!root)return;const w=document.createTreeWalker(root,Node
   root.querySelectorAll&&root.querySelectorAll("[placeholder],[aria-label],[title]").forEach(el=>{for(const a of ["placeholder","aria-label","title"]){const v=el.getAttribute(a);if(v){const x=huT(v);if(x!==v)el.setAttribute(a,x)}}})}
 window.trusHu=()=>T.P&&T.lang==="hu";window.trusHuDom=huDom;
 
-window.trusPortal=async function(){const r=await sb.rpc("trus_portal");if(r.error||!r.data)return false;T.P=r.data;if(!T.lang){let l=null;try{l=localStorage.getItem("ernte-trus-lang")}catch(x){}T.lang=l||(r.data.me.country==="HU"?"hu":"sk")}
+window.trusPortal=async function(){const r=await sb.rpc("trus_portal");if(r.error||!r.data||!r.data.me)return false;T.P=r.data;if(!T.lang){let l=null;try{l=localStorage.getItem("ernte-trus-lang")}catch(x){}T.lang=l||r.data.me.lang||(r.data.me.country==="HU"?"hu":"sk")}
   if(!T.psec)T.psec=r.data.me.kind==="dodavatel"?"new":"dod";
   const h=document.getElementById("hS");if(h)h.textContent=r.data.me.name;const t=document.getElementById("hT");if(t)t.textContent="ERNTE · kurací trus";document.title="ERNTE – kurací trus";
   renderP();if(!window._trusIv)window._trusIv=setInterval(async()=>{if(document.hidden||document.querySelector("#app form :focus"))return;const x=await sb.rpc("trus_portal");if(!x.error&&x.data){T.P=x.data;renderP()}},60e3);return true};
@@ -230,6 +231,11 @@ function buyCard(o,P){const U=P.unload||[];
     <label class="w">Pokyn pre vodiča<input name="note" value="${e(o.unload_note||"")}" placeholder="napr. vjazd zadnou bránou, hlásiť sa na váhe"></label><div class="w btns"><button class="lime">💾 Poslať dopravcovi</button></div></form>`:`<div class="s">🏁 ${e(o.unload||"BPS Kamenica nad Cirochou – areál")}</div>`}</div>`}
 
 
+function priHTML(D){const P=(D.partners||[]).filter(p=>p.active!==false);
+  return `<div class="card"><div class="s">Tu vytvoríš prístup do aplikácie pre ľudí z firmy, nastavíš čo vidia a v akom jazyku majú aplikáciu. Heslo im pošleš cez WhatsApp/SMS jedným ťuknutím.</div></div>`+P.map(p=>{const L=p.lang||(p.country==="HU"?"hu":"sk");
+    return `<div class="card trpri"><div class="row"><span class="t">${p.kind==="dodavatel"?"🇭🇺 ":"🏭 "}${e(p.name)}</span><span class="pill">${p.kind==="dodavatel"?"dodávateľ":"koncový odberateľ"}</span></div>
+    <div class="w"><small>Jazyk aplikácie pre túto firmu</small><div class="btns seg2 trplang"><button type="button" data-plang="${e(p.id)}" data-l="sk" aria-pressed="${L==="sk"}">🇸🇰 Slovenčina</button><button type="button" data-plang="${e(p.id)}" data-l="hu" aria-pressed="${L==="hu"}">🇭🇺 Magyar</button></div></div>
+    ${usersHTML(p,D)}</div>`}).join("")}
 // ---------- prístupy firiem (viac ľudí na firmu, každý s vlastnými právami) ----------
 const PK={dodavatel:[["t_report","Nahlasovať vývozy (farma, dátum, autá)"],["t_weigh","Zadávať váženie pri nakládke"],["t_price","Vidieť výkupnú cenu a sumy"],["t_bill","Vyúčtovanie a podklad k faktúre"]],
   odberatel:[["t_unload","Určovať miesto vykládky pre vodiča"],["t_weigh","Potvrdzovať prevzatie a váženie"],["t_price","Vidieť cenu trusu a dopravy"],["t_bill","Podklady k faktúre"],["t_list","Cenník podľa miest nakládky"]]};
@@ -246,7 +252,7 @@ function usersHTML(p,D){const U=(D.users||[]).filter(u=>u.partner_id===p.id),K=P
     <label class="w">Rola<select name="preset" data-tupre="${e(p.kind)}">${(PRS[p.kind]||[]).map(r=>`<option value="${r[0]}">${e(r[1])}</option>`).join("")}<option value="">Vlastné – vyberiem nižšie</option></select></label>
     <div class="w trtk">${K.map(k=>box(k,((PRS[p.kind]||[])[0]||[,,[]])[2].includes(k[0]))).join("")}</div>
     <div class="w btns"><button class="lime">🔑 Vytvoriť prístup a heslo</button></div></form></div>`}
-async function showLogin(p,login,pw,name){const app=typeof APP_URL!=="undefined"?APP_URL:location.href.split("#")[0],hu=p.country==="HU",lg=lgShow(login);
+async function showLogin(p,login,pw,name){const app=typeof APP_URL!=="undefined"?APP_URL:location.href.split("#")[0],hu=(p.lang||(p.country==="HU"?"hu":"sk"))==="hu",lg=lgShow(login);
   const txt=hu?`ERNTE – csirketrágya / kurací trus\n${app}\nBejelentkezés / Prihlásenie: ${lg}\nJelszó / Heslo: ${pw}\n${p.kind==="dodavatel"?"Itt jelentheti be a szállításokat, és látja a kamionokat.":"Itt látja a szállításokat, kamionokat és az árakat."}`
     :`ERNTE – kurací trus\n${app}\nPrihlásenie: ${lg}\nHeslo: ${pw}\n${p.kind==="dodavatel"?"Tu nahlásite vývozy a uvidíte pridelené autá.":"Tu uvidíte dodávky, autá, cenu a podklady k faktúre."}`;
   const ph=/^\d+@tel\.ernte\.sk$/.test(login)?login.split("@")[0]:tel(p.phone);
@@ -255,6 +261,7 @@ async function showLogin(p,login,pw,name){const app=typeof APP_URL!=="undefined"
 const genPw2=()=>Array.from(crypto.getRandomValues(new Uint8Array(6)),b=>"abcdefghjkmnpqrstuvwxyz23456789"[b%31]).join("")+"-"+(1000+crypto.getRandomValues(new Uint16Array(1))[0]%9000);
 document.addEventListener("change",ev=>{const x=ev.target;if(!x.dataset||x.dataset.tupre==null)return;const R=(PRS[x.dataset.tupre]||[]).find(r=>r[0]===x.value);if(!R)return;x.form.querySelectorAll("input[name=pk]").forEach(c=>c.checked=R[2].includes(c.value))});
 document.addEventListener("click",async ev=>{const g=s=>ev.target.closest&&ev.target.closest(s);let x;
+  if(x=g("[data-plang]")){const r=await sb.from("trus_partners").update({lang:x.dataset.l}).eq("id",x.dataset.plang);if(r.error){tm()(/lang/.test(r.error.message)?"Zapne sa po aktualizácii databázy (pár minút).":r.error.message,6000);return}tm()(x.dataset.l==="hu"?"Firma bude mať aplikáciu po maďarsky ✓":"Firma bude mať aplikáciu po slovensky ✓");await loadStaffT();return}
   if(x=g("[data-tupw]")){const p=T.d.partners.find(y=>y.id===x.dataset.tp),u=(T.d.users||[]).find(y=>y.login===x.dataset.tupw);if(!confirm(`Vytvoriť nové heslo pre ${u&&u.name||lgShow(x.dataset.tupw)}?`))return;const pw=genPw2();
     const r=await sb.rpc("trus_user_save",{p_partner:p.id,p_login:x.dataset.tupw,p_name:null,p_perms:null,pw});if(r.error){tm()(r.error.message,7000);return}showLogin(p,r.data,pw,u&&u.name);loadStaffT();return}
   if(x=g("[data-tublk]")){const on=x.dataset.on==="1";if(!on&&!confirm("Zablokovať tento prístup? Človek sa už neprihlási."))return;const r=await sb.rpc("trus_user_block",{p_login:x.dataset.tublk,p_active:on});if(r.error){tm()(r.error.message,6000);return}tm()(on?"Odblokované ✓":"Zablokované ✓");loadStaffT();return}

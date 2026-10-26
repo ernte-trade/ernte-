@@ -47,3 +47,4 @@ html.big .trtab table{font-size:1rem}html.big .trlh b{font-size:1.2rem}html.big 
 .trus{display:grid;gap:10px;margin:6px 0 14px;padding:12px;border-radius:18px;border:1px solid rgba(124,196,255,.35);background:linear-gradient(150deg,rgba(124,196,255,.08),rgba(255,255,255,.02))}
 .trusr{padding:10px;border-radius:14px;border:1px solid var(--line,rgba(255,255,255,.12))}.trusr.off{opacity:.6}.trusr .row{display:flex;flex-wrap:wrap;gap:4px 10px;align-items:baseline}.trusr small{color:var(--muted)}
 .trnewu{padding:10px;border-radius:14px;border:1px dashed rgba(182,255,59,.45)}
+.trpri{display:grid;gap:10px}.trpri .row{display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap}.trplang{margin-top:6px}.trplang button{flex:1;min-height:48px}
