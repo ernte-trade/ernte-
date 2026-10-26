@@ -130,3 +130,5 @@ tr.ztot td{background:rgba(255,255,255,.05)}.fzv b{white-space:nowrap}
 .fzh span{display:grid;gap:2px;min-width:0}.fzh small{color:var(--muted);font-size:.78rem}.fzv{text-align:right}.fzv b{font:700 1.2rem var(--f-num)}.fzd{display:grid;gap:8px}
 html.big .fdk b{font-size:max(1.6rem,26px)}
 .zt{min-width:0;max-width:100%;display:grid;gap:12px}.zt>*{min-width:0;max-width:100%}.hrt{max-width:100%}
+.zsg{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(46%,160px),1fr));gap:8px}.zsg>div{display:grid;gap:2px;padding:10px 12px;border-radius:14px;border:1px solid var(--line2);background:rgba(255,255,255,.04);min-width:0}.zsg small{color:var(--muted);font-size:.74rem}.zsg b{font:700 1.05rem var(--f-num);overflow-wrap:anywhere}.zsg .hl{border-color:rgba(182,255,59,.55);background:rgba(182,255,59,.08)}.zsg .hl b{color:var(--lime)}.zsg .wn b{color:var(--warn)}
+.zform select{width:100%}
