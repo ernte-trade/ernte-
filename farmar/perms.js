@@ -182,7 +182,7 @@ document.addEventListener("submit",async e=>{const f=e.target;if(f.id!=="fFpDef"
 document.addEventListener("click",async e=>{const x=e.target.closest("[data-fpreset]");if(!x)return;const r=await sb.rpc("set_farmer_perms",{fid:x.dataset.fpreset,p:{}});if(r.error){toast(r.error.message);return}await loadStaff();renderStaff();toast("Vrátené na predvolené.")});
 
 // ===== OBCHODY BEZ CIEN · VÝVOZ · ZOSTATKY · POZNÁMKY =====
-let OPS=null,OPSN={},OPSF="left",OPSA=null,OPSQ="";
+let OPS=null,OPSN={},OPSF="left",OPSA=null,OPSQ="",OPSC="",OPSL=40;
 async function loadOps(){const r=await sb.rpc("ops_deals");OPS=r.error?{err:r.error.message}:r.data||[];
   if(can("notes")&&Array.isArray(OPS)&&OPS.length){const n=await sb.from("deal_notes").select("*").order("created_at",{ascending:false}).limit(500);OPSN={};for(const x of n.data||[])(OPSN[x.deal_id||"f"+x.farmer_id]=OPSN[x.deal_id||"f"+x.farmer_id]||[]).push(x)}
   if(TAB==="deals")renderStaff()}
@@ -190,12 +190,18 @@ window.loadOps=loadOps;
 const NK={vyvoz:["🚚","vývoz"],nedodane:["⚠️","nedodaný tovar"],farmar:["👨‍🌾","od farmára"],obchodnik:["🤝","od obchodníka"]};
 function opsHTML(){if(OPS===null){loadOps();return `<div class="card"><div class="s">Načítavam vývoz…</div></div>`}
   if(OPS.err)return `<div class="card"><div class="s">Vývoz sa zapne po aktualizácii databázy (pár minút). ${esc(OPS.err)}</div></div>`;
-  const q=norm(OPSQ),L=OPS.filter(d=>(OPSF!=="left"||+d.left_t>0)&&(!q||norm([d.farmer,d.no,comName(d.com),d.addr,d.load_place].join(" ")).includes(q)));
-  const tot=OPS.filter(d=>["podpisany","odvoz"].includes(d.status)).reduce((s,d)=>s+(+d.left_t||0),0);
-  let h=`<h2>Vývoz od farmárov${can("deals")?"":" · bez cien"}</h2><div class="ops-k"><div><small>Zostáva vyviezť</small><b>${fmt(tot,1)} t</b></div><div><small>Obchodov</small><b>${OPS.filter(d=>+d.left_t>0).length}</b></div><div><small>Dnes jázd</small><b>${(STATE.trips||[]).filter(t=>t.day===today()&&t.status!=="zrusena").length}</b></div></div>
-   <div class="card f"><label class="w">Hľadať farmára / obchod<input id="opsQ" value="${esc(OPSQ)}" placeholder="meno, obec, komodita"></label><div class="w btns seg2"><button type="button" data-opsf="left" aria-pressed="${OPSF==="left"}">Len so zostatkom</button><button type="button" data-opsf="all" aria-pressed="${OPSF==="all"}">Všetky</button></div></div>`;
+  const q=norm(OPSQ),base=OPS.filter(d=>(OPSF!=="left"||+d.left_t>0)&&(!q||norm([d.farmer,d.no,comName(d.com),d.addr,d.load_place].join(" ")).includes(q)));
+  const L=base.filter(d=>!OPSC||d.com===OPSC),sumL=a=>a.reduce((s,d)=>s+(+d.left_t||0),0),tot=sumL(L);
+  const coms={};for(const d of base){if(!(+d.left_t>0)&&OPSF==="left")continue;const c=coms[d.com]=coms[d.com]||{t:0,n:0};c.t+=+d.left_t||0;c.n++}
+  const CL=Object.entries(coms).sort((a,b)=>b[1].t-a[1].t);
+  const fm={};for(const d of L){if(!(+d.left_t>0))continue;const k=d.farmer||"?";const x=fm[k]=fm[k]||{t:0,n:0,com:new Set()};x.t+=+d.left_t;x.n++;x.com.add(d.com)}
+  const FL=Object.entries(fm).sort((a,b)=>b[1].t-a[1].t);
+  let h=`<h2>Vývoz od farmárov${can("deals")?"":" · bez cien"}</h2><div class="ops-k"><div class="hl"><small>Zostáva vyviezť${OPSC?" · "+esc(comName(OPSC)):""}</small><b>${fmt(tot,1)} t</b></div><div><small>${OPSF==="left"?"Obchodov so zostatkom":"Obchodov"}</small><b>${L.length}</b></div><div><small>Farmárov</small><b>${FL.length}</b></div><div><small>Dnes jázd</small><b>${(STATE.trips||[]).filter(t=>t.day===today()&&t.status!=="zrusena").length}</b></div></div>
+   <div class="card f"><label class="w">Hľadať farmára / obchod / komoditu<input id="opsQ" value="${esc(OPSQ)}" placeholder="meno, obec, komodita" autocomplete="off"></label><div class="w btns seg2"><button type="button" data-opsf="left" aria-pressed="${OPSF==="left"}">Len so zostatkom</button><button type="button" data-opsf="all" aria-pressed="${OPSF==="all"}">Všetky</button></div>
+   <div class="w opsc"><button type="button" data-opsc="" aria-pressed="${!OPSC}"><b>Všetky komodity</b><small>${fmt(sumL(base),1)} t</small></button>${CL.map(([c,v])=>`<button type="button" data-opsc="${esc(c)}" aria-pressed="${OPSC===c}">${typeof comImg==="function"?comImg(c):""}<b>${esc(comName(c))}</b><small>${fmt(v.t,1)} t · ${v.n}×</small></button>`).join("")}</div></div>`;
+  if(FL.length>1)h+=`<details class="card hsec"${OPSC||q?" open":""}><summary><span>👨‍🌾</span><b>Nevyvezené podľa farmárov${OPSC?" · "+esc(comName(OPSC)):""}</b><small>${FL.length} farmárov · ${fmt(tot,1)} t</small></summary><div class="opsfl">${FL.map(([f,v])=>`<button type="button" data-opsfarm="${esc(f)}"><span><b>${esc(f)}</b><small>${[...v.com].map(c=>esc(comName(c))).join(", ")} · ${v.n} ${v.n===1?"obchod":"obchody"}</small></span><b class="num">${fmt(v.t,1)} t</b></button>`).join("")}</div></details>`;
   if(!L.length)return h+`<div class="card"><div class="s">Žiadny obchod${OPSF==="left"?" so zostatkom":""}.</div></div>`;
-  return h+L.map(d=>{const pct=+d.tons>0?Math.min(100,(+d.delivered_t||0)/(+d.tons)*100):0,N=OPSN[d.id]||[],T=(STATE.trips||[]).filter(t=>t.deal_id===d.id&&t.status!=="zrusena").sort((a,b)=>String(b.day).localeCompare(a.day)),op=OPSA===d.id;
+  const more=L.length>OPSL;return h+L.slice(0,OPSL).map(d=>{const pct=+d.tons>0?Math.min(100,(+d.delivered_t||0)/(+d.tons)*100):0,N=OPSN[d.id]||[],T=(STATE.trips||[]).filter(t=>t.deal_id===d.id&&t.status!=="zrusena").sort((a,b)=>String(b.day).localeCompare(a.day)),op=OPSA===d.id;
    const tel=String(d.phone||"").replace(/\s/g,"");
    return `<div class="card opc"><div class="row"><span class="t">${esc(d.farmer)}</span>${pill(DST[d.status]||[d.status])}</div>
     <div class="opcom">${comImg(d.com,"cico")}<b>${esc(comName(d.com))}</b><span class="s">obchod ${esc(d.no)}${d.term?" · do "+esc(d.term):""}</span></div>
@@ -212,12 +218,15 @@ function opsHTML(){if(OPS===null){loadOps();return `<div class="card"><div class
       <div class="w btns"><button class="pri" type="submit">Potvrdiť autá farmárovi</button></div></form>`:""}
     ${OPSA==="n"+d.id?`<form class="f sub" id="fOpsN" data-deal="${esc(d.id)}" data-fid="${esc(d.farmer_id)}"><label>Typ<select name="kind"><option value="vyvoz">🚚 vývoz</option><option value="nedodane">⚠️ nedodaný tovar</option><option value="obchodnik">🤝 od obchodníka</option></select></label><label>Tony (nepovinné)<input name="tons" inputmode="decimal"></label>
       <label class="w">Poznámka<textarea name="body" required maxlength="2000" placeholder="napr. farmár nedodal 2 t – vlhké, dovezie v piatok"></textarea></label><label class="w pck"><input type="checkbox" name="ff"><span>Zobraziť aj farmárovi</span></label>
-      <div class="w btns"><button class="pri" type="submit">Uložiť poznámku</button></div></form>`:""}</div>`}).join("")}
+      <div class="w btns"><button class="pri" type="submit">Uložiť poznámku</button></div></form>`:""}</div>`}).join("")+(more?`<div class="btns"><button type="button" data-opsmore="1">Zobraziť ďalšie (${L.length-OPSL})</button></div>`:"")}
 const _vd=window.vDeals;window.vDeals=function(){let h="";if(can("deals"))h+=_vd.apply(this,arguments);if(canAny("deals_qty","remain","notes")&&(!can("deals")||ROLE!=="owner"))h+=opsHTML();else if(ROLE==="owner")h+=`<div class="btns" style="margin-top:14px"><button type="button" data-opsshow="1">🚚 Vývoz a zostatky (pohľad dopravy, bez cien)</button></div>`+(STATE.opsShow?opsHTML():"");return h};
-document.addEventListener("input",e=>{if(e.target.id==="opsQ"){OPSQ=e.target.value;clearTimeout(e.target._t);e.target._t=setTimeout(()=>{renderStaff();const i=document.getElementById("opsQ");if(i){i.focus();i.setSelectionRange(i.value.length,i.value.length)}},350)}});
+document.addEventListener("input",e=>{if(e.target.id==="opsQ"){OPSQ=e.target.value;clearTimeout(e.target._t);OPSL=40;const p=e.target.selectionStart;e.target._t=setTimeout(()=>{renderStaff();const i=document.getElementById("opsQ");if(i){i.focus();try{i.setSelectionRange(p,p)}catch(x){}}},180)}});
 document.addEventListener("click",async e=>{const t=e.target;let x;
   if(x=t.closest("[data-opsshow]")){STATE.opsShow=!STATE.opsShow;renderStaff();return}
-  if(x=t.closest("[data-opsf]")){OPSF=x.dataset.opsf;renderStaff();return}
+  if(x=t.closest("[data-opsf]")){OPSF=x.dataset.opsf;OPSL=40;renderStaff();return}
+  if(x=t.closest("[data-opsc]")){OPSC=x.dataset.opsc;OPSL=40;renderStaff();return}
+  if(x=t.closest("[data-opsfarm]")){OPSQ=x.dataset.opsfarm;OPSL=40;renderStaff();const i=document.getElementById("opsQ");if(i)i.scrollIntoView({block:"center",behavior:"smooth"});return}
+  if(x=t.closest("[data-opsmore]")){OPSL+=60;renderStaff();return}
   if(x=t.closest("[data-opsa]")){OPSA=OPSA===x.dataset.opsa?null:x.dataset.opsa;renderStaff();return}
   if(x=t.closest("[data-opsn]")){OPSA=OPSA==="n"+x.dataset.opsn?null:"n"+x.dataset.opsn;renderStaff();return}
   if(x=t.closest("[data-tgps]")){x.disabled=true;const r=await sb.rpc("trip_gps",{tid:x.dataset.tgps,val:x.dataset.v==="1"});if(r.error){toast("Chyba: "+r.error.message,6000);x.disabled=false;return}await loadStaff();renderStaff();toast(x.dataset.v==="1"?"📍 Farmár teraz vidí polohu auta.":"Poloha pre farmára vypnutá.");return}});

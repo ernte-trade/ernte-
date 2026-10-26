@@ -227,3 +227,17 @@ html.big .agqp{font-size:2.5rem}
 .pinerr{display:none;padding:12px 14px;border-radius:14px;font-weight:700;font-size:.95rem;line-height:1.35;color:#fecaca;background:rgba(248,113,113,.14);border:1px solid rgba(248,113,113,.55);box-shadow:0 0 22px rgba(248,113,113,.2)}.pinerr.on{display:block}
 html[data-theme=light] .pinerr{color:#991b1b;background:#fef2f2}
 .toast{z-index:10050!important}
+/* vývoz: komodity + farmári */
+.opsc{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(46%,150px),1fr));gap:8px}
+.opsc button{display:grid!important;grid-template-columns:auto 1fr;gap:2px 8px;align-items:center;justify-items:start;text-align:left;padding:10px 12px!important;min-height:58px;border-radius:16px!important;position:relative;overflow:hidden;
+  border:1px solid var(--ds-edge,rgba(255,255,255,.18))!important;background:linear-gradient(180deg,rgba(255,255,255,.10),rgba(255,255,255,.04))!important;box-shadow:inset 0 1px 0 rgba(255,255,255,.25)}
+.opsc button img,.opsc button .cimg{grid-row:span 2;width:30px;height:30px;border-radius:9px;object-fit:cover}.opsc button b{font-size:.92rem}.opsc button small{color:var(--muted);font-size:.74rem}
+.opsc button:not(:has(img,.cimg)){grid-template-columns:1fr}
+.opsc button[aria-pressed=true]{border-color:rgba(182,255,59,.6)!important;background:radial-gradient(120% 140% at 100% 0%,rgba(182,255,59,.22),transparent 60%),linear-gradient(180deg,rgba(182,255,59,.12),rgba(94,234,212,.05))!important;box-shadow:0 0 22px rgba(182,255,59,.2),inset 0 1px 0 rgba(236,255,200,.45)}
+.opsc button[aria-pressed=true] small{color:var(--lime)}
+.opsfl{display:grid;gap:6px;padding:4px 14px 14px}.opsfl button{display:flex!important;justify-content:space-between;align-items:center;gap:10px;text-align:left;padding:10px 12px!important;min-height:52px;border-radius:14px!important}
+.opsfl button span{display:grid;min-width:0}.opsfl button small{color:var(--muted);font-size:.74rem}.opsfl button>b{font:800 1.05rem var(--f-num);color:var(--lime);white-space:nowrap}
+.ops-k>div.hl b{color:var(--lime);text-shadow:0 0 12px rgba(182,255,59,.4)}
+html[data-theme=light] .opsc button[aria-pressed=true]{background:linear-gradient(180deg,#f4ffe0,#e6f9cf)!important}html[data-theme=light] .opsc button[aria-pressed=true] small,html[data-theme=light] .opsfl button>b,html[data-theme=light] .ops-k>div.hl b{color:#3f6212;text-shadow:none}
+.opsc .cimg img{width:100%;height:100%;object-fit:cover;border-radius:9px}
+.ops-k{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:8px}@media (min-width:700px){.ops-k{grid-template-columns:repeat(4,minmax(0,1fr))!important}}

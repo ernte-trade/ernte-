@@ -790,7 +790,7 @@ html[data-theme=light] .ftbl th{color:#0f172a}html[data-theme=light] .fdban{colo
 .rdel{min-width:40px;min-height:40px;padding:0;border-radius:10px}
 </style>
 <script>try{if(localStorage.getItem('ernte-theme')==='light')document.documentElement.dataset.theme='light'}catch(e){}</script>
-<link rel="stylesheet" href="perms.css?v=20261026-1750">
+<link rel="stylesheet" href="perms.css?v=20261026-1815">
 </head>
 <body>
 <div class="wrap">
@@ -2717,7 +2717,7 @@ document.addEventListener("input",e=>{if(e.target.id==="dfq"){const h=e.target.f
 document.addEventListener("click",e=>{const b=e.target.closest("[data-dfp]");if(!b)return;const fm=b.closest("form"),f=(STATE.farmers||[]).find(x=>x.id===b.dataset.dfp);if(!fm||!f)return;fm.elements.farmer.value=f.id;document.getElementById("dfq").value=String(f.name).trim();document.getElementById("dfl").innerHTML=`<div class="s">✓ Vybraný: <b>${esc(String(f.name).trim())}</b></div>`});
 </script>
 <script src="ai.js?v=20261026-0600"></script>
-<script src="perms.js?v=20261026-1750"></script>
+<script src="perms.js?v=20261026-1815"></script>
 <script src="bonus.js?v=20261026-1000"></script>
 <script src="hub.js?v=20261026-1105"></script>
 <script src="settle.js?v=20261026-1430"></script>
