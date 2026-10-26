@@ -1700,7 +1700,9 @@ function loadPay(){const mon=PMON;if(loadPay.p&&loadPay.m===mon)return loadPay.p
   for(const o of r.data||[])if(window.VALIAS&&window.VALIAS[o.vehicle_id])o.vehicle_id=window.VALIAS[o.vehicle_id];
   if(PMON===mon)STATE.pay={mon,rides:r.data||[],err:r.error,ev:ev.data||[],yf:yf.error?[]:(yf.data||[])};loadPay.p=null})()}
 function vPay(F,X){X=X||{};if(ROLE!=="owner")return "";const P=payView();if(!P||P.mon!==PMON){loadPay().then(renderStaff);return `<h2>Mzdy vodičov</h2><div class="card"><div class="s">Načítavam…</div></div>`}
-  const C=Object.assign({base:1031,inReg:80,outReg:90,minKm:10},F.cfg.pay||{});
+  const C=Object.assign({base:1031,inReg:80,outReg:90,minKm:10,euDay:105},F.cfg.pay||{}),C0=Object.assign({},C);
+  // Flotila EU: rovnaký model (vyššie zo základu alebo súčtu dní), každý odpracovaný deň rovnaká sadzba
+  if(FFLT==="eu"){C.inReg=+C.euDay||105;C.outReg=+C.euDay||105}
   const hasGeo=P.rides.some(r=>r.lat_start!=null);
   const D={};for(const r of P.rides){if(/PRIVAT/.test(r.ride_type||""))continue;const dn=r.driver||"neznámy vodič";const day=new Date(r.start_at).toLocaleDateString("sv-SE",{timeZone:"Europe/Bratislava"});
     const d=(D[dn]=D[dn]||{});const x=(d[day]=d[day]||{km:0,out:false,plates:new Set()});x.km+=+r.distance||0;if(outReg(r))x.out=true;if(r.plate)x.plates.add(r.plate)}
@@ -1712,7 +1714,7 @@ function vPay(F,X){X=X||{};if(ROLE!=="owner")return "";const P=payView();if(!P||
   const [yy,mm]=PMON.split("-").map(Number),dim=new Date(yy,mm,0).getDate(),first=(new Date(yy,mm-1,1).getDay()+6)%7;
   const ini=n=>n.split(/\s+/).filter(Boolean).map(w=>w[0]).slice(0,2).join("").toUpperCase();
   const maxPay=Math.max(C.base*1.6,...rows.map(r=>r.pay));
-  let h=`<h2>Vodiči a mzdy · ${esc(FLN[FFLT])}</h2>${FLX(FFLT)?`<div class="box w"><div>${esc(FLN[FFLT])}: mzdy sa tu nepočítajú (pravidlá sú pre vodičov kamiónov).</div></div>`:''}${FFLT==='eu'?`<div class="box w"><div>Mzdy Flotily EU sú počítané sadzbami regiónu (deň v kraji / mimo kraja). Pre medzinárodnú dopravu (diéty, minimálna mzda v DE/FR, vysielanie vodičov) to je len hrubý odhad.</div></div>`:''}
+  let h=`<h2>Vodiči a mzdy · ${esc(FLN[FFLT])}</h2>${FLX(FFLT)?`<div class="box w"><div>${esc(FLN[FFLT])}: mzdy sa tu nepočítajú (pravidlá sú pre vodičov kamiónov).</div></div>`:''}${FFLT==='eu'?`<div class="box"><div><b>Flotila EU:</b> každý odpracovaný deň ${n0(C.euDay)} € (bez rozdielu kraj / mimo kraja). Vodič dostane vyššie z: základ ${n0(C.base)} € alebo súčet dní. Diéty a vysielanie vodičov (DE/FR minimálna mzda) nie sú zahrnuté.</div></div>`:''}
   <div class="pyhero"><div class="pyh1"><small>Vodiči · hrubé mzdy · ${esc(mName(PMON))} ${yy}</small><b>${n0(tot)} €</b><span>${rows.length} vodičov · ${daysT} odpracovaných dní${outT?` · ${outT}× mimo kraja`:""}</span></div>
     <div class="pyh2"><div><small>nad základ</small><b class="good">+${n0(plusT)} €</b></div><div><small>priemer / vodič</small><b>${rows.length?n0(tot/rows.length):"–"} €</b></div></div></div>
   <div class="pymon">${months.map(m=>`<button type="button" data-pmon="${m}" aria-pressed="${m===PMON}">${esc(mName(m).slice(0,3))}</button>`).join("")}</div>
@@ -1732,8 +1734,8 @@ function vPay(F,X){X=X||{};if(ROLE!=="owner")return "";const P=payView();if(!P||
         :(()=>{const fp=X.firmPh?X.firmPh(r.n,lr):null;return `<div class="btns xact">${fp?`<a class="btn pri" href="tel:${esc(tel(fp.ph))}">📞 Firemný${fp.no?" (č."+fp.no+")":""}</a>`:""}${ph?`<a class="btn lime" href="tel:${esc(tel(ph))}">📱 Súkromný</a><a class="btn" href="https://wa.me/${esc(tel(ph).replace(/^\+/,"").replace(/^0/,"421"))}" target="_blank" rel="noopener">WhatsApp</a>`:""}<button type="button" data-phedit="${esc(r.n)}">${ph?"✏️":"+ súkromný"}</button><button type="button" data-pdrv="${esc(r.n)}">${open?"Skryť dni":"📅 Dni"}</button></div>`})()}
       ${open?`<div class="pcal">${["Po","Ut","St","Št","Pi","So","Ne"].map(d=>`<span class="pdh">${d}</span>`).join("")}${"<span></span>".repeat(first)}${[...Array(dim)].map((_,i)=>{const v=map[i+1];return `<span class="pd ${v?(v.out?"o":"k"):""}" title="${v?n0(v.km)+" km":""}"><b>${i+1}</b>${v?`<small>${n0(v.km)}</small>`:""}</span>`}).join("")}</div>
         <div class="s">🟩 kraj ${C.inReg} € · 🟪 mimo kraja ${C.outReg} € · číslo pod dňom = km</div>`:""}</div>`}).join("")||`<div class="card"><div class="s">V tomto mesiaci zatiaľ žiadne jazdy.</div></div>`}</div>
-  <details class="card"><summary class="s" style="cursor:pointer">Sadzby a pravidlá</summary><div class="s">Denne ${C.inReg} € v Košickom kraji (po Prešov a Rožňavu), ${C.outReg} € mimo neho, od 1. dňa. Vodič dostane vyššie z: základ ${n0(C.base)} € alebo súčet denných. Odpracovaný deň = aspoň ${C.minKm} km. Odhad z Commandera – nie výplatná páska (bez odvodov, dovolenky, PN).</div>
-    <form class="f sub" id="fPay"><label>Základ € (hrubé)<input name="base" inputmode="decimal" value="${C.base}"></label><label>Deň v kraji €<input name="inReg" inputmode="decimal" value="${C.inReg}"></label><label>Deň mimo kraja €<input name="outReg" inputmode="decimal" value="${C.outReg}"></label><label>Min. km na deň<input name="minKm" inputmode="numeric" value="${C.minKm}"></label><div class="w btns"><button class="pri" type="submit">Uložiť</button></div></form></details>`;
+  <details class="card"><summary class="s" style="cursor:pointer">Sadzby a pravidlá</summary><div class="s">Región: denne ${C0.inReg} € v Košickom kraji (po Prešov a Rožňavu), ${C0.outReg} € mimo neho, od 1. dňa. Flotila EU: ${n0(C0.euDay)} € za každý deň. Vodič dostane vyššie z: základ ${n0(C.base)} € alebo súčet denných. Odpracovaný deň = aspoň ${C.minKm} km. Odhad z Commandera – nie výplatná páska (bez odvodov, dovolenky, PN).</div>
+    <form class="f sub" id="fPay"><label>Základ € (hrubé)<input name="base" inputmode="decimal" value="${C.base}"></label><label>Deň v kraji €<input name="inReg" inputmode="decimal" value="${C0.inReg}"></label><label>Deň mimo kraja €<input name="outReg" inputmode="decimal" value="${C0.outReg}"></label><label>🇪🇺 Deň EU €<input name="euDay" inputmode="decimal" value="${C0.euDay}"></label><label>Min. km na deň<input name="minKm" inputmode="numeric" value="${C.minKm}"></label><div class="w btns"><button class="pri" type="submit">Uložiť</button></div></form></details>`;
   if(X.score)h+=vDrvScore(F,false);
   h+=vDrvCar(F,false);
   return h}
@@ -1807,7 +1809,7 @@ document.addEventListener("change",async e=>{const x=e.target.closest("[data-tac
   const r=await sb.from("fleet_cfg").upsert({key:"tacho",value:cur});if(r.error){toast("Chyba: "+r.error.message);return}F.cfg.tacho=cur;STATE.fleet=null;renderStaff();toast("Tachograf uložený.")});
 document.addEventListener("click",e=>{const x=e.target.closest("[data-pmon]");if(!x)return;PMON=x.dataset.pmon;PDRV=null;renderStaff()});
 document.addEventListener("click",e=>{const x=e.target.closest("[data-pdrv]");if(!x)return;PDRV=PDRV===x.dataset.pdrv?null:x.dataset.pdrv;renderStaff()});
-document.addEventListener("submit",async e=>{if(e.target.id!=="fPay")return;e.preventDefault();const fd=new FormData(e.target);const v={base:num(fd.get("base"))||1031,inReg:num(fd.get("inReg"))||80,outReg:num(fd.get("outReg"))||90,minKm:num(fd.get("minKm"))||10};
+document.addEventListener("submit",async e=>{if(e.target.id!=="fPay")return;e.preventDefault();const fd=new FormData(e.target);const v={base:num(fd.get("base"))||1031,inReg:num(fd.get("inReg"))||80,outReg:num(fd.get("outReg"))||90,minKm:num(fd.get("minKm"))||10,euDay:num(fd.get("euDay"))||105};
   const r=await sb.from("fleet_cfg").upsert({key:"pay",value:v});if(r.error){toast("Chyba: "+r.error.message);return}STATE.fleet=null;renderStaff();toast("Sadzby uložené.")},true);
 
 // ================= OCHRANA NAFTY =================
