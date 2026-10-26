@@ -23,7 +23,7 @@ revoke all on function public.deliveries_allocate(uuid,text) from public, anon, 
 create or replace function public.settle_reallocate() returns int language plpgsql security definer set search_path=public as $$
 declare p record; k int:=0;
 begin
-  if not is_owner() and current_user not in ('postgres','supabase_admin') then raise exception 'Iba majiteľ.'; end if;
+  if auth.uid() is not null and not is_owner() then raise exception 'Iba majiteľ.'; end if;
   for p in select distinct farmer_id, com from deliveries where farmer_id is not null loop perform deliveries_allocate(p.farmer_id,p.com); k:=k+1; end loop;
   update deals d set delivered_t=coalesce((select sum(netto) from trips t where t.deal_id=d.id and t.status='vylozene'),0)+coalesce((select sum(coalesce(gross_kg,net_kg))/1000 from deliveries v where v.deal_id=d.id),0)
    where exists(select 1 from deliveries v where v.farmer_id=d.farmer_id);
