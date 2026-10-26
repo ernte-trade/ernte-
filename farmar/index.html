@@ -170,6 +170,9 @@ details.trips{border-top:1px solid var(--line);padding-top:8px}details.trips sum
 .vnt{font-size:.78rem}.vnt em{font-style:normal;color:var(--muted);font-size:.68rem}
 .vrf{display:grid;gap:6px}.vrr{display:grid;grid-template-columns:minmax(0,1.6fr) auto minmax(0,1fr);gap:8px;align-items:center;padding:8px 10px;border-radius:12px;background:rgba(255,255,255,.04);font-size:.8rem}.vrr>span{display:grid;min-width:0}.vrr>span:last-child{text-align:right}.vrr small{font-size:.66rem;color:var(--muted)}.vrr b{font:700 .9rem var(--f-num,inherit)}.vrr.bad{box-shadow:inset 3px 0 0 #ef4444;background:rgba(239,68,68,.08)}
 html[data-theme=light] .vtl,html[data-theme=light] .vch,html[data-theme=light] .vrr{background:rgba(15,23,42,.04);border-color:rgba(15,23,42,.1)}html[data-theme=light] .vlv{color:#047857;text-shadow:none}
+.fpl{display:grid;gap:10px;margin-bottom:12px}.fpr{display:flex;justify-content:space-between;gap:10px;align-items:baseline;padding:6px 2px;border-top:1px solid rgba(255,255,255,.07);font-size:.84rem}.fpr span{display:grid}.fpr small{font-size:.68rem;color:var(--muted)}.fpr b{font:700 .92rem var(--f-num,inherit);white-space:nowrap}
+.fpr.bon b{color:#6ee7b7}.fpr.tot b{font-size:1.05rem}.fpr.cost{border-top:1px solid rgba(34,211,238,.3)}.fpr.cost b{color:var(--ds-acc,#22d3ee);font-size:1.05rem}.fpw{font-size:.74rem;color:#fcd34d;padding:6px 8px;border-radius:10px;background:rgba(251,191,36,.08)}
+html[data-theme=light] .fpr.bon b{color:#047857}html[data-theme=light] .fpw{color:#92400e}
 .klc.lowk{box-shadow:inset 3px 0 0 #fbbf24}.klc.nok{box-shadow:inset 3px 0 0 #ef4444;background:rgba(239,68,68,.08)}.nojd{font-style:normal;color:#f87171;font-weight:800;white-space:nowrap}.lowt{font-style:normal;color:#fcd34d;font-weight:700}
 .flsegw{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;margin:12px 0 4px}.flsegw button{display:grid;justify-items:center;gap:2px;min-height:64px;padding:8px 4px;border-radius:16px;text-align:center}.flsegw button span{font-size:1.15rem;line-height:1}.flsegw button b{font-size:.8rem;line-height:1.15}.flsegw button small{font-size:.66rem;color:var(--muted)}
 .flsegw button[aria-pressed=true]{background:var(--grad);color:#06110a;border-color:transparent;box-shadow:0 6px 20px rgba(182,255,59,.3)}.flsegw button[aria-pressed=true] small{color:#06110a;opacity:.75}.flmv{display:grid;gap:4px;font-size:.75rem;color:var(--muted)}.flmv select{min-height:44px}.flmv.sm select{max-width:150px;font-size:.78rem}
@@ -1816,7 +1819,8 @@ function loadPay(){const mon=PMON;if(loadPay.p&&loadPay.m===mon)return loadPay.p
   const pr=await sb.from("probe_refuel").select("key,vehicle_id,at,rise,ride_id").gte("at",a.toISOString()).lt("at",b.toISOString()).limit(5000);
   for(const o of pr.data||[])if(window.VALIAS&&window.VALIAS[o.vehicle_id])o.vehicle_id=window.VALIAS[o.vehicle_id];
   const R=dedupRides(r.data||[]);
-  if(PMON===mon)STATE.pay={mon,rides:R,err:r.error,ev:ev.data||[],yf:yf.error?[]:(yf.data||[]),probe:pr.error?[]:(pr.data||[])};
+  const vio=await sb.from("fleet_events").select("vehicle_id,kind,at,driver,kmh,liters").in("kind",["speed","fuel_drop","fuel_transfer"]).gte("at",a.toISOString()).lt("at",b.toISOString()).limit(3000);
+  if(PMON===mon)STATE.pay={mon,rides:R,err:r.error,viol:vio.error?null:(vio.data||[]),ev:ev.data||[],yf:yf.error?[]:(yf.data||[]),probe:pr.error?[]:(pr.data||[])};
   if(mon===curMonKey()){STATE.payCurRides=R;STATE.payCur=payTotal(R,(STATE.fleet&&STATE.fleet.cfg.pay)||{});STATE.payTot=STATE.payCur;STATE.payCurMon=mon}
   loadPay.p=null})()}
 // MZDY: jeden výpočet pre Prevádzku, Dashboard, zisk aj AI (rovnako ako databáza fleet_month): všetky jazdy mesiaca okrem súkromných
@@ -1867,9 +1871,77 @@ function vPay(F,X){X=X||{};if(ROLE!=="owner")return "";const P=payView();if(!P||
   <details class="card"><summary class="s" style="cursor:pointer">Sadzby a pravidlá</summary><div class="s">Región: denne ${C0.inReg} € v Košickom kraji (po Prešov a Rožňavu), ${C0.outReg} € mimo neho, od 1. dňa. Flotila EU: ${n0(C0.euDay)} € za každý deň. Vodič dostane vyššie z: základ ${n0(C.base)} € alebo súčet denných. Odpracovaný deň = aspoň ${C.minKm} km. Odhad z Commandera – nie výplatná páska (bez odvodov, dovolenky, PN).</div>
     <form class="f sub" id="fPay"><label>Základ € (hrubé)<input name="base" inputmode="decimal" value="${C.base}"></label><label>Deň v kraji €<input name="inReg" inputmode="decimal" value="${C0.inReg}"></label><label>Deň mimo kraja €<input name="outReg" inputmode="decimal" value="${C0.outReg}"></label><label>🇪🇺 Deň EU €<input name="euDay" inputmode="decimal" value="${C0.euDay}"></label><label>Min. km na deň<input name="minKm" inputmode="numeric" value="${C.minKm}"></label><div class="w btns"><button class="pri" type="submit">Uložiť</button></div></form></details>`;
   if(X.score)h+=vDrvScore(F,false);
+  h+=vFairPay(F);
   h+=vDrvCar(F,false);
   return h}
 // ================= VODIČI × AUTÁ (zvolený mesiac) =================
+// ================= NÁVRH SPRAVODLIVEJ MZDY =================
+// Stravné podľa zákona 283/2002 Z. z.: tuzemské od 1. 12. 2025 (9,30 / 13,80 / 20,60 €), zahraničné pre mobilných zamestnancov
+// v cestnej doprave podľa opatrenia MF SR 401/2012 v znení 9/2026 (§ 1a, od 30. 1. 2026); pásma 25 % do 6 h, 50 % 6–12 h, 100 % nad 12 h.
+const FP_DEF={base_region:1500,base_eu:1600,b_eco:100,b_eco2:50,b_safe:100,b_perf:75,b_att:50,emp:37.2,czk:24.5};
+const FP_TUZ=[[5,9.30],[12,13.80],[18,20.60]];
+const FP_ZAH={HU:55,CZ:"CZK1200",PL:52,AT:63,DE:63,RO:60,UA:52,SI:53,HR:56,IT:63,FR:63,NL:63,BE:63,BG:43,RS:60,LT:56,LV:56,EE:50,DK:"DKK456",SE:"SEK637",ES:60,PT:60,LU:60,CH:"CHF80",XX:55};
+const FP_CN={SK:"Slovensko",HU:"Maďarsko",CZ:"Česko",PL:"Poľsko",AT:"Rakúsko",DE:"Nemecko",RO:"Rumunsko",UA:"Ukrajina",SI:"Slovinsko",HR:"Chorvátsko",IT:"Taliansko",FR:"Francúzsko",NL:"Holandsko",BE:"Belgicko",XX:"zahraničie"};
+const SKPOLY=[[16.84,48.37],[16.95,48.62],[17.2,48.87],[17.55,48.8],[17.88,48.93],[18.1,49.08],[18.4,49.33],[18.85,49.52],[19.25,49.55],[19.47,49.6],[19.8,49.2],[20.1,49.3],[20.7,49.4],[21.3,49.45],[21.8,49.35],[22.2,49.15],[22.56,49.08],[22.15,48.4],[21.7,48.38],[21.4,48.55],[20.8,48.57],[20.45,48.47],[19.9,48.15],[19.5,48.1],[18.85,48.05],[18.65,47.76],[17.8,47.75],[17.3,47.95],[17.05,48.1]];
+const CBOX=[["HU",45.74,48.59,16.11,22.9],["CZ",48.55,51.06,12.09,18.86],["AT",46.37,49.02,9.53,17.16],["PL",49,54.84,14.12,24.15],["UA",44.4,52.38,22.13,40.2],["RO",43.62,48.27,20.26,29.7],["SI",45.42,46.88,13.38,16.6],["HR",42.39,46.55,13.49,19.45],["DE",47.27,55.06,5.87,15.04],["NL",50.75,53.6,3.3,7.2],["BE",49.5,51.5,2.5,6.4],["IT",36.6,47.1,6.6,18.5],["FR",42.3,51.1,-4.8,8.2]];
+const CADDR=[["HU",/(Hungary|Maďarsko|Magyarország|\bHU\b)/i],["CZ",/(Czech|Česk|\bCZ\b)/i],["PL",/(Poland|Poľsk|Polska|\bPL\b)/i],["AT",/(Austria|Rakúsk|Österreich|\bAT\b)/i],["DE",/(Germany|Nemeck|Deutschland|\bDE\b)/i],["RO",/(Romania|Rumunsk|România|\bRO\b)/i],["UA",/(Ukrain|Україна|\bUA\b)/i],["SI",/(Sloveni[ja]|Slovinsk|\bSI\b)/i],["HR",/(Croatia|Chorvátsk|Hrvatska|\bHR\b)/i],["IT",/(Ital|Talian|\bIT\b)/i],["FR",/(France|Francúzsk|\bFR\b)/i],["NL",/(Netherlands|Holand|Nederland|\bNL\b)/i],["BE",/(Belgi|\bBE\b)/i],["SK",/(Slovakia|Slovensk|\bSK\b)/i]];
+function inPoly(x,y,P){let c=false;for(let i=0,j=P.length-1;i<P.length;j=i++){const [xi,yi]=P[i],[xj,yj]=P[j];if(((yi>y)!==(yj>y))&&(x<(xj-xi)*(y-yi)/(yj-yi)+xi))c=!c}return c}
+function cOf(lat,lon,addr){if(addr){for(const [k,re] of CADDR)if(re.test(addr))return k}if(lat==null||lon==null)return null;lat=+lat;lon=+lon;if(inPoly(lon,lat,SKPOLY))return "SK";for(const [k,a,b,c,d] of CBOX)if(lat>=a&&lat<=b&&lon>=c&&lon<=d)return k;return "XX"}
+function fpRate(c,FP){const v=FP_ZAH[c]??FP_ZAH.XX;if(typeof v==="number")return v;if(v.startsWith("CZK"))return +v.slice(3)/(+FP.czk||24.5);if(v.startsWith("CHF"))return +v.slice(3)*1.05;if(v.startsWith("DKK"))return +v.slice(3)/7.46;if(v.startsWith("SEK"))return +v.slice(3)/11.2;return 55}
+function fpCalc(F,P,grp){const FP=Object.assign({},FP_DEF,(F.cfg&&F.cfg.pay2)||{}),dk=t=>new Date(t).toLocaleDateString("sv-SE",{timeZone:"Europe/Bratislava"});
+  const R=(P.rides||[]).filter(r=>!/PRIVAT/.test(r.ride_type||"")&&r.start_at),V=P.viol||[];
+  const D={};for(const r of R){const n=String(r.driver||"").trim();if(!n)continue;(D[n]=D[n]||[]).push(r)}
+  const avgC=fleetCons(R),kmAll=Object.values(D).map(L=>L.reduce((t,r)=>t+(+r.distance||0),0)),kmAvg=kmAll.length?kmAll.reduce((a,b)=>a+b,0)/kmAll.length:0;
+  const [yy,mm]=P.mon.split("-").map(Number),dim=new Date(yy,mm,0).getDate();
+  const out=Object.entries(D).map(([n,L])=>{L.sort((a,b)=>new Date(a.start_at)-new Date(b.start_at));
+    const day={};for(const r of L){const k=dk(r.start_at),x=(day[k]=day[k]||{km:0,t0:null,t1:null,w:{}});const s0=new Date(r.start_at),s1=r.stop_at?new Date(r.stop_at):new Date(s0.getTime()+(+r.duration||0)*1000);
+      x.km+=+r.distance||0;x.t0=x.t0&&x.t0<s0?x.t0:s0;x.t1=x.t1&&x.t1>s1?x.t1:s1;const c1=cOf(r.lat_start,r.lon_start,r.start_addr)||"SK",c2=cOf(r.lat_stop,r.lon_stop,r.stop_addr)||c1,h=Math.max(.05,(s1-s0)/36e5);
+      x.w[c1]=(x.w[c1]||0)+h/2;x.w[c2]=(x.w[c2]||0)+h/2;x.cab=(x.cab||0)+(c1!=="SK"&&c2!=="SK"?1:0);x.last=c2;x.first=x.first||c1}
+    // dni na turne v zahraničí bez jazdy (odpočinok v aute) – medzi dvoma zahraničnými dňami, max. 3 dni
+    const keys=Object.keys(day).sort(),all=[];for(let i=0;i<keys.length;i++){all.push(keys[i]);if(i<keys.length-1){const a=new Date(keys[i]+"T12:00"),b=new Date(keys[i+1]+"T12:00"),gap=Math.round((b-a)/864e5)-1;
+      if(gap>0&&gap<=3&&day[keys[i]].last!=="SK"&&day[keys[i+1]].first!=="SK")for(let g=1;g<=gap;g++){const d=new Date(a.getTime()+g*864e5),k=dk(d);day[k]={km:0,rest:true,w:{[day[keys[i]].last]:24},last:day[keys[i]].last,first:day[keys[i]].last};all.push(k)}}}
+    let str=0,dT=0,dZ=0,dRest=0,cab=0,cn={};const det=[];
+    for(const k of all.sort()){const x=day[k];if(!x.rest&&x.km<10)continue;const fw=Object.entries(x.w).filter(([c])=>c!=="SK").sort((a,b)=>b[1]-a[1]),sk=x.w.SK||0,fT=fw.reduce((t,a)=>t+a[1],0);
+      const prevA=day[dk(new Date(new Date(k+"T12:00").getTime()-864e5))],nextA=day[dk(new Date(new Date(k+"T12:00").getTime()+864e5))],tour=(prevA&&prevA.last&&prevA.last!=="SK")||(nextA&&nextA.first&&nextA.first!=="SK");
+      if(fT>0&&(fT>=sk||tour)){const c=fw[0][0],rate=fpRate(c,FP),hrs=x.rest||tour?24:Math.max(fT,(x.t1-x.t0)/36e5),pct=hrs>12?1:hrs>6?.5:.25,a=rate*pct;str+=a;dZ++;if(x.rest)dRest++;cn[c]=(cn[c]||0)+1;if(x.cab)cab++;det.push([k,c,a])}
+      else{const hrs=(x.t1-x.t0)/36e5;let a=0;for(const [h,v] of FP_TUZ)if(hrs>=h)a=v;str+=a;if(a)dT++;det.push([k,"SK",a])}}
+    const worked=all.filter(k=>day[k].rest||day[k].km>=10).length,a=agg(L),cons=a.km>=1000?a.cons:null;
+    const vs=V.filter(e=>e.driver&&normName(e.driver)===normName(n)),sp=vs.filter(e=>e.kind==="speed").length,fu=vs.filter(e=>e.kind!=="speed").length;
+    const B=[];if(cons&&avgC){if(cons<=avgC*.95)B.push(["Úsporná jazda",+FP.b_eco,`${n1(cons)} l/100 (priemer ${n1(avgC)})`]);else if(cons<=avgC)B.push(["Spotreba pod priemerom",+FP.b_eco2,`${n1(cons)} l/100`])}
+    if(V&&!sp&&!fu&&a.km>=500)B.push(["Bez porušení",+FP.b_safe,"rýchlosť ani nafta"]);
+    if(kmAvg&&a.km>=kmAvg*1.1)B.push(["Výkon",+FP.b_perf,`${n0(a.km)} km (priemer ${n0(kmAvg)})`]);
+    if(worked>=(grp==="eu"?18:20))B.push(["Dochádzka",+FP.b_att,`${worked} dní`]);
+    const base=grp==="eu"?+FP.base_eu:+FP.base_region,bon=B.reduce((t,b)=>t+b[1],0),gross=base+bon,cost=gross*(1+(+FP.emp||0)/100)+str;
+    return {n,worked,km:a.km,cons:a.cons,few:a.km<100,base,str,dT,dZ,dRest,cn,B,bon,gross,cost,sp,fu,cab}}).sort((a,b)=>b.cost-a.cost);
+  return {FP,out,avgC,kmAvg,dim}}
+const normName=x=>String(x||"").toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g,"").split(/\s+/).filter(Boolean).sort().join(" ");
+function vFairPay(F){if(ROLE!=="owner"||FLX(FFLT))return "";const P=grpView();if(!P||P.mon!==PMON)return "";
+  const X=fpCalc(F,P,FFLT),O=X.out,FP=X.FP,T=k=>O.reduce((t,r)=>t+(+r[k]||0),0),eur=x=>n0(x)+" €",mName=new Date(PMON+"-15").toLocaleDateString("sk-SK",{month:"long",year:"numeric"});
+  let h=`<h2>💎 Návrh spravodlivej mzdy · ${esc(FLN[FFLT])}</h2>
+  <div class="vd2 fph"><div class="vdh"><b>${esc(mName)}</b><span class="vof">${O.length} vodičov</span></div><div class="vtg">
+    <div class="vtl"><small>Hrubé mzdy</small><b>${eur(T("gross"))}</b><em>základ ${eur(T("base"))} + bonusy ${eur(T("bon"))}</em></div>
+    <div class="vtl"><small>Stravné (bez dane)</small><b>${eur(T("str"))}</b><em>${T("dT")} dní SK · ${T("dZ")} dní zahraničie</em></div>
+    <div class="vtl on"><small>Náklad firmy</small><b>${eur(T("cost"))}</b><em>hrubá × ${(1+FP.emp/100).toFixed(3).replace(".",",")} + stravné</em></div>
+    ${STATE.payTot?`<div class="vtl"><small>Doterajší model</small><b>${eur(STATE.payTot)}</b><em>${FFLT==="eu"?n0(+((F.cfg.pay||{}).euDay||105))+" €/deň":"80 / 90 €/deň"} alebo základ</em></div>`:""}</div>
+    <div class="vdn">Návrh = základ ${eur(FFLT==="eu"?FP.base_eu:FP.base_region)} hrubého + zákonné stravné podľa toho, kde a ako dlho vodič jazdil + bonusy za výkon a správanie. Nič sa nestrháva – bonus sa len nedostane.</div></div>
+  <div class="fpl">`+(O.length?O.map(r=>`<div class="vd2 fpc"><div class="vdh"><b>${esc(r.n)}</b><span class="vof">${r.worked} dní · ${n0(r.km)} km${r.few?" · málo dát":""}</span></div>
+    <div class="fpr"><span>Základ</span><b>${eur(r.base)}</b></div>
+    ${r.B.map(b=>`<div class="fpr bon"><span>✓ ${esc(b[0])}<small>${esc(b[2])}</small></span><b>+${eur(b[1])}</b></div>`).join("")}
+    <div class="fpr tot"><span>Hrubá mzda</span><b>${eur(r.gross)}</b></div>
+    <div class="fpr"><span>Stravné<small>${r.dT?r.dT+" dní SK":""}${r.dT&&r.dZ?" · ":""}${r.dZ?r.dZ+" dní zahr. ("+Object.entries(r.cn).map(([c,k])=>esc(FP_CN[c]||c)+" "+k).join(", ")+")":""}${r.dRest?` · ${r.dRest} dni odpočinku na turne`:""}</small></span><b>${eur(r.str)}</b></div>
+    <div class="fpr cost"><span>Náklad firmy</span><b>${eur(r.cost)}</b></div>
+    ${r.sp||r.fu?`<div class="fpw">⚠️ ${r.sp?r.sp+"× rýchlosť nad limit":""}${r.sp&&r.fu?" · ":""}${r.fu?r.fu+"× podozrivý pohyb nafty":""} – bonus Bez porušení neudelený</div>`:""}
+    ${r.cab?`<div class="fpw">🇪🇺 ${r.cab} dní s jazdou len v zahraničí (možná kabotáž / cross-trade) – pri vyslaní treba doplatiť do minimálnej mzdy krajiny (napr. DE 13,90 €/h) a podať vyhlásenie IMI.</div>`:""}</div>`).join(""):`<div class="card"><div class="s">V tomto mesiaci zatiaľ žiadne jazdy.</div></div>`)+`</div>
+  <details class="card"><summary class="s" style="cursor:pointer">⚙️ Sadzby návrhu a zdroje</summary>
+    <form class="f sub" id="fPay2"><label>Základ Región € hrubé<input name="base_region" inputmode="decimal" value="${FP.base_region}"></label><label>Základ EU € hrubé<input name="base_eu" inputmode="decimal" value="${FP.base_eu}"></label>
+    <label>Bonus úsporná jazda (−5 % pod priemer) €<input name="b_eco" inputmode="decimal" value="${FP.b_eco}"></label><label>Bonus spotreba pod priemerom €<input name="b_eco2" inputmode="decimal" value="${FP.b_eco2}"></label>
+    <label>Bonus bez porušení €<input name="b_safe" inputmode="decimal" value="${FP.b_safe}"></label><label>Bonus výkon (km +10 % nad priemer) €<input name="b_perf" inputmode="decimal" value="${FP.b_perf}"></label>
+    <label>Bonus dochádzka €<input name="b_att" inputmode="decimal" value="${FP.b_att}"></label><label>Odvody zamestnávateľa %<input name="emp" inputmode="decimal" value="${FP.emp}"></label>
+    <label>Kurz CZK za 1 €<input name="czk" inputmode="decimal" value="${FP.czk}"></label><div class="w btns"><button class="pri" type="submit">Uložiť</button></div></form>
+    <div class="s">Stravné SK (zákon 283/2002 Z. z., od 1. 12. 2025): 5–12 h 9,30 €, 12–18 h 13,80 €, nad 18 h 20,60 €. Zahraničné pre vodičov (opatrenie MF SR 401/2012 v znení 9/2026, od 30. 1. 2026): HU 55, AT/DE/IT/FR/NL/BE 63, PL 52, RO 60, HR 56, SI 53, UA 52 €, CZ 1 200 Kč; do 6 h 25 %, 6–12 h 50 %, nad 12 h 100 %. Dni odpočinku na turne v zahraničí sa rátajú ako celý deň. Krajina sa určuje z polohy a adresy jázd – odhad, nie výplatná páska. Minimálna mzda 2026: 915 €, 2. stupeň náročnosti 1 031 €. Trh 2026: priemerná základná mzda vodiča kamiónu 1 695 € (Platy.sk), ponuky MKD 1 600–2 400 € hrubého. Zrážky zo mzdy za spotrebu nie sú v návrhu – len bonusy. Over s účtovníčkou.</div></details>`;
+  return h}
+document.addEventListener("submit",async e=>{if(e.target.id!=="fPay2")return;e.preventDefault();const fd=new FormData(e.target),v={};for(const k of Object.keys(FP_DEF))v[k]=num(fd.get(k))||FP_DEF[k];
+  const r=await sb.from("fleet_cfg").upsert({key:"pay2",value:v});if(r.error){toast("Chyba: "+r.error.message);return}STATE.fleet=null;renderStaff();toast("Sadzby návrhu uložené.")},true);
 function grpView(){const P=STATE.pay,S=fltIds(STATE.fleet);if(!P||!S)return P;const k=x=>!x.vehicle_id||S.has(x.vehicle_id);return Object.assign({},P,{rides:(P.rides||[]).filter(k),ev:(P.ev||[]).filter(k)})}
 function vDrvCar(F,withMon){const P=grpView(),mName=m=>new Date(m+"-15").toLocaleDateString("sk-SK",{month:"long"});
   const months=[...Array(6)].map((_,i)=>{const d=new Date();d.setDate(15);d.setMonth(d.getMonth()-i);return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")});
