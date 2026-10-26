@@ -192,7 +192,7 @@ function shareFiles(files,after){const o=document.createElement("div");o.classNa
   document.body.appendChild(o);const close=()=>o.remove();
   o.querySelector("#pdfGo").onclick=async()=>{try{await navigator.share({files});close();after&&after()}catch(e){if(e&&e.name!=="AbortError"){files.forEach(f=>dl(f.name,f));close();after&&after()}}};
   o.querySelector("#pdfDl").onclick=()=>{files.forEach(f=>dl(f.name,f));close();after&&after()};o.querySelector("#pdfX").onclick=close}
-async function makePdf(x){const H=await loadLib("https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js","html2pdf");
+async function makePdf(x){const H=await loadLib("vendor/html2pdf-0.10.1.js","html2pdf");
   const sx=window.scrollX,sy=window.scrollY;window.scrollTo(0,0);
   const box=document.createElement("div");box.style.cssText="position:absolute;left:0;top:0;width:180mm;background:#fff;z-index:-5";box.innerHTML=`<style>${DOCCSS}</style>`+docHTML(x);document.body.appendChild(box);
   try{await Promise.all([...box.querySelectorAll("img")].map(im=>im.complete?1:new Promise(r=>{im.onload=im.onerror=r})));
@@ -292,9 +292,9 @@ function imgTo(file,max,q){return new Promise((ok,no)=>{const u=URL.createObject
 async function readFile(f){const n=f.name||"súbor",t=(f.type||"").toLowerCase(),ext=(n.split(".").pop()||"").toLowerCase();
   if(t.startsWith("image/")||/^(jpe?g|png|heic|heif|webp|gif)$/.test(ext)){const d=await imgTo(f,1600,.85),th=await imgTo(f,160,.7);return {kind:"image",name:n,media_type:"image/jpeg",data:d.split(",")[1],thumb:th}}
   if(t==="application/pdf"||ext==="pdf"){if(f.size>MAXB)throw new Error(n+": PDF je väčšie ako 9 MB");return {kind:"pdf",name:n,data:b64(await f.arrayBuffer())}}
-  if(/^(xlsx|xls)$/.test(ext)){const X=await loadLib("https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js","XLSX");const wb=X.read(await f.arrayBuffer(),{type:"array"});
+  if(/^(xlsx|xls)$/.test(ext)){const X=await loadLib("vendor/xlsx-0.18.5.js","XLSX");const wb=X.read(await f.arrayBuffer(),{type:"array"});
     return {kind:"sheet",name:n,text:wb.SheetNames.map(sn=>"Hárok "+sn+":\n"+X.utils.sheet_to_csv(wb.Sheets[sn],{FS:";"})).join("\n\n").slice(0,150000)}}
-  if(ext==="docx"){const M=await loadLib("https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js","mammoth");const r=await M.extractRawText({arrayBuffer:await f.arrayBuffer()});return {kind:"text",name:n,text:r.value.slice(0,150000)}}
+  if(ext==="docx"){const M=await loadLib("vendor/mammoth-1.6.0.js","mammoth");const r=await M.extractRawText({arrayBuffer:await f.arrayBuffer()});return {kind:"text",name:n,text:r.value.slice(0,150000)}}
   if(ext==="doc")throw new Error(n+": starý formát .doc – ulož ho ako .docx alebo PDF");
   return {kind:"text",name:n,text:(await f.text()).slice(0,150000)}}
 async function addFiles(list){for(const f of list){try{const a=await readFile(f);if(PEND.reduce((s,x)=>s+(x.data||x.text||"").length,0)+(a.data||a.text||"").length>14e6){toast("Príloh je priveľa naraz – pošli ich postupne.");break}PEND.push(a)}catch(e){toast(e.message||"Súbor sa nedá načítať")}}pendView()}

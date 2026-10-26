@@ -13,8 +13,8 @@
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="icon-180.png">
 <link rel="icon" type="image/png" href="icon-192.png">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="fonts/fonts.css?v=1">
+<style>.privl{text-align:center;margin:14px 0 96px;font-size:.8rem;opacity:.75}.privl a{color:inherit}</style>
 <style>
 /* ERNTE – sklo, žiara, profesionálna typografia. Tmavá nočná scéna s farebnou žiarou, sklenené karty, Unbounded nadpisy + Sora text + Plex Mono čísla. */
 :root{
@@ -797,12 +797,13 @@ html[data-theme=light] .ftbl th{color:#0f172a}html[data-theme=light] .fdban{colo
 <div class="wrap">
   <header class="top"><img src="logo.png" alt="ERNTE"><div class="tt"><h1 id="hT">ERNTE Farmár</h1><small id="hS">výkup komodít</small></div><button type="button" class="topref" id="refBtn" data-refresh="1" hidden aria-label="Obnoviť údaje" title="Obnoviť"><span>↻</span></button><button type="button" class="aibtn" id="aiBtn" hidden aria-label="AI Podpora"><i></i><span>Podpora</span></button><button type="button" class="out" id="outBtn" hidden aria-label="Odhlásiť" title="Odhlásiť"><span class="oi">⏻</span><span class="ot">Odhlásiť</span></button></header>
   <main id="app" class="wrap" aria-live="polite"><div class="card"><div class="t">Načítavam…</div></div></main>
+  <div class="privl"><a href="sukromie.html">🔒 Ochrana osobných údajov</a></div>
 </div>
 <div class="toast" id="toast" role="status"></div>
 
 <script>window.LEAFLET_SRC="leaflet.js"</script>
 <script src="config.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+<script src="vendor/supabase-2.45.4.js"></script>
 <script>
 "use strict";
 const MK=[["repka","Repka"],["lo","LO slnečnica"],["ho","HO slnečnica"],["soja","Sója"],["psenica_p","Pšenica potravinárska"],["psenica_k","Pšenica kŕmna"],["jacmen_k","Jačmeň kŕmny"],["jacmen_s","Jačmeň sladovnícky"],["kukurica","Kukurica"],["cirok","Cirok"]];
@@ -821,7 +822,7 @@ const dtSK=d=>d?new Date(d).toLocaleString("sk-SK",{day:"numeric",month:"numeric
 const comName=c=>(MK.find(m=>m[0]===c)||[c,c||"–"])[1];
 const specLine=c=>{const s=SPEC[c];return s?`vlhkosť max. ${String(s[0]).replace(".",",")} %, nečistoty max. ${s[1]} %${s[2]?", Non-GMO":""}`:""};
 const IMG={repka:"Rapsfeld Rapeseed Brassica napus.jpg",lo:"Sunflower (Helianthus annuus) seeds.jpg",ho:"Sonnenblumenkerne sunflower seeds.jpg",soja:"Soybeans.jpg",psenica_p:"Wheat close-up.JPG",psenica_k:"Wheat grain.jpg",jacmen_k:"Barley grains.jpg",jacmen_s:"Barley.jpg",kukurica:"Maize Corn.jpg",cirok:"Sorghum.jpg"};
-const imgUrl=c=>IMG[c]?"https://commons.wikimedia.org/wiki/Special:FilePath/"+encodeURIComponent(IMG[c].replace(/ /g,"_"))+"?width=400":"";
+const imgUrl=c=>IMG[c]?"img/com/"+c+".jpg":"";
 const comImg=(c,cls="cimg")=>IMG[c]?`<span class="${cls}"><img src="${imgUrl(c)}" alt="${esc(comName(c))}" loading="lazy" referrerpolicy="no-referrer" onerror="this.style.display='none'"></span>`:"";
 const pill=a=>`<span class="pill ${a[1]||""}">${esc(a[0])}</span>`;
 const today=()=>new Date().toLocaleDateString("sv-SE",{timeZone:"Europe/Bratislava"});
@@ -848,7 +849,7 @@ let LOGIN={email:"",sent:false};
 function showLogin(){$("outBtn").hidden=true;$("refBtn").hidden=true;$("aiBtn").hidden=true;$("hS").textContent="výkup komodít";
   const A=$("app");
   if(!LOGIN.sent){A.innerHTML=`<div class="center"><div class="hero"><small>Vitajte</small><b>Prihlásenie</b><small>Zadajte e-mail alebo telefón a heslo, ktoré vám poslala ERNTE.</small></div>
-    <form class="card" id="fEmail"><label>E-mail alebo telefón<input name="email" type="text" inputmode="email" autocomplete="username" autocapitalize="off" required value="${esc(LOGIN.email)}" placeholder="meno@firma.sk alebo 0905 123 456"></label><label>Heslo <span style="font-weight:400">(dostali ste ho od ERNTE)</span><input name="pw" type="password" autocomplete="current-password"></label><button class="pri" type="submit">Prihlásiť / poslať kód</button></form>${installHint()}</div>`}
+    <form class="card" id="fEmail"><label>E-mail alebo telefón<input name="email" type="text" inputmode="email" autocomplete="username" autocapitalize="off" required value="${esc(LOGIN.email)}" placeholder="meno@firma.sk alebo 0905 123 456"></label><label>Heslo <span style="font-weight:400">(dostali ste ho od ERNTE)</span><input name="pw" type="password" autocomplete="current-password"></label><button class="pri" type="submit">Prihlásiť / poslať kód</button></form>${installHint()}<div class="s" style="text-align:center;margin-top:10px"><a href="sukromie.html">🔒 Ochrana osobných údajov</a></div></div>`}
   else{A.innerHTML=`<div class="center"><div class="hero"><small>Kód sme poslali na</small><b>${esc(LOGIN.email)}</b><small>Pozrite si e-mail (aj priečinok Spam) a opíšte kód. Ak je v e-maile iba tlačidlo „Log In“, podržte na ňom prst → Kopírovať odkaz a vložte ho sem.</small></div>
     <form class="card" id="fCode"><label>Kód z e-mailu<input class="code" name="code" inputmode="numeric" autocomplete="one-time-code" required></label><button class="pri" type="submit">Prihlásiť</button><button type="button" id="backEmail">Zmeniť e-mail / poslať znova</button></form></div>`;
     setTimeout(()=>{const i=document.querySelector("input.code");if(i)i.focus()},50)}
@@ -912,7 +913,7 @@ const LCSS=`.leaflet-pane,.leaflet-tile,.leaflet-marker-icon,.leaflet-marker-sha
 .lpin.old i{background:#9aa3b8;box-shadow:0 0 0 4px rgba(154,163,184,.25)}.lpin.old span{opacity:.75}
 .lmap{height:300px;border-radius:16px;border:1px solid rgba(255,255,255,.16);margin-top:6px}.lmap.sm{height:200px}.lmap.big{height:min(60vh,460px)}`;
 (function(){if(document.getElementById("lcss"))return;const s=document.createElement("style");s.id="lcss";s.textContent=LCSS;document.head.appendChild(s)})();
-let LREADY=null;function needL(){if(window.L)return Promise.resolve();if(LREADY)return LREADY;LREADY=new Promise((ok,no)=>{const s=document.createElement("script");s.src=window.LEAFLET_SRC||"https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js";s.onload=ok;s.onerror=no;document.head.appendChild(s)});return LREADY}
+let LREADY=null;function needL(){if(window.L)return Promise.resolve();if(LREADY)return LREADY;LREADY=new Promise((ok,no)=>{const s=document.createElement("script");s.src=window.LEAFLET_SRC||"leaflet.js";s.onload=ok;s.onerror=no;document.head.appendChild(s)});return LREADY}
 function baseLayers(map,sat){const osm=L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png",{maxZoom:19,className:"ldark",attribution:'© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'});
   const esri=L.tileLayer("https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",{maxZoom:19,attribution:"© Esri"});
   (sat?esri:osm).addTo(map);const C=L.Control.extend({onAdd(){const d=L.DomUtil.create("div","lsw");d.innerHTML=`<button type="button" class="${sat?"":"on"}">Mapa</button><button type="button" class="${sat?"on":""}">Satelit</button>`;
@@ -1510,7 +1511,7 @@ function fcCSV(txt){const first=txt.split(/\r?\n/).find(l=>l.trim())||"",dl=[";"
   const out=[];let row=[],cur="",q=false;for(let i=0;i<txt.length;i++){const ch=txt[i];if(q){if(ch==='"'){if(txt[i+1]==='"'){cur+='"';i++}else q=false}else cur+=ch}
     else if(ch==='"')q=true;else if(ch===dl){row.push(cur);cur=""}else if(ch==="\n"||ch==="\r"){if(ch==="\r"&&txt[i+1]==="\n")i++;row.push(cur);cur="";if(row.some(c=>String(c).trim()))out.push(row);row=[]}else cur+=ch}
   row.push(cur);if(row.some(c=>String(c).trim()))out.push(row);return out}
-function fcXlsxLib(){if(window.XLSX)return Promise.resolve(window.XLSX);return new Promise((ok,no)=>{const sc=document.createElement("script");sc.src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js";sc.onload=()=>ok(window.XLSX);sc.onerror=()=>no(new Error("Knižnicu pre Excel sa nepodarilo načítať – ulož výpis ako CSV."));document.head.appendChild(sc)})}
+function fcXlsxLib(){if(window.XLSX)return Promise.resolve(window.XLSX);return new Promise((ok,no)=>{const sc=document.createElement("script");sc.src="vendor/xlsx-0.18.5.js";sc.onload=()=>ok(window.XLSX);sc.onerror=()=>no(new Error("Knižnicu pre Excel sa nepodarilo načítať – ulož výpis ako CSV."));document.head.appendChild(sc)})}
 async function fcRead(file){FCI={rows:null,heads:null,map:null,name:file.name,busy:true,res:null,err:""};renderStaff();
   try{let A;if(/\.(xlsx|xls|xlsm)$/i.test(file.name)){const X=await fcXlsxLib(),wb=X.read(await file.arrayBuffer(),{type:"array",cellDates:true});const ws=wb.Sheets[wb.SheetNames[0]];A=X.utils.sheet_to_json(ws,{header:1,raw:true,defval:""})}
     else{const buf=await file.arrayBuffer();let t=new TextDecoder("utf-8").decode(buf);if(t.includes("�"))t=new TextDecoder("windows-1250").decode(buf);A=fcCSV(t.replace(/^﻿/,""))}
@@ -1791,7 +1792,7 @@ function reportHTMLDoc(){const D=reportData(),t=r=>`<table>${r.map((x,i)=>`<tr>$
    <h3>KPI</h3><table>${D.kpi.map(r=>`<tr><th>${esc(r[0])}</th><td>${esc(String(r[1]))}</td></tr>`).join("")}</table><h3>Nafta po autách</h3>${t(D.cars)}${D.cost?`<h3>Náklady</h3>${t(D.cost)}`:""}<h3>Vodiči</h3>${t(D.drv)}</div>`}
 const RPCSS=`.rpd{font:10pt/1.4 Arial,sans-serif;color:#111;background:#fff;padding:4px}.rph{display:flex;gap:12px;align-items:center;border-bottom:2px solid #1e2f8a;padding-bottom:8px;margin-bottom:10px}.rph img{height:36px}.rph b{display:block;font-size:13pt}.rph small{color:#555}.rpd h3{margin:14px 0 6px;font-size:11pt}.rpd table{border-collapse:collapse;width:100%;margin-bottom:6px}.rpd th,.rpd td{border:1px solid #bbb;padding:3px 5px;text-align:left;font-size:8.5pt;color:#111}.rpd th{background:#eef1fb}.rpd tr{page-break-inside:avoid}`;
 async function reportPdf(btn){const sp=btn&&btn.querySelector("span");if(sp)sp.textContent="Pripravujem…";
-  try{await new Promise((ok,no)=>{if(window.html2pdf)return ok();const s=document.createElement("script");s.src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js";s.onload=ok;s.onerror=no;document.head.appendChild(s)});
+  try{await new Promise((ok,no)=>{if(window.html2pdf)return ok();const s=document.createElement("script");s.src="vendor/html2pdf-0.10.1.js";s.onload=ok;s.onerror=no;document.head.appendChild(s)});
     const box=document.createElement("div");box.style.cssText="position:absolute;left:0;top:0;width:270mm;background:#fff;z-index:-5";box.innerHTML=`<style>${RPCSS}</style>`+reportHTMLDoc();document.body.appendChild(box);const sx=scrollX,sy=scrollY;scrollTo(0,0);
     try{await window.html2pdf().set({margin:[10,10,10,10],filename:"VALKO-report-flotily-"+curMonKey()+".pdf",image:{type:"jpeg",quality:.95},html2canvas:{scale:2,backgroundColor:"#ffffff"},jsPDF:{unit:"mm",format:"a4",orientation:"landscape"},pagebreak:{mode:["css","legacy"],avoid:["tr","h3"]}}).from(box.querySelector(".rpd")).save()}finally{box.remove();scrollTo(sx,sy)}}
   catch(e){const w=window.open("","_blank");if(w){w.document.write(`<!doctype html><meta charset="utf-8"><title>VALKO report</title><style>${RPCSS}</style>${reportHTMLDoc()}`);w.document.close();setTimeout(()=>w.print(),400)}else toast("PDF sa nepodarilo pripraviť.")}

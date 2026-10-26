@@ -8,8 +8,7 @@
 <meta name="application-name" content="ERNTE">
 
 <meta name="theme-color" content="#0a0f0b">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&family=Jost:wght@400;500;600&family=Unbounded:wght@500;600;700&display=swap">
+<link rel="stylesheet" href="fonts/fonts.css?v=1">
 <style>
 /* Layout: app shell — top bar, four numbered steps as panels, result sheet, fixed price dock at the bottom.
    Dark-first: night field console; light mirrors it as daylight. */
@@ -969,7 +968,7 @@ html.kx .top .ttl{flex:1 1 auto;min-width:0}
 <div class="dock" id="dock"><a href="#out" id="dockLink"></a></div>
 
 <script src="config.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+<script src="vendor/supabase-2.45.4.js"></script>
 <script src="kalk-shim.js"></script>
 <script>
 
@@ -1846,7 +1845,7 @@ const LCSS=`.leaflet-pane,.leaflet-tile,.leaflet-marker-icon,.leaflet-marker-sha
 .lpin span{font:700 11px "Sora",system-ui;color:#fff;background:rgba(10,13,20,.75);padding:2px 6px;border-radius:7px}
 .lmap{height:300px;border-radius:16px;border:1px solid rgba(255,255,255,.16);margin-top:6px}.lmap.sm{height:200px}`;
 (function(){if(document.getElementById("lcss"))return;const s=document.createElement("style");s.id="lcss";s.textContent=LCSS;document.head.appendChild(s)})();
-let LREADY=null;function needL(){if(window.L)return Promise.resolve();if(LREADY)return LREADY;LREADY=new Promise((ok,no)=>{const s=document.createElement("script");s.src=window.LEAFLET_SRC||"https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js";s.onload=ok;s.onerror=no;document.head.appendChild(s)});return LREADY}
+let LREADY=null;function needL(){if(window.L)return Promise.resolve();if(LREADY)return LREADY;LREADY=new Promise((ok,no)=>{const s=document.createElement("script");s.src=window.LEAFLET_SRC||"leaflet.js";s.onload=ok;s.onerror=no;document.head.appendChild(s)});return LREADY}
 function baseLayers(map,sat){const osm=L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png",{maxZoom:19,className:"ldark",attribution:'© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'});
   const esri=L.tileLayer("https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",{maxZoom:19,attribution:"© Esri"});
   (sat?esri:osm).addTo(map);const C=L.Control.extend({onAdd(){const d=L.DomUtil.create("div","lsw");d.innerHTML=`<button type="button" class="${sat?"":"on"}">Mapa</button><button type="button" class="${sat?"on":""}">Satelit</button>`;
