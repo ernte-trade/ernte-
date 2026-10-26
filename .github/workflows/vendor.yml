@@ -1,30 +1,40 @@
-name: Knižnice do aplikácie (bez externých CDN)
+name: Obrázky komodít do aplikácie (bez Wikimedia)
 on:
   push:
     paths: ['.github/workflows/vendor.yml']
-  workflow_dispatch:
 permissions:
   contents: write
 jobs:
-  vendor:
+  img:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
         with: { ref: main }
-      - name: Stiahnuť knižnice
+      - name: Stiahnuť obrázky a licencie
         run: |
           set -e
-          mkdir -p farmar/vendor
-          curl -fsSL -o farmar/vendor/supabase-2.45.4.js https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js
-          curl -fsSL -o farmar/vendor/xlsx-0.18.5.js https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js
-          curl -fsSL -o farmar/vendor/html2pdf-0.10.1.js https://cdn.jsdelivr.net/npm/html2pdf.js@0.10.1/dist/html2pdf.bundle.min.js
-          curl -fsSL -o farmar/vendor/mammoth-1.6.0.js https://cdn.jsdelivr.net/npm/mammoth@1.6.0/mammoth.browser.min.js
-          ls -la farmar/vendor
-          sha256sum farmar/vendor/*.js > farmar/vendor/SHA256SUMS
+          mkdir -p farmar/img/com
+          python3 - <<'PY'
+          import json,urllib.request,urllib.parse,re
+          IMG={"repka":"Rapsfeld Rapeseed Brassica napus.jpg","lo":"Sunflower (Helianthus annuus) seeds.jpg","ho":"Sonnenblumenkerne sunflower seeds.jpg","soja":"Soybeans.jpg","psenica_p":"Wheat close-up.JPG","psenica_k":"Wheat grain.jpg","jacmen_k":"Barley grains.jpg","jacmen_s":"Barley.jpg","kukurica":"Maize Corn.jpg","cirok":"Sorghum.jpg"}
+          H={"User-Agent":"ERNTE-app/1.0 (info@valko-logistics.sk)"}
+          out={}
+          strip=lambda s:re.sub(r"<[^>]+>","",s or "").strip()
+          for k,f in IMG.items():
+            q="https://commons.wikimedia.org/w/api.php?"+urllib.parse.urlencode({"action":"query","titles":"File:"+f,"prop":"imageinfo","iiprop":"url|extmetadata","iiurlwidth":"400","format":"json"})
+            d=json.load(urllib.request.urlopen(urllib.request.Request(q,headers=H)))
+            p=list(d["query"]["pages"].values())[0];ii=p["imageinfo"][0];m=ii.get("extmetadata",{})
+            data=urllib.request.urlopen(urllib.request.Request(ii["thumburl"],headers=H)).read()
+            open(f"farmar/img/com/{k}.jpg","wb").write(data)
+            out[k]={"file":f,"author":strip(m.get("Artist",{}).get("value")),"license":strip(m.get("LicenseShortName",{}).get("value")),"license_url":m.get("LicenseUrl",{}).get("value",""),"source":ii["descriptionurl"]}
+            print(k,len(data),out[k]["license"],out[k]["author"][:40])
+          json.dump(out,open("farmar/img/com/credits.json","w"),ensure_ascii=False,indent=1)
+          PY
       - name: Uložiť
         run: |
           git config user.name "ERNTE Trade"
           git config user.email "report.valko@gmail.com"
-          git add farmar/vendor
-          git diff --cached --quiet || git commit -m "Knižnice priamo v aplikácii (supabase, xlsx, html2pdf, mammoth)"
+          git add farmar/img/com
+          git diff --cached --quiet || git commit -m "Obrázky komodít priamo v aplikácii s licenciami"
+          git pull --rebase origin main
           git push origin HEAD:main
