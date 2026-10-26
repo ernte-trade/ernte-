@@ -19,8 +19,15 @@ html[data-theme=light] .obbox{background:#fff;color:#0f172a}
 html[data-theme=light] .obit{border-color:rgba(15,23,42,.14);background:rgba(15,23,42,.03)}
 .obto{display:flex;align-items:center;gap:8px;flex-wrap:wrap}.obto small{opacity:.7}.obit input,.obit textarea{width:100%;box-sizing:border-box}.obit textarea{min-height:90px;font:inherit}
 .obres{display:grid;gap:8px;padding:12px;border-radius:16px;border:1px solid rgba(52,211,153,.5);background:rgba(52,211,153,.08)}
-.inbx{border-color:rgba(124,196,255,.55)!important}.inbx .inm{display:grid;gap:4px;padding:10px 0;border-top:1px solid var(--line,rgba(255,255,255,.12))}.inbx .inm:first-of-type{border-top:0}
-.inbx .inm p{margin:0;white-space:pre-wrap}.npush ol{margin:6px 0;padding-left:20px}.npush li{margin:4px 0}`;document.head.appendChild(st);
+.inbx{position:relative;isolation:isolate;display:grid;gap:10px;padding:18px;margin:0 0 14px;border-radius:26px;color:#fff;overflow:hidden;
+  background:linear-gradient(135deg,rgba(255,61,154,.92),rgba(124,92,255,.92) 45%,rgba(34,211,238,.92));box-shadow:0 0 0 2px rgba(255,255,255,.55),0 0 34px rgba(255,61,154,.55),0 0 70px rgba(34,211,238,.35),inset 0 1px 0 rgba(255,255,255,.7);animation:ingl 2.2s ease-in-out infinite}
+.inbx::before{content:"";position:absolute;inset:-40%;z-index:-1;background:conic-gradient(from 0deg,transparent 0 70%,rgba(255,255,255,.55) 80%,transparent 90%);animation:inspin 3.2s linear infinite}
+.inbx::after{content:"";position:absolute;inset:2px;z-index:-1;border-radius:24px;background:linear-gradient(135deg,rgba(255,61,154,.95),rgba(124,92,255,.95) 45%,rgba(14,165,233,.95))}
+@keyframes inspin{to{transform:rotate(360deg)}}@keyframes ingl{50%{box-shadow:0 0 0 2px rgba(255,255,255,.8),0 0 50px rgba(255,61,154,.8),0 0 90px rgba(34,211,238,.55),inset 0 1px 0 rgba(255,255,255,.7)}}
+@media (prefers-reduced-motion:reduce){.inbx,.inbx::before{animation:none}}
+.inhd{display:flex;align-items:center;gap:12px}.inhd b{display:block;font-size:1.2rem;letter-spacing:.01em}.inhd small{opacity:.9}.ingem{font-size:2.2rem;filter:drop-shadow(0 0 10px rgba(255,255,255,.9));animation:ingem 1.6s ease-in-out infinite}@keyframes ingem{50%{transform:scale(1.18) rotate(-8deg)}}
+.inbx .inm{display:grid;gap:4px;padding:12px 14px;border-radius:18px;background:rgba(255,255,255,.16);border:1px solid rgba(255,255,255,.35);backdrop-filter:blur(6px)}
+.inbx .inm p{margin:0;white-space:pre-wrap}.inbx .inm small{opacity:.85}.inbx .inok{background:#fff!important;color:#4c1d95!important;font-weight:800;border:0!important}.npush ol{margin:6px 0;padding-left:20px}.npush li{margin:4px 0}`;document.head.appendChild(st);
 
 // ---------- MAJITEĽ ----------
 let OB={n:0,list:null,sent:null,tab:"wait",res:{}},obTimer=null;
@@ -55,9 +62,7 @@ let IN=null,inBusy=false;
 async function inLoad(){if(inBusy)return;inBusy=true;try{const r=await sb.rpc("my_inbox");IN=r.error?null:r.data}catch(x){IN=null}inBusy=false;inDecor()}
 function inDecor(){const app=document.getElementById("app");if(!app||!IN)return;app.querySelectorAll(".inbx,.npush").forEach(x=>x.remove());
   const U=(IN.items||[]).filter(x=>!x.read_at);let h="";
-  if(U.length)h+=`<div class="card inbx"><div class="t">🔔 ${U.length===1?"Nová správa od ERNTE":"Nové správy od ERNTE ("+U.length+")"}</div>${U.map(x=>`<div class="inm"><b>${e(x.title)}</b><p>${e(x.body)}</p><small>${e(dt(x.sent_at))}</small><div class="btns"><button type="button" data-inread="${e(x.id)}">✓ Rozumiem</button></div></div>`).join("")}</div>`;
-  let skip=false;try{skip=localStorage.getItem("ernte-npush-skip")==="1"}catch(x){}
-  if(!IN.push&&!skip)h+=`<div class="card npush"><div class="t">🔔 Upozornenia do mobilu</div><div class="s">Chcete vedieť o zmluve na podpis, autách a správach od ERNTE hneď – aj keď máte aplikáciu zatvorenú?</div><div class="btns"><button type="button" class="pri" data-npush>Zapnúť upozornenia</button><button type="button" data-npskip>Nie, ďakujem</button></div></div>`;
+  if(U.length)h+=`<div class="inbx" role="alert"><div class="inhd"><span class="ingem" aria-hidden="true">💎</span><div><b>${U.length===1?"Nová správa od ERNTE":"Nové správy od ERNTE ("+U.length+")"}</b><small>prečítajte si a ťuknite Rozumiem</small></div></div>${U.map(x=>`<div class="inm"><b>${e(x.title)}</b><p>${e(x.body)}</p><small>${e(dt(x.sent_at))}</small><div class="btns"><button type="button" class="inok" data-inread="${e(x.id)}">✓ Rozumiem</button></div></div>`).join("")}</div>`;
   if(h){const d=document.createElement("div");d.innerHTML=h;const first=app.querySelector(".sgban");[...d.children].reverse().forEach(c=>first?first.after(c):app.prepend(c))}}
 window.inboxDecor=()=>{if(IN)inDecor();inLoad()};
 if(typeof window.renderFarmer==="function"){const _rf=window.renderFarmer;window.renderFarmer=function(){const r=_rf.apply(this,arguments);try{IN?inDecor():inLoad()}catch(x){}return r}}
