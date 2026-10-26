@@ -241,3 +241,13 @@ html[data-theme=light] .pinerr{color:#991b1b;background:#fef2f2}
 html[data-theme=light] .opsc button[aria-pressed=true]{background:linear-gradient(180deg,#f4ffe0,#e6f9cf)!important}html[data-theme=light] .opsc button[aria-pressed=true] small,html[data-theme=light] .opsfl button>b,html[data-theme=light] .ops-k>div.hl b{color:#3f6212;text-shadow:none}
 .opsc .cimg img{width:100%;height:100%;object-fit:cover;border-radius:9px}
 .ops-k{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:8px}@media (min-width:700px){.ops-k{grid-template-columns:repeat(4,minmax(0,1fr))!important}}
+/* aktivita tímu */
+.avb{display:grid;gap:10px;padding:4px 14px 14px}.avp{display:grid;gap:8px;padding:12px;border-radius:18px;border:1px solid var(--ds-edge,rgba(255,255,255,.18));background:linear-gradient(180deg,rgba(255,255,255,.09),rgba(255,255,255,.03));box-shadow:inset 0 1px 0 rgba(255,255,255,.25)}
+.avh{all:unset;cursor:pointer;display:grid;grid-template-columns:auto 1fr auto;gap:10px;align-items:center}.avh>span:nth-child(2){display:grid;min-width:0}.avh small{color:var(--muted);font-size:.74rem;overflow-wrap:anywhere}
+.avt{display:grid;justify-items:end}.avt b{font:800 1.1rem var(--f-num);color:var(--lime);text-shadow:0 0 12px rgba(182,255,59,.35)}.avt small{color:var(--muted);font-size:.72rem}
+.avbars{display:grid;gap:5px}.avbar{display:grid;grid-template-columns:minmax(0,9.5em) 1fr auto;gap:8px;align-items:center;font-size:.8rem}.avbar span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.avbar i{height:8px;border-radius:99px;background:rgba(255,255,255,.07);position:relative;overflow:hidden}.avbar i::before{content:"";position:absolute;inset:0 auto 0 0;width:var(--w);border-radius:99px;background:linear-gradient(90deg,#22d3ee,#5eead4 50%,#b6ff3b);box-shadow:0 0 10px rgba(182,255,59,.4)}
+.avbar b{font:700 .78rem var(--f-num);white-space:nowrap}
+.avacts{display:grid;gap:4px;max-height:320px;overflow:auto}.avacts>div{display:grid;grid-template-columns:3.2em 1fr;gap:2px 8px;padding:6px 8px;border-radius:10px;background:rgba(255,255,255,.04);font-size:.82rem}.avacts time{font:700 .78rem var(--f-num);color:var(--ds-acc,#22d3ee)}.avacts small{grid-column:2;color:var(--muted);font-size:.72rem}
+.avinfo{border-color:rgba(34,211,238,.45)!important}
+html[data-theme=light] .avt b{color:#3f6212;text-shadow:none}html[data-theme=light] .avp{background:rgba(255,255,255,.8)}
