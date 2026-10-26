@@ -1,0 +1,30 @@
+name: Knižnice do aplikácie (bez externých CDN)
+on:
+  push:
+    paths: ['.github/workflows/vendor.yml']
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  vendor:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with: { ref: main }
+      - name: Stiahnuť knižnice
+        run: |
+          set -e
+          mkdir -p farmar/vendor
+          curl -fsSL -o farmar/vendor/supabase-2.45.4.js https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js
+          curl -fsSL -o farmar/vendor/xlsx-0.18.5.js https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js
+          curl -fsSL -o farmar/vendor/html2pdf-0.10.1.js https://cdn.jsdelivr.net/npm/html2pdf.js@0.10.1/dist/html2pdf.bundle.min.js
+          curl -fsSL -o farmar/vendor/mammoth-1.6.0.js https://cdn.jsdelivr.net/npm/mammoth@1.6.0/mammoth.browser.min.js
+          ls -la farmar/vendor
+          sha256sum farmar/vendor/*.js > farmar/vendor/SHA256SUMS
+      - name: Uložiť
+        run: |
+          git config user.name "ERNTE Trade"
+          git config user.email "report.valko@gmail.com"
+          git add farmar/vendor
+          git diff --cached --quiet || git commit -m "Knižnice priamo v aplikácii (supabase, xlsx, html2pdf, mammoth)"
+          git push origin HEAD:main
