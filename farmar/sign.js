@@ -83,10 +83,11 @@ document.addEventListener("click",async ev=>{const g=s=>ev.target.closest&&ev.ta
   // ---------- ZAMESTNANCI ----------
   if(x=g("[data-sgreq]")){const id=x.dataset.sgreq,d=(STATE.deals||[]).find(y=>y.id===id);if(typeof busy==="function")busy(x,true);const r=await sb.rpc("deal_sign_request",{p_deal:id});if(typeof busy==="function")busy(x,false);
     if(r.error){tm(r.error.message,6000);return}SS=null;await loadSS();
-    const f=(STATE.farmers||[]).find(y=>y.id===(d&&d.farmer_id))||{},app=typeof APP_URL!=="undefined"?APP_URL:location.href.split("#")[0];
+    const OWNR=typeof ROLE!=="undefined"&&ROLE==="owner",f=(STATE.farmers||[]).find(y=>y.id===(d&&d.farmer_id))||{},app=typeof APP_URL!=="undefined"?APP_URL:location.href.split("#")[0];
     const txt=`Dobrý deň, ERNTE vám posiela na podpis kúpnu zmluvu ${d?d.no:""}. Otvorte aplikáciu ERNTE (${app}) – hore uvidíte „Podpísať teraz“. Podpis prstom trvá 30 sekúnd. Ďakujeme, ERNTE Trade & Logistic`;
-    const m=document.createElement("div");m.className="sgmod";m.id="sgMod";m.innerHTML=`<div class="sgbox"><div class="sghd"><b>🔔 Požiadané o podpis</b><button type="button" class="sgx" data-sgclose aria-label="Zavrieť">✕</button></div>
-      <div class="sgnote">${e(f.name||"Farmár")} uvidí v aplikácii upozornenie „Zmluva na podpis“. Pošlite mu aj správu:</div><div class="sgmsg">${e(txt)}</div>
+    const m=document.createElement("div");m.className="sgmod";m.id="sgMod";m.innerHTML=`<div class="sgbox"><div class="sghd"><b>✍️ Žiadosť o podpis</b><button type="button" class="sgx" data-sgclose aria-label="Zavrieť">✕</button></div>
+      <div class="sgnote">${OWNR?`✅ Upozornenie „Zmluva na podpis“ je odoslané do aplikácie farmára ${e(f.name||"")}${f.notify_topic?" a prišlo mu aj do mobilu.":". Upozornenia do mobilu si zatiaľ nezapol – uvidí ho, keď otvorí aplikáciu (pri prvom otvorení mu aplikácia ponúkne ich zapnutie)."}`:`📤 Žiadosť čaká na schválenie majiteľom – po schválení ju ${e(f.name||"farmár")} dostane do aplikácie.`}</div>
+      <div class="sgnote">Ak chcete, pošlite mu aj správu:</div><div class="sgmsg">${e(txt)}</div>
       <div class="btns">${f.phone?`<a class="btn pri" target="_blank" rel="noopener" href="https://wa.me/${telOf(f.phone)}?text=${encodeURIComponent(txt)}">WhatsApp</a><a class="btn" href="sms:+${telOf(f.phone)}?&body=${encodeURIComponent(txt)}">SMS</a>`:""}<button type="button" data-sgcopy>📋 Kopírovať</button></div></div>`;
     document.body.appendChild(m);window._sgTxt=txt;return}
   if(g("[data-sgcopy]")){try{await navigator.clipboard.writeText(window._sgTxt||"");tm("Skopírované ✓")}catch(y){}return}
