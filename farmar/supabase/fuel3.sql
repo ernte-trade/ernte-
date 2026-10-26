@@ -1422,3 +1422,174 @@ do $$ begin
      and ((coalesce(driver,'')||' '||title||' '||content) ilike '%Vodič' and (title||content) ~* 'MI ?680 ?FU'
        or (coalesce(driver,'')||' '||title||' '||content) ilike '%Slivk%' and (title||content) ~* 'AA ?623 ?NU');
 exception when others then insert into check_err as c(fn,msg,at) values('vyzvy_poznamka',left(SQLERRM,300),now()) on conflict on constraint check_err_pkey do update set msg=excluded.msg, at=now(); end $$;
+
+-- AI úprava 26. 10. 2026: alarm „Možná kabotáž“ (Flotila EU) + yard_check
+-- ===== 2) MOŽNÁ KABOTÁŽ (Flotila EU) =====
+-- krajina z adresy Commandera
+create or replace function public.addr_cc(a text) returns text language sql immutable as $$
+  select case when a is null or btrim(a)='' then null
+    when a ~* '(Slovakia|Slovensk|Slowakei|Szlovákia)' or a ~ '(\ySK\y|\ySVK\y)' then 'SK'
+    when a ~* '(Czech|Česk|Tschech|Csehország)' or a ~ '(\yCZ\y|\yCZE\y)' then 'CZ'
+    when a ~* '(Hungary|Maďarsk|Magyarország|Ungarn)' or a ~ '(\yHU\y|\yHUN\y)' then 'HU'
+    when a ~* '(Poland|Poľsk|Polska|Polen\y)' or a ~ '(\yPL\y|\yPOL\y)' then 'PL'
+    when a ~* '(Austria|Rakúsk|Österreich|Osterreich)' or a ~ '(\yAT\y|\yAUT\y|\yA-\d{4}\y)' then 'AT'
+    when a ~* '(Germany|Nemeck|Deutschland|Németország)' or a ~ '(\yDE\y|\yDEU\y|\yD-\d{5}\y)' then 'DE'
+    when a ~* '(Netherlands|Holand|Nederland|Niederlande)' or a ~ '(\yNL\y|\yNLD\y)' then 'NL'
+    when a ~* '(Belgi)' or a ~ '(\yBE\y|\yBEL\y)' then 'BE'
+    when a ~* '(Luxemb)' or a ~ '(\yLU\y|\yLUX\y)' then 'LU'
+    when a ~* '(France|Francúzsk|Frankreich)' or a ~ '(\yFR\y|\yFRA\y)' then 'FR'
+    when a ~* '(Ital|Talian)' or a ~ '(\yIT\y|\yITA\y)' then 'IT'
+    when a ~* '(Sloveni[ja]|Slovinsk|Slowenien)' or a ~ '(\ySI\y|\ySVN\y)' then 'SI'
+    when a ~* '(Croatia|Chorvátsk|Hrvatska|Kroatien)' or a ~ '(\yHR\y|\yHRV\y)' then 'HR'
+    when a ~* '(Romania|Rumunsk|România|Rumänien)' or a ~ '(\yRO\y|\yROU\y)' then 'RO'
+    when a ~* '(Ukrain|Україна)' or a ~ '(\yUA\y|\yUKR\y)' then 'UA'
+    when a ~* '(Switzerland|Švajčiar|Schweiz|Suisse)' or a ~ '(\yCH\y|\yCHE\y)' then 'CH'
+    when a ~* '(Denmark|Dánsk|Danmark)' or a ~ '(\yDK\y|\yDNK\y)' then 'DK'
+    when a ~* '(Spain|Španiel|España)' or a ~ '(\yES\y|\yESP\y)' then 'ES'
+    when a ~* '(Bulgaria|Bulharsk)' or a ~ '(\yBG\y|\yBGR\y)' then 'BG'
+    when a ~* '(Serbia|Srbsk)' or a ~ '(\yRS\y|\ySRB\y)' then 'RS'
+    when a ~* '(Lithuania|Litv)' or a ~ '(\yLT\y|\yLTU\y)' then 'LT'
+    when a ~* '(Sweden|Švédsk|Sverige)' or a ~ '(\ySE\y|\ySWE\y)' then 'SE'
+  end $$;
+
+-- bod v polygóne ([[lon,lat],…])
+create or replace function public.geo_in_poly(lon numeric, lat numeric, p jsonb) returns boolean language plpgsql immutable as $$
+declare n int:=jsonb_array_length(p); i int; j int; xi numeric; yi numeric; xj numeric; yj numeric; c boolean:=false;
+begin
+  j:=n-1;
+  for i in 0..n-1 loop
+    xi:=(p->i->>0)::numeric; yi:=(p->i->>1)::numeric; xj:=(p->j->>0)::numeric; yj:=(p->j->>1)::numeric;
+    if ((yi>lat)<>(yj>lat)) and (lon < (xj-xi)*(lat-yi)/(yj-yi)+xi) then c:=not c; end if;
+    j:=i;
+  end loop;
+  return c;
+end $$;
+
+-- krajina zo súradníc (záloha, keď adresa nemá štát): SK, CZ, AT, HU podľa obrysu, ostatné podľa obdĺžnika
+create or replace function public.geo_cc(lat numeric, lon numeric) returns text language plpgsql immutable as $$
+declare b record;
+begin
+  if lat is null or lon is null then return null; end if;
+  if geo_in_poly(lon,lat,'[[16.84,48.37],[16.95,48.62],[17.2,48.87],[17.55,48.8],[17.88,48.93],[18.1,49.08],[18.4,49.33],[18.85,49.52],[19.25,49.55],[19.47,49.6],[19.8,49.2],[20.1,49.3],[20.7,49.4],[21.3,49.45],[21.8,49.35],[22.2,49.15],[22.56,49.08],[22.15,48.4],[21.7,48.38],[21.4,48.55],[20.8,48.57],[20.45,48.47],[19.9,48.15],[19.5,48.1],[18.85,48.05],[18.65,47.76],[17.8,47.75],[17.3,47.95],[17.05,48.1]]'::jsonb) then return 'SK'; end if;
+  if geo_in_poly(lon,lat,'[[12.09,50.25],[12.5,50.4],[13.0,50.5],[14.3,51.05],[14.8,50.85],[15.0,51.0],[16.3,50.65],[16.6,50.15],[17.0,50.4],[17.7,50.3],[18.0,50.0],[18.85,49.52],[18.4,49.33],[17.6,48.85],[17.1,48.85],[16.9,48.6],[16.0,48.75],[15.0,49.0],[14.7,48.6],[14.0,48.6],[13.8,48.75],[13.0,49.3],[12.5,49.7],[12.4,50.0],[12.1,50.2]]'::jsonb) then return 'CZ'; end if;
+  if geo_in_poly(lon,lat,'[[9.53,47.27],[9.6,47.55],[10.2,47.3],[10.5,47.55],[11.1,47.4],[12.2,47.6],[12.8,47.55],[13.0,47.8],[12.75,48.1],[13.4,48.35],[13.8,48.55],[14.7,48.6],[15.0,49.0],[16.0,48.75],[16.9,48.6],[17.15,48.0],[16.5,47.5],[16.4,46.9],[15.0,46.65],[14.0,46.45],[12.4,46.7],[12.1,47.0],[11.1,46.95],[10.4,46.85],[10.1,46.85],[9.6,47.05]]'::jsonb) then return 'AT'; end if;
+  if geo_in_poly(lon,lat,'[[16.1,46.85],[16.4,46.9],[16.5,47.5],[17.15,48.0],[17.3,47.95],[17.8,47.75],[18.65,47.76],[18.85,48.05],[19.5,48.1],[19.9,48.15],[20.45,48.47],[20.8,48.57],[21.4,48.55],[21.7,48.38],[22.15,48.4],[22.9,47.95],[22.1,47.6],[21.3,46.6],[20.2,46.15],[18.8,45.9],[17.3,45.95],[16.6,46.47]]'::jsonb) then return 'HU'; end if;
+  for b in select * from (values ('NL',50.75,53.6,3.3,7.2),('BE',49.5,51.5,2.5,6.4),('CH',45.8,47.8,5.95,10.5),('SI',45.42,46.88,13.38,16.6),('HR',42.39,46.55,13.49,19.45),
+      ('PL',49.0,54.9,14.9,24.15),('DE',47.27,55.06,5.87,15.04),('FR',42.3,51.1,-4.8,8.2),('IT',36.6,47.1,6.6,18.5),('RO',43.62,48.27,20.26,29.7),('UA',44.4,52.38,22.13,40.2),('DK',54.5,57.8,8.0,12.7)) x(c,a,b2,c1,d)
+  loop
+    if lat between b.a and b.b2 and lon between b.c1 and b.d then return b.c; end if;
+  end loop;
+  return null;
+end $$;
+
+create or replace function public.ride_cc(addr text, lat numeric, lon numeric) returns text language sql immutable as $$
+  select coalesce(addr_cc(addr), geo_cc(lat,lon)) $$;
+
+create or replace function public.cc_name(c text) returns text language sql immutable as $$
+  select coalesce((jsonb_build_object('SK','Slovensko','CZ','Česko','HU','Maďarsko','PL','Poľsko','AT','Rakúsko','DE','Nemecko','NL','Holandsko','BE','Belgicko','LU','Luxembursko',
+    'FR','Francúzsko','IT','Taliansko','SI','Slovinsko','HR','Chorvátsko','RO','Rumunsko','UA','Ukrajina','CH','Švajčiarsko','DK','Dánsko','ES','Španielsko','BG','Bulharsko',
+    'RS','Srbsko','LT','Litva','SE','Švédsko'))->>c, c) $$;
+
+-- Možná kabotáž: autá skupiny Flotila EU, jazdy so štartom aj cieľom v tom istom štáte mimo Slovenska,
+-- v kĺzavom okne 7 dní od posledného vyloženia medzinárodnej prepravy (koniec príjazdu do štátu – prvé státie 90+ min po prechode hranice).
+-- Jazdy so státím do 90 min (prestávky, tankovanie) sa spájajú do jednej prepravy; preprava musí mať aspoň 20 km. Pri 3. preprave alarm stupňa VYSOKÝ.
+create or replace function public.cabotage_check(since timestamptz default now()-interval '14 days', push boolean default true) returns int
+language plpgsql security definer set search_path=public, extensions, net as $$
+declare t text; k int:=0; v record; r record; s record; tz text:='Europe/Bratislava'; f text:='DD.MM.YYYY HH24:MI';
+  sid int; ck text; cc text; c1 text; c2 text; prev_stop timestamptz; pl text;
+  host text; anchor timestamptz; anchor_addr text; cnt int; ops jsonb; msg text; isnew boolean; drvs text; skey text; lst text;
+begin
+  select value->>'topic' into t from fleet_cfg where key='notify';
+  create temp table if not exists _cab_r(vid text, sid int, kind text, cc text, start_at timestamptz, stop_at timestamptz, a1 text, a2 text,
+    la1 numeric, lo1 numeric, la2 numeric, lo2 numeric, km numeric, drv text) on commit drop;
+  for v in select c.id, coalesce(nullif(trim(c.plate),''),c.name,c.id) plate from cmd_vehicles c where c.fleet='eu' and c.alias_of is null loop
+    truncate _cab_r; sid:=0; ck:=null; cc:=null; prev_stop:=null;
+    -- 1) jazdy → úseky: int = prechod hranice + pokračovanie do prvého státia 90+ min (vyloženie), dom = preprava v jednom štáte, sk = Slovensko, x = neznámy štát
+    for r in select * from rides where vehicle_id=any(veh_ids(v.id)) and start_at>=since-interval '10 days' and start_at is not null order by start_at, stop_at loop
+      if prev_stop is not null and r.start_at<prev_stop-interval '2 minutes' then continue; end if; -- duplicita z druhej GPS jednotky
+      c1:=ride_cc(r.start_addr,r.lat_start,r.lon_start); c2:=ride_cc(r.stop_addr,r.lat_stop,r.lon_stop);
+      if c1 is null and c2 is null then sid:=sid+1; ck:='x'; cc:=null;
+      elsif coalesce(c1,c2)<>coalesce(c2,c1) then sid:=sid+1; ck:='int'; cc:=c2;
+      else c1:=coalesce(c1,c2);
+        if c1='SK' then sid:=sid+1; ck:='sk'; cc:='SK';
+        elsif ck in ('int','dom') and cc=c1 and prev_stop is not null and r.start_at-prev_stop<interval '90 minutes' then null; -- pokračovanie tej istej prepravy
+        else sid:=sid+1; ck:='dom'; cc:=c1; end if;
+      end if;
+      insert into _cab_r values(v.id,sid,ck,cc,r.start_at,coalesce(r.stop_at,r.start_at+make_interval(secs=>coalesce(r.duration,0))),r.start_addr,r.stop_addr,r.lat_start,r.lon_start,r.lat_stop,r.lon_stop,coalesce(r.distance,0),
+        case when not fleet_unknown(r.driver) then trim(r.driver) end);
+      prev_stop:=greatest(coalesce(prev_stop,r.start_at),coalesce(r.stop_at,r.start_at));
+    end loop;
+    -- 2) okno 7 dní od vyloženia
+    host:=null; anchor:=null; anchor_addr:=null; cnt:=0; ops:='[]';
+    for s in select x.sid, x.kind, x.cc, min(x.start_at) t0, max(x.stop_at) t1, sum(x.km) km,
+                    (array_agg(x.a1 order by x.start_at))[1] a1, (array_agg(x.a2 order by x.start_at desc))[1] a2,
+                    (array_agg(x.la1 order by x.start_at))[1] la1, (array_agg(x.lo1 order by x.start_at))[1] lo1,
+                    (array_agg(x.la2 order by x.start_at desc))[1] la2, (array_agg(x.lo2 order by x.start_at desc))[1] lo2,
+                    string_agg(distinct x.drv, ', ') drv
+               from _cab_r x group by x.sid, x.kind, x.cc order by x.sid loop
+      if s.kind='int' then
+        if s.cc is not null and s.cc<>'SK' then host:=s.cc; anchor:=s.t1; anchor_addr:=coalesce(s.a2,round(s.la2,4)||', '||round(s.lo2,4)); else host:=null; anchor:=null; end if;
+        cnt:=0; ops:='[]';
+      elsif s.kind='sk' then host:=null; anchor:=null; cnt:=0; ops:='[]';
+      elsif s.kind='dom' then
+        if s.cc is distinct from host or anchor is null then host:=s.cc; anchor:=null; cnt:=0; ops:='[]';
+        elsif s.km>=20 and s.t0<=anchor+interval '7 days' then
+          cnt:=cnt+1;
+          ops:=ops||jsonb_build_array(jsonb_build_object('t0',s.t0,'t1',s.t1,'a1',coalesce(s.a1,round(s.la1,4)||', '||round(s.lo1,4)),'a2',coalesce(s.a2,round(s.la2,4)||', '||round(s.lo2,4)),
+                                                         'km',round(s.km),'drv',s.drv,'la',s.la1,'lo',s.lo1));
+          if cnt>=3 and (s.t0>=greatest(since,'2026-07-01 00:00+02'::timestamptz) or exists(select 1 from fleet_events where src_key='cab:'||v.id||':'||to_char(anchor at time zone 'UTC','YYYYMMDDHH24MI'))) then
+            skey:='cab:'||v.id||':'||to_char(anchor at time zone 'UTC','YYYYMMDDHH24MI');
+            select string_agg(n||') '||to_char((e->>'t0')::timestamptz at time zone tz,f)||' '||(e->>'a1')||' → '||to_char((e->>'t1')::timestamptz at time zone tz,f)||' '||(e->>'a2')
+                              ||' ('||(e->>'km')||' km'||coalesce(', '||(e->>'drv'),'')||')', ' · ' order by n),
+                   string_agg(distinct e->>'drv', ', ')
+              into lst, drvs from jsonb_array_elements(ops) with ordinality q(e,n);
+            msg:='Možná kabotáž – '||cc_name(host)||' ('||host||'): '||cnt||' vnútroštátne prepravy do 7 dní od vyloženia medzinárodnej prepravy (vyloženie '
+               ||to_char(anchor at time zone tz,f)||', '||coalesce(anchor_addr,'?')||'). Prepravy: '||lst||' · stupeň VYSOKÝ';
+            insert into fleet_events as e(vehicle_id,plate,kind,at,driver,place,place_kind,lat,lon,t_from,t_to,note,src_key)
+              values(v.id,v.plate,'cabotage',s.t1,coalesce(s.drv,drvs),cc_name(host)||': '||(ops->-1->>'a1')||' → '||(ops->-1->>'a2'),'country',s.la1,s.lo1,anchor,s.t1,msg,skey)
+              on conflict (src_key) do update set note=excluded.note, t_to=excluded.t_to, driver=excluded.driver
+              returning (xmax=0) into isnew;
+            if isnew then k:=k+1; end if;
+            if isnew and push and t is not null and s.t1>now()-interval '6 hours' then
+              begin perform net.http_post(url:='https://ntfy.sh/'||t, body:=jsonb_build_object('topic',t,'title','MOŽNÁ KABOTÁŽ – '||v.plate,'message','⚠️ '||v.plate||' · '||msg,
+                'tags',jsonb_build_array('rotating_light'),'priority',5,'click','https://maps.google.com/?q='||s.la1||','||s.lo1)); exception when others then null; end;
+            end if;
+          end if;
+        end if;
+      end if;
+    end loop;
+  end loop;
+  return k;
+end $$;
+revoke all on function public.cabotage_check(timestamptz,boolean) from public, anon, authenticated;
+
+-- beh každých 15 min (v rámci yard_check)
+create or replace function public.cabotage_tick() returns int language plpgsql security definer set search_path=public as $$
+begin
+  if extract(minute from now())::int % 15 >= 3 then return 0; end if;
+  return cabotage_check(now()-interval '14 days', true);
+end $$;
+revoke all on function public.cabotage_tick() from public, anon, authenticated;
+
+create or replace function public.yard_check() returns integer language plpgsql security definer set search_path=public as $$
+declare k int:=0;
+begin
+  perform check_run('osm_sync');
+  k:=k+check_run('place_check');
+  k:=k+check_run('stop_check');
+  k:=k+check_run('fuel_check');
+  k:=k+check_run('ride_events');
+  k:=k+check_run('fuel_gap_tick');
+  k:=k+check_run('fuel_transfer_tick');
+  k:=k+check_run('no_signal_check');
+  k:=k+check_run('fuel_extra_tick');
+  k:=k+check_run('cabotage_tick');
+  return k;
+end $$;
+revoke all on function public.yard_check() from public, anon, authenticated;
+
+-- spätné vyhodnotenie od 1. 7. 2026 (bez upozornení do mobilu)
+do $$ declare n int; begin
+  n:=cabotage_check('2026-07-01 00:00+02'::timestamptz, false);
+  insert into check_err as c(fn,msg,ok_at,n) values('kabotaz_od_1_7',null,now(),n) on conflict on constraint check_err_pkey do update set ok_at=now(), n=excluded.n, msg=null;
+exception when others then insert into check_err as c(fn,msg,at) values('kabotaz_od_1_7',left(SQLERRM,300),now()) on conflict on constraint check_err_pkey do update set msg=excluded.msg, at=now(); end $$;

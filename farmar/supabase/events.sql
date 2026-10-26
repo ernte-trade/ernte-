@@ -431,3 +431,72 @@ begin
 exception when others then return jsonb_build_object('chyba_prehladu',SQLERRM);
 end $function$;
 revoke all on function public.ai_snapshot() from public, anon, authenticated;
+
+-- AI úprava 26. 10. 2026: sadzby od dátumu (stravné, minimálna mzda SR/DE), mzdy a diéty podľa sadzby platnej v daný deň
+-- ===== 1) SADZBY OD DÁTUMU (fleet_cfg 'rates') =====
+-- k: d1 = tuzemské stravné 5–12 h, d2 = 12–18 h, d3 = nad 18 h, mw_sk = minimálna mzda SR (€/mesiac), mw_de = minimálna mzda DE (€/h)
+insert into fleet_cfg(key,value) values('rates',jsonb_build_object('rows',jsonb_build_array(
+  jsonb_build_object('k','d1','from','2025-12-01','v',9.30),
+  jsonb_build_object('k','d2','from','2025-12-01','v',13.80),
+  jsonb_build_object('k','d3','from','2025-12-01','v',20.60),
+  jsonb_build_object('k','mw_sk','from','2026-01-01','v',915),
+  jsonb_build_object('k','mw_sk','from','2027-01-01','v',972),
+  jsonb_build_object('k','mw_de','from','2026-01-01','v',13.90),
+  jsonb_build_object('k','mw_de','from','2027-01-01','v',14.60))))
+on conflict(key) do nothing;
+
+-- sadzba platná v daný deň (najnovšia s dátumom od ≤ deň)
+create or replace function public.pay_rate(k text, d date) returns numeric language sql stable security definer set search_path=public as $$
+  select (x->>'v')::numeric from fleet_cfg c, jsonb_array_elements(case when jsonb_typeof(c.value->'rows')='array' then c.value->'rows' else '[]'::jsonb end) x
+   where c.key='rates' and x->>'k'=k and x->>'from' ~ '^\d{4}-\d{2}-\d{2}$' and (x->>'from')::date<=d and x->>'v' ~ '^[0-9]+(\.[0-9]+)?$'
+   order by (x->>'from')::date desc limit 1 $$;
+revoke all on function public.pay_rate(text,date) from public, anon, authenticated;
+
+-- mzdy za mesiac: rovnaký výpočet ako Flotila → Vodiči a mzdy; diéty podľa sadzby platnej v daný deň, základ aspoň minimálna mzda SR platná v mesiaci
+create or replace function public.fleet_pay(dday date default (now() at time zone 'Europe/Bratislava')::date, grp text default 'region')
+returns jsonb language plpgsql stable security definer set search_path=public as $$
+declare pc jsonb; m0 timestamptz; m1 timestamptz; dim int; dd int; f numeric; cur boolean; res jsonb; bs numeric;
+begin
+  select coalesce(value,'{}') into pc from fleet_cfg where key='pay'; pc:=coalesce(pc,'{}');
+  m0:=date_trunc('month',dday)::timestamp at time zone 'Europe/Bratislava'; m1:=(dday+1)::timestamp at time zone 'Europe/Bratislava';
+  dim:=extract(day from date_trunc('month',dday)+interval '1 month - 1 day')::int; dd:=extract(day from dday)::int;
+  cur:=date_trunc('month',dday)=date_trunc('month',(now() at time zone 'Europe/Bratislava')::date) and dd<dim;
+  f:=case when cur then dd::numeric/dim else 1 end;
+  bs:=greatest(coalesce((pc->>'base')::numeric,1031),coalesce(pay_rate('mw_sk',date_trunc('month',dday)::date),0));
+  if grp in ('sluzobne','traktory') then
+    return jsonb_build_object('skupina',grp,'mzdy_eur',0,'vodici',0,'poznamka','služobné autá a traktory – mzdy sa nepočítajú');
+  end if;
+  with gm as (select v.id, case when c.fleet='sluzobne' and exists(select 1 from trucks t where pnorm(t.spz)=pnorm(c.plate)) then 'region'
+                               when c.fleet in ('region','eu','sluzobne','traktory') then c.fleet else 'region' end gg, v.alias_of
+                 from cmd_vehicles v join cmd_vehicles c on c.id=coalesce(v.alias_of,v.id)),
+    r0 as (select r.*, gm.alias_of al, coalesce(gm.gg,'region') g from rides r left join gm on gm.id=r.vehicle_id
+               where r.start_at>=m0 and r.start_at<m1 and coalesce(r.ride_type,'') !~ 'PRIVAT'),
+    -- duplicitná jazda z druhej GPS jednotky toho istého auta (do 3 min) sa nepočíta
+    r1 as (select * from r0 where not (r0.al is not null and exists(select 1 from r0 x where x.vehicle_id=r0.al and abs(extract(epoch from x.start_at-r0.start_at))<=180))),
+    r as (select coalesce(nullif(trim(driver),''),'neznámy vodič') dn, (start_at at time zone 'Europe/Bratislava')::date dy, coalesce(distance,0) km,
+       ((lat_start is not null and (lat_start<48.38 or lat_start>49.05 or coalesce(lon_start,0)<20.25 or coalesce(lon_start,0)>22.57))
+        or (lat_stop is not null and (lat_stop<48.38 or lat_stop>49.05 or coalesce(lon_stop,0)<20.25 or coalesce(lon_stop,0)>22.57))
+        or (coalesce(start_addr,'')||' '||coalesce(stop_addr,'')) ~* '(Hungary|Maďarsko|Magyar|Ukrajin|Ukraine|Poľsko|Poland|Česk|Czech|Austria|Rakúsk|\yHU\y|\yUA\y|\yPL\y|\yCZ\y|\yAT\y)') o
+      from r1 where r1.g=grp),
+    dy as (select dn, dy, sum(km) km, bool_or(o) o from r group by 1,2),
+    w as (select dn, count(*) filter (where km>=coalesce((pc->>'minKm')::numeric,10) and not o) i, count(*) filter (where km>=coalesce((pc->>'minKm')::numeric,10) and o) x,
+            coalesce(sum(case when km<coalesce((pc->>'minKm')::numeric,10) then 0
+                              when grp='eu' then coalesce((pc->>'diet_eu')::numeric,55)
+                              when o then coalesce(pay_rate('d2',dy),(pc->>'diet_out')::numeric,13.80)
+                              else coalesce(pay_rate('d1',dy),(pc->>'diet_in')::numeric,9.30) end),0) dt
+            from dy group by dn),
+    p as (select dn, i, x, dt,
+            case when grp='eu' then (i+x)*coalesce((pc->>'euDay')::numeric,105) else i*coalesce((pc->>'inReg')::numeric,80)+x*coalesce((pc->>'outReg')::numeric,90) end s
+            from w)
+  select jsonb_build_object('skupina',grp,'mesiac',to_char(dday,'YYYY-MM'),'do_dna',to_char(dday,'DD.MM.YYYY'),'pomerne',cur,'dni',dd,'dni_v_mesiaci',dim,
+     'zaklad',bs,'zaklad_pomerne',round(bs*f,2),'minimalna_mzda_sr',pay_rate('mw_sk',date_trunc('month',dday)::date),
+     'mzdy_eur',round(coalesce(sum(greatest(bs*f, s)),0)),
+     'mzdy_cely_mesiac_zaklad_eur',round(coalesce(sum(greatest(bs, s)),0)),
+     'vodici',count(*),'dni_v_kraji',coalesce(sum(i),0),'dni_mimo_kraja',coalesce(sum(x),0),
+     'diety_eur',round(coalesce(sum(dt),0)),'diety_poznamka','tuzemské stravné podľa sadzby platnej v daný deň (Flotila → Vodiči a mzdy → Sadzby od dátumu)',
+     'po_vodicoch',coalesce(jsonb_agg(jsonb_build_object('vodic',dn,'dni_v_kraji',i,'dni_mimo',x,'sucet_dni',s,'diety',round(dt,2),'mzda',round(greatest(bs*f, s))) order by greatest(bs*f, s) desc),'[]'))
+    into res from p;
+  return res;
+end $$;
+revoke all on function public.fleet_pay(date,text) from public, anon, authenticated;
+
