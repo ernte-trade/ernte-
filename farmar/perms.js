@@ -136,7 +136,7 @@ async function teamCode(login,name,role,extra){const pw=genPw()+"-"+String(10+((
 const presetObj=k=>Object.fromEntries(PCAT.map(p=>[p[0],PRESET[k].k.includes(p[0])]));
 document.addEventListener("click",async e=>{if(typeof ROLE==="undefined"||ROLE!=="owner")return;const t=e.target;let x;
   if(x=t.closest("[data-tperm]")){TOPEN=TOPEN===x.dataset.tperm?null:x.dataset.tperm;TEDIT=null;renderStaff();return}
-  if(x=t.closest("[data-tedit]")){TEDIT=TEDIT===x.dataset.tedit?null:x.dataset.tedit;TOPEN=null;renderStaff();return}
+  if(x=t.closest("button[data-tedit]")){TEDIT=TEDIT===x.dataset.tedit?null:x.dataset.tedit;TOPEN=null;renderStaff();return}
   if(x=t.closest("[data-tadd]")){const P=PEOPLE.find(p=>p[0]===x.dataset.tadd);TADD=P?{name:P[1],title:P[2],region:P[3],preset:P[4]}:null;renderStaff();setTimeout(()=>{const i=document.querySelector("#fTeam2 input[name=login]");if(i){i.scrollIntoView({block:"center"});i.focus()}},60);return}
   if(x=t.closest("[data-tpreset]")){const f=x.closest("form"),k=PRESET[x.dataset.tpreset];if(!f||!k)return;f.querySelectorAll("input[type=checkbox]").forEach(c=>{c.checked=k.k.includes(c.name.slice(2))});toast("Nastavené podľa: "+k.n+" – ulož.");return}
   if(x=t.closest("[data-tcode]")){const p=(STATE.staff||[]).find(y=>y.email===x.dataset.tcode);if(!p||!confirm("Vytvoriť nový jednorazový kód pre "+p.name+"?\nStarý kód aj PIN prestanú platiť."))return;await teamCode(p.email.replace("@tel.ernte.sk",""),p.name,p.role);return}

@@ -4,7 +4,7 @@
 // Percentá sa rátajú z plnej ceny P, takže farmár nikdy nedostane viac ako P.
 (function(){
 const RT={qty:["Množstvo aspoň","t"],moist:["Vlhkosť najviac","%"],dirt:["Nečistoty najviac","%"],fast:["Odvoz do","dní od podpisu"],contract:["Zmluva vopred na celé množstvo",""],custom:["Iná podmienka",""]};
-const LIM={repka:8,soja:12,kukurica:14,lo:8,ho:8,psenica_p:14,psenica_k:14,jacmen_k:14,jacmen_s:14,cirok:14};
+const LIM=(typeof SPEC!=="undefined")?Object.fromEntries(Object.entries(SPEC).map(([k,v])=>[k,v[0]])):{repka:8,soja:12,kukurica:14,lo:9,ho:9,psenica_p:14,psenica_k:13,jacmen_k:14,jacmen_s:14.5,cirok:14};
 const r2=x=>Math.round(x*100)/100;
 const DEF_RULES=[{t:"qty",v:100,pct:1},{t:"qty",v:300,pct:1},{t:"moist",v:-1,pct:1},{t:"dirt",v:1,pct:1},{t:"fast",v:14,pct:1}]; // v:-1 = limit komodity mínus 1 %
 const raw=()=>((typeof STATE!=="undefined"&&STATE.settings)||{}).price_bonus||{};

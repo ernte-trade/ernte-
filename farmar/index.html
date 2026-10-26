@@ -789,7 +789,7 @@ html[data-theme=light] .ftbl th{color:#0f172a}html[data-theme=light] .fdban{colo
 .rdel{min-width:40px;min-height:40px;padding:0;border-radius:10px}
 </style>
 <script>try{if(localStorage.getItem('ernte-theme')==='light')document.documentElement.dataset.theme='light'}catch(e){}</script>
-<link rel="stylesheet" href="perms.css?v=20261026-0830">
+<link rel="stylesheet" href="perms.css?v=20261026-1000">
 </head>
 <body>
 <div class="wrap">
@@ -812,7 +812,7 @@ const RKIND={sell:"Chcem predať",transport:"Objednávka odvozu",agree:"Súhlas 
 
 const $=id=>document.getElementById(id);
 const esc=t=>String(t??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
-const num=s=>{if(s==null||s==="")return NaN;if(typeof s==="number")return s;return Number(String(s).replace(/\s/g,"").replace(",","."))};
+const num=s=>{if(s==null||s==="")return NaN;if(typeof s==="number")return s;let t=String(s).replace(/[\s\u00a0]/g,"");if(t.includes(","))t=t.replace(/\./g,"").replace(",",".");return Number(t)};
 const fmt=(x,d=2)=>Number.isFinite(+x)&&x!==null&&x!==""?(+x).toLocaleString("sk-SK",{minimumFractionDigits:d,maximumFractionDigits:d}):"–";
 const dSK=d=>{if(!d)return "";const m=String(d).match(/^(\d{4})-(\d{2})-(\d{2})/);return m?`${+m[3]}. ${+m[2]}. ${m[1]}`:String(d)};
 const dtSK=d=>d?new Date(d).toLocaleString("sk-SK",{day:"numeric",month:"numeric",hour:"2-digit",minute:"2-digit"}):"";
@@ -822,7 +822,7 @@ const IMG={repka:"Rapsfeld Rapeseed Brassica napus.jpg",lo:"Sunflower (Helianthu
 const imgUrl=c=>IMG[c]?"https://commons.wikimedia.org/wiki/Special:FilePath/"+encodeURIComponent(IMG[c].replace(/ /g,"_"))+"?width=400":"";
 const comImg=(c,cls="cimg")=>IMG[c]?`<span class="${cls}"><img src="${imgUrl(c)}" alt="${esc(comName(c))}" loading="lazy" referrerpolicy="no-referrer" onerror="this.style.display='none'"></span>`:"";
 const pill=a=>`<span class="pill ${a[1]||""}">${esc(a[0])}</span>`;
-const today=()=>new Date().toISOString().slice(0,10);
+const today=()=>new Date().toLocaleDateString("sv-SE",{timeZone:"Europe/Bratislava"});
 function toast(t,ms=3500){const e=$("toast");e.textContent=t;e.classList.add("on");clearTimeout(e._t);e._t=setTimeout(()=>e.classList.remove("on"),ms)}
 async function copy(t){try{await navigator.clipboard.writeText(t);toast("Skopírované.")}catch(e){prompt("Skopírujte:",t)}}
 function busy(btn,on){if(!btn)return;btn.disabled=on;if(on){btn._t=btn.textContent;btn.textContent="Chvíľu…"}else if(btn._t)btn.textContent=btn._t}
@@ -836,7 +836,7 @@ const APP_URL=location.origin+location.pathname.replace(/index\.html$/,"");
 async function boot(){
   if(!CFG.SUPABASE_URL||!CFG.SUPABASE_KEY||!window.supabase){$("app").innerHTML=`<div class="card"><div class="t">Aplikácia ešte nie je pripojená na databázu.</div><div class="s">Doplňte config.js.</div></div>`;return}
   sb=window.supabase.createClient(CFG.SUPABASE_URL,CFG.SUPABASE_KEY,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}});
-  sb.auth.onAuthStateChange((ev)=>{if(ev==="SIGNED_OUT"){ME=null;showLogin()}});
+  sb.auth.onAuthStateChange((ev)=>{if(ev==="SIGNED_OUT"){ME=null;ROLE=null;FARMER=null;try{sessionStorage.clear()}catch(x){}location.replace(APP_URL)}});
   const {data}=await sb.auth.getSession();
   if(data&&data.session)await enter(data.session.user);else showLogin();
 }
@@ -873,7 +873,7 @@ document.addEventListener("submit",async e=>{const f=e.target;
     if(error){toast("Kód nesedí alebo vypršal ("+(error.message||error.code||"")+"). Najjednoduchšie: prihláste sa heslom.",7000);return}
     LOGIN.sent=false;await enter(data.user);return}
 },true);
-document.addEventListener("click",e=>{if(e.target.id==="backEmail"){LOGIN.sent=false;showLogin()}if(e.target.id==="outBtn"){sb.auth.signOut()}});
+document.addEventListener("click",e=>{if(e.target.id==="backEmail"){LOGIN.sent=false;showLogin()}if(e.target.closest&&e.target.closest("#outBtn")){sb.auth.signOut()}});
 
 // ================= kto som =================
 async function enter(user){ME=user;$("outBtn").hidden=false;
@@ -969,7 +969,7 @@ function rerender(){if(FARMER)renderFarmer();else if(ROLE)renderStaff()}
 
 // ================= FARMÁR =================
 let SELL=null,ORDER=null;
-async function startFarmer(){await loadFarmer();await loadPos();renderFarmer();setInterval(async()=>{if(document.hidden)return;await loadPos();if((STATE.pos||[]).length)renderFarmer()},60000);loadWx().then(renderFarmer);
+async function startFarmer(){await loadFarmer();await loadPos();renderFarmer();setInterval(async()=>{if(document.hidden)return;await loadPos();if((STATE.pos||[]).length&&!document.querySelector("#app form :focus"))renderFarmer()},60000);loadWx().then(renderFarmer);
   sb.channel("f-"+FARMER.id).on("postgres_changes",{event:"*",schema:"public",table:"requests",filter:"farmer_id=eq."+FARMER.id},()=>loadFarmer().then(renderFarmer)).on("postgres_changes",{event:"*",schema:"public",table:"trips",filter:"farmer_id=eq."+FARMER.id},()=>loadFarmer().then(renderFarmer)).subscribe();
   document.addEventListener("visibilitychange",()=>{if(!document.hidden)loadFarmer().then(renderFarmer)})}
 async function loadFarmer(){const [p,s,d,r]=await Promise.all([
@@ -984,14 +984,14 @@ const ago=d=>{const m=Math.round((Date.now()-new Date(d))/60000);return m<1?"pr�
 async function loadPos(){try{const r=await sb.rpc("my_truck_positions");STATE.pos=r.data||[]}catch(e){STATE.pos=[]}}
 function tripRow(t){const d=new Date(t.day+"T12:00").toLocaleDateString("sk-SK",{weekday:"short",day:"numeric",month:"numeric"});
   return `<div class="trip"><div class="tr1"><b>${esc(d)}${t.time?" · "+esc(t.time):""}</b>${pill(TST[t.status]||[t.status])}</div><div class="tr2">🚛 <b>${esc(t.spz||"auto VALKO")}</b>${t.driver?" · "+esc(t.driver):""}${t.driver_phone&&!["vylozene","zrusena"].includes(t.status)?` · <a class="copy" href="tel:${esc(String(t.driver_phone).replace(/\s/g,""))}">volať vodiča</a>`:""}</div>${t.netto!=null?`<div class="tr2">Netto: <b class="num">${fmt(t.netto,3)} t</b></div>`:""}${t.note?`<div class="s">${esc(t.note)}</div>`:""}${(()=>{const q=(STATE.pos||[]).find(x=>x.trip_id===t.id);return q&&q.lat?`<div class="tr2">📍 Poloha auta ${esc(ago(q.at))}${q.speed?` · ${q.speed} km/h`:""}</div>`+miniMap(+q.lat,+q.lon,t.spz||"auto"):""})()}</div>`}
-function renderFarmer(){const F=FARMER,P=MK.map(m=>STATE.prices.find(x=>x.com===m[0])).filter(Boolean),valid=((STATE.settings||{}).pricelist||{}).valid,c=contact();
+function renderFarmer(){const F=FARMER,P=MK.map(m=>STATE.prices.find(x=>x.com===m[0])).filter(Boolean),valid=((STATE.settings||{}).pricelist||{}).valid,c=contact(),expired=!!valid&&valid<today();
   let h=`<div class="hero"><small>Prihlásený dodávateľ</small><b>${esc(F.name)}</b><small>${esc(ME.email)}</small></div>`;
   if(window.bigBtn)h+=`<div class="hrow">${bigBtn()}</div>`;
   if((!window.fcan||fcan("f_prices"))){h+=`<h2>Výkupné ceny · FCA farma, bez DPH</h2>`;
   h+=P.length?`<div class="card">${P.map(p=>`<div class="prow">${comImg(p.com)}<div><div class="t">${esc(comName(p.com))}</div><div class="s">${esc(specLine(p.com))}</div></div><b class="num">${fmt(p.price)} €/t</b>
-      ${SELL===p.com||(window.fcan&&!fcan("f_sell"))?"":`<button type="button" class="lime sell" data-sell="${esc(p.com)}">Predať</button>`}
+      ${SELL===p.com||expired||(window.fcan&&!fcan("f_sell"))?"":`<button type="button" class="lime sell" data-sell="${esc(p.com)}">Predať</button>`}
       ${SELL===p.com?`<form class="f sub" id="fSell"><div class="w"><b>Predať ${esc(comName(p.com))} za ${fmt(p.price)} €/t</b></div><label>Koľko ton?<input name="tons" inputmode="decimal" required placeholder="napr. 100"></label><label>Odkedy môžeme odviezť?<input name="date" type="date" min="${today()}"></label><label class="w">Poznámka (nepovinné)<input name="note" placeholder="napr. vlhkosť, miesto skladu"></label><div class="w btns"><button class="pri" type="submit">Odoslať ERNTE</button><button type="button" data-sell="">Zrušiť</button></div></form>`:""}${window.bonusRow?bonusRow(p):""}</div>`).join("")}
-      <div class="s">${valid?`Ceny platia do ${esc(dSK(valid))}. `:""}Ťuknite na <b>Predať</b>, napíšte tony a odošlite. ERNTE sa vám ozve.</div><div class="s" style="font-size:.66rem;opacity:.7">Ilustračné fotografie: Wikimedia Commons</div></div>`
+      ${expired?`<div class="box w"><b>Cenník sa práve aktualizuje.</b> Nové ceny tu budú čoskoro – predaj je zatiaľ pozastavený. Zavolajte ERNTE.</div>`:""}<div class="s">${valid&&!expired?`Ceny platia do ${esc(dSK(valid))}. `:""}Ťuknite na <b>Predať</b>, napíšte tony a odošlite. ERNTE sa vám ozve.</div><div class="s" style="font-size:.66rem;opacity:.7">Ilustračné fotografie: Wikimedia Commons</div></div>`
     :`<div class="card"><div class="s">Cenník práve pripravujeme.</div></div>`;}
   const R=STATE.reqs;
   if(R.length){h+=`<h2>Moje požiadavky</h2><div class="card">${R.slice(0,8).map(r=>`<div class="row"><span><b style="font-family:var(--f-ui)">${esc(RKIND[r.kind])}</b>${r.com?" · "+esc(comName(r.com)):""}${r.tons?" · "+fmt(r.tons)+" t":""}</span>${pill(RST[r.status]||[r.status])}</div><div class="s" style="margin-top:-6px">${esc(dtSK(r.created_at))}${r.reply?" · ERNTE: "+esc(r.reply):""}</div>`).join("")}</div>`}
@@ -1271,7 +1271,7 @@ function priceBanner(){const v=((STATE.settings||{}).pricelist||{}).valid;
   if(d<=7)return `<div class="pban w"><b>Cenník platí do ${esc(dSK(v))}, obnov ho</b><span>${d<1?"Platí už len dnes.":d===1?"Platí ešte zajtra.":"Zostáva "+d+" "+(d<5?"dni":"dní")+"."}</span></div>`;
   return ""}
 // ===== DIZAJN „sklo – diamant“: zdieľané pomocné funkcie (iba vzhľad) =====
-const TICO={req:"📥",price:"💶",trans:"🚚",fleet:"🚛",deals:"🤝",farm:"👨‍🌾",wx:"🌦️",team:"👥",calc:"🧮"};
+const TICO={home:"🏠",req:"📥",price:"💶",trans:"🚚",fleet:"🚛",deals:"🤝",farm:"👨‍🌾",wx:"🌦️",team:"👥",calc:"🧮"};
 const dsF2=x=>Number.isFinite(+x)?(+x).toLocaleString("sk-SK",{minimumFractionDigits:2,maximumFractionDigits:2}):"–";
 const dsSg=x=>(x>=0?"+":"−")+Math.round(Math.abs(x)).toLocaleString("sk-SK");
 const dsSg2=x=>(x>=0?"+":"−")+dsF2(Math.abs(x));
@@ -1325,8 +1325,8 @@ let DSRZ=0;window.addEventListener("resize",()=>{clearTimeout(DSRZ);DSRZ=setTime
 document.addEventListener("click",e=>{const th=e.target.closest("[data-dstheme]");if(th){const L=document.documentElement.dataset.theme!=="light";if(L)document.documentElement.dataset.theme="light";else delete document.documentElement.dataset.theme;try{localStorage.setItem("ernte-theme",L?"light":"dark")}catch(x){}th.textContent=L?"🌙":"☀️";const m=document.querySelector('meta[name="color-scheme"]');if(m)m.content=L?"light":"dark";return}
   const op=e.target.closest("[data-tedop]");if(op){STATE.tOpen=STATE.tOpen===op.dataset.tedop?null:op.dataset.tedop;renderStaff()}});
 function renderStaff(){const nNew=STATE.reqs.filter(r=>r.status==="nova").length;
-  let tabs=[["req",`Požiadavky${nNew?` <span class="cnt">${nNew}</span>`:""}`],["price","Cenník"],["trans",`Doprava${(STATE.reqs||[]).filter(r=>r.kind==="transport"&&r.status==="nova").length?` <span class="cnt">${STATE.reqs.filter(r=>r.kind==="transport"&&r.status==="nova").length}</span>`:""}`],["deals","Obchody"],["farm","Farmári"],["wx","Počasie"]];
-  if(typeof tabOK==="function"){tabs.splice(3,0,["fleet","Flotila"]);tabs.splice(5,0,["calc","Kalkulačka"]);if(ROLE==="owner")tabs.push(["team","Tím"]);tabs=tabs.filter(t=>tabOK(t[0]));if(!tabs.length)tabs=[["wx","Počasie"]]}
+  let tabs=[["home","Prehľad"],["req",`Požiadavky${nNew?` <span class="cnt">${nNew}</span>`:""}`],["price","Cenník"],["trans",`Doprava${(STATE.reqs||[]).filter(r=>r.kind==="transport"&&r.status==="nova").length?` <span class="cnt">${STATE.reqs.filter(r=>r.kind==="transport"&&r.status==="nova").length}</span>`:""}`],["deals","Obchody"],["farm","Farmári"],["wx","Počasie"]];
+  if(typeof tabOK==="function"){tabs.splice(4,0,["fleet","Flotila"]);tabs.splice(6,0,["calc","Kalkulačka"]);if(ROLE==="owner")tabs.push(["team","Tím"]);tabs=tabs.filter(t=>tabOK(t[0]));if(!tabs.length)tabs=[["wx","Počasie"]]}
   else{if(ROLE==="owner"||ROLE==="dispatch")tabs.splice(3,0,["fleet","Flotila"]);
   if(ROLE==="owner")tabs.push(["team","Tím"]);
   if(ROLE==="dispatch")tabs=tabs.filter(t=>["req","trans","fleet","wx"].includes(t[0]));
@@ -1335,12 +1335,12 @@ function renderStaff(){const nNew=STATE.reqs.filter(r=>r.status==="nova").length
   let h=`<nav class="tabs" aria-label="Hlavná navigácia">${tabs.map(t=>{const lb=String(t[1]).split(' <span class="cnt">');return `<button type="button" data-tab="${t[0]}" aria-pressed="${TAB===t[0]}"><span class="ti" aria-hidden="true">${TICO[t[0]]||"•"}</span><span class="tl">${lb[0]}</span>${lb[1]?'<span class="cnt">'+lb[1]:""}</button>`}).join("")}</nav>`;
   h+=`<div class="hrow"><button type="button" class="ds-theme" data-dstheme aria-label="Prepnúť svetlý / tmavý režim" title="Svetlý / tmavý režim">${document.documentElement.dataset.theme==="light"?"🌙":"☀️"}</button>${window.bigBtn?bigBtn():""}${helpBtn(TAB)}</div>`;
   if(tabs.some(t=>t[0]==="price")&&(TAB==="price"||TAB==="req"))h+=priceBanner();
-  if(TAB==="wx"&&!WXD)loadWx().then(renderStaff);if(TAB==="fleet"&&!STATE.fleet)loadFleet().then(renderStaff);if(TAB==="team"&&!STATE.staff)loadTeam().then(renderStaff);h+=({req:vReq,price:vPrice,trans:vTrans,deals:vDeals,farm:vFarm,wx:wxCard,fleet:vFleet,team:vTeam,calc:()=>window.vCalc?vCalc():""})[TAB]();if(TAB==="req")h+=pwCard();$("app").innerHTML=h;mountR();dsAfter()}
+  if(TAB==="wx"&&!WXD)loadWx().then(renderStaff);if(TAB==="fleet"&&!STATE.fleet)loadFleet().then(renderStaff);if(TAB==="team"&&!STATE.staff)loadTeam().then(renderStaff);h+=({req:vReq,price:vPrice,trans:vTrans,deals:vDeals,farm:vFarm,wx:wxCard,fleet:vFleet,team:vTeam,calc:()=>window.vCalc?vCalc():"",home:()=>window.vHome?vHome():""})[TAB]();if(TAB==="req")h+=pwCard();$("app").innerHTML=h;mountR();dsAfter()}
 function vReq(){const R=STATE.reqs;if(!R.length)return `<div class="card"><div class="s">Zatiaľ žiadne požiadavky od farmárov.</div></div>`;
   const ord=[...R.filter(r=>r.status==="nova"),...R.filter(r=>r.status!=="nova")],OWN=ROLE==="owner",RI={sell:"🌾",transport:"🚚",agree:"✍️",message:"💬"};
   return ord.map(r=>{const fr=STATE.farmers.find(x=>x.id===r.farmer_id)||{},d=r.deal_id?STATE.deals.find(x=>x.id===r.deal_id):null;
     const com=r.com||(d&&d.com),tons=r.tons!=null?+r.tons:d?+d.tons:null,buy=r.price!=null?+r.price:d?+d.price:null,df=OWN&&d?(STATE.dfin||{})[d.id]:null,sell=df&&df.sell_price!=null?+df.sell_price:null;
-    const ch=[];if(com)ch.push(dsChip("Plodina",esc(comName(com))));if(tons!=null&&isFinite(tons))ch.push(dsChip("Množstvo",fmt(tons)+" t"));if(buy!=null&&isFinite(buy))ch.push(dsChip("Nákup",fmt(buy)+" €/t"));
+    const ch=[];if(com)ch.push(dsChip("Plodina",esc(comName(com))));if(tons!=null&&isFinite(tons))ch.push(dsChip("Množstvo",fmt(tons)+" t"));if(buy!=null&&isFinite(buy)&&(!window.canAny||canAny("deals","price_view")))ch.push(dsChip("Nákup",fmt(buy)+" €/t"));
     if(OWN&&buy!=null&&(r.kind==="sell"||d)){ch.push(dsChip("Predaj",sell!=null?fmt(sell)+" €/t":"nezadané",sell!=null?"":"na",1));if(sell!=null){const m=sell-buy;ch.push(dsChip("Marža €/t",dsSg2(m),m>=0?"pos":"neg",1));if(tons!=null)ch.push(dsChip("Marža spolu",dsSg(m*tons)+" €",m>=0?"pos":"neg",1))}}
     return `<div class="card"><div class="ds-hd"><span class="ds-ic" aria-hidden="true">${RI[r.kind]||"📩"}</span><span class="ds-ttl"><b>${esc(RKIND[r.kind]||r.kind)}</b><small>${esc(fr.name||"?")} · ${esc(dtSK(r.created_at))}</small></span>${pill(RST[r.status]||[r.status])}</div>
     ${ch.length?`<div class="ds-chips">${ch.join("")}</div>`:""}
@@ -1348,7 +1348,7 @@ function vReq(){const R=STATE.reqs;if(!R.length)return `<div class="card"><div c
     ${r.note?`<div class="s">„${esc(r.note)}“</div>`:""}
     ${r.reply?`<div class="s">Odpoveď: ${esc(r.reply)}${r.handled_by?" ("+esc(r.handled_by)+")":""}</div>`:""}
     <div class="btns">${fr.phone?`<a class="btn" href="tel:${esc(String(fr.phone).replace(/\s/g,""))}">📞 Volať</a>`:""}
-      ${r.status==="nova"&&r.kind==="sell"?`<button type="button" class="lime" data-mkdeal="${esc(r.id)}">Vytvoriť obchod</button>`:""}
+      ${r.status==="nova"&&r.kind==="sell"&&(!window.can||can("deals"))?`<button type="button" class="lime" data-mkdeal="${esc(r.id)}">Vytvoriť obchod</button>`:""}
       ${r.status==="nova"&&r.kind==="agree"&&d?`<button type="button" class="lime" data-sign="${esc(r.id)}">Zmluva podpísaná</button>`:""}
       ${r.status==="nova"?`<button type="button" class="pri" data-done="${esc(r.id)}">Vybavené</button><button type="button" class="dng" data-rej="${esc(r.id)}">Zamietnuť</button>`:""}</div></div>`}).join("")}
 function fleetMap(G){return lmapHTML(G.map(k=>({lat:+k.gps_lat,lon:+k.gps_lon,label:String(k.no),mv:(+k.gps_speed||0)>3,old:!!k.old,tip:k.tip||""})))}
@@ -2617,7 +2617,7 @@ function vDeals(){const F=STATE.farmers.filter(f=>f.active),pre=DEALF||{},OWN=RO
    <label>Množstvo t<input name="tons" inputmode="decimal" required value="${esc(pre.tons??"")}"></label>
    <label>Cena €/t FCA<input name="price" id="dPrice" inputmode="decimal" required value="${esc(pre.price!=null?String(pre.price).replace(".",","):"")}"></label>
    <label>Termín plnenia<input name="term" value="${esc(pre.term||"")}" placeholder="napr. 30. 11. 2026"></label>
-   <label class="w">Poznámka<input name="note" value="${esc(pre.note||"")}"></label>
+   <label class="w">Poznámka – 👁️ vidí aj farmár (interné veci sem nepíš)<input name="note" value="${esc(pre.note||"")}"></label>
    <div class="w btns"><button class="pri" type="submit">Uložiť obchod</button>${DEALF?`<button type="button" data-clrdeal>Zrušiť</button>`:""}</div></form>`;
   h+=STATE.deals.map(d=>{const df=OWN?(STATE.dfin||{})[d.id]:null,sell=df&&df.sell_price!=null?+df.sell_price:null,m=sell!=null?sell-(+d.price):null;
     return `<div class="card"><div class="ds-hd"><span class="ds-ic" aria-hidden="true">🤝</span><span class="ds-ttl"><b>${esc(fName(d.farmer_id))}</b><small>${esc(d.no)}${d.term?" · termín "+esc(d.term):""}</small></span>${pill(DST[d.status]||[d.status])}</div>
@@ -2705,7 +2705,8 @@ if("serviceWorker" in navigator&&location.protocol==="https:")navigator.serviceW
 if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",()=>boot());else boot();
 </script>
 <script src="ai.js?v=20261026-0600"></script>
-<script src="perms.js?v=20261026-0900"></script>
-<script src="bonus.js?v=20261026-0830"></script>
+<script src="perms.js?v=20261026-1000"></script>
+<script src="bonus.js?v=20261026-1000"></script>
+<script src="hub.js?v=20261026-1000"></script>
 </body>
 </html>
