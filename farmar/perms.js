@@ -76,15 +76,22 @@ function pinModal(){return new Promise(res=>{const d=document.createElement("div
   d.innerHTML=`<form class="pinbox" id="fPin"><div class="pinic">🔐</div><h2>Nastavte si vlastný PIN</h2><p>Prihlásili ste sa kódom od ERNTE. Kvôli bezpečnosti si teraz vytvorte <b>vlastný PIN</b> – odteraz sa budete prihlasovať ním.</p>
    <label>Nový PIN (aspoň 6 číslic alebo znakov)<input name="a" type="password" inputmode="numeric" autocomplete="new-password" minlength="6" required></label>
    <label>Zopakujte PIN<input name="b" type="password" inputmode="numeric" autocomplete="new-password" minlength="6" required></label>
-   <button class="pri" type="submit">Uložiť môj PIN</button>
+   <div class="pinerr" role="alert" aria-live="assertive"></div><button class="pri" type="submit">Uložiť môj PIN</button>
    <p class="pinlaw">🛡️ Ochrana osobných údajov: vaše meno, telefón a e-mail spracúva ERNTE spol. s r.o. (doprava VALKO s.r.o.) iba na účely spolupráce, obchodov a dopravy podľa nariadenia GDPR a zákona č. 18/2018 Z. z. PIN nikomu neprezrádzajte – ERNTE ho nikdy nepozná ani si ho nepýta.</p></form>`;
   document.body.appendChild(d);setTimeout(()=>{const i=d.querySelector("input");if(i)i.focus()},100);
-  d.querySelector("form").addEventListener("submit",async e=>{e.preventDefault();const f=new FormData(e.target),a=String(f.get("a")),b=String(f.get("b"));
-    if(a.length<6){toast("PIN musí mať aspoň 6 znakov.");return}if(a!==b){toast("PIN sa nezhoduje – zadajte ho dvakrát rovnako.");return}
-    if(/^(\d)\1+$/.test(a)||["123456","654321","000000","111111","123123"].includes(a)){toast("Príliš jednoduchý PIN – zvoľte iný.");return}
+  const er=d.querySelector(".pinerr"),bad=m=>{er.textContent="⚠️ "+m;er.classList.add("on");try{navigator.vibrate&&navigator.vibrate(120)}catch(x){}};
+  d.querySelector("form").addEventListener("input",()=>{er.textContent="";er.classList.remove("on")});
+  d.querySelector("form").addEventListener("submit",async e=>{e.preventDefault();const f=new FormData(e.target),a=String(f.get("a")).trim(),b=String(f.get("b")).trim();
+    if(a.length<6){bad("PIN musí mať aspoň 6 číslic alebo znakov.");return}if(a!==b){bad("PIN sa nezhoduje – zadajte ho dvakrát rovnako.");return}
+    if(/^(\d)\1+$/.test(a)||["123456","654321","000000","111111","123123","012345","234567","987654"].includes(a)){bad("Príliš jednoduchý PIN (napr. 123456 alebo 111111) – zvoľte iný.");return}
     const bt=e.target.querySelector("button");bt.disabled=true;bt.textContent="Ukladám…";
-    const r=await sb.auth.updateUser({password:a});if(r.error){bt.disabled=false;bt.textContent="Uložiť môj PIN";toast("Nepodarilo sa: "+r.error.message,6000);return}
-    await sb.rpc("pin_done");d.remove();toast("✓ Váš PIN je uložený. Odteraz sa prihlasujete ním.",5000);res()})})}
+    let r;try{r=await sb.auth.updateUser({password:a})}catch(x){r={error:{message:String(x&&x.message||x)}}}
+    if(r.error){bt.disabled=false;bt.textContent="Uložiť môj PIN";const m=String(r.error.message||""),c=String(r.error.code||"");
+      bad(/same|different from the old/i.test(m+c)?"Nový PIN musí byť iný ako kód, ktorý ste dostali od ERNTE. Zvoľte iný PIN.":
+        /weak|pwned|leaked|characters|too short/i.test(m+c)?"Tento PIN je príliš slabý alebo známy z únikov hesiel. Zvoľte iný – napr. 8 číslic, nie po sebe idúcich.":
+        /reauth|recent|session|jwt|expired|not authenticated/i.test(m+c)?"Prihlásenie vypršalo. Zavrite stránku, prihláste sa znova kódom od ERNTE a hneď nastavte PIN.":
+        /fetch|network|failed/i.test(m)?"Nie je internet alebo je slabý signál. Skúste to znova o chvíľu.":"Nepodarilo sa uložiť PIN ("+m+"). Skúste iný PIN alebo zavolajte ERNTE.");return}
+    try{await sb.rpc("pin_done")}catch(x){}d.remove();toast("✓ Váš PIN je uložený. Odteraz sa prihlasujete ním.",5000);res()})})}
 async function loadMe(){try{const r=await sb.from("staff").select("*").eq("email",String(ME.email).toLowerCase()).maybeSingle();STATE.me=r.data||{role:ROLE,perms:{}}}catch(e){STATE.me={role:ROLE,perms:{}}}}
 const _ss=window.startStaff;window.startStaff=async function(){await loadMe();if(STATE.me&&STATE.me.must_change)await pinModal();applyBig();if(ROLE!=="owner"&&!can("fleet_all")){try{FFLT="region"}catch(e){}}return _ss.apply(this,arguments)};
 const _sf=window.startFarmer;window.startFarmer=async function(){if(FARMER&&FARMER.must_change)await pinModal();applyBig();return _sf.apply(this,arguments)};
