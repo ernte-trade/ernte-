@@ -320,3 +320,298 @@ revoke all on function public.yard_check() from public, anon, authenticated;
 select public.refuel_gap_sync('2026-10-01 00:00 Europe/Bratislava'::timestamptz);
 select public.fuel_transfer_check('2026-10-01 00:00 Europe/Bratislava'::timestamptz, false);
 select public.no_signal_check();
+
+-- ===== 26. 10. 2026: výpadok dát, rýchlosť podľa typu, obmedzovač, čas tankovania =====
+-- VALKO flotila: VÝPADOK DÁT (medzera > 6 h medzi dvoma hladinami/polohami = nie pokles v státí, bez € straty),
+-- rýchlosť podľa typu vozidla (N2/N3 > 90, M1/N1 > 130 km/h), alarm OBMEDZOVAČ (N3 > 100 km/h), čas tankovania pri „Tankovanie nesedí“,
+-- naftová bilancia bez zlúčených duplicitných vozidiel.
+
+-- najdlhšia medzera bez záznamu (začiatok/koniec úseku + záznamy hladiny zo sondy) v úseku od–do
+create or replace function public.veh_data_gap(vid text, a timestamptz, b timestamptz) returns interval language sql stable security definer set search_path=public as $$
+  select max(d) from (select t-lag(t) over (order by t) d from (select a t union all select tl.at from tank_log tl where tl.vehicle_id=vid and tl.at>a and tl.at<b union all select b) q) z $$;
+revoke all on function public.veh_data_gap(text,timestamptz,timestamptz) from public, anon, authenticated;
+
+-- udalosti z jázd: 1b obmedzovač, 2) pokles v státí iba pri dátach bez medzery nad 6 h, inak výpadok dát
+create or replace function public.ride_events_since(since timestamptz) returns int language plpgsql security definer set search_path=public as $$
+declare k int:=0; n int; c jsonb; son boolean; mn int;
+begin
+  select value into c from fleet_cfg where key='stop'; son:=coalesce((c->>'on')::boolean,true); mn:=coalesce((c->>'min')::int,30);
+  -- 1) rýchlosť nad 90 km/h
+  insert into fleet_events(vehicle_id,plate,kind,at,driver,kmh,note,lat,lon,src_key)
+    select r.vehicle_id,r.plate,'speed',r.start_at,r.driver,r.max_speed,'max '||r.max_speed||' km/h · jazda '||round(coalesce(r.distance,0))||' km',r.lat_start,r.lon_start,'spd:'||r.ride_id
+      from rides r where r.start_at>=since and r.max_speed>90
+    on conflict (src_key) do nothing;
+  get diagnostics n=row_count; k:=k+n;
+  -- 1b) nákladné N3 nad 100 km/h = skontrolovať obmedzovač rýchlosti
+  insert into fleet_events(vehicle_id,plate,kind,at,driver,kmh,note,lat,lon,src_key)
+    select r.vehicle_id,r.plate,'limiter',r.start_at,r.driver,r.max_speed,
+           'max '||r.max_speed||' km/h · '||veh_type_name(veh_vtype(r.vehicle_id))||' (obmedzovač 90 km/h) · jazda '||round(coalesce(r.distance,0))||' km · '||coalesce(r.start_addr,'?')||' → '||coalesce(r.stop_addr,'?'),
+           r.lat_start,r.lon_start,'lim:'||r.ride_id
+      from rides r where r.start_at>=since and r.max_speed>100 and veh_vtype(r.vehicle_id) in ('tahac_n3','sklapac_n3')
+    on conflict (src_key) do nothing;
+  get diagnostics n=row_count; k:=k+n;
+  -- 2) pokles nafty počas státia (medzi dvoma jazdami bez tankovania) a 3) odchod po státí
+  create temp table if not exists _rev(ride_id text, vehicle_id text, plate text, driver text, start_at timestamptz, fuel_start numeric, refuel_l numeric,
+    p_stop timestamptz, p_fuel numeric, p_drv text, p_lat numeric, p_lon numeric, p_addr text, gap interval) on commit drop;
+  truncate _rev;
+  insert into _rev select * from (
+    select r.ride_id, r.vehicle_id, r.plate, r.driver, r.start_at, r.fuel_start, r.refuel_l,
+           lag(r.stop_at) over w p_stop, lag(r.fuel_stop) over w p_fuel, lag(r.driver) over w p_drv, lag(r.lat_stop) over w p_lat, lag(r.lon_stop) over w p_lon, lag(r.stop_addr) over w p_addr
+      from rides r where r.start_at>=since-interval '3 days' window w as (partition by r.vehicle_id order by r.start_at)) x
+   where x.start_at>=since and x.p_stop is not null;
+  -- najdlhšia medzera bez dát medzi dvoma hladinami (koniec jazdy, záznamy sondy, začiatok ďalšej jazdy)
+  update _rev s set gap=veh_data_gap(s.vehicle_id,s.p_stop,s.start_at);
+  insert into fleet_events(vehicle_id,plate,kind,at,driver,liters,place,place_kind,lat,lon,t_from,t_to,lvl_from,lvl_to,minutes,note,src_key)
+    select s.vehicle_id,s.plate,case when s.gap>interval '6 hours' then 'data_gap' else 'fuel_drop' end,s.start_at,coalesce(nullif(trim(s.p_drv),''),s.driver),round(s.p_fuel-s.fuel_start),
+           coalesce((select name from place_near(s.p_lat,s.p_lon)),s.p_addr),'stop',s.p_lat,s.p_lon,s.p_stop,s.start_at,round(s.p_fuel),round(s.fuel_start),floor(extract(epoch from s.gap)/60)::int,
+           case when s.gap>interval '6 hours' then 'výpadok dát '||replace(round(extract(epoch from s.gap)/3600,1)::text,'.',',')||' h bez záznamu hladiny · ' else '' end||
+           'státie '||to_char(s.p_stop at time zone 'Europe/Bratislava','DD.MM HH24:MI')||' → '||to_char(s.start_at at time zone 'Europe/Bratislava','DD.MM HH24:MI')||' · '||round(s.p_fuel)||' → '||round(s.fuel_start)||' l'
+           ||case when s.gap>interval '6 hours' then ' (nepočíta sa ako pokles v státí)' else '' end,
+           case when s.gap>interval '6 hours' then 'dgap:' else 'drp:' end||s.ride_id
+      from _rev s where s.p_fuel is not null and s.fuel_start is not null and s.p_fuel-s.fuel_start>=25 and coalesce(s.refuel_l,0)=0
+       and not exists(select 1 from fleet_events e where e.src_key in ('drp:'||s.ride_id,'dgap:'||s.ride_id))
+       and not exists(select 1 from fleet_events e where e.vehicle_id=s.vehicle_id and e.kind='fuel_drop' and e.src_key is null and e.at between s.p_stop-interval '10 minutes' and s.start_at+interval '10 minutes')
+    on conflict (src_key) do nothing;
+  get diagnostics n=row_count; k:=k+n;
+  if son then
+    insert into fleet_events(vehicle_id,plate,kind,at,driver,minutes,place,place_kind,lat,lon,src_key)
+      select s.vehicle_id,s.plate,'depart',s.start_at,s.driver,floor(extract(epoch from s.start_at-s.p_stop)/60)::int,(select name from place_near(s.p_lat,s.p_lon)),'stop',s.p_lat,s.p_lon,'dep:'||s.ride_id
+        from _rev s where s.start_at-s.p_stop>=make_interval(mins=>mn)
+         and not exists(select 1 from fleet_events e where e.vehicle_id=s.vehicle_id and e.kind='depart' and e.src_key is null and e.at between s.start_at-interval '20 minutes' and s.start_at+interval '20 minutes')
+      on conflict (src_key) do nothing;
+    get diagnostics n=row_count; k:=k+n;
+  end if;
+  -- 4) príchod na miesto (koniec jazdy) a odchod z dvora / od odberateľa (začiatok jazdy)
+  insert into fleet_events(vehicle_id,plate,kind,at,driver,place,place_kind,lat,lon,src_key)
+    select r.vehicle_id,r.plate,'in',r.stop_at,r.driver,pl.name,pl.kind,r.lat_stop,r.lon_stop,'in:'||r.ride_id
+      from rides r cross join lateral place_near(r.lat_stop,r.lon_stop) pl
+     where r.stop_at>=since and r.stop_at is not null
+       and not exists(select 1 from fleet_events e where e.vehicle_id=r.vehicle_id and e.kind in ('in','yard_in') and e.src_key is null and e.at between r.stop_at-interval '20 minutes' and r.stop_at+interval '20 minutes')
+    on conflict (src_key) do nothing;
+  get diagnostics n=row_count; k:=k+n;
+  insert into fleet_events(vehicle_id,plate,kind,at,driver,place,place_kind,lat,lon,src_key)
+    select r.vehicle_id,r.plate,'out',r.start_at,r.driver,pl.name,pl.kind,r.lat_start,r.lon_start,'out:'||r.ride_id
+      from rides r cross join lateral place_near(r.lat_start,r.lon_start,array['yard','buyer']) pl
+     where r.start_at>=since
+       and not exists(select 1 from fleet_events e where e.vehicle_id=r.vehicle_id and e.kind in ('out','yard_out') and e.src_key is null and e.at between r.start_at-interval '20 minutes' and r.start_at+interval '20 minutes')
+    on conflict (src_key) do nothing;
+  get diagnostics n=row_count; k:=k+n;
+  -- 5) tankovanie nesedí s nárastom v nádrži: |nárast − natankované| > 20 l a zároveň > 5 %
+  k:=k+refuel_gap_sync(since);
+  return k;
+end $$;
+revoke all on function public.ride_events_since(timestamptz) from public, anon, authenticated;
+
+-- pokles medzi dvoma záznamami sondy: medzera nad 6 h = výpadok dát
+create or replace function public.fuel_gap_check(days integer DEFAULT 1)
+ RETURNS integer
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO 'public', 'extensions', 'net'
+AS $function$
+declare s record; t text; k int:=0; drv text; pl text; moved numeric; ignon boolean; v record; msg text; thr numeric;
+begin
+  select value->>'topic' into t from fleet_cfg where key='notify';
+  thr:=coalesce((select (value->>'drop')::numeric from fleet_cfg where key='fuel'),20);
+  for s in
+    with x as (select vehicle_id, at, tank, speed, ign, lat, lon,
+                 lag(at) over w p_at, lag(tank) over w p_tank, lag(lat) over w p_lat, lag(lon) over w p_lon
+               from tank_log where at>now()-make_interval(days=>days) - interval '2 days' window w as (partition by vehicle_id order by at))
+    select * from x where p_at is not null and at>now()-make_interval(days=>days) and p_tank-tank>=thr
+  loop
+    if exists(select 1 from fuel_gap_seen where vehicle_id=s.vehicle_id and t_from=s.p_at) then continue; end if;
+    insert into fuel_gap_seen values(s.vehicle_id,s.p_at) on conflict do nothing;
+    -- jazdilo auto medzi meraniami? (jazdy z Commandera alebo rýchlosť)
+    select coalesce(sum(case when greatest(start_at,s.p_at)<least(coalesce(stop_at,start_at),s.at) then distance else 0 end),0) into moved
+      from rides where vehicle_id=s.vehicle_id and start_at<s.at and coalesce(stop_at,start_at)>s.p_at;
+    if moved>2 then continue; end if;   -- pokles počas jazdy = spotreba
+    if s.lat is not null and s.p_lat is not null and abs(s.lat-s.p_lat)+abs(s.lon-s.p_lon)>0.02 then continue; end if; -- auto sa presunulo
+    -- tankovanie medzi meraniami vylúči (hladina by stúpla) – tu ide o pokles, tak nič
+    select bool_or(coalesce(ign,0)=1) into ignon from tank_log where vehicle_id=s.vehicle_id and at between s.p_at and s.at;
+    select driver into drv from rides where vehicle_id=s.vehicle_id and start_at<=s.at and driver is not null order by start_at desc limit 1;
+    select coalesce(p.name, (select stop_addr from rides where vehicle_id=s.vehicle_id and start_at<=s.at and stop_addr is not null order by start_at desc limit 1)) into pl
+      from (select 1) d left join places p on abs(p.lat-s.lat)<0.01 and abs(p.lon-s.lon)<0.015;
+    select * into v from cmd_vehicles where id=s.vehicle_id;
+    if s.at-s.p_at>interval '6 hours' then
+      -- medzera bez dát nad 6 h = výpadok dát, nie pokles v státí (bez € straty a bez upozornenia)
+      insert into fleet_events(vehicle_id,plate,kind,driver,place,place_kind,liters,lat,lon,at,t_from,t_to,lvl_from,lvl_to,minutes,note)
+        values(s.vehicle_id,v.plate,'data_gap',drv,pl,'stop',round(s.p_tank-s.tank),s.lat,s.lon,s.at,s.p_at,s.at,round(s.p_tank),round(s.tank),floor(extract(epoch from s.at-s.p_at)/60)::int,
+          'výpadok dát '||replace(round(extract(epoch from s.at-s.p_at)/3600,1)::text,'.',',')||' h bez záznamu hladiny · '||round(s.p_tank)||' → '||round(s.tank)||' l (nepočíta sa ako pokles v státí)');
+      continue;
+    end if;
+    insert into fleet_events(vehicle_id,plate,kind,driver,place,place_kind,liters,lat,lon,at,t_from,t_to,lvl_from,lvl_to,note)
+      values(s.vehicle_id,v.plate,'fuel_drop',drv,pl,'fuel',round(s.p_tank-s.tank),s.lat,s.lon,s.at,s.p_at,s.at,round(s.p_tank),round(s.tank),
+        case when s.at-s.p_at>interval '1 hour' then 'pokles počas výpadku signálu ('||round(extract(epoch from s.at-s.p_at)/3600,1)||' h)' else 'pokles medzi meraniami' end
+        ||case when coalesce(ignon,false) then ', motor bežal' else ', motor vypnutý' end);
+    k:=k+1;
+    if t is not null and s.at>now()-interval '3 hours' then
+      msg:='⚠️ '||coalesce(v.plate,s.vehicle_id)||': pokles nafty '||round(s.p_tank)||' → '||round(s.tank)||' l (−'||round(s.p_tank-s.tank)||' l) medzi '
+        ||to_char(s.p_at at time zone 'Europe/Bratislava','DD.MM HH24:MI')||' a '||to_char(s.at at time zone 'Europe/Bratislava','DD.MM HH24:MI')||', auto stálo'||coalesce(' · '||pl,'')||coalesce(' · '||drv,'');
+      perform net.http_post(url:='https://ntfy.sh/'||t, body:=jsonb_build_object('topic',t,'title','MOŽNÁ KRÁDEŽ NAFTY','message',msg,'tags',jsonb_build_array('rotating_light'),'priority',5,'click','https://maps.google.com/?q='||s.lat||','||s.lon));
+    end if;
+  end loop;
+  return k;
+end $function$;
+revoke all on function public.fuel_gap_check(int) from public, anon, authenticated;
+
+-- tankovanie nesedí: dátum a čas tankovania (z tankovacej karty Commandera, inak koniec jazdy)
+create or replace function public.refuel_gap_sync(since timestamptz) returns int language plpgsql security definer set search_path=public, extensions, net as $$
+declare k int:=0; n int; t text; e record;
+begin
+  select value->>'topic' into t from fleet_cfg where key='notify';
+  -- zruš alarmy, ktoré podmienku nesplnia (napr. 265 l natankované = 265 l nárast)
+  delete from fleet_events fe where fe.kind='refuel_gap' and fe.at>=since-interval '2 days'
+     and fe.src_key like 'gap:%'
+     and exists(select 1 from rides r where r.ride_id=substr(fe.src_key,5))
+     and not coalesce((select q.bad and q.ready from refuel_eval(substr(fe.src_key,5)) q),false);
+  get diagnostics n=row_count;
+  for e in
+    with x as (
+      insert into fleet_events as f(vehicle_id,plate,kind,at,driver,liters,place,place_kind,t_from,note,src_key)
+      select r.vehicle_id,coalesce(r.plate,(select plate from cmd_vehicles where id=r.vehicle_id)),'refuel_gap',coalesce(r.stop_at,r.start_at),r.driver,abs(q.diff),r.stop_addr,'fuel',
+             tk.t,
+             'tankovanie '||to_char(tk.t at time zone 'Europe/Bratislava','DD.MM.YYYY HH24:MI')||' · natankované '||round(q.refuel)||' l · nárast v nádrži '||q.rise||' l · rozdiel '||case when q.diff>0 then '−' else '+' end||abs(q.diff)||' l ('||replace(q.pct::text,'.',',')||' %)'
+             ||case when q.diff>0 then ' – v nádrži pribudlo menej, ako bolo natankované' else ' – v nádrži pribudlo viac, ako je na doklade' end,
+             'gap:'||r.ride_id
+        from rides r cross join lateral refuel_eval(r.ride_id) q
+        cross join lateral (select coalesce((select min(c.at) from cmd_refuel c where c.ride_id=r.ride_id),
+                                            (select min(c.at) from cmd_refuel c where c.object_id=r.vehicle_id and c.at between r.start_at-interval '30 minutes' and coalesce(r.stop_at,r.start_at)+interval '30 minutes'),
+                                            coalesce(r.stop_at,r.start_at)) t) tk
+       where coalesce(r.stop_at,r.start_at)>=since and r.refuel_l>0 and q.bad and q.ready
+      on conflict (src_key) do update set liters=excluded.liters, note=excluded.note, t_from=excluded.t_from
+      returning f.plate, f.note, f.at, f.driver, (xmax=0) isnew)
+    select * from x
+  loop
+    if e.isnew then k:=k+1;
+      if t is not null and e.at>now()-interval '6 hours' then
+        begin perform net.http_post(url:='https://ntfy.sh/'||t, body:=jsonb_build_object('topic',t,'title','Tankovanie nesedí','message',
+          coalesce(e.plate,'')||': '||e.note||coalesce(' · '||e.driver,'')||' · '||to_char(e.at at time zone 'Europe/Bratislava','DD.MM. HH24:MI'),
+          'tags',jsonb_build_array('fuelpump','warning'),'priority',4)); exception when others then null; end;
+      end if;
+    end if;
+  end loop;
+  return k;
+end $$;
+revoke all on function public.refuel_gap_sync(timestamptz) from public, anon, authenticated;
+
+-- hodnotenie vodičov: prekročenia rýchlosti podľa typu vozidla
+create or replace function public.fleet_drv_eval(a timestamp with time zone, b timestamp with time zone)
+ RETURNS jsonb
+ LANGUAGE plpgsql
+ STABLE SECURITY DEFINER
+ SET search_path TO 'public'
+AS $function$
+declare c jsonb; p numeric; t numeric; sh numeric; r jsonb;
+begin
+  select value into c from fleet_cfg where key='costs'; c:=coalesce(c,'{}');
+  p:=coalesce((c->>'diesel')::numeric,1.952)/1.23; t:=coalesce((c->>'toll')::numeric,0.2677); sh:=coalesce((c->>'share')::numeric,100);
+  with rr as (select r.*, coalesce(nullif(trim(r.driver),''),'neznámy vodič') dn, coalesce(nullif(trim(r.plate),''),r.vehicle_id,'?') car from rides r where r.start_at>=a and r.start_at<b),
+  near as (select x.vehicle_id, x.start_at, x.dn, x.car, x.refuel_l,
+      case when fleet_unknown(x.driver) then coalesce((select trim(y.driver) from rides y where y.vehicle_id=x.vehicle_id and not fleet_unknown(y.driver)
+        and y.start_at between x.start_at-interval '12 hours' and x.start_at+interval '12 hours' order by abs(extract(epoch from y.start_at-x.start_at)) limit 1),x.dn) else x.dn end dto
+    from rr x where x.refuel_l>0),
+  yd as (select coalesce(nullif(trim(f.driver),''),(select trim(y.driver) from rides y where (y.vehicle_id=f.vehicle_id or upper(replace(y.plate,' ',''))=upper(replace(f.plate,' ','')))
+        and not fleet_unknown(y.driver) order by abs(extract(epoch from y.start_at-(f.day::timestamp+interval '12 hours') at time zone 'Europe/Bratislava')) limit 1),'neznámy vodič') dn,
+      coalesce(nullif(trim(f.plate),''),f.vehicle_id,'?') car, f.liters
+    from yard_fuel f where f.kind='vydaj' and f.day>=(a at time zone 'Europe/Bratislava')::date and f.day<(b at time zone 'Europe/Bratislava')::date),
+  multi as (select car from rr where coalesce(distance,0)>0 group by car having count(distinct dn)>1),
+  dc as (select dn, car, sum(coalesce(distance,0)) km, sum(coalesce(fuel_consumed,0)) l,
+      sum(fuel_consumed) filter (where distance>0 and fuel_consumed>0) lok, sum(distance) filter (where distance>0 and fuel_consumed>0) kok,
+      count(*) filter (where max_speed>coalesce(veh_speed_lim(vehicle_id),90)) ov, max(max_speed) vmax from rr group by 1,2),
+  rc as (select dto dn, car, sum(refuel_l) l from near group by 1,2),
+  ry as (select dn, car, sum(liters) l from yd group by 1,2),
+  allc as (select dn, car from dc union select dn, car from rc union select dn, car from ry),
+  cc as (select x.dn, x.car, coalesce(dc.km,0) km, coalesce(dc.l,0) l, coalesce(dc.lok,0) lok, coalesce(dc.kok,0) kok, coalesce(dc.ov,0) ov, dc.vmax,
+      coalesce(rc.l,0) rk, coalesce(ry.l,0) ryd, x.car in (select car from multi) mul
+    from allc x left join dc using (dn,car) left join rc using (dn,car) left join ry using (dn,car)),
+  dr as (select dn, sum(km) km, sum(l) l, sum(lok) lok, sum(kok) kok, sum(ov) ov, max(vmax) vmax, sum(rk) rk, sum(ryd) ryd, bool_or(mul) mul,
+      jsonb_agg(jsonb_build_object('auto',car,'km',round(km),'litre',round(l),'l_100km',case when km>=100 and kok>20 then to_jsonb(round(lok/kok*100,1)) else '"málo dát"'::jsonb end,
+        'natankovane_l',round(rk+ryd),'natankovane_karta_l',round(rk),'natankovane_dvor_l',round(ryd),'viac_vodicov',mul) order by km desc) auta
+    from cc group by dn),
+  dp as (select coalesce(nullif(trim(driver),''),'neznámy vodič') dn, count(*) n from fleet_events where kind='fuel_drop' and at>=a and at<b group by 1)
+  select coalesce(jsonb_agg(jsonb_build_object('vodic',dr.dn,'km',round(km),'litre',round(l),
+      'l_100km',case when km>=100 and kok>20 then to_jsonb(round(lok/kok*100,1)) else '"málo dát"'::jsonb end,'malo_dat',km<100,
+      'natankovane_l',round(rk+ryd),'natankovane_karta_l',round(rk),'natankovane_dvor_l',round(ryd),
+      'rozdiel_l',round(l-rk-ryd),'rozdiel_pct',case when l>0 then round((l-rk-ryd)/l*100,1) end,'rozdiel_eur_bez_dph',round((l-rk-ryd)*p),
+      'pocet_prekroceni_90',ov,'max_rychlost',vmax,'pocet_poklesov_paliva',coalesce(dp.n,0),
+      'naklad_nafta_myto_eur_km_bez_dph',case when km>0 then round((l*p+km*sh/100*t)/km,3) end,
+      'viac_vodicov_na_aute',mul,'poznamka',case when km<100 then 'málo dát' when mul then 'viac vodičov na aute, rozdiel orientačný' end,
+      'auta',auta) order by (km<100), fleet_unknown(dr.dn), case when l>0 then (l-rk-ryd)/l end desc nulls last),'[]') into r
+  from dr left join dp using (dn);
+  return r;
+exception when others then return jsonb_build_object('chyba',SQLERRM);
+end $function$;
+revoke all on function public.fleet_drv_eval(timestamptz,timestamptz) from public, anon, authenticated;
+
+-- naftová bilancia: iba unikátne vozidlá (zlúčené duplicity GPS jednotiek sa nepočítajú dvakrát)
+create or replace function public.fuel_balance(days int default 7) returns jsonb language sql stable security definer set search_path=public as $$
+  with p as (select now()-make_interval(days=>days) w0, round(coalesce((select (value->>'diesel')::numeric from fleet_cfg where key='costs'),1.952)/1.23,3) cb),
+  v as (select id, coalesce(plate,name,id) auto, upper(replace(coalesce(plate,''),' ','')) pn from cmd_vehicles where alias_of is null and not coalesce(deleted,false)),
+  s as (select vehicle_id, at, tank from tank_log, p where at>=p.w0 and tank is not null
+        union all select vehicle_id, start_at, fuel_start from rides, p where start_at>=p.w0 and fuel_start is not null
+        union all select vehicle_id, stop_at, fuel_stop from rides, p where start_at>=p.w0 and stop_at is not null and fuel_stop is not null and stop_at<=now()),
+  b as (select v.id, v.auto, v.pn,
+          (select at from s where s.vehicle_id=v.id order by at asc limit 1) t0,
+          (select tank from s where s.vehicle_id=v.id order by at asc limit 1) l0,
+          (select at from s where s.vehicle_id=v.id order by at desc limit 1) t1,
+          (select tank from s where s.vehicle_id=v.id order by at desc limit 1) l1
+        from v),
+  a as (select b.*,
+          (select coalesce(sum(refuel_l),0) from rides r where r.vehicle_id=b.id and r.start_at>=b.t0 and coalesce(r.stop_at,r.start_at)<=b.t1) nat,
+          (select coalesce(sum(fuel_consumed),0) from rides r where r.vehicle_id=b.id and r.start_at>=b.t0 and coalesce(r.stop_at,r.start_at)<=b.t1) spotr,
+          (select coalesce(sum(distance),0) from rides r where r.vehicle_id=b.id and r.start_at>=b.t0 and coalesce(r.stop_at,r.start_at)<=b.t1) km,
+          (select coalesce(sum(liters),0) from yard_fuel y where y.kind='vydaj' and (y.vehicle_id=b.id or (b.pn<>'' and upper(replace(coalesce(y.plate,''),' ',''))=b.pn))
+              and y.day between (b.t0 at time zone 'Europe/Bratislava')::date and (b.t1 at time zone 'Europe/Bratislava')::date) dvor,
+          (select count(*) from fleet_events e, p where e.vehicle_id=b.id and e.kind in ('fuel_drop','refuel_gap','fuel_transfer') and e.at>=p.w0) alarmy
+        from b),
+  r as (select a.*, p.cb, a.t0 is not null and a.t1>a.t0 ok,
+          a.spotr-(a.nat+a.dvor+a.l0-a.l1) chyba   -- kladné = spotreba je väčšia ako natankované + pokles hladiny
+        from a, p)
+  select coalesce(jsonb_agg(jsonb_build_object(
+     'auto',auto,
+     'od',to_char(t0 at time zone 'Europe/Bratislava','DD.MM HH24:MI'),'do',to_char(t1 at time zone 'Europe/Bratislava','DD.MM HH24:MI'),
+     'nadrz_zaciatok_l',round(l0),'natankovane_l',round(nat),'vydaj_z_dvora_l',round(dvor),'spotreba_jazdou_l',round(spotr),'nadrz_koniec_l',round(l1),'km',round(km),
+     'nevysvetleny_ubytok_l',case when ok then round(l0+nat+dvor-spotr-l1) end,
+     'stav',case when not ok then 'málo dát (menej ako dva záznamy hladiny v okne)'
+                 when chyba>30 then 'chýbajú záznamy o tankovaní (nie krádež)'
+                 when l0+nat+dvor-spotr-l1>30 then 'nevysvetlený úbytok – skontrolovať'
+                 else 'v poriadku' end,
+     'chybajuce_tankovanie_l',case when ok and chyba>30 then round(chyba) end,
+     'chybajuce_tankovanie_eur_bez_dph',case when ok and chyba>30 then round(chyba*cb) end,
+     'nevysvetleny_ubytok_eur_bez_dph',case when ok and l0+nat+dvor-spotr-l1>30 then round((l0+nat+dvor-spotr-l1)*cb) end,
+     'cena_nafty_bez_dph',cb,'alarmy_nafty',alarmy)
+     order by case when ok then abs(l0+nat+dvor-spotr-l1) end desc nulls last),'[]') from r $$;
+revoke all on function public.fuel_balance(int) from public, anon, authenticated;
+
+
+-- ===== jednorazovo od 1. 7. 2026 =====
+-- a) poklesy v státí s medzerou bez dát nad 6 h → výpadok dát (z jázd)
+with e as (select f.id, f.src_key, c.ride_id, c.vehicle_id, c.start_at, c.fuel_start,
+                  (select p.stop_at from rides p where p.vehicle_id=c.vehicle_id and p.start_at<c.start_at order by p.start_at desc limit 1) p_stop,
+                  (select p.fuel_stop from rides p where p.vehicle_id=c.vehicle_id and p.start_at<c.start_at order by p.start_at desc limit 1) p_fuel
+             from fleet_events f join rides c on c.ride_id=substr(f.src_key,5)
+            where f.kind='fuel_drop' and f.src_key like 'drp:%' and f.at>='2026-07-01'),
+     g as (select e.*, veh_data_gap(e.vehicle_id,e.p_stop,e.start_at) gap from e where e.p_stop is not null)
+update fleet_events f set kind='data_gap', src_key='dgap:'||g.ride_id, t_from=g.p_stop, t_to=g.start_at, lvl_from=round(g.p_fuel), lvl_to=round(g.fuel_start),
+       minutes=floor(extract(epoch from g.gap)/60)::int,
+       note='výpadok dát '||replace(round(extract(epoch from g.gap)/3600,1)::text,'.',',')||' h bez záznamu hladiny · '||coalesce(f.note,'')||' (nepočíta sa ako pokles v státí)'
+  from g where f.id=g.id and g.gap>interval '6 hours' and not exists(select 1 from fleet_events x where x.src_key='dgap:'||g.ride_id);
+-- ostatné poklesy z jázd: doplň čas od–do a hladiny
+update fleet_events f set t_from=p.stop_at, t_to=c.start_at, lvl_from=round(p.fuel_stop), lvl_to=round(c.fuel_start)
+  from rides c cross join lateral (select stop_at, fuel_stop from rides p where p.vehicle_id=c.vehicle_id and p.start_at<c.start_at order by p.start_at desc limit 1) p
+ where f.kind='fuel_drop' and f.src_key='drp:'||c.ride_id and f.t_from is null;
+-- b) poklesy medzi dvoma záznamami sondy s medzerou nad 6 h → výpadok dát
+update fleet_events set kind='data_gap', minutes=floor(extract(epoch from t_to-t_from)/60)::int,
+       note='výpadok dát '||replace(round(extract(epoch from t_to-t_from)/3600,1)::text,'.',',')||' h bez záznamu hladiny · '||coalesce(lvl_from::text,'?')||' → '||coalesce(lvl_to::text,'?')||' l (nepočíta sa ako pokles v státí)'
+ where kind='fuel_drop' and src_key is null and t_from is not null and t_to-t_from>interval '6 hours';
+-- c) obmedzovač rýchlosti N3 nad 100 km/h spätne (bez upozornení)
+insert into fleet_events(vehicle_id,plate,kind,at,driver,kmh,note,lat,lon,src_key)
+  select r.vehicle_id,r.plate,'limiter',r.start_at,r.driver,r.max_speed,
+         'max '||r.max_speed||' km/h · '||veh_type_name(veh_vtype(r.vehicle_id))||' (obmedzovač 90 km/h) · jazda '||round(coalesce(r.distance,0))||' km · '||coalesce(r.start_addr,'?')||' → '||coalesce(r.stop_addr,'?'),
+         r.lat_start,r.lon_start,'lim:'||r.ride_id
+    from rides r where r.start_at>='2026-07-01' and r.max_speed>100 and veh_vtype(r.vehicle_id) in ('tahac_n3','sklapac_n3')
+  on conflict (src_key) do nothing;
+-- d) rýchlosť M1/N1 do 130 km/h nie je porušenie (podľa typu vozidla)
+delete from fleet_events e where e.kind='speed' and coalesce(e.kmh,0)<=coalesce(veh_speed_lim(e.vehicle_id),90);
+-- e) čas tankovania pri „Tankovanie nesedí“ (prepočet od 1. 7.)
+select public.refuel_gap_sync('2026-07-01 00:00 Europe/Bratislava'::timestamptz);
