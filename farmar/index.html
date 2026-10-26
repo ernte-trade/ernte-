@@ -2629,13 +2629,13 @@ function vDeals(){const F=STATE.farmers.filter(f=>f.active),pre=DEALF||{},OWN=RO
   return h}
 function vFarm(){const q=FQ.toLowerCase().trim(),qd=q.replace(/\s/g,""),L=STATE.farmers.filter(f=>!q||[f.name,f.email,f.addr,f.phone].join(" ").toLowerCase().includes(q)||(qd&&String(f.ico||"").replace(/\s/g,"").includes(qd)));const E=EDITF==="new"?{}:STATE.farmers.find(f=>f.id===EDITF);
   let h=`<div class="card"><div class="btns"><button type="button" class="pri" data-fedit="new">+ Pridať farmára</button></div><label class="ds-search">Rýchle hľadanie<input id="fq" value="${esc(FQ)}" placeholder="meno, obec alebo IČO" autocomplete="off"></label>
-   <div class="s">${q?`Nájdené: <b>${L.length}</b> z ${STATE.farmers.length}`:`${STATE.farmers.length} farmárov`} · „Vytvoriť prihlásenie“ vygeneruje farmárovi heslo a pripraví pozvánku – pošleš ju cez WhatsApp alebo SMS.</div></div>`;
+   <div class="s">${q?`Nájdené: <b>${L.length}</b> z ${STATE.farmers.length}`:`${STATE.farmers.length} farmárov`} ${ROLE==="owner"||typeof can!=="function"||can("farm_login")?" · „Vytvoriť prihlásenie“ vygeneruje farmárovi heslo a pripraví pozvánku – pošleš ju cez WhatsApp alebo SMS.":""}</div></div>`;
   if(STATE.invite&&!STATE.invite.team)h+=inviteBox(STATE.invite,true);
   if(E)h+=farmForm(E);
   h+=L.map(f=>{const nD=STATE.deals.filter(d=>d.farmer_id===f.id).length,ob=String(f.addr||"").split(",")[0].trim();
     return `<div class="ds-fc"><div class="ds-hd"><span class="ds-av" aria-hidden="true">${esc(dsIni(f.name))}</span><span class="ds-ttl"><b>${esc(f.name)}</b><small>${esc([ob,f.ico&&"IČO "+f.ico].filter(Boolean).join(" · ")||"bez adresy")}</small></span>${pill(f.active?["aktívny",""]:["neaktívny","g"])}</div>
     <div class="ds-meta">${f.email?`<a href="mailto:${esc(f.email)}" title="E-mail">✉️ ${esc(f.email)}</a>`:""}${f.phone?`<a href="tel:${esc(String(f.phone).replace(/\s/g,""))}">📞 ${esc(f.phone)}</a>`:""}<span>🤝 ${nD} ${nD===1?"obchod":nD>=2&&nD<=4?"obchody":"obchodov"}</span><span>${!(f.email||f.phone)?"⚠️ bez kontaktu":f.active&&f.login?"🔐 prihlásenie aktívne":f.active?"🔓 prístup zapnutý":"⛔ bez prístupu"}</span></div>
-    <div class="btns"><button type="button" data-fedit="${esc(f.id)}">Upraviť</button>${(f.email||f.phone)?`<button type="button" class="lime" data-mklogin="${esc(f.id)}">${f.login?"Nové heslo a pozvánka":"Vytvoriť prihlásenie"}</button>`:""}${f.active&&(f.login||f.email)?`<button type="button" class="dng" data-acc="${esc(f.id)}" data-on="0">Vypnúť prístup</button>`:""}${!f.active&&f.login?`<button type="button" data-acc="${esc(f.id)}" data-on="1">Zapnúť prístup</button>`:""}</div></div>`}).join("")||(q?`<div class="card"><div class="s">Nič sa nenašlo pre „${esc(FQ)}“.</div></div>`:"");
+    <div class="btns"><button type="button" data-fedit="${esc(f.id)}">Upraviť</button>${(f.email||f.phone)&&(ROLE==="owner"||typeof can!=="function"||can("farm_login"))?`<button type="button" class="lime" data-mklogin="${esc(f.id)}">${f.login?"Nové heslo a pozvánka":"Vytvoriť prihlásenie"}</button>`:""}${f.active&&(f.login||f.email)?`<button type="button" class="dng" data-acc="${esc(f.id)}" data-on="0">Vypnúť prístup</button>`:""}${!f.active&&f.login?`<button type="button" data-acc="${esc(f.id)}" data-on="1">Zapnúť prístup</button>`:""}</div></div>`}).join("")||(q?`<div class="card"><div class="s">Nič sa nenašlo pre „${esc(FQ)}“.</div></div>`:"");
   return h}
 function farmForm(f){const v=k=>esc(f[k]||"");return `<form class="card f" id="fFarm" data-id="${esc(f.id||"")}"><div class="w t">${f.id?"Upraviť farmára":"Nový farmár"}</div>
   <label class="w">Názov / meno<input name="name" required value="${v("name")}"></label><label>E-mail na prihlásenie<input name="email" type="email" value="${v("email")}"></label><label>Telefón<input name="phone" value="${v("phone")}"></label>
@@ -2653,7 +2653,7 @@ document.addEventListener("click",async e=>{if(!ROLE)return;const t=e.target,g=s
     if(a.error){busy(x,false);toast("Chyba: "+a.error.message);return}await upd("requests",r.id,{status:"vybavena",reply:"Zmluva potvrdená.",handled_by:ME.staffName,handled_at:new Date().toISOString()});return}
   if(x=g("[data-fedit]")){EDITF=x.dataset.fedit||null;renderStaff();if(EDITF)window.scrollTo(0,0);return}
   if(x=g("[data-assign]")){ASSIGN=x.dataset.assign||null;renderStaff();return}
-  if(x=g("[data-mklogin]")){const f=STATE.farmers.find(y=>y.id===x.dataset.mklogin);let usePhone=false;
+  if(x=g("[data-mklogin]")){if(ROLE!=="owner"&&typeof can==="function"&&!can("farm_login")){toast("Prihlásenia farmárom vytvára iba majiteľ.");return}const f=STATE.farmers.find(y=>y.id===x.dataset.mklogin);let usePhone=false;
     if(f.email&&f.phone)usePhone=!confirm(`Prihlasovať sa bude e-mailom ${f.email}?\n\nOK = e-mail · Zrušiť = telefón ${f.phone}`);
     else usePhone=!f.email;
     const pw=genPw();busy(x,true);const r=await sb.rpc("set_farmer_password",{fid:f.id,pw,use_phone:usePhone});busy(x,false);
