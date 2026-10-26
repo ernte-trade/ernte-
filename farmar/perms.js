@@ -210,7 +210,10 @@ document.addEventListener("submit",async e=>{const f=e.target;if(f.id!=="fOpsA"&
   busy(b,false);if(r.error){toast("Chyba: "+r.error.message,6000);return}OPSA=null;await loadOps();toast("✓ Poznámka uložená.")},true);
 
 // ===== KALKULAČKA ERNTE (z Claude app) =====
-window.vCalc=function(){return `<div class="calcw"><iframe class="calcfr" src="kalkulacka.html?v=20261026" title="ERNTE Kalkulačka nákupnej ceny" loading="lazy"></iframe><div class="s" style="text-align:center"><a class="copy" href="kalkulacka.html" target="_blank" rel="noopener">Otvoriť kalkulačku na celú obrazovku ↗</a></div></div>`};
+window.vCalc=function(){requestAnimationFrame(calcFit);return `<div class="calcw" id="calcW"><iframe class="calcfr" src="kalkulacka.html?v=20261026b" title="ERNTE Kalkulačka nákupnej ceny" allow="clipboard-write"></iframe></div>`};
+function calcFit(){const w=document.getElementById("calcW");if(!w)return;const hd=document.querySelector("header.top"),nv=document.querySelector("#app>.tabs,.tabs");
+  let top=hd?Math.max(0,hd.getBoundingClientRect().bottom):0,bot=0;if(nv){const r=nv.getBoundingClientRect();if(r.top>innerHeight/2)bot=Math.max(0,innerHeight-r.top);else top=Math.max(top,r.bottom)}w.style.top=top+"px";w.style.bottom=bot+"px"}
+addEventListener("resize",()=>calcFit());addEventListener("orientationchange",()=>setTimeout(calcFit,300));
 
 // ===== FARMÁR: poznámky k vývozu =====
 window.farmNotesHTML=function(){if(!fcan("f_notes"))return "";const N=STATE.fnotes;if(N===undefined){STATE.fnotes=null;sb.from("deal_notes").select("*").order("created_at",{ascending:false}).limit(30).then(r=>{STATE.fnotes=r.data||[];renderFarmer()});return ""}
