@@ -37,8 +37,7 @@ const PRESET={
  manazer:{n:"Manažér obchodu",role:"admin",k:["req","price_view","price_edit","deals","farm","farm_login","calc","market","trans","remain","notes","wx","big"]},
  obchodnik:{n:"Obchodník",role:"admin",k:["req","price_view","deals","farm","farm_login","calc","market","trans","remain","notes","wx","big"]},
  fakt:{n:"Fakturácia",role:"invoice",k:["req","price_view","deals","farm","trans","remain","wx"]}};
-const PEOPLE=[["Dispečer","Ján Novák","vedúci dopravy","flotila Región","doprava"],["Obchodník","Ján Novák","obchodník","Prešovský kraj","obchodnik"],
- ["Obchodník","Ján Novák","obchodník","Košický kraj","obchodnik"],["Manažér","Ján Novák","manažér obchodu · šéf krmovín","Košický a Prešovský kraj","manazer"]];
+let PEOPLE=[],PPL=0;async function loadPeople(){PPL=1;try{const r=await sb.from("staff_cfg").select("value").eq("key","team_people").maybeSingle();if(r.data&&Array.isArray(r.data.value)&&r.data.value.length){PEOPLE=r.data.value;if(TAB==="team")renderStaff()}}catch(e){PPL=0}}
 const FCAT=[["f_prices","Výkupné ceny (cenník)",""],["f_sell","Ponúknuť komoditu na predaj",""],["f_deals","Moje obchody a dohodnutá cena",""],["f_remain","Zostatok na vývoz (koľko ešte odvezieme)",""],
  ["f_transport","Objednať odvoz",""],["f_trucks","Pridelené autá – ŠPZ, vodič, telefón",""],["f_gps","Poloha auta cestou na nakládku","len keď ju doprava zapne"],
  ["f_notes","Poznámky k vývozu (posielať a čítať)",""],["f_agro","Agro služby – cenník a objednávka prác strojmi",""],["f_wx","Počasie",""],["f_big","Veľké písmo a tlačidlá",""]];
@@ -123,7 +122,7 @@ function addForm(){const A=TADD||{};return `<form class="card f" id="fTeam2"><di
   <label class="w">Prístupy podľa funkcie (doladíš potom v ⚙️ Prístupy)<select name="preset">${Object.entries(PRESET).map(([k,v])=>`<option value="${k}"${k===(A.preset||"obchodnik")?" selected":""}>${esc(v.n)}</option>`).join("")}</select></label>
   <div class="w btns"><button class="pri" type="submit">🔑 Vytvoriť prihlásenie a kód</button>${A.name?`<button type="button" data-tadd="">Zrušiť</button>`:""}</div>
   <div class="w s">Vytvorí sa jednorazový kód. Pošleš ho cez WhatsApp a pri prvom prihlásení si človek nastaví vlastný PIN.</div></form>`}
-window.vTeam=function(){const L=STATE.staff;if(!L)return `<div class="card"><div class="s">Načítavam…</div></div>`;
+window.vTeam=function(){const L=STATE.staff;if(!L)return `<div class="card"><div class="s">Načítavam…</div></div>`;if(!PPL&&sb)loadPeople();
   let h="";if(STATE.invite&&STATE.invite.team)h+=inviteBox(STATE.invite,false);
   const miss=PEOPLE.filter(x=>!L.some(p=>norm(p.name).includes(x[0])));
   h+=`<h2>Tím a prístupy</h2><div class="card tmintro"><b>Ty rozhoduješ, kto čo vidí.</b><div class="s">Pri každom človeku ťukni <b>⚙️ Prístupy</b> a zaškrtni. ★ je moje odporúčanie. Ceny, obchody, flotilu a jazdy chráni aj databáza – kto nemá prístup, údaje vôbec nedostane.</div></div>`;

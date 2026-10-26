@@ -1,5 +1,5 @@
 // ===== ERNTE · DYNAMICKÝ VZOREC CENY PRE FARMÁRA =====
-// Majiteľ alebo Manažér zadá v Cenníku cenu P. Farmár automaticky vidí základnú cenu P − 5 %
+// Majiteľ alebo obchod zadá v Cenníku cenu P. Farmár automaticky vidí základnú cenu P − 5 %
 // a kalkulačku, ako získať bonus až 5 % – po splnení všetkých podmienok dostane plnú cenu P.
 // Percentá sa rátajú z plnej ceny P, takže farmár nikdy nedostane viac ako P.
 (function(){

@@ -122,11 +122,11 @@ exception when others then null; end $$;
 
 -- ---------- ERNTE ľudia ----------
 insert into staff(email,name,role) values
-  ('ernte@ernte.sk','Vaľko','owner'),
-  ('report.valko@gmail.com','Vaľko','owner'),
-  ('meno@example.sk','Ján Novák','admin'),
-  ('meno@example.sk','ERNTE spol','admin'),
-  ('jana.valkova@ernte.sk','Jana Valková','invoice')
+  ('majitel@example.sk','Majiteľ','owner'),
+  ('majitel2@example.sk','Majiteľ','owner'),
+  ('obchod@example.sk','Obchod','admin'),
+  ('admin@example.sk','Admin','admin'),
+  ('fakturacia@example.sk','Fakturácia','invoice')
 on conflict (email) do nothing;
 
 insert into settings(key,value) values
