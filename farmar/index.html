@@ -791,6 +791,7 @@ html[data-theme=light] .ftbl th{color:#0f172a}html[data-theme=light] .fdban{colo
 </style>
 <script>try{if(localStorage.getItem('ernte-theme')==='light')document.documentElement.dataset.theme='light'}catch(e){}</script>
 <link rel="stylesheet" href="perms.css?v=20261026-1955">
+<link rel="stylesheet" href="trus.css?v=20261026-2340">
 </head>
 <body>
 <div class="wrap">
@@ -882,6 +883,7 @@ async function enter(user){ME=user;$("outBtn").hidden=false;
   if(st.data){ROLE=st.data.role;ME.staffName=st.data.name;$("hS").textContent=st.data.name+" · ERNTE";$("hT").textContent="ERNTE Trade & Logistic";document.title="ERNTE Trade & Logistic";startStaff();return}
   const fr=await sb.from("farmers").select("*").limit(1).maybeSingle();
   if(fr.data){FARMER=fr.data;$("hS").textContent=fr.data.name;startFarmer();return}
+  if(window.trusPortal){$("refBtn").hidden=true;if(await trusPortal())return}
   $("app").innerHTML=`<div class="card"><div class="t">Váš e-mail ešte nemá prístup</div><div class="s">${esc(user.email)} zatiaľ nie je v zozname dodávateľov ERNTE. Zavolajte nám a zapíšeme vás.</div><div class="btns"><a class="btn pri" href="tel:+421918449991">Zavolať ERNTE</a></div></div>`}
 
 
@@ -1048,6 +1050,11 @@ async function loadStaff(){const [f,p,s,d,r]=await Promise.all([sb.from("farmers
 const fName=id=>{const f=STATE.farmers.find(x=>x.id===id);return f?f.name:"?"};
 // ===== NÁPOVEDA „Ako to funguje“ =====
 const HELP={
+trus:{t:"Kurací trus",i:"🐔",r:"Vývozy kuracieho trusu z fariem Baromfi (HU) do BPS Kamenica nad Cirochou – od nahlásenia po faktúru.",s:[
+ ["Ako to ide","<b>1.</b> Baromfi v aplikácii nahlási vývoz: farma, dátum, čas, počet áut. Príde ti upozornenie. <b>2.</b> VALKO dispečing zaškrtne autá (ŠPZ) a schváli. <b>3.</b> BPS hneď vidí, kedy a koľko ton príde, ktoré autá a koľko zaplatí, a doplní miesto vykládky pre vodiča. <b>4.</b> Baromfi zadá netto pri nakládke, BPS pri prevzatí."],
+ ["Ceny","Výkup, predaj a doprava €/km sa nastavujú v Nastaveniach. Pri schválení sa ceny vývozu zmrazia. Doprava sa platí za jazdu (km otočka × €/km), trus podľa váženia: Baromfi podľa nakládky, BPS podľa vykládky."],
+ ["Kto čo vidí","Baromfi: iba výkupnú cenu a svoje vývozy, ako odberateľa vidí ERNTE. BPS: iba svoju cenu, dopravu a dodávky, nie dodávateľa ani nákup. VALKO dispečing: autá, miesta a tony bez cien. Zisk a ekonomiku trás vidíš iba ty."],
+ ["Fakturácia","V časti Fakturácia vyber obdobie a vytlač podklady: Baromfi → ERNTE (bez DPH, dodanie z HU), VALKO → ERNTE (doprava), ERNTE → BPS (trus + doprava s DPH)."]]},
 req:{t:"Požiadavky",i:"📥",r:"Všetko, čo ti farmári pošlú z aplikácie – na jednom mieste.",s:[
  ["Odkiaľ prichádzajú","Farmár v aplikácii ťukne <b>Predať</b> pri komodite (chce predať tony za cenu z cenníka), <b>Objednať odvoz</b>, <b>Súhlasím</b> pri obchode alebo pošle <b>Správu</b>. Nová požiadavka ti hneď zasvieti s číslom na záložke."],
  ["Čo s ňou spravíš","Pri „Chcem predať“ ťukni <b>Založiť obchod</b> – údaje sa predvyplnia do záložky Obchody. Pri odvoze naplánuj auto v Doprave. Potom požiadavku označ <b>Vybavené</b> alebo <b>Zamietnuť</b> a môžeš farmárovi napísať odpoveď – uvidí ju v aplikácii."],
@@ -1274,7 +1281,7 @@ function priceBanner(){const v=((STATE.settings||{}).pricelist||{}).valid;
   if(d<=7)return `<div class="pban w"><b>Cenník platí do ${esc(dSK(v))}, obnov ho</b><span>${d<1?"Platí už len dnes.":d===1?"Platí ešte zajtra.":"Zostáva "+d+" "+(d<5?"dni":"dní")+"."}</span></div>`;
   return ""}
 // ===== DIZAJN „sklo – diamant“: zdieľané pomocné funkcie (iba vzhľad) =====
-const TICO={agro:"🚜",zuct:"🧾",home:"🏠",req:"📥",price:"💶",trans:"🚚",fleet:"🚛",deals:"🤝",farm:"👨‍🌾",wx:"🌦️",team:"👥",calc:"🧮"};
+const TICO={trus:"🐔",agro:"🚜",zuct:"🧾",home:"🏠",req:"📥",price:"💶",trans:"🚚",fleet:"🚛",deals:"🤝",farm:"👨‍🌾",wx:"🌦️",team:"👥",calc:"🧮"};
 const dsF2=x=>Number.isFinite(+x)?(+x).toLocaleString("sk-SK",{minimumFractionDigits:2,maximumFractionDigits:2}):"–";
 const dsSg=x=>(x>=0?"+":"−")+Math.round(Math.abs(x)).toLocaleString("sk-SK");
 const dsSg2=x=>(x>=0?"+":"−")+dsF2(Math.abs(x));
@@ -1329,7 +1336,7 @@ document.addEventListener("click",e=>{const th=e.target.closest("[data-dstheme]"
   const op=e.target.closest("[data-tedop]");if(op){STATE.tOpen=STATE.tOpen===op.dataset.tedop?null:op.dataset.tedop;renderStaff()}});
 function renderStaff(){const nNew=STATE.reqs.filter(r=>r.status==="nova").length;
   let tabs=[["home","Prehľad"],["req",`Požiadavky${nNew?` <span class="cnt">${nNew}</span>`:""}`],["price","Cenník"],["trans",`Doprava${(STATE.reqs||[]).filter(r=>r.kind==="transport"&&r.status==="nova").length?` <span class="cnt">${STATE.reqs.filter(r=>r.kind==="transport"&&r.status==="nova").length}</span>`:""}`],["deals","Obchody"],["farm","Farmári"],["wx","Počasie"]];
-  if(typeof tabOK==="function"){tabs.splice(4,0,["fleet","Flotila"]);tabs.splice(6,0,["calc","Kalkulačka"]);tabs.splice(6,0,["zuct","Zúčtovanie"]);tabs.splice(7,0,["agro","Agro služby"]);if(ROLE==="owner")tabs.push(["team","Tím"]);tabs=tabs.filter(t=>tabOK(t[0]));if(!tabs.length)tabs=[["wx","Počasie"]]}
+  if(typeof tabOK==="function"){tabs.splice(4,0,["fleet","Flotila"]);tabs.splice(6,0,["calc","Kalkulačka"]);tabs.splice(6,0,["zuct","Zúčtovanie"]);tabs.splice(7,0,["agro","Agro služby"]);tabs.splice(8,0,["trus",`Kurací trus${window.trusNew&&trusNew()?` <span class="cnt">${trusNew()}</span>`:""}`]);if(ROLE==="owner")tabs.push(["team","Tím"]);tabs=tabs.filter(t=>tabOK(t[0]));if(!tabs.length)tabs=[["wx","Počasie"]]}
   else{if(ROLE==="owner"||ROLE==="dispatch")tabs.splice(3,0,["fleet","Flotila"]);
   if(ROLE==="owner")tabs.push(["team","Tím"]);
   if(ROLE==="dispatch")tabs=tabs.filter(t=>["req","trans","fleet","wx"].includes(t[0]));
@@ -1338,7 +1345,7 @@ function renderStaff(){const nNew=STATE.reqs.filter(r=>r.status==="nova").length
   let h=`<nav class="tabs" aria-label="Hlavná navigácia">${tabs.map(t=>{const lb=String(t[1]).split(' <span class="cnt">');return `<button type="button" data-tab="${t[0]}" aria-pressed="${TAB===t[0]}"><span class="ti" aria-hidden="true">${TICO[t[0]]||"•"}</span><span class="tl">${lb[0]}</span>${lb[1]?'<span class="cnt">'+lb[1]:""}</button>`}).join("")}</nav>`;
   h+=`<div class="hrow"><button type="button" class="ds-theme" data-dstheme aria-label="Prepnúť svetlý / tmavý režim" title="Svetlý / tmavý režim">${document.documentElement.dataset.theme==="light"?"🌙":"☀️"}</button>${window.bigBtn?bigBtn():""}${helpBtn(TAB)}</div>`;
   if(tabs.some(t=>t[0]==="price")&&(TAB==="price"||TAB==="req"))h+=priceBanner();
-  if(TAB==="wx"&&!WXD)loadWx().then(renderStaff);if(TAB==="fleet"&&!STATE.fleet)loadFleet().then(renderStaff);if(TAB==="team"&&!STATE.staff)loadTeam().then(renderStaff);h+=({req:vReq,price:vPrice,trans:vTrans,deals:vDeals,farm:vFarm,wx:wxCard,fleet:vFleet,team:vTeam,calc:()=>window.vCalc?vCalc():"",home:()=>window.vHome?vHome():"",zuct:()=>window.vZuct?vZuct():"",agro:()=>window.vAgro?vAgro():""})[TAB]();if(TAB==="req")h+=pwCard();$("app").innerHTML=h;mountR();dsAfter()}
+  if(TAB==="wx"&&!WXD)loadWx().then(renderStaff);if(TAB==="fleet"&&!STATE.fleet)loadFleet().then(renderStaff);if(TAB==="team"&&!STATE.staff)loadTeam().then(renderStaff);h+=({req:vReq,price:vPrice,trans:vTrans,deals:vDeals,farm:vFarm,wx:wxCard,fleet:vFleet,team:vTeam,calc:()=>window.vCalc?vCalc():"",home:()=>window.vHome?vHome():"",zuct:()=>window.vZuct?vZuct():"",agro:()=>window.vAgro?vAgro():"",trus:()=>window.vTrus?vTrus():""})[TAB]();if(TAB==="req")h+=pwCard();$("app").innerHTML=h;mountR();dsAfter()}
 function vReq(){const R=STATE.reqs;if(!R.length)return `<div class="card"><div class="s">Zatiaľ žiadne požiadavky od farmárov.</div></div>`;
   const ord=[...R.filter(r=>r.status==="nova"),...R.filter(r=>r.status!=="nova")],OWN=ROLE==="owner",RI={sell:"🌾",transport:"🚚",agree:"✍️",message:"💬"};
   return ord.map(r=>{const fr=STATE.farmers.find(x=>x.id===r.farmer_id)||{},d=r.deal_id?STATE.deals.find(x=>x.id===r.deal_id):null;
@@ -2740,12 +2747,13 @@ document.addEventListener("input",e=>{if(e.target.id==="dfq"){const h=e.target.f
 document.addEventListener("click",e=>{const b=e.target.closest("[data-dfp]");if(!b)return;const fm=b.closest("form"),f=(STATE.farmers||[]).find(x=>x.id===b.dataset.dfp);if(!fm||!f)return;fm.elements.farmer.value=f.id;document.getElementById("dfq").value=String(f.name).trim();document.getElementById("dfl").innerHTML=`<div class="s">✓ Vybraný: <b>${esc(String(f.name).trim())}</b></div>`});
 </script>
 <script src="ai.js?v=20261026-0600"></script>
-<script src="perms.js?v=20261026-2100"></script>
+<script src="perms.js?v=20261026-2340"></script>
 <script src="bonus.js?v=20261026-2100"></script>
 <script src="hub.js?v=20261026-1830"></script>
 <script src="settle.js?v=20261026-1930"></script>
 <script src="contract.js?v=20261026-1930"></script>
 <script src="agro.js?v=20261026-1600"></script>
 <script src="activity.js?v=20261026-1955"></script>
+<script src="trus.js?v=20261026-2340"></script>
 </body>
 </html>

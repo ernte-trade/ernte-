@@ -1,0 +1,280 @@
+// ===== ERNTE · KURACÍ TRUS – Baromfi (dodávateľ) → ERNTE → BPS (koncový odberateľ), doprava VALKO =====
+// Tok: dodávateľ nahlási vývoz → VALKO schváli a pridelí autá (ŠPZ) → BPS hneď vidí termín, tony, autá a cenu
+// a doplní miesto vykládky → naložené / prevzaté (váženie) → podklady k fakturácii pre každú stranu.
+// Ceny a ekonomika sa počítajú v databáze; každý vidí len to, čo smie (dodávateľ výkup, BPS predaj, VALKO bez cien).
+(function(){
+const e=x=>typeof esc==="function"?esc(x):String(x??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const f2=(x,d=2)=>typeof fmt==="function"?fmt(x,d):(+x).toFixed(d);
+const num=v=>{const x=parseFloat(String(v??"").replace(/\s/g,"").replace(",","."));return Number.isFinite(x)?x:null};
+const dSK=d=>d?new Date(d+(String(d).length===10?"T12:00:00":"")).toLocaleDateString(T&&T.P&&T.lang==="hu"?"hu-HU":"sk-SK",{weekday:"short",day:"numeric",month:"numeric",year:"numeric"}):"";
+const dtSK=d=>d?new Date(d).toLocaleString("sk-SK",{day:"numeric",month:"numeric",hour:"2-digit",minute:"2-digit"}):"";
+const today=()=>new Date(Date.now()-new Date().getTimezoneOffset()*6e4).toISOString().slice(0,10);
+const tm=()=>typeof toast==="function"?toast:alert;
+const STS={nahlasene:["na schválenie","w"],schvalene:["schválené · autá pridelené","b"],na_ceste:["na ceste","b"],dorucene:["doručené",""],zrusene:["zrušené","g"],zamietnute:["zamietnuté","r"]};
+const LST={pridelene:["pridelené","b"],nalozene:["naložené","w"],vylozene:["vyložené",""]};
+const pill=(m,s)=>{const x=m[s]||[s,"g"];return `<span class="pill ${x[1]}">${e(x[0])}</span>`};
+const OPEN=["nahlasene","schvalene","na_ceste"],BILL=["schvalene","na_ceste","dorucene"];
+let T={sec:"",d:null,flt:"open",open:null,from:"",to:"",lang:null,P:null,psec:"",edit:null,pf:""};
+const tel=p=>String(p||"").replace(/\D/g,"").replace(/^00/,"").replace(/^0/,"421");
+const errMsg=r=>{const m=(r&&r.error&&r.error.message)||"";return /trus_/.test(m)&&/does not exist|could not find/i.test(m)?"Modul kurací trus sa zapne po aktualizácii databázy (pár minút).":m};
+
+// ---------- tlač podkladov ----------
+function printDoc(title,body){const w=window.open("","_blank");if(!w){tm()("Povoľte vyskakovacie okná pre tlač.");return}
+  w.document.write(`<!doctype html><html lang="sk"><head><meta charset="utf-8"><title>${e(title)}</title><style>
+  @page{size:A4;margin:14mm}body{font:12px/1.45 "Segoe UI",Arial,sans-serif;color:#111;margin:0}h1{font-size:19px;margin:0 0 2px}h2{font-size:14px;margin:16px 0 6px}
+  .hd{display:flex;justify-content:space-between;gap:16px;border-bottom:2px solid #3f6212;padding-bottom:8px;margin-bottom:10px}.hd small{color:#555}
+  .pt{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin:10px 0}.pt div{border:1px solid #ccc;border-radius:6px;padding:8px}.pt h3{margin:0 0 4px;font-size:11px;text-transform:uppercase;color:#3f6212;letter-spacing:.06em}
+  table{width:100%;border-collapse:collapse;margin-top:6px}th,td{border-bottom:1px solid #ddd;padding:5px 6px;text-align:left;vertical-align:top}th{background:#f3f5ef;font-size:11px}td.r,th.r{text-align:right;white-space:nowrap}
+  tfoot td{font-weight:700;border-top:2px solid #333}.sum{margin-left:auto;width:320px;margin-top:10px}.sum td{border:0;padding:3px 6px}.sum tr.t td{font-size:15px;font-weight:800;border-top:2px solid #333}
+  .note{margin-top:14px;color:#444;font-size:11px;border-top:1px solid #ccc;padding-top:8px}.btn{position:fixed;right:14px;bottom:14px;padding:10px 16px;font-weight:700;border:0;border-radius:8px;background:#3f6212;color:#fff}@media print{.btn{display:none}}
+  </style></head><body><button class="btn" onclick="print()">Tlačiť / PDF</button>${body}</body></html>`);w.document.close();setTimeout(()=>{try{w.focus();w.print()}catch(x){}},400)}
+const party=(h,p)=>`<div><h3>${e(h)}</h3><b>${e(p.name||"")}</b><br>${e(p.addr||"")}${p.ico?`<br>IČO: ${e(p.ico)}`:""}${p.dic?` · DIČ: ${e(p.dic)}`:""}${p.icdph||p.ic_dph?`<br>IČ DPH: ${e(p.icdph||p.ic_dph)}`:""}</div>`;
+const ERN={name:"ERNTE spol. s r.o.",addr:"Zbudza 141, 072 23 Zbudza, Slovensko",ico:"52 341 356"};
+const VALKO={name:"VALKO s.r.o.",addr:"Zbudza 141, 072 23 Zbudza, Slovensko",ico:"53 365 241",icdph:"SK2121345424"};
+const inPer=(o,a,b)=>(!a||o.day>=a)&&(!b||o.day<=b);
+const perTxt=(a,b)=>a||b?`${a?dSK(a):"…"} – ${b?dSK(b):"…"}`:"všetky obdobia";
+// riadky: dodávateľ podľa nakládky, odberateľ podľa vykládky (nezvážené auto = plán)
+function rowsOf(o,kind){const L=(o.loads||[]).filter(l=>l.status!=="zrusene"),pl=(o.sum&&o.sum.tons_plan||o.trucks_n*25)/Math.max(1,o.trucks_n);
+  if(!L.length)return [{day:o.day,no:o.no,spz:"—",ticket:"",t:+(o.sum&&o.sum.tons_plan)||pl*o.trucks_n,plan:true}];
+  return L.map(l=>{const t=kind==="buy"?(l.load_t??l.unload_t):(l.unload_t??l.load_t);return {day:o.day,no:o.no,spz:l.spz,ticket:l.ticket||"",t:t??pl,plan:t==null}})}
+function docSupplier(O,me,buyer,a,b,lang){const H=lang==="hu";const L=O.filter(o=>BILL.includes(o.status)&&inPer(o,a,b));
+  let R=[],tot=0,eur=0;for(const o of L){const pr=+(o.sum&&o.sum.buy)||0;for(const r of rowsOf(o,"buy")){R.push({...r,site:o.site,pr,sum:r.t*pr});tot+=r.t;eur+=r.t*pr}}
+  return `<div class="hd"><div><h1>${H?"Elszámolás – csirketrágya":"Podklad k faktúre – kurací trus"}</h1><small>${H?"Időszak":"Obdobie"}: ${e(perTxt(a,b))} · ${H?"készült":"vyhotovené"} ${e(new Date().toLocaleDateString("sk-SK"))}</small></div><div style="text-align:right"><b>${e(me.name)}</b><br><small>→ ${e(buyer.name)}</small></div></div>
+  <div class="pt">${party(H?"Eladó (szállító)":"Dodávateľ (predávajúci)",me)}${party(H?"Vevő":"Odberateľ (kupujúci)",buyer)}</div>
+  <table><thead><tr><th>${H?"Dátum":"Dátum"}</th><th>${H?"Szám":"Číslo"}</th><th>${H?"Telep":"Farma"}</th><th>${H?"Rendszám":"ŠPZ"}</th><th>${H?"Mérlegjegy":"Vážny lístok"}</th><th class="r">${H?"Nettó t":"Netto t"}</th><th class="r">€/t</th><th class="r">${H?"Összesen €":"Spolu €"}</th></tr></thead>
+  <tbody>${R.map(r=>`<tr><td>${e(dSK(r.day))}</td><td>${e(r.no)}</td><td>${e(r.site)}</td><td>${e(r.spz)}</td><td>${e(r.ticket)}</td><td class="r">${f2(r.t,3)}${r.plan?" *":""}</td><td class="r">${f2(r.pr)}</td><td class="r">${f2(r.sum)}</td></tr>`).join("")||`<tr><td colspan="8">${H?"Nincs szállítás.":"Žiadne vývozy v období."}</td></tr>`}</tbody>
+  <tfoot><tr><td colspan="5">${H?"Összesen":"Spolu"}</td><td class="r">${f2(tot,3)}</td><td></td><td class="r">${f2(eur)} €</td></tr></tfoot></table>
+  <table class="sum"><tr class="t"><td>${H?"Fizetendő (ÁFA nélkül)":"K úhrade bez DPH"}</td><td class="r">${f2(eur)} €</td></tr></table>
+  <div class="note">${H?"Közösségen belüli termékértékesítés – az ÁFA-t a vevő fizeti meg (fordított adózás). Vevő közösségi adószáma":"Dodanie tovaru do iného členského štátu – oslobodené od DPH, daň platí odberateľ (prenesenie daňovej povinnosti). IČ DPH odberateľa"}: ${e(buyer.icdph||"[doplniť]")}.<br>${H?"* nem mért – tervezett mennyiség.":"* nezvážené – plánované množstvo."} ${H?"Ez elszámolási alap, nem számla.":"Ide o podklad k faktúre, nie o daňový doklad."}</div>`}
+function docBuyer(O,me,seller,a,b){const L=O.filter(o=>BILL.includes(o.status)&&inPer(o,a,b));
+  let R=[],tt=0,te=0,trips=0,tr=0,inv=null,vat=23;for(const o of L){const S=o.sum||{};inv=S.inv||inv;vat=+S.vat||vat;for(const r of rowsOf(o,"sell")){R.push({...r,origin:o.origin||o.site,pr:+S.sell||0,sum:r.t*(+S.sell||0)});tt+=r.t;te+=r.t*(+S.sell||0)}
+    trips+=+S.trips||0;tr+=+S.trans_sum||0}
+  const own=inv!=="valko",base=te+(own?tr:0),dph=base*vat/100;
+  return `<div class="hd"><div><h1>Podklad k faktúre – kurací trus${own?" a doprava":""}</h1><small>Obdobie: ${e(perTxt(a,b))} · vyhotovené ${e(new Date().toLocaleDateString("sk-SK"))}</small></div><div style="text-align:right"><b>${e(seller.name)}</b><br><small>→ ${e(me.name)}</small></div></div>
+  <div class="pt">${party("Dodávateľ (predávajúci)",seller)}${party("Odberateľ",me)}</div>
+  <h2>Kurací trus</h2><table><thead><tr><th>Dátum</th><th>Číslo</th><th>Pôvod</th><th>ŠPZ</th><th class="r">Netto t</th><th class="r">€/t</th><th class="r">Spolu €</th></tr></thead>
+  <tbody>${R.map(r=>`<tr><td>${e(dSK(r.day))}</td><td>${e(r.no)}</td><td>${e(r.origin)}</td><td>${e(r.spz)}</td><td class="r">${f2(r.t,3)}${r.plan?" *":""}</td><td class="r">${f2(r.pr)}</td><td class="r">${f2(r.sum)}</td></tr>`).join("")||`<tr><td colspan="7">Žiadne dodávky v období.</td></tr>`}</tbody>
+  <tfoot><tr><td colspan="4">Spolu trus</td><td class="r">${f2(tt,3)}</td><td></td><td class="r">${f2(te)} €</td></tr></tfoot></table>
+  <h2>Doprava MKD 40 t ${own?"":"(fakturuje VALKO s.r.o. samostatne)"}</h2><table><thead><tr><th>Dátum</th><th>Číslo</th><th>Pôvod</th><th class="r">Jazdy</th><th class="r">Km otočka</th><th class="r">€/km</th><th class="r">Spolu €</th></tr></thead>
+  <tbody>${L.map(o=>`<tr><td>${e(dSK(o.day))}</td><td>${e(o.no)}</td><td>${e(o.origin||o.site)}</td><td class="r">${e(o.sum.trips)}</td><td class="r">${f2(o.sum.km_turn,0)}</td><td class="r">${f2(o.sum.price_km)}</td><td class="r">${f2(o.sum.trans_sum)}</td></tr>`).join("")}</tbody>
+  <tfoot><tr><td colspan="3">Spolu doprava</td><td class="r">${trips}</td><td colspan="2"></td><td class="r">${f2(tr)} €</td></tr></tfoot></table>
+  <table class="sum"><tr><td>Základ DPH</td><td class="r">${f2(base)} €</td></tr><tr><td>DPH ${f2(vat,0)} %</td><td class="r">${f2(dph)} €</td></tr><tr class="t"><td>K úhrade s DPH</td><td class="r">${f2(base+dph)} €</td></tr></table>
+  <div class="note">Trus sa fakturuje podľa váženia na vykládke, doprava za jazdu (km otočka × €/km). * nezvážené – plánované množstvo. Ide o podklad k faktúre, nie o daňový doklad.</div>`}
+function docValko(O,a,b,cfg){const L=O.filter(o=>BILL.includes(o.status)&&inPer(o,a,b));let tr=0,trips=0;for(const o of L){tr+=+o.sum.trans_sum||0;trips+=+o.sum.trips||0}
+  const vat=+(cfg.vat_pct??23),dph=tr*vat/100,to=cfg.trans_invoicer==="valko"?{name:L[0]&&L[0].buyer||"BPS Kamenica nad Cirochou",addr:"Kamenica nad Cirochou"}:{...ERN,icdph:cfg.ernte_icdph};
+  return `<div class="hd"><div><h1>Podklad k faktúre – doprava kuracieho trusu</h1><small>Obdobie: ${e(perTxt(a,b))} · MKD Maďarsko → Slovensko</small></div><div style="text-align:right"><b>VALKO s.r.o.</b><br><small>→ ${e(to.name)}</small></div></div>
+  <div class="pt">${party("Dopravca",VALKO)}${party("Objednávateľ",to)}</div>
+  <table><thead><tr><th>Dátum</th><th>Číslo</th><th>Nakládka</th><th>Vykládka</th><th>Autá (ŠPZ)</th><th class="r">Jazdy</th><th class="r">Km otočka</th><th class="r">€/km</th><th class="r">Spolu €</th></tr></thead>
+  <tbody>${L.map(o=>`<tr><td>${e(dSK(o.day))}</td><td>${e(o.no)}</td><td>${e(o.site)}</td><td>${e(o.unload&&o.unload.name||"")}</td><td>${e((o.loads||[]).map(l=>l.spz).join(", "))}</td><td class="r">${e(o.sum.trips)}</td><td class="r">${f2(o.sum.km_turn,0)}</td><td class="r">${f2(o.sum.price_km)}</td><td class="r">${f2(o.sum.trans_sum)}</td></tr>`).join("")||`<tr><td colspan="9">Žiadne jazdy v období.</td></tr>`}</tbody>
+  <tfoot><tr><td colspan="5">Spolu</td><td class="r">${trips}</td><td colspan="2"></td><td class="r">${f2(tr)} €</td></tr></tfoot></table>
+  <table class="sum"><tr><td>Základ DPH</td><td class="r">${f2(tr)} €</td></tr><tr><td>DPH ${f2(vat,0)} %</td><td class="r">${f2(dph)} €</td></tr><tr class="t"><td>K úhrade s DPH</td><td class="r">${f2(tr+dph)} €</td></tr></table>
+  <div class="note">Doprava sa fakturuje za jazdu (otočka Kamenica nad Cirochou → farma → vykládka). Ide o podklad k faktúre, nie o daňový doklad. DPH over s účtovníčkou.</div>`}
+
+// ---------- spoločné kúsky ----------
+const perForm=(id)=>`<form class="f trper" id="${id}"><label>Od<input type="date" name="from" value="${e(T.from)}"></label><label>Do<input type="date" name="to" value="${e(T.to)}"></label>
+  <div class="w btns seg2">${[["m","Tento mesiac"],["pm","Minulý mesiac"],["a","Všetko"]].map(x=>`<button type="button" data-trper="${x[0]}">${x[1]}</button>`).join("")}</div></form>`;
+function setPer(k){const d=new Date(),y=d.getFullYear(),m=d.getMonth(),iso=x=>new Date(x.getTime()-x.getTimezoneOffset()*6e4).toISOString().slice(0,10);
+  if(k==="m"){T.from=iso(new Date(y,m,1));T.to=iso(new Date(y,m+1,0))}else if(k==="pm"){T.from=iso(new Date(y,m-1,1));T.to=iso(new Date(y,m,0))}else{T.from="";T.to=""}}
+function loadsHTML(o,mode){const L=o.loads||[];if(!L.length)return "";
+  const live=["schvalene","na_ceste","dorucene"].includes(o.status);
+  return `<div class="trl">${L.map(l=>{const can=live&&(mode==="staff"||(o.status!=="dorucene"&&l.status!=="vylozene"));
+    return `<div class="trlr"><div class="trlh"><b>🚛 ${e(l.spz)}</b>${l.driver?`<small>${e(l.driver)}</small>`:""}${pill(LST,l.status)}</div>
+    <div class="trlw">${l.load_t!=null?`<span>⬆️ nakládka <b>${f2(l.load_t,3)} t</b>${l.ticket?` · lístok ${e(l.ticket)}`:""}</span>`:""}${l.unload_t!=null?`<span>⬇️ vykládka <b>${f2(l.unload_t,3)} t</b></span>`:""}${l.unloaded_at?`<small>prevzaté ${e(dtSK(l.unloaded_at))}</small>`:l.loaded_at?`<small>naložené ${e(dtSK(l.loaded_at))}</small>`:""}</div>
+    ${can?`<details class="trap trwd"${(mode==="buy"&&l.status==="nalozene")||(mode==="sup"&&l.status==="pridelene"&&o.day<=today())?" open":""}><summary>⚖️ ${mode==="sup"?(T.lang==="hu"?"Megrakva – nettó súly":"Naložené – zadať netto"):mode==="buy"?"Prevzaté – zadať netto z váhy":"Váženie"}</summary><form class="f trw" data-trw="${e(l.id)}" data-mode="${mode}">${mode!=="buy"?`<label>${mode==="sup"&&T.lang==="hu"?"Rakodási nettó t":"Netto nakládka t"}<input name="load" inputmode="decimal" value="${l.load_t!=null?String(l.load_t).replace(".",","):""}" placeholder="napr. 24,6"></label><label>${mode==="sup"&&T.lang==="hu"?"Mérlegjegy":"Vážny lístok"}<input name="ticket" value="${e(l.ticket||"")}"></label>`:""}
+      ${mode!=="sup"?`<label>Netto vykládka t<input name="unload" inputmode="decimal" value="${l.unload_t!=null?String(l.unload_t).replace(".",","):""}" placeholder="napr. 24,4"></label>`:""}
+      <div class="w btns"><button class="lime">${mode==="sup"?(T.lang==="hu"?"✓ Megrakva":"✓ Naložené"):mode==="buy"?"✓ Prevzaté":"💾 Uložiť váženie"}</button></div></form></details>`:""}</div>`}).join("")}</div>`}
+
+// ================= ZAMESTNANCI (ERNTE / VALKO) =================
+async function loadStaffT(){const r=await sb.rpc("trus_staff");T.d=r.error?{err:errMsg(r)}:r.data;if(typeof TAB!=="undefined"&&TAB==="trus")renderStaff()}
+window.trusNew=()=>T.d&&!T.d.err?(T.d.orders||[]).filter(o=>o.status==="nahlasene").length:0;
+window.vTrus=function(){const D=T.d;if(!D){loadStaffT();return `<div class="card"><div class="s">Načítavam kurací trus…</div></div>`}
+  if(D.err)return `<div class="card"><div class="s">${e(D.err)}</div></div>`;
+  const nw=(D.orders||[]).filter(o=>o.status==="nahlasene").length,run=(D.orders||[]).filter(o=>["schvalene","na_ceste"].includes(o.status)).length;
+  const SEC=[["vyv","🚛","Vývozy a autá",nw?`${nw} na schválenie · ${run} v behu`:`${run} v behu · nahlásenia od dodávateľa`]];
+  if(D.price)SEC.push(["fak","🧾","Fakturácia","podklady: Baromfi → ERNTE · VALKO → ERNTE · ERNTE → BPS"],["cen","💶","Cenník pre odberateľa","21 miest nakládky · trus + doprava €/t"]);
+  if(D.own)SEC.push(["eko","📊","Ekonomika trás","úplné náklady súpravy · zisk · stratové trasy"],["nas","⚙️","Nastavenia a partneri","ceny · km trás · prihlásenia Baromfi a BPS"]);
+  let h=`<div class="zt trz"><h2>🐔 Kurací trus ${T.sec?`<button type="button" class="ztb" data-trsec="">← späť</button>`:""}</h2>`;
+  if(!T.sec)return h+`<div class="trflow"><span>🇭🇺 Baromfi Kft<small>nahlási vývoz</small></span><i>→</i><span>🚛 VALKO<small>schváli · ŠPZ</small></span><i>→</i><span>🏭 BPS Kamenica<small>vidí termín, tony, cenu</small></span><i>→</i><span>🧾 ERNTE<small>fakturácia</small></span></div>
+    <div class="zgrid">${SEC.map(s=>`<button type="button" class="zbtn" data-trsec="${s[0]}"><span>${s[1]}</span><b>${s[2]}${s[0]==="vyv"&&nw?` <em class="acnt">${nw} nové</em>`:""}</b><small>${e(s[3])}</small></button>`).join("")}</div>
+    <div class="s">🔒 Baromfi vidí iba výkupnú cenu a svoje vývozy. BPS vidí iba predajnú cenu, dopravu a svoje dodávky – nie dodávateľa ani nákup. VALKO dispečing vidí autá a miesta, bez cien.</div></div>`;
+  if(T.sec==="vyv")h+=ordersHTML(D);else if(T.sec==="fak"&&D.price)h+=fakHTML(D);else if(T.sec==="cen"&&D.price)h+=cenHTML(D);else if(T.sec==="eko"&&D.own)h+=ekoHTML(D);else if(T.sec==="nas"&&D.own)h+=nasHTML(D);
+  return h+`</div>`};
+function ordersHTML(D){const O=D.orders||[],F={open:o=>OPEN.includes(o.status),nahlasene:o=>o.status==="nahlasene",dorucene:o=>o.status==="dorucene",all:()=>true},L=O.filter(F[T.flt]||F.open);
+  const op=O.filter(F.open),tp=op.reduce((s,o)=>s+(+(o.sum&&o.sum.tons_plan)||0),0),tr=op.reduce((s,o)=>s+(+o.trucks_n||0),0);
+  let h=`<div class="hrk"><div class="${O.some(F.nahlasene)?"wn":""}"><small>Na schválenie</small><b>${O.filter(F.nahlasene).length}</b></div><div><small>Otvorené vývozy</small><b>${op.length} · ${tr} áut</b></div><div><small>Plán v behu</small><b>${f2(tp,0)} t</b></div>
+    ${D.price?`<div class="ps"><small>Doručené tento mesiac</small><b>${f2(O.filter(o=>o.status==="dorucene"&&String(o.day).slice(0,7)===today().slice(0,7)).reduce((s,o)=>s+(+o.sum.t_sell||0),0),1)} t</b></div>`:""}</div>
+    <div class="btns seg2">${[["open","Otvorené"],["nahlasene","Na schválenie"],["dorucene","Doručené"],["all","Všetky"]].map(x=>`<button type="button" data-trflt="${x[0]}" aria-pressed="${T.flt===x[0]}">${x[1]}</button>`).join("")}</div>`;
+  if(!L.length)return h+`<div class="card"><div class="s">Žiadne vývozy v tomto zozname.${!O.length?" Keď Baromfi nahlási vývoz, objaví sa tu a príde ti upozornenie do mobilu.":""}</div></div>`;
+  return h+`<div class="agl">${L.map(o=>orderCard(o,D)).join("")}</div>`}
+function orderCard(o,D){const S=o.sum||{},U=o.unload,canAp=["nahlasene","schvalene"].includes(o.status),used=new Set((o.loads||[]).map(l=>String(l.spz).replace(/\s/g,"").toUpperCase()));
+  return `<div class="card agc trc ${o.status}"><div class="row"><span class="t">${e(o.no)} · ${e(o.site)}</span>${pill(STS,o.status)}</div>
+  <div class="s"><b>${e(o.supplier)}</b> → ${e(o.buyer||"odberateľ nezadaný")} · nahlásené ${e(dtSK(o.created_at))}</div>
+  <div class="zsg"><div class="hl"><small>Termín nakládky</small><b>📅 ${e(dSK(o.day))}${o.time?" · "+e(o.time):""}</b></div><div><small>Autá</small><b>${e(o.trucks_n)} × 40 t</b></div><div><small>Plán</small><b>${f2(S.tons_plan,1)} t</b></div><div><small>Km otočka</small><b>${f2(S.km_turn,0)} km</b></div>
+   ${S.tons_load!=null?`<div><small>Naložené</small><b>${f2(S.tons_load,2)} t</b></div>`:""}${S.tons_unload!=null?`<div><small>Prevzaté BPS</small><b>${f2(S.tons_unload,2)} t</b></div>`:""}${S.loss_t?`<div class="${Math.abs(S.loss_t)>0.5?"wn":""}"><small>Rozdiel váženia</small><b>${f2(S.loss_t,2)} t</b></div>`:""}
+   ${D.price&&S.sell!=null?`<div><small>Trus BPS</small><b>${f2(S.trus_sum,0)} €</b></div><div><small>Doprava</small><b>${f2(S.trans_sum,0)} €</b></div><div><small>Výkup Baromfi</small><b>${f2(S.buy_sum,0)} €</b></div>`:""}
+   ${D.own&&S.cost_sum!=null?`<div class="ps"><small>Zisk zákazky (trus + doprava)</small><b>${f2((S.trus_sum-S.buy_sum)+(S.trans_sum-S.cost_sum),0)} €</b></div>`:""}</div>
+  <div class="s">📍 Nakládka: <b>${e(o.site)}</b>${o.site_addr?", "+e(o.site_addr):""}, Maďarsko</div>
+  <div class="s">🏁 Vykládka: ${U?`<b>${e(U.name)}</b>${U.addr?", "+e(U.addr):""}${U.contact?" · "+e(U.contact):""}`:`<i>BPS ešte nezadalo – predvolene areál BPS Kamenica nad Cirochou</i>`}${o.unload_note?`<br>💬 BPS: ${e(o.unload_note)}`:""}</div>
+  ${o.note?`<div class="s">💬 Baromfi: ${e(o.note)}</div>`:""}${o.reply?`<div class="s">↩️ ${e(o.reply)}</div>`:""}
+  ${loadsHTML(o,"staff")}
+  ${canAp?`<details class="trap"${o.status==="nahlasene"?" open":""}><summary>${o.status==="nahlasene"?"✓ Schváliť a prideliť autá":"✏️ Zmeniť autá alebo termín"}</summary><form class="f" data-trap="${e(o.id)}">
+    <label>Dátum<input type="date" name="day" value="${e(o.day)}"></label><label>Čas<input name="time" value="${e(o.time||"")}" placeholder="napr. 07:00"></label>
+    <div class="w trtk"><small>Autá VALKO – zaškrtni ${e(o.trucks_n)} ${o.trucks_n==1?"auto":"autá"}:</small>${(D.trucks||[]).map(t=>`<label class="trck"><input type="checkbox" name="tk" value="${e(t.no)}"${used.has(String(t.spz).replace(/\s/g,"").toUpperCase())?" checked":""}><span><b>${e(t.spz)}</b><small>č. ${e(t.no)}${t.driver?" · "+e(t.driver):""}</small></span></label>`).join("")||`<div class="s">V zozname áut VALKO nie sú autá – napíš ŠPZ nižšie.</div>`}</div>
+    <label class="w">Iné ŠPZ (čiarkou)<input name="extra" placeholder="napr. MI 123AB, MI 456CD"></label>
+    <label class="w">Správa pre Baromfi<input name="reply" value="${e(o.reply||"")}" placeholder="napr. autá prídu o 7:00, nakládka čelným nakladačom"></label>
+    <div class="w btns"><button class="pri" name="act" value="ok">✓ ${o.status==="nahlasene"?"Schváliť a poslať autá":"Uložiť zmenu"}</button><button class="ghost" name="act" value="no">✕ Zamietnuť</button></div></form></details>`:""}
+  </div>`}
+function cenHTML(D){const C=D.cfg||{},S=(D.sites||[]).filter(s=>s.active);
+  return `<div class="card"><div class="s">Toto vidí BPS v aplikácii. Trus <b>${f2(C.sell_eur_t)} €/t</b> + doprava <b>${f2(C.trans_eur_km)} €/km</b> otočky, náklad ${f2(C.load_t,0)} t. Ceny bez DPH.</div></div>
+  <div class="card trtab"><table><thead><tr><th>Miesto nakládky</th><th class="r">Km otočka</th><th class="r">Doprava €/jazda</th><th class="r">Doprava €/t</th><th class="r">Trus €/t</th><th class="r">Spolu €/t</th></tr></thead>
+  <tbody>${S.map(s=>`<tr><td>${e(s.name)}${s.km_verified?"":` <span class="pill w" title="km z modelu – over v MKD navigácii">odhad km</span>`}</td><td class="r">${f2(s.calc.km,0)}</td><td class="r">${f2(s.calc.trans,0)}</td><td class="r">${f2(s.calc.trans_t)}</td><td class="r">${f2(C.sell_eur_t)}</td><td class="r"><b>${f2(s.calc.total_t)}</b></td></tr>`).join("")}</tbody></table></div>`}
+function fakHTML(D){const O=D.orders||[],C=D.cfg||{},L=O.filter(o=>o.status!=="zrusene"&&o.status!=="zamietnute"&&inPer(o,T.from,T.to));
+  const t=k=>L.reduce((s,o)=>s+(+o.sum[k]||0),0),bps=D.partners.find(p=>p.kind==="odberatel")||{name:"BPS"},bar=D.partners.find(p=>p.kind==="dodavatel")||{name:"Baromfi Kft"},vat=+(C.vat_pct??23),inv=C.trans_invoicer||"ernte";
+  return perForm("trPerF")+`<div class="hrk"><div><small>Vývozy v období</small><b>${L.length} · ${L.reduce((s,o)=>s+(+o.sum.trips||0),0)} jázd</b></div><div><small>Prevzaté BPS</small><b>${f2(t("t_sell"),2)} t</b></div><div><small>Naložené u Baromfi</small><b>${f2(t("t_buy"),2)} t</b></div>${L.some(o=>!o.sum.final)?`<div class="wn"><small>Nedokončené</small><b>${L.filter(o=>!o.sum.final).length} – čiastočne plán</b></div>`:""}</div>
+  <div class="trdocs">
+   <div class="card"><div class="t">🇭🇺 ${e(bar.name)} → ERNTE</div><div class="s">výkup trusu podľa nakládky · bez DPH (dodanie z HU)</div><div class="trbig">${f2(t("buy_sum"))} €</div><button type="button" data-trdoc="sup">🖨️ Podklad / PDF</button></div>
+   <div class="card"><div class="t">🚛 VALKO → ${inv==="valko"?e(bps.name):"ERNTE"}</div><div class="s">doprava za jazdy · + DPH ${f2(vat,0)} %</div><div class="trbig">${f2(t("trans_sum"))} €<small> + DPH ${f2(t("trans_sum")*vat/100)} €</small></div><button type="button" data-trdoc="valko">🖨️ Podklad / PDF</button></div>
+   <div class="card"><div class="t">🏭 ERNTE → ${e(bps.name)}</div><div class="s">trus podľa vykládky${inv==="ernte"?" + doprava":""} · + DPH ${f2(vat,0)} %</div><div class="trbig">${f2(t("trus_sum")+(inv==="ernte"?t("trans_sum"):0))} €<small> s DPH ${f2((t("trus_sum")+(inv==="ernte"?t("trans_sum"):0))*(1+vat/100))} €</small></div><button type="button" data-trdoc="buy">🖨️ Podklad / PDF</button></div>
+  </div>${D.own?`<div class="card"><div class="s">📊 Zisk ERNTE na truse v období: <b>${f2(t("trus_sum")-t("buy_sum"))} €</b> · zisk VALKO na doprave (podľa úplných nákladov): <b>${f2(t("trans_sum")-t("cost_sum"))} €</b> · spolu skupina <b>${f2(t("trus_sum")-t("buy_sum")+t("trans_sum")-t("cost_sum"))} €</b></div></div>`:""}
+  ${!C.ernte_icdph&&D.own?`<div class="card"><div class="s">⚠️ Doplň IČ DPH ERNTE v Nastaveniach – Baromfi ho potrebuje na faktúre (prenesenie daňovej povinnosti).</div></div>`:""}`}
+function ekoHTML(D){const C=D.cfg||{},S=(D.sites||[]).filter(s=>s.active).map(s=>({...s,k:s.calc})).sort((a,b)=>a.k.job_profit-b.k.job_profit),loss=S.filter(s=>s.k.profit<0),low=S.filter(s=>s.k.profit>=0&&s.k.margin<C.min_margin_pct);
+  const sum=k=>S.reduce((a,s)=>a+(+s.k[k]||0),0);
+  return `<div class="hrk"><div><small>Trás</small><b>${S.length}</b></div><div class="${loss.length?"wn":""}"><small>Stratová doprava</small><b>${loss.length}${loss.length?" · "+e(loss.map(s=>s.name).join(", ")):""}</b></div><div><small>Marža dopravy (priemer)</small><b>${f2(sum("profit")/Math.max(1,sum("trans"))*100,1)} %</b></div><div class="ps"><small>Zisk 1 jazdy na každú trasu</small><b>${f2(sum("job_profit"),0)} €</b></div></div>
+  ${loss.length||low.length?`<div class="card trwarn"><div class="t">⚠️ Doprava pod nákladmi</div><div class="s">Pri ${f2(C.trans_eur_km)} €/km ${loss.length?`sú <b>${e(loss.map(s=>s.name).join(", "))}</b> stratové`:""}${low.length?`${loss.length?"; ":""}pod ${f2(C.min_margin_pct,0)} % marže: ${e(low.map(s=>s.name).join(", "))}`:""}. Odporúčaná minimálna cena: ${[...loss,...low].map(s=>`${e(s.name)} <b>${f2(s.k.min_km,2)} €/km</b>`).join(" · ")}. Nastavíš ju pri trase v Nastaveniach (vlastná cena €/km).</div><div class="s">Asi ${f2(sum("trus_profit")/Math.max(1,sum("job_profit"))*100,0)} % zisku tvorí marža na truse – sleduj výkupnú a predajnú cenu.</div></div>`:""}
+  <div class="card trtab"><table><thead><tr><th>Trasa</th><th class="r">Km</th><th class="r">Nafta</th><th class="r">Mýto</th><th class="r">Vodič</th><th class="r">Servis+pneu+AdBlue</th><th class="r">Leasing, poistky, réžia</th><th class="r">Úplné náklady</th><th class="r">€/km</th><th class="r">Tržba</th><th class="r">Zisk doprava</th><th class="r">Zisk trus</th><th class="r">Zákazka</th></tr></thead>
+  <tbody>${S.map(s=>{const k=s.k;return `<tr class="${k.profit<0?"neg":""}"><td>${e(s.name)}${s.km_verified?"":" *"}</td><td class="r">${f2(k.km,0)}</td><td class="r">${f2(k.fuel,0)}</td><td class="r">${f2(k.toll,0)}</td><td class="r">${f2(k.driver,0)}</td><td class="r">${f2(k.service+k.tyres+k.adblue,0)}</td><td class="r">${f2(k.fixed+k.overhead,0)}</td><td class="r">${f2(k.full,0)}</td><td class="r">${f2(k.full_km,2)}</td><td class="r">${f2(k.trans,0)}</td><td class="r"><b>${f2(k.profit,0)}</b></td><td class="r">${f2(k.trus_profit,0)}</td><td class="r"><b>${f2(k.job_profit,0)}</b></td></tr>`}).join("")}</tbody></table>
+  <div class="s">* km sú orientačné z Excelu – presné km a mýto zadaj pri trase po overení v MKD navigácii / HU-GO. Model: súprava 40 t, 5 náprav, EURO VI, ${f2(C.fuel_l100,0)} l/100 km, nafta ${f2(C.fuel_eur_l)} €/l, vodič ${f2(C.driver_eur_km)} €/km, ${f2(C.km_year,0)} km/rok.</div></div>`}
+function nasHTML(D){const C=D.cfg||{},P=D.partners||[],S=D.sites||[];const fld=(k,l,u)=>`<label>${l}<input name="${k}" inputmode="decimal" value="${C[k]!=null?String(C[k]).replace(".",","):""}">${u?`<small>${u}</small>`:""}</label>`;
+  return `<form class="card f" id="trCfg"><div class="w t">💶 Ceny (bez DPH)</div>${fld("buy_eur_t","Výkup od Baromfi €/t")}${fld("sell_eur_t","Predaj BPS €/t")}${fld("trans_eur_km","Doprava €/km otočky")}${fld("load_t","Náklad na jazdu t")}${fld("vat_pct","DPH %")}
+   <label>Dopravu fakturuje BPS<select name="trans_invoicer"><option value="ernte"${C.trans_invoicer!=="valko"?" selected":""}>ERNTE (trus + doprava spolu)</option><option value="valko"${C.trans_invoicer==="valko"?" selected":""}>VALKO priamo</option></select></label>
+   <label>IČ DPH ERNTE<input name="ernte_icdph" value="${e(C.ernte_icdph||"")}" placeholder="SK…"></label><label>DIČ ERNTE<input name="ernte_dic" value="${e(C.ernte_dic||"")}"></label>
+   <div class="w t">🚛 Náklady súpravy 40 t</div>${fld("fuel_l100","Spotreba l/100 km")}${fld("fuel_eur_l","Nafta €/l")}${fld("driver_eur_km","Vodič €/km")}${fld("sk_km","Km otočky po SR")}${fld("sk_toll_km","Mýto SR €/km")}${fld("sk_toll_share","Podiel spoplatnených km SR","0,7 = 70 %")}
+   ${fld("hu_toll_main","Mýto HU hlavná cesta €/km")}${fld("hu_toll_mw","Mýto HU diaľnica €/km")}${fld("hu_toll_share","Podiel spoplatnených km HU")}${fld("hu_mw_share","Podiel HU po diaľnici")}${fld("service_km","Servis €/km")}${fld("tyres_km","Pneumatiky €/km")}
+   ${fld("adblue_pct","AdBlue podiel z nafty","0,04 = 4 %")}${fld("adblue_eur_l","AdBlue €/l")}${fld("fixed_year","Leasing+poistenie+dane €/rok")}${fld("overhead_year","Réžia €/rok")}${fld("km_year","Nájazd km/rok")}${fld("min_margin_pct","Upozorniť pod maržou %")}
+   <div class="w btns"><button class="pri">💾 Uložiť nastavenia</button></div><div class="w s">Nové ceny platia pre nové vývozy. Schválené vývozy majú cenu zmrazenú pri schválení.</div></form>
+  <div class="card"><div class="t">🤝 Partneri a prihlásenia</div>${P.map(p=>`<form class="f trpf" data-trp="${e(p.id)}"><div class="w row"><b>${p.kind==="dodavatel"?"🇭🇺 Dodávateľ":"🏭 Koncový odberateľ"}</b>${p.login?`<span class="pill">prihlásenie: ${e(p.login)}</span>`:`<span class="pill w">bez prihlásenia</span>`}</div>
+    <label class="w">Názov<input name="name" value="${e(p.name)}" required></label><label class="w">Adresa<input name="addr" value="${e(p.addr||"")}"></label><label>IČO<input name="ico" value="${e(p.ico||"")}"></label><label>DIČ<input name="dic" value="${e(p.dic||"")}"></label><label>IČ DPH<input name="ic_dph" value="${e(p.ic_dph||"")}"></label>
+    <label>Kontaktná osoba<input name="contact" value="${e(p.contact||"")}"></label><label>Telefón<input name="phone" value="${e(p.phone||"")}"></label><label>E-mail<input name="email" type="email" value="${e(p.email||"")}"></label>
+    <div class="w btns"><button>💾 Uložiť</button><button type="button" class="lime" data-trlogin="${e(p.id)}">${p.login?"🔑 Nové heslo":"🔑 Vytvoriť prihlásenie"}</button></div></form>`).join("")}</div>
+  <div class="card"><div class="t">📍 Trasy – miesta nakládky (km jedným smerom)</div><div class="s">Po overení km v MKD navigácii zaškrtni „overené“. Mýto otočky € a vlastná cena €/km sú nepovinné – prázdne = model.</div>
+   <div class="trsites">${S.map(s=>`<form class="f trsf" data-trs="${e(s.id)}"><label class="w"><b>${e(s.name)}</b><small>${f2(s.calc.km,0)} km otočka · ${f2(s.calc.full_km,2)} €/km náklad</small></label>
+    <label>Km tam<input name="km_one_way" inputmode="decimal" value="${e(s.km_one_way)}"></label><label>Mýto otočka €<input name="toll_eur" inputmode="decimal" value="${s.toll_eur!=null?e(s.toll_eur):""}" placeholder="${f2(s.calc.toll,0)}"></label>
+    <label>Cena €/km<input name="price_km" inputmode="decimal" value="${s.price_km!=null?e(s.price_km):""}" placeholder="${f2(C.trans_eur_km)}"></label><label class="trck"><input type="checkbox" name="km_verified"${s.km_verified?" checked":""}><span>overené</span></label>
+    <div class="btns"><button>💾</button></div></form>`).join("")}</div>
+   <form class="f" id="trSiteNew"><label class="w">Nová farma (mesto)<input name="name" required placeholder="napr. Kisvárda"></label><label>Km tam<input name="km" inputmode="decimal" required></label><div class="btns"><button class="lime">＋ Pridať</button></div></form></div>`}
+
+// ================= PORTÁL PARTNERA =================
+const HU={"Nahlásiť vývoz":"Szállítás bejelentése","Moje vývozy":"Szállításaim","Vyúčtovanie":"Elszámolás","Farma":"Telep","Dátum nakládky":"Rakodás dátuma","Čas":"Időpont","Počet áut (40 t)":"Kamionok száma (40 t)","Tony spolu (nepovinné)":"Összes tonna (nem kötelező)","Poznámka pre dopravcu":"Megjegyzés a fuvarozónak","Odoslať na schválenie":"Jóváhagyásra küldés","Výkupná cena":"Felvásárlási ár","na schválenie":"jóváhagyásra vár","schválené · autá pridelené":"jóváhagyva · kamionok kiosztva","na ceste":"úton","doručené":"leszállítva","zrušené":"törölve","zamietnuté":"elutasítva","Zrušiť":"Törlés","Upraviť":"Módosítás","Uložiť zmenu":"Mentés","Plán":"Terv","Autá":"Kamionok","Spolu bez DPH":"Összesen ÁFA nélkül","Naložené":"Megrakva","Odberateľ":"Vevő","Podklad / PDF":"Elszámolás / PDF","Zmeniť heslo":"Jelszó módosítása","Odhlásiť":"Kijelentkezés","Žiadne vývozy.":"Nincs szállítás.","Vývozy v období":"Szállítások az időszakban","Tento mesiac":"Ez a hónap","Minulý mesiac":"Előző hónap","Všetko":"Mind","Od":"Tól","Do":"Ig","Odoslané – ERNTE potvrdí autá.":"Elküldve – az ERNTE visszaigazolja a kamionokat.","naložené":"megrakva","pridelené":"kiosztva","vyložené":"lerakva"};
+const tr=s=>T.lang==="hu"?(HU[s]||s):s;
+window.trusPortal=async function(){const r=await sb.rpc("trus_portal");if(r.error||!r.data)return false;T.P=r.data;if(!T.lang){let l=null;try{l=localStorage.getItem("ernte-trus-lang")}catch(x){}T.lang=l||(r.data.me.country==="HU"?"hu":"sk")}
+  if(!T.psec)T.psec=r.data.me.kind==="dodavatel"?"new":"dod";
+  const h=document.getElementById("hS");if(h)h.textContent=r.data.me.name;const t=document.getElementById("hT");if(t)t.textContent="ERNTE · kurací trus";document.title="ERNTE – kurací trus";
+  renderP();if(!window._trusIv)window._trusIv=setInterval(async()=>{if(document.hidden||document.querySelector("#app form :focus"))return;const x=await sb.rpc("trus_portal");if(!x.error&&x.data){T.P=x.data;renderP()}},60e3);return true};
+function renderP(){const P=T.P,sup=P.me.kind==="dodavatel",LS=P.orders||[];
+  const tabs=sup?[["new","➕ "+tr("Nahlásiť vývoz")],["list","🚛 "+tr("Moje vývozy")],["acc","🧾 "+tr("Vyúčtovanie")]]:[["dod","🚛 Dodávky"],["acc","🧾 Cena a fakturácia"],["cen","💶 Cenník"]];
+  let h=`<nav class="tabs trtabs">${tabs.map(t=>`<button type="button" data-trtab="${t[0]}" aria-pressed="${T.psec===t[0]}"><span class="tl">${e(t[1])}</span></button>`).join("")}</nav>
+   <div class="hrow trhr">${sup?`<div class="btns seg2 trlang"><button type="button" data-trlang="sk" aria-pressed="${T.lang!=="hu"}">SK</button><button type="button" data-trlang="hu" aria-pressed="${T.lang==="hu"}">HU</button></div>`:""}<button type="button" class="ztb" data-trpw>🔑 ${tr("Zmeniť heslo")}</button></div><div class="zt trz">`;
+  if(sup){const pr=P.price||{};
+    h+=`<div class="hrk"><div class="ps"><small>${tr("Výkupná cena")}</small><b>${f2(pr.buy)} €/t</b></div><div><small>${tr("Odberateľ")}</small><b>${e(P.buyer.name)}</b></div><div><small>${tr("Autá")}</small><b>40 t · ~${f2(pr.load_t,0)} t</b></div></div>`;
+    if(T.psec==="new"){const ed=T.edit?LS.find(o=>o.id===T.edit):null,S=P.sites||[];
+      h+=`<form class="card f" id="trNew"><div class="w t">${ed?"✏️ "+tr("Upraviť")+" "+e(ed.no):"➕ "+tr("Nahlásiť vývoz")}</div>
+        <label class="w">${tr("Farma")}<select name="site" required>${S.length>1?`<option value="">—</option>`:""}${S.map(s=>`<option value="${e(s.id)}"${ed&&ed.site_id===s.id?" selected":""}>${e(s.name)}</option>`).join("")}</select></label>
+        <label>${tr("Dátum nakládky")}<input type="date" name="day" required min="${today()}" value="${e(ed?ed.day:"")}"></label><label>${tr("Čas")}<input type="time" name="time" value="${e(ed&&ed.time||"07:00")}"></label>
+        <label>${tr("Počet áut (40 t)")}<input name="trucks" type="number" min="1" max="30" required value="${e(ed?ed.trucks_n:1)}"></label><label>${tr("Tony spolu (nepovinné)")}<input name="tons" inputmode="decimal" value="${ed&&ed.tons_plan!=null?e(ed.tons_plan):""}" placeholder="${f2(pr.load_t,0)} t / ${T.lang==="hu"?"kamion":"auto"}"></label>
+        <label class="w">${tr("Poznámka pre dopravcu")}<input name="note" value="${e(ed&&ed.note||"")}" placeholder="${T.lang==="hu"?"pl. homlokrakodó, 2-es kapu":"napr. čelný nakladač, brána 2"}"></label>
+        <div class="w btns"><button class="pri">${ed?"💾 "+tr("Uložiť zmenu"):"📨 "+tr("Odoslať na schválenie")}</button>${ed?`<button type="button" class="ghost" data-tredit="">✕</button>`:""}</div></form>`;
+      const op=LS.filter(o=>OPEN.includes(o.status));if(op.length)h+=`<h3>${tr("Moje vývozy")}</h3>`+op.map(o=>supCard(o)).join("")}
+    else if(T.psec==="list")h+=LS.length?LS.map(o=>supCard(o)).join(""):`<div class="card"><div class="s">${tr("Žiadne vývozy.")}</div></div>`;
+    else{const L=LS.filter(o=>BILL.includes(o.status)&&inPer(o,T.from,T.to));
+      h+=perFormP()+`<div class="hrk"><div><small>${tr("Vývozy v období")}</small><b>${L.length}</b></div><div><small>${tr("Naložené")}</small><b>${f2(L.reduce((s,o)=>s+(+o.sum.tons||0),0),2)} t</b></div><div class="ps"><small>${tr("Spolu bez DPH")}</small><b>${f2(L.reduce((s,o)=>s+(+o.sum.buy_sum||0),0))} €</b></div></div>
+       <div class="card"><button type="button" class="pri" data-trpdoc="sup">🖨️ ${tr("Podklad / PDF")}</button></div>`}}
+  else{const pr=P.price||{};
+    if(T.psec==="dod"){const up=LS.filter(o=>OPEN.includes(o.status)),done=LS.filter(o=>o.status==="dorucene").slice(0,15);
+      h+=`<div class="hrk"><div class="ps"><small>Najbližšie dodávky</small><b>${up.length}</b></div><div><small>Plánované tony</small><b>${f2(up.reduce((s,o)=>s+(+o.sum.tons_plan||0),0),0)} t</b></div><div><small>Autá</small><b>${up.reduce((s,o)=>s+(+o.trucks_n||0),0)}</b></div></div>`;
+      h+=up.length?up.map(o=>buyCard(o,P)).join(""):`<div class="card"><div class="s">Zatiaľ žiadne schválené dodávky. Keď VALKO schváli vývoz, uvidíte tu termín, tony, autá a cenu.</div></div>`;
+      if(done.length)h+=`<h3>Doručené</h3>`+done.map(o=>buyCard(o,P)).join("")}
+    else if(T.psec==="acc"){const L=LS.filter(o=>inPer(o,T.from,T.to)),vat=+pr.vat||23,own=pr.inv!=="valko",ts=L.reduce((s,o)=>s+(+o.sum.trus_sum||0),0),tt=L.reduce((s,o)=>s+(+o.sum.trans_sum||0),0),base=ts+(own?tt:0);
+      h+=perForm("trPerP")+`<div class="hrk"><div><small>Dodávky</small><b>${L.length} · ${f2(L.reduce((s,o)=>s+(+o.sum.tons||0),0),2)} t</b></div><div><small>Trus</small><b>${f2(ts)} €</b></div><div><small>Doprava ${own?"":"(VALKO)"}</small><b>${f2(tt)} €</b></div><div class="ps"><small>Fakturuje ERNTE s DPH</small><b>${f2(base*(1+vat/100))} €</b></div></div>
+        <div class="card"><div class="s">Bez DPH ${f2(base)} € + DPH ${f2(vat,0)} % ${f2(base*vat/100)} €.${own?"":" Dopravu fakturuje VALKO s.r.o. samostatne: "+f2(tt)+" € + DPH."} Trus podľa váženia na vykládke, doprava za jazdu.</div><button type="button" class="pri" data-trpdoc="buy">🖨️ Podklad k faktúre / PDF</button></div>
+        ${L.map(o=>`<div class="card trmini"><div class="row"><b>${e(o.no)} · ${e(dSK(o.day))}</b>${pill(STS,o.status)}</div>${priceBox(o)}</div>`).join("")}`}
+    else{h+=`<div class="card"><div class="s">Cena trusu <b>${f2(pr.sell)} €/t</b> + doprava MKD 40 t <b>${f2(pr.km)} €/km</b> otočky (náklad ~${f2(pr.load_t,0)} t). Ceny bez DPH, DPH ${f2(pr.vat,0)} %.</div></div>
+      <div class="card trtab"><table><thead><tr><th>Miesto nakládky (HU)</th><th class="r">Km otočka</th><th class="r">Doprava €/jazda</th><th class="r">Doprava €/t</th><th class="r">Trus €/t</th><th class="r">Spolu €/t</th></tr></thead><tbody>${(P.pricelist||[]).map(s=>`<tr><td>${e(s.site)}</td><td class="r">${f2(s.km,0)}</td><td class="r">${f2(s.trans,0)}</td><td class="r">${f2(s.trans_t)}</td><td class="r">${f2(s.sell)}</td><td class="r"><b>${f2(s.total_t)}</b></td></tr>`).join("")}</tbody></table><div class="s">Km sú orientačné do overenia presnej trasy; fakturuje sa podľa km schválených pri vývoze.</div></div>`}}
+  document.getElementById("app").innerHTML=h+`</div>`}
+const perFormP=()=>perForm("trPerP").replace(/>Od</,">"+tr("Od")+"<").replace(/>Do</,">"+tr("Do")+"<").replace("Tento mesiac",tr("Tento mesiac")).replace("Minulý mesiac",tr("Minulý mesiac")).replace(">Všetko<",">"+tr("Všetko")+"<");
+function supCard(o){const S=o.sum||{},st=STS[o.status]||[o.status,"g"];
+  return `<div class="card agc trc ${o.status}"><div class="row"><span class="t">${e(o.no)} · ${e(o.site)}</span><span class="pill ${st[1]}">${e(tr(st[0]))}</span></div>
+  <div class="zsg"><div class="hl"><small>${tr("Dátum nakládky")}</small><b>📅 ${e(dSK(o.day))}${o.time?" · "+e(o.time):""}</b></div><div><small>${tr("Autá")}</small><b>${e(o.trucks_n)}</b></div><div><small>${tr("Plán")}</small><b>${f2(o.tons_plan!=null?o.tons_plan:o.trucks_n*((T.P.price||{}).load_t||25),1)} t</b></div><div class="ps"><small>${tr("Spolu bez DPH")}</small><b>${f2(S.buy_sum)} €</b></div></div>
+  ${o.note?`<div class="s">💬 ${e(o.note)}</div>`:""}${o.reply?`<div class="s">↩️ ERNTE / VALKO: ${e(o.reply)}</div>`:""}
+  ${(o.loads||[]).length?loadsHTML(o,"sup").replace(/>(pridelené|naložené|vyložené)</g,(m,x)=>">"+tr(x)+"<"):""}
+  ${o.status==="nahlasene"?`<div class="btns"><button type="button" data-tredit="${e(o.id)}">✏️ ${tr("Upraviť")}</button><button type="button" class="ghost" data-trcancel="${e(o.id)}">✕ ${tr("Zrušiť")}</button></div>`:""}</div>`}
+function priceBox(o){const S=o.sum||{},vat=+S.vat||23,own=S.inv!=="valko",base=(+S.trus_sum||0)+(own?(+S.trans_sum||0):0);
+  return `<div class="zsg"><div><small>Trus ${f2(S.tons,2)} t × ${f2(S.sell)} €</small><b>${f2(S.trus_sum)} €</b></div><div><small>Doprava ${e(S.trips)} × ${f2(S.km_turn,0)} km × ${f2(S.price_km)} €</small><b>${f2(S.trans_sum)} €</b></div>
+   <div><small>Bez DPH</small><b>${f2((+S.trus_sum||0)+(+S.trans_sum||0))} €</b></div><div class="ps"><small>${own?"Faktúra ERNTE s DPH":"ERNTE s DPH (doprava VALKO zvlášť)"}</small><b>${f2(base*(1+vat/100))} €</b></div><div><small>Spolu €/t</small><b>${S.tons?f2(((+S.trus_sum||0)+(+S.trans_sum||0))/S.tons):"–"} €/t</b></div></div>
+   <div class="s">${S.final?"✅ Konečná cena podľa váženia.":"ℹ️ Predbežne podľa plánu – konečná suma podľa váženia na vykládke."}</div>`}
+function buyCard(o,P){const U=P.unload||[];
+  return `<div class="card agc trc ${o.status}"><div class="row"><span class="t">${e(o.no)} · ${e(dSK(o.day))}${o.time?" · "+e(o.time):""}</span>${pill(STS,o.status)}</div>
+  <div class="zsg"><div class="hl"><small>Príde</small><b>📅 ${e(dSK(o.day))}${o.time?" · nakládka "+e(o.time):""}</b></div><div><small>Množstvo</small><b>${f2(o.sum.tons_plan,1)} t</b></div><div><small>Autá</small><b>${e(o.trucks_n)} × 40 t</b></div><div><small>Pôvod</small><b>${e(o.origin)}</b></div></div>
+  ${loadsHTML(o,"buy")}
+  ${priceBox(o)}
+  ${o.status!=="dorucene"?`<form class="f trun${U.length?"":" on"}" data-trun="${e(o.id)}"><div class="w t">🏁 Miesto vykládky pre dopravcu</div><label class="w">Miesto<select name="u">${U.map(u=>`<option value="${e(u.id)}"${o.unload_id===u.id?" selected":""}>${e(u.name)}${u.addr?" · "+e(u.addr):""}</option>`).join("")}<option value="">＋ nové miesto…</option></select></label>
+    <label class="trnew">Názov nového miesta<input name="name" placeholder="napr. Hala 3 / sklad digestátu"></label><label class="trnew">Adresa<input name="addr"></label><label class="trnew">Kontakt na mieste<input name="contact" placeholder="meno, telefón"></label>
+    <label class="w">Pokyn pre vodiča<input name="note" value="${e(o.unload_note||"")}" placeholder="napr. vjazd zadnou bránou, hlásiť sa na váhe"></label><div class="w btns"><button class="lime">💾 Poslať dopravcovi</button></div></form>`:`<div class="s">🏁 ${e(o.unload||"BPS Kamenica nad Cirochou – areál")}</div>`}</div>`}
+
+// ================= udalosti =================
+document.addEventListener("click",async ev=>{const g=s=>ev.target.closest&&ev.target.closest(s);let x;
+  if(x=g("[data-trsec]")){T.sec=x.dataset.trsec;if(T.sec==="vyv"||T.sec==="fak")loadStaffT();renderStaff();scrollTo(0,0);return}
+  if(x=g("[data-trflt]")){T.flt=x.dataset.trflt;renderStaff();return}
+  if(x=g("[data-trper]")){setPer(x.dataset.trper);T.P?renderP():renderStaff();return}
+  if(x=g("[data-trdoc]")){const D=T.d,bps=D.partners.find(p=>p.kind==="odberatel")||{},bar=D.partners.find(p=>p.kind==="dodavatel")||{},C=D.cfg||{},er={...ERN,icdph:C.ernte_icdph,dic:C.ernte_dic};
+    const O=D.orders.map(o=>({...o,origin:"Maďarsko · "+o.site}));
+    if(x.dataset.trdoc==="sup")printDoc("Podklad Baromfi",docSupplier(D.orders.filter(o=>o.supplier_id===bar.id),bar,er,T.from,T.to,"sk"));
+    else if(x.dataset.trdoc==="valko")printDoc("Podklad VALKO doprava",docValko(O,T.from,T.to,C));
+    else printDoc("Podklad ERNTE → BPS",docBuyer(O.filter(o=>o.buyer_id===bps.id),bps,er,T.from,T.to));return}
+  if(x=g("[data-trpdoc]")){const P=T.P;if(x.dataset.trpdoc==="sup")printDoc(tr("Vyúčtovanie"),docSupplier(P.orders,P.me,P.buyer,T.from,T.to,T.lang));else printDoc("Podklad k faktúre",docBuyer(P.orders,P.me,P.seller,T.from,T.to));return}
+  if(x=g("[data-trtab]")){T.psec=x.dataset.trtab;T.edit=null;renderP();scrollTo(0,0);return}
+  if(x=g("[data-trlang]")){T.lang=x.dataset.trlang;try{localStorage.setItem("ernte-trus-lang",T.lang)}catch(y){}renderP();return}
+  if(x=g("[data-tredit]")){T.edit=x.dataset.tredit||null;T.psec="new";renderP();scrollTo(0,0);return}
+  if(x=g("[data-trcancel]")){if(!confirm(tr("Zrušiť")+"?"))return;const o=T.P.orders.find(y=>y.id===x.dataset.trcancel);const r=await sb.rpc("trus_report",{p_site:o.site_id,p_day:o.day,p_time:o.time,p_trucks:o.trucks_n,p_tons:o.tons_plan,p_note:o.note,p_id:o.id,p_cancel:true});
+    if(r.error){tm()(r.error.message,6000);return}await trusPortal();return}
+  if(x=g("[data-trpw]")){const p=prompt(T.lang==="hu"?"Új jelszó (min. 8 karakter):":"Nové heslo (aspoň 8 znakov):");if(!p)return;if(p.length<8){tm()("Heslo musí mať aspoň 8 znakov.");return}const r=await sb.auth.updateUser({password:p});tm()(r.error?r.error.message:"Heslo zmenené ✓",5000);return}
+  if(x=g("[data-trlogin]")){const p=T.d.partners.find(y=>y.id===x.dataset.trlogin);const lg=prompt("Prihlasovací e-mail alebo telefón partnera:",p.login&&!/@tel\.ernte\.sk$/.test(p.login)?p.login:(p.email||p.phone||""));if(!lg)return;
+    const pw=Array.from(crypto.getRandomValues(new Uint8Array(6)),b=>"abcdefghjkmnpqrstuvwxyz23456789"[b%31]).join("")+"-"+(1000+Math.floor(Math.random()*9000));
+    const r=await sb.rpc("trus_set_login",{p_partner:p.id,p_login:lg,pw});if(r.error){tm()(r.error.message,7000);return}
+    const app=typeof APP_URL!=="undefined"?APP_URL:location.href.split("#")[0],hu=p.country==="HU";
+    const txt=hu?`ERNTE – csirketrágya szállítások\n${app}\nBejelentkezés: ${String(r.data).replace("@tel.ernte.sk","")}\nJelszó: ${pw}\nItt jelentheti be a szállításokat, és látja a kamionokat és az elszámolást.`:`ERNTE – kurací trus\n${app}\nPrihlásenie: ${String(r.data).replace("@tel.ernte.sk","")}\nHeslo: ${pw}\nTu uvidíte dodávky, autá, cenu a podklady k faktúre.`;
+    if(typeof camModal==="function")camModal(`<b>🔑 Prihlásenie pre ${e(p.name)}</b><div class="s">Heslo sa nikde neukladá – pošli ho teraz.</div><pre class="trpre">${e(txt)}</pre><div class="btns">${p.phone?`<a class="btn lime" target="_blank" rel="noopener" href="https://wa.me/${tel(p.phone)}?text=${encodeURIComponent(txt)}">WhatsApp</a>`:""}<button type="button" data-trcopy>📋 Kopírovať</button></div>`);
+    window._trTxt=txt;loadStaffT();return}
+  if(g("[data-trcopy]")){navigator.clipboard.writeText(window._trTxt||"").then(()=>tm()("Skopírované ✓"));return}
+});
+document.addEventListener("change",ev=>{const f=ev.target.form;if(!f)return;
+  if(f.id==="trPerF"||f.id==="trPerP"){T[ev.target.name]=ev.target.value;T.P?renderP():renderStaff();return}
+  if(f.dataset.trun!=null&&ev.target.name==="u")f.classList.toggle("on",!ev.target.value)});
+document.addEventListener("submit",async ev=>{const f=ev.target;if(!f.closest||!(f.id&&f.id.startsWith("tr")||f.dataset.trap||f.dataset.trw||f.dataset.trun||f.dataset.trp||f.dataset.trs))return;
+  ev.preventDefault();const F=new FormData(f),b=ev.submitter||f.querySelector("button");if(typeof busy==="function")busy(b,true);let r;
+  try{
+  if(f.id==="trNew"){r=await sb.rpc("trus_report",{p_site:F.get("site"),p_day:F.get("day"),p_time:F.get("time"),p_trucks:+F.get("trucks"),p_tons:num(F.get("tons")),p_note:F.get("note"),p_id:T.edit||null,p_cancel:false});
+    if(!r.error){tm()(tr("Odoslané – ERNTE potvrdí autá."),5000);T.edit=null;T.psec="list";await trusPortal()}}
+  else if(f.dataset.trap){const o=T.d.orders.find(y=>y.id===f.dataset.trap);
+    if(b&&b.value==="no"){const rep=F.get("reply")||prompt("Dôvod pre Baromfi (napr. navrhujeme iný termín):");if(!rep){return}r=await sb.rpc("trus_reject",{p_order:o.id,p_reply:rep})}
+    else{const ids=F.getAll("tk").map(String),L=(T.d.trucks||[]).filter(t=>ids.includes(String(t.no))).map(t=>({truck_no:t.no,spz:t.spz,driver:t.driver||""}));
+      String(F.get("extra")||"").split(/[,;\n]/).map(s=>s.trim()).filter(Boolean).forEach(s=>L.push({spz:s}));
+      if(!L.length){tm()("Zaškrtni autá alebo napíš ŠPZ.");return}
+      if(L.length!==+o.trucks_n&&!confirm(`Baromfi chce ${o.trucks_n} áut, prideľuješ ${L.length}. Pokračovať?`)){return}
+      r=await sb.rpc("trus_approve",{p_order:o.id,p_loads:L,p_day:F.get("day")||null,p_time:F.get("time")||null,p_reply:F.get("reply")||null,p_buyer:null})}
+    if(!r.error){tm()("Uložené ✓ – Baromfi aj BPS to vidia hneď.",5000);await loadStaffT()}}
+  else if(f.dataset.trw){const id=f.dataset.trw,lo=num(F.get("load")),un=num(F.get("unload")),m=f.dataset.mode;
+    if(m!=="buy"&&F.has("load")&&(lo!=null||F.get("ticket")))r=await sb.rpc("trus_weigh",{p_load:id,p_kind:"load",p_t:lo,p_ticket:F.get("ticket")||null});
+    if((!r||!r.error)&&m!=="sup"&&un!=null)r=await sb.rpc("trus_weigh",{p_load:id,p_kind:"unload",p_t:un,p_ticket:null});
+    if(!r){tm()("Zadajte netto tony.");return}
+    if(!r.error){tm()("Uložené ✓");T.P?await trusPortal():await loadStaffT()}}
+  else if(f.dataset.trun){const u=F.get("u")||null;if(!u&&!String(F.get("name")||"").trim()){tm()("Napíšte názov nového miesta.");return}
+    r=await sb.rpc("trus_set_unload",{p_order:f.dataset.trun,p_unload:u,p_name:F.get("name"),p_addr:F.get("addr"),p_contact:F.get("contact"),p_note:F.get("note")});
+    if(!r.error){tm()("Odoslané dopravcovi ✓");await trusPortal()}}
+  else if(f.id==="trCfg"){const o={};for(const[k,v]of F.entries()){if(["trans_invoicer","ernte_icdph","ernte_dic"].includes(k))o[k]=String(v).trim()||null;else{const n=num(v);if(n!=null)o[k]=n}}
+    o.trans_invoicer=o.trans_invoicer||"ernte";o.updated_at=new Date().toISOString();r=await sb.from("trus_cfg").update(o).eq("id",1);if(!r.error){tm()("Nastavenia uložené ✓");await loadStaffT()}}
+  else if(f.dataset.trp){const o={};for(const k of ["name","addr","ico","dic","ic_dph","contact","phone","email"])o[k]=String(F.get(k)||"").trim()||null;r=await sb.from("trus_partners").update(o).eq("id",f.dataset.trp);if(!r.error){tm()("Uložené ✓");await loadStaffT()}}
+  else if(f.dataset.trs){r=await sb.from("trus_sites").update({km_one_way:num(F.get("km_one_way"))||0,toll_eur:num(F.get("toll_eur")),price_km:num(F.get("price_km")),km_verified:F.get("km_verified")!=null}).eq("id",f.dataset.trs);if(!r.error){tm()("Trasa uložená ✓");await loadStaffT()}}
+  else if(f.id==="trSiteNew"){const bar=T.d.partners.find(p=>p.kind==="dodavatel");if(!bar){tm()("Najprv pridaj dodávateľa.");return}r=await sb.from("trus_sites").insert({partner_id:bar.id,name:String(F.get("name")).trim(),km_one_way:num(F.get("km"))||0});if(!r.error){tm()("Farma pridaná ✓");await loadStaffT()}}
+  if(r&&r.error)tm()(r.error.message,7000);
+  }finally{if(typeof busy==="function")busy(b,false)}},true);
+})();
