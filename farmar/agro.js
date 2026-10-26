@@ -213,12 +213,12 @@ const hId=x=>x[0]+" | "+x[1],hFind=id=>HDR.find(x=>hId(x)===id);
 const CROP={psenica:{n:"Pšenica",spd:5,fe:70,y:7,fuel:17,h:"G"},jacmen:{n:"Jačmeň",spd:5.5,fe:70,y:6.5,fuel:16,h:"G"},obilniny:{n:"Tritikale, raž, ovos",spd:5,fe:70,y:5.5,fuel:16,h:"G"},
  repka:{n:"Repka",spd:5,fe:70,y:3.5,fuel:14,h:"G"},soja:{n:"Sója",spd:4.5,fe:70,y:3,fuel:15,h:"G"},hrach:{n:"Hrach",spd:4.5,fe:70,y:3.5,fuel:14,h:"G"},kukurica:{n:"Kukurica na zrno",spd:7,fe:70,y:10,fuel:25,h:"M",tf:1.4}};
 const FLEET_DEF={mkT:30,mkH:20,minT:5,minH:1,hFix:true,hBig:80,hSmall:100,hLim:20,fuelBill:true,fuelP:1.92,net:1800,hours:174,
- tractors:[{model:"CLAAS | AXION 850",n:1,price:154000,annual:1000,hold:5},{model:"CLAAS | AXION 930",n:1,price:230000,annual:1000,hold:5}],
+ tractors:[{model:"CLAAS | XERION 12.650",n:1,price:620000,annual:800,hold:6,bare:true,tt:true},{model:"CLAAS | AXION 850",n:1,price:154000,annual:1000,hold:5},{model:"CLAAS | AXION 930",n:1,price:230000,annual:1000,hold:5}],
  impl:[{id:"Väderstad | TopDown 700",price:"",ha:1500,yrs:8},{id:"Väderstad | Spirit 600 C",price:"",ha:1500,yrs:8},{id:"Lemken | Diamant 11 V 8 L100",price:"",ha:800,yrs:8},{id:"Väderstad | NZ Aggressive 800",price:"",ha:2000,yrs:8},{id:"Lemken | Rubin 12/400 KUA",price:"",ha:1500,yrs:8}],
  combines:[{model:"CLAAS | LEXION 8700 TERRA TRAC",n:2,price:780000,annual:600,hold:7,hdr:["CLAAS | CONVIO FLEX 1230","CLAAS | CORIO 675","CLAAS | CORIO 875","CLAAS | CORIO 1275"]},
   {model:"CLAAS | LEXION 6700",n:1,price:480000,annual:600,hold:7,hdr:["CLAAS | CONVIO FLEX 930","CLAAS | CORIO 675","CLAAS | CORIO 875","CLAAS | CORIO 1275"]}],
  hprice:{},over:{},off:{}};
-const mName=id=>String(id||"").replace(" | "," ").replace("TERRA TRAC","TT");
+const mName=(id,t)=>String(id||"").replace(" | "," ").replace("TERRA TRAC","TT")+(t&&t.tt&&!/TT|TRAC/.test(id)?" TT":"");
 // náklad súpravy €/h podľa ASABE (rovnaké vzorce ako kalkulácia)
 function offerCost(F,mach,M,toolPrice,toolAh,toolYrs,toolRv,toolRf,cap,lha){const c=A.cfg&&!A.cfg.err?A.cfg:DEF,rate=n(c.rate)||5,insP=1.5,lubeP=n(c.lube)||5,fp=n(c.fuel)||1.92;
   const isK=M[1]==="K",ah=n(mach.annual)||(isK?450:1000),yrs=Math.max(1,n(mach.hold)||(isK?7:5)),rf=isK?[.04,2.1]:M[1]==="P"?[.003,2]:[.007,2],rvk=isK?"K":M[3]*.7355>=150?"TR":"TRs";
@@ -226,10 +226,11 @@ function offerCost(F,mach,M,toolPrice,toolAh,toolYrs,toolRv,toolRf,cap,lha){cons
   const empH=empCost(n(F.net)||1800)/(n(F.hours)||174)*(1+(n(c.labor)||10)/100),lube=lha*cap*fp*lubeP/100;return (T.tot+I.tot+empH+lube)/cap}
 function buildOffers(F){const L=[];
   for(const t of F.tractors||[]){const M=mFind(t.model);if(!M||M[1]==="K")continue;const usable=M[3]*.7355*.8;
+    if(t.bare){const lph=M[5],cost=offerCost(F,t,M,0,1,1,"T",[0,1],1,lph);L.push({okey:`tillage|${t.model}|bare|`,kind:"tillage",unit:"h",machine:mName(t.model,t)+(t.n>1?` (${t.n}×)`:""),tool:"bez náradia · traktor s obsluhou",crop:null,name:`Prenájom traktora s obsluhou – ${mName(t.model,t)}`,cap:1,cost,mk:n(F.mkT)||0,min:n(F.minBare)||4,fuel:null,lph,descr:`${mName(t.model,t)} (${M[3]} hp) s obsluhou na vaše náradie alebo prepravu. Účtuje sa motohodina. Spotreba ~${f2(lph,0)} l/h podľa zaťaženia.`})}
     for(const it of F.impl||[]){const I=iFind(it.id);if(!I)continue;const K=CLS[I[2]],need=(I[5]+I[6])/2*.7355*.8,load=need/usable;if(load<.4)continue;
       let spd=I[7];if(load>1){spd=I[7]*Math.pow(1/load,1/1.2);if(spd<I[7]*.7)continue}const cap=I[3]*spd/10*K.fe/100,ip=it.price===""||it.price==null?I[4]:n(it.price),iah=n(it.ha)/cap;
       const cost=offerCost(F,t,M,ip,iah,Math.min(n(it.yrs)||8,K.life/Math.max(20,iah)),K.rv,[K.rf1,K.rf2],cap,I[8]);const okey=`tillage|${t.model}|${it.id}|`;
-      L.push({okey,kind:"tillage",machine:mName(t.model)+(t.n>1?` (${t.n}×)`:""),tool:I[0]+" "+I[1]+" · "+String(I[3]).replace(".",",")+" m",crop:null,name:`${K.svc} – ${I[0]} ${I[1]}`,cap,cost,mk:n(F.mkT)||0,min:n(F.minT)||0,fuel:I[8],descr:I[9].charAt(0).toUpperCase()+I[9].slice(1)+`. Traktor ${mName(t.model)} s obsluhou.`+(load>1?` Pri ${f2(spd,1)} km/h.`:""),slow:load>1}) }}
+      L.push({okey,kind:"tillage",machine:mName(t.model,t)+(t.n>1?` (${t.n}×)`:""),tool:I[0]+" "+I[1]+" · "+String(I[3]).replace(".",",")+" m",crop:null,name:`${K.svc} – ${I[0]} ${I[1]}`,cap,cost,mk:n(F.mkT)||0,min:n(F.minT)||0,fuel:I[8],descr:I[9].charAt(0).toUpperCase()+I[9].slice(1)+`. Traktor ${mName(t.model,t)} s obsluhou.`+(load>1?` Pri ${f2(spd,1)} km/h.`:""),slow:load>1}) }}
   for(const cb of F.combines||[]){const M=mFind(cb.model);if(!M)continue;const tph=M[3]*.11*.6;
     for(const hid of cb.hdr||[]){const H=hFind(hid);if(!H)continue;const hp=n((F.hprice||{})[hid])||H[4];
       for(const [ck,C] of Object.entries(CROP)){if(C.h!==H[2])continue;const cap=Math.min(H[3]*C.spd/10*C.fe/100,tph*(C.tf||1)/C.y);
@@ -239,7 +240,7 @@ function buildOffers(F){const L=[];
     if(hv&&fix){o.small=n(F.hSmall)||null;o.lim=n(F.hLim)||null}if(hv&&F.fuelBill!==false){o.fbill=true;o.fp=n(F.fuelP)||1.92}}
   return L}
 async function loadFleet(){const r=await sb.from("agro_cfg").select("key,value").in("key",["fleet","calc"]);if(r.error){A.fleet={err:r.error.message};renderStaff();return}
-  const g=k=>(r.data||[]).find(x=>x.key===k),f=g("fleet"),c=g("calc"),D=JSON.parse(JSON.stringify(FLEET_DEF));A.fleet=f&&f.value&&f.value.combines?{...D,...f.value}:D;
+  const g=k=>(r.data||[]).find(x=>x.key===k),f=g("fleet"),c=g("calc"),D=JSON.parse(JSON.stringify(FLEET_DEF));A.fleet=f&&f.value&&f.value.combines?{...D,...f.value}:D;if(!A.fleet.xer){A.fleet.xer=1;if(!(A.fleet.tractors||[]).some(t=>/XERION 12\.650/.test(t.model)))A.fleet.tractors.unshift(JSON.parse(JSON.stringify(D.tractors[0])))}
   if(!A.cfg){const D2=JSON.parse(JSON.stringify(DEF)),v=c&&c.value&&c.value.m?c.value:null;A.cfg=v?{...D2,...v,m:v.m.map((m,i)=>({...D2.m[i],...m}))}:D2}renderStaff()}
 function saveFleet(){clearTimeout(A.fT);A.fT=setTimeout(async()=>{const r=await sb.from("agro_cfg").upsert({key:"fleet",value:A.fleet,updated_at:new Date().toISOString()});const el=document.getElementById("agFSave");if(el)el.textContent=r.error?"⚠️ Neuložené":"✓ Uložené"},900)}
 const fin=(path,lab,unit,val,attr="")=>`<label><span>${lab}${unit?` <small>· ${unit}</small>`:""}</span><input data-af="${path}" inputmode="decimal" value="${esc(String(val??"").replace(".",","))}" ${attr}></label>`;
@@ -255,19 +256,20 @@ function fleetHTML(){const F=A.fleet;if(!F){loadFleet();return `<div class="card
      <div class="w agchk">${HDR.map(H=>`<label class="pck"><input type="checkbox" data-afh="${i}" value="${esc(hId(H))}"${(c.hdr||[]).includes(hId(H))?" checked":""}><span>${esc(H[1])} <small>${String(H[3]).replace(".",",")} m</small></span></label>`).join("")}</div>`).join("")}
    <div class="w s agh">Ceny adaptérov</div>${HDR.map(H=>fin(`hprice.${hId(H)}`,H[1],"€",(F.hprice||{})[hId(H)]??"",`placeholder="${H[4]} (orient.)"`)).join("")}</div></details>
    <details class="card hsec agin"><summary><span>🚜</span><b>Traktory a náradie</b><small>${(F.tractors||[]).map(t=>mName(t.model)).join(" · ")} · ${(F.impl||[]).length} náradí</small></summary><div class="f agf">
-   ${(F.tractors||[]).map((t,i)=>`<div class="w s agh">${esc(mName(t.model))}</div>${fin(`tractors.${i}.price`,"Cena traktora","€",t.price)}${fin(`tractors.${i}.annual`,"Ročne motohodín","mth",t.annual)}${fin(`tractors.${i}.hold`,"Roky držania","r.",t.hold)}`).join("")}
+   ${(F.tractors||[]).map((t,i)=>`<div class="w s agh">${esc(mName(t.model))}</div>${fin(`tractors.${i}.price`,"Cena traktora","€",t.price)}${fin(`tractors.${i}.annual`,"Ročne motohodín","mth",t.annual)}${fin(`tractors.${i}.hold`,"Roky držania","r.",t.hold)}<label class="pck w"><input type="checkbox" data-aft="${i}"${t.bare?" checked":""}><span>Ponúkať aj <b>bez náradia</b> (prenájom s obsluhou, €/motohodina)</span></label>`).join("")}${fin("minBare","Minimum prenájmu bez náradia","mth",F.minBare??4)}
+   <label class="w">Pridať traktor<select data-aftadd="1"><option value="">– vyber z katalógu –</option>${AGM.filter(m=>m[1]!=="K").map(m=>`<option value="${esc(mId(m))}">${esc(mId(m))} · ${m[3]} hp</option>`).join("")}</select></label>
    <div class="w s agh">Naše náradie</div><div class="w agchk">${IMP.map(I=>`<label class="pck"><input type="checkbox" data-afi="${esc(iId(I))}"${(F.impl||[]).some(x=>x.id===iId(I))?" checked":""}><span>${esc(I[0])} ${esc(I[1])} <small>${CLS[I[2]].n} · ${String(I[3]).replace(".",",")} m</small></span></label>`).join("")}</div>
    ${(F.impl||[]).map((x,i)=>{const I=iFind(x.id);return I?`<div class="w s agh">${esc(I[1])}</div>${fin(`impl.${i}.price`,"Cena","€",x.price,`placeholder="${I[4]} (orient.)"`)}${fin(`impl.${i}.ha`,"Ročne ha","ha",x.ha)}${fin(`impl.${i}.yrs`,"Roky držania","r.",x.yrs)}`:""}).join("")}</div></details>
    <div id="agOffers">${offersHTML(F)}</div>`;
   return h}
 function offersHTML(F){const O=buildOffers(F),on=O.filter(o=>o.on);
   return `<div class="card"><div class="row"><b class="sth">Ponuka pre farmárov · ${on.length} z ${O.length}</b></div>
-   <div class="agol">${O.map(o=>`<div class="agoi ${o.on?"":"off"}"><label class="pck"><input type="checkbox" data-afo="${esc(o.okey)}"${o.on?" checked":""}><span><b>${esc(o.kind==="harvest"?CROP[o.crop].n+" · "+o.machine:o.name.split(" – ")[0]+" · "+o.machine)}</b><small>${esc(o.tool)} · ${f2(o.cap,1)} ha/h${o.slow?" · traktor slabší, nižšia rýchlosť":""}</small></span></label>
-     <div class="agop"><small>náklad ${f2(o.cost,0)} € · ${o.small?`do ${f2(o.lim,0)} ha ${f2(o.small,0)} € · `:""}${o.small?"nad":"auto"} ${f2(o.auto,0)} €${o.fbill?" + nafta":""}</small><input data-afp="${esc(o.okey)}" inputmode="decimal" value="${esc(String((F.over||{})[o.okey]??"").replace(".",","))}" placeholder="${o.auto}" aria-label="Cena €/ha"><b>€/ha</b></div></div>`).join("")}</div>
+   <div class="agol">${O.map(o=>`<div class="agoi ${o.on?"":"off"}"><label class="pck"><input type="checkbox" data-afo="${esc(o.okey)}"${o.on?" checked":""}><span><b>${esc(o.kind==="harvest"?CROP[o.crop].n+" · "+o.machine:o.name.split(" – ")[0]+" · "+o.machine)}</b><small>${esc(o.tool)}${o.unit==="h"?` · ~${f2(o.lph,0)} l/h`:` · ${f2(o.cap,1)} ha/h`}${o.slow?" · traktor slabší, nižšia rýchlosť":""}</small></span></label>
+     <div class="agop"><small>náklad ${f2(o.cost,0)} €/${o.unit==="h"?"mth":"ha"} · ${o.small?`do ${f2(o.lim,0)} ha ${f2(o.small,0)} € · `:""}${o.small?"nad":"auto"} ${f2(o.auto,0)} €${o.fbill?" + nafta":""}</small><input data-afp="${esc(o.okey)}" inputmode="decimal" value="${esc(String((F.over||{})[o.okey]??"").replace(".",","))}" placeholder="${o.auto}" aria-label="Cena"><b>€/${o.unit==="h"?"mth":"ha"}</b></div></div>`).join("")}</div>
    <div class="s">Prázdne pole ceny = automatická cena (náklad + prirážka). Vlastnú cenu napíš do poľa. Odškrtnutú kombináciu farmár nevidí.</div>
    <div class="btns"><button type="button" class="lime" data-afpub="1">🚀 Zverejniť ponuku farmárom</button></div></div>`}
 async function publishOffers(b){const F=A.fleet,O=buildOffers(F);busy(b,true);
-  const rows=O.map((o,i)=>({okey:o.okey,kind:o.kind,auto:true,name:o.name,machine:o.machine,tool:o.tool,crop:o.crop,unit:"ha",price:o.price,price_small:o.small||null,small_limit:o.small?o.lim:null,fuel_billed:!!o.fbill,fuel_price:o.fbill?o.fp:null,fuel_lha:o.fuel,min_qty:o.min,fuel_by_customer:!o.fbill,descr:o.descr,active:o.on,sort:(o.kind==="harvest"?200:300)+i}));
+  const rows=O.map((o,i)=>({okey:o.okey,kind:o.kind,auto:true,name:o.name,machine:o.machine,tool:o.tool,crop:o.crop,unit:o.unit||"ha",price:o.price,price_small:o.small||null,small_limit:o.small?o.lim:null,fuel_billed:!!o.fbill,fuel_price:o.fbill?o.fp:null,fuel_lha:o.fuel,min_qty:o.min,fuel_by_customer:!o.fbill,descr:o.descr,active:o.on,sort:(o.kind==="harvest"?200:300)+i+(o.unit==="h"?60:0)}));
   let r=await sb.from("agro_services").upsert(rows,{onConflict:"okey"});
   if(!r.error){const keep=new Set(O.map(o=>o.okey)),ex=await sb.from("agro_services").select("id,okey").eq("auto",true);const gone=(ex.data||[]).filter(x=>!keep.has(x.okey)).map(x=>x.id);if(gone.length)r=await sb.from("agro_services").update({active:false}).in("id",gone)}
   busy(b,false);if(r.error){toast("Chyba: "+r.error.message,7000);return}A.srv=null;toast(`✓ Zverejnené ${O.filter(o=>o.on).length} ponúk – farmári si už vyberajú stroj a vidia cenu.`,7000)}
@@ -283,6 +285,7 @@ document.addEventListener("change",e=>{if(!A.fleet||A.fleet.err||ROLE!=="owner")
   if(t.dataset.afh!=null){const c=A.fleet.combines[+t.dataset.afh];c.hdr=c.hdr||[];if(t.checked){if(!c.hdr.includes(t.value))c.hdr.push(t.value)}else c.hdr=c.hdr.filter(x=>x!==t.value);saveFleet();renderStaff();return}
   if(t.dataset.afi!=null){const id=t.dataset.afi;A.fleet.impl=A.fleet.impl||[];if(t.checked){if(!A.fleet.impl.some(x=>x.id===id))A.fleet.impl.push({id,price:"",ha:1500,yrs:8})}else A.fleet.impl=A.fleet.impl.filter(x=>x.id!==id);saveFleet();renderStaff()}});
 document.addEventListener("click",e=>{const b=e.target.closest("[data-afpub]");if(b&&ROLE==="owner")publishOffers(b)});
+document.addEventListener("change",e=>{if(!A.fleet||ROLE!=="owner")return;const t=e.target;if(t.dataset.aft!=null){A.fleet.tractors[+t.dataset.aft].bare=t.checked;saveFleet();renderStaff();return}if(t.dataset.aftadd&&t.value){A.fleet.tractors.push({model:t.value,n:1,price:mFind(t.value)[3]*600,annual:1000,hold:6});saveFleet();renderStaff();return}});
 document.addEventListener("change",e=>{const k=e.target.dataset&&e.target.dataset.afb;if(!k||!A.fleet||ROLE!=="owner")return;A.fleet[k]=e.target.checked;saveFleet();renderStaff()});
 // --- udalosti (tím) ---
 document.addEventListener("click",async e=>{if(typeof ROLE==="undefined"||!ROLE||(typeof FARMER!=="undefined"&&FARMER))return;const t=e.target;let x;
@@ -331,7 +334,7 @@ window.farmAgroHTML=function(){if(typeof FARMER==="undefined"||!FARMER||(window.
       picks=`<label>Plodina<select data-fapk="crop">${opt(crops,FA.crop,c=>(CROP[c]||{n:c}).n)}</select></label><label>Kombajn<select data-fapk="mach">${opt(ms,FA.mach)}</select></label>
        <label class="w">Adaptér · záber<select data-fapk="sid">${L2.map(s=>`<option value="${esc(s.id)}"${s.id===FA.sid?" selected":""}>${esc(s.tool||s.name)}</option>`).join("")}</select></label>`}
     else if(FA.kind==="tillage"){const ms=[...new Set(L.map(s=>s.machine))];if(!ms.includes(FA.mach))FA.mach=ms[0];const L2=L.filter(s=>s.machine===FA.mach);if(!L2.some(s=>s.id===FA.sid))FA.sid=(L2[0]||{}).id;sel=L2.find(s=>s.id===FA.sid);
-      picks=`<label>Traktor<select data-fapk="mach">${opt(ms,FA.mach)}</select></label><label>Náradie · práca<select data-fapk="sid">${L2.map(s=>`<option value="${esc(s.id)}"${s.id===FA.sid?" selected":""}>${esc(s.name.split(" – ")[0]+" · "+(s.tool||""))}</option>`).join("")}</select></label>`}
+      picks=`<label>Traktor<select data-fapk="mach">${opt(ms,FA.mach)}</select></label><label>Náradie · práca<select data-fapk="sid">${L2.map(s=>`<option value="${esc(s.id)}"${s.id===FA.sid?" selected":""}>${esc(s.unit==="h"?"Bez náradia – traktor s obsluhou (€/motohodina)":s.name.split(" – ")[0]+" · "+(s.tool||""))}</option>`).join("")}</select></label>`}
     else{if(!L.some(s=>s.id===FA.sid))FA.sid=L[0].id;sel=L.find(s=>s.id===FA.sid);picks=`<label class="w">Služba<select data-fapk="sid">${L.map(s=>`<option value="${esc(s.id)}"${s.id===FA.sid?" selected":""}>${esc(s.name)}</option>`).join("")}</select></label>`}
     const s=sel,u=s?UN[s.unit]||s.unit:"ha",q=n(FA.q);
     h+=`<div class="card agcfg"><div class="btns seg2">${kinds.map(k=>`<button type="button" data-fakind="${k[0]}" aria-pressed="${FA.kind===k[0]}">${k[1]}</button>`).join("")}</div>
