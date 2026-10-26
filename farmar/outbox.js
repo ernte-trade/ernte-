@@ -63,7 +63,7 @@ async function inLoad(){if(inBusy)return;inBusy=true;try{const r=await sb.rpc("m
 function inDecor(){const app=document.getElementById("app");if(!app||!IN)return;app.querySelectorAll(".inbx,.npush").forEach(x=>x.remove());
   const U=(IN.items||[]).filter(x=>!x.read_at);let h="";
   if(U.length)h+=`<div class="inbx" role="alert"><div class="inhd"><span class="ingem" aria-hidden="true">💎</span><div><b>${U.length===1?"Nová správa od ERNTE":"Nové správy od ERNTE ("+U.length+")"}</b><small>prečítajte si a ťuknite Rozumiem</small></div></div>${U.map(x=>`<div class="inm"><b>${e(x.title)}</b><p>${e(x.body)}</p><small>${e(dt(x.sent_at))}</small><div class="btns"><button type="button" class="inok" data-inread="${e(x.id)}">✓ Rozumiem</button></div></div>`).join("")}</div>`;
-  if(h){const d=document.createElement("div");d.innerHTML=h;const first=app.querySelector(".sgban");[...d.children].reverse().forEach(c=>first?first.after(c):app.prepend(c))}}
+  if(h){const d=document.createElement("div");d.innerHTML=h;if(window.trusHu&&trusHu())trusHuDom(d);const first=app.querySelector(".sgban");[...d.children].reverse().forEach(c=>first?first.after(c):app.prepend(c))}}
 window.inboxDecor=()=>{if(IN)inDecor();inLoad()};
 if(typeof window.renderFarmer==="function"){const _rf=window.renderFarmer;window.renderFarmer=function(){const r=_rf.apply(this,arguments);try{IN?inDecor():inLoad()}catch(x){}return r}}
 setInterval(()=>{if(document.hidden)return;if((typeof FARMER!=="undefined"&&FARMER)||document.querySelector(".trtabs"))inLoad()},90e3);

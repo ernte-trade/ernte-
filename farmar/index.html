@@ -791,7 +791,7 @@ html[data-theme=light] .ftbl th{color:#0f172a}html[data-theme=light] .fdban{colo
 </style>
 <script>try{if(localStorage.getItem('ernte-theme')==='light')document.documentElement.dataset.theme='light'}catch(e){}</script>
 <link rel="stylesheet" href="perms.css?v=20261026-1955">
-<link rel="stylesheet" href="trus.css?v=20261027-0110">
+<link rel="stylesheet" href="trus.css?v=20261027-0120">
 </head>
 <body>
 <div class="wrap">
@@ -848,8 +848,8 @@ async function boot(){
 let LOGIN={email:"",sent:false};
 function showLogin(){$("outBtn").hidden=true;$("refBtn").hidden=true;$("aiBtn").hidden=true;$("hS").textContent="výkup komodít";
   const A=$("app");
-  if(!LOGIN.sent){A.innerHTML=`<div class="center"><div class="hero"><small>Vitajte</small><b>Prihlásenie</b><small>Zadajte e-mail alebo telefón a heslo, ktoré vám poslala ERNTE.</small></div>
-    <form class="card" id="fEmail"><label>E-mail alebo telefón<input name="email" type="text" inputmode="email" autocomplete="username" autocapitalize="off" required value="${esc(LOGIN.email)}" placeholder="meno@firma.sk alebo 0905 123 456"></label><label>Heslo <span style="font-weight:400">(dostali ste ho od ERNTE)</span><input name="pw" type="password" autocomplete="current-password"></label><button class="pri" type="submit">Prihlásiť / poslať kód</button></form>${installHint()}<div class="s" style="text-align:center;margin-top:10px"><a href="sukromie.html">🔒 Ochrana osobných údajov</a></div></div>`}
+  if(!LOGIN.sent){A.innerHTML=`<div class="center"><div class="hero"><small>Vitajte</small><b>Prihlásenie</b><small>Zadajte e-mail alebo telefón a heslo, ktoré vám poslala ERNTE.</small><small lang="hu" style="opacity:.8">🇭🇺 Bejelentkezés: adja meg az e-mail címét vagy telefonszámát és az ERNTE-től kapott jelszót.</small></div>
+    <form class="card" id="fEmail"><label>E-mail alebo telefón · E-mail vagy telefon<input name="email" type="text" inputmode="email" autocomplete="username" autocapitalize="off" required value="${esc(LOGIN.email)}" placeholder="meno@firma.sk alebo 0905 123 456"></label><label>Heslo · Jelszó <span style="font-weight:400">(od ERNTE · az ERNTE-től)</span><input name="pw" type="password" autocomplete="current-password"></label><button class="pri" type="submit">Prihlásiť / Belépés</button></form>${installHint()}<div class="s" style="text-align:center;margin-top:10px"><a href="sukromie.html">🔒 Ochrana osobných údajov</a></div></div>`}
   else{A.innerHTML=`<div class="center"><div class="hero"><small>Kód sme poslali na</small><b>${esc(LOGIN.email)}</b><small>Pozrite si e-mail (aj priečinok Spam) a opíšte kód. Ak je v e-maile iba tlačidlo „Log In“, podržte na ňom prst → Kopírovať odkaz a vložte ho sem.</small></div>
     <form class="card" id="fCode"><label>Kód z e-mailu<input class="code" name="code" inputmode="numeric" autocomplete="one-time-code" required></label><button class="pri" type="submit">Prihlásiť</button><button type="button" id="backEmail">Zmeniť e-mail / poslať znova</button></form></div>`;
     setTimeout(()=>{const i=document.querySelector("input.code");if(i)i.focus()},50)}
@@ -2765,8 +2765,8 @@ document.addEventListener("click",e=>{const b=e.target.closest("[data-dfp]");if(
 <script src="contract.js?v=20261027-0050"></script>
 <script src="agro.js?v=20261026-1600"></script>
 <script src="activity.js?v=20261026-1955"></script>
-<script src="trus.js?v=20261027-0110"></script>
+<script src="trus.js?v=20261027-0120"></script>
 <script src="sign.js?v=20261027-0035"></script>
-<script src="outbox.js?v=20261027-0035"></script>
+<script src="outbox.js?v=20261027-0120"></script>
 </body>
 </html>
