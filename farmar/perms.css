@@ -83,3 +83,8 @@ html.big .bnlist b{font-size:max(1rem,16.5px)}html.big .bnres b{font-size:max(1.
 body.ds-tab-calc .calcw{position:fixed;left:0;right:0;top:0;bottom:0;z-index:5;padding:0;display:block}
 body.ds-tab-calc .calcfr{width:100%;height:100%;min-height:0;border:0;border-radius:0;box-shadow:none;background:transparent}
 body.ds-tab-calc .hrow{display:none}
+.tmnew{border-style:dashed!important;border-color:rgba(182,255,59,.45)!important}.tmlg{display:grid;gap:4px;font-size:.82rem;color:var(--muted)}
+.tmmore>summary,.tmown>summary{cursor:pointer;list-style:none;font-weight:700}.tmmore>summary::-webkit-details-marker,.tmown>summary::-webkit-details-marker{display:none}
+.tmmore>form{margin-top:10px;border:0;padding:0;background:none;box-shadow:none}
+.tmown{margin:18px 0 8px}.tmown>summary{display:inline-flex;align-items:center;gap:6px;padding:8px 14px;border-radius:999px;border:1px solid var(--line2);background:rgba(255,255,255,.05);font-size:.85rem;color:var(--muted)}
+.tmown[open]>summary{margin-bottom:10px}

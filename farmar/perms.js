@@ -116,10 +116,13 @@ window.vTeam=function(){const L=STATE.staff;if(!L)return `<div class="card"><div
   let h="";if(STATE.invite&&STATE.invite.team)h+=inviteBox(STATE.invite,false);
   const miss=PEOPLE.filter(x=>!L.some(p=>norm(p.name).includes(x[0])));
   h+=`<h2>Tím a prístupy</h2><div class="card tmintro"><b>Ty rozhoduješ, kto čo vidí.</b><div class="s">Pri každom človeku ťukni <b>⚙️ Prístupy</b> a zaškrtni. ★ je moje odporúčanie. Ceny, obchody, flotilu a jazdy chráni aj databáza – kto nemá prístup, údaje vôbec nedostane.</div></div>`;
-  if(miss.length)h+=`<div class="tmadd">${miss.map(x=>`<button type="button" class="tmq" data-tadd="${x[0]}"><b>＋ ${esc(x[1])}</b><small>${esc(x[2])} · ${esc(x[3])}</small></button>`).join("")}</div>`;
-  h+=addForm();
-  const ord={owner:0,dispatch:1,admin:2,invoice:3};
-  h+=`<h2>Tím (${L.length})</h2><div class="ds-team">`+[...L].sort((a,b)=>(ord[a.role]??9)-(ord[b.role]??9)||String(a.name).localeCompare(b.name,"sk")).map(staffCard).join("")+`</div>`;
+  const ord={dispatch:1,admin:2,invoice:3},emp=[...L].filter(p=>p.role!=="owner").sort((a,b)=>(ord[a.role]??9)-(ord[b.role]??9)||String(a.name).localeCompare(b.name,"sk")),own=L.filter(p=>p.role==="owner");
+  h+=`<h2>Zamestnanci (${emp.length+miss.length})</h2><div class="ds-team">`+emp.map(staffCard).join("")+miss.map(x=>`<form class="ds-fc tmc tmnew" data-tnew="${x[0]}"><div class="ds-hd"><span class="ds-av" aria-hidden="true">${esc(dsIni(x[1].replace(/^(Bc|Mgr|Ing)\.\s*/,"")))}</span><span class="ds-ttl"><b>${esc(x[1])}</b><small>${esc(x[2])} · ${esc(x[3])}</small></span></div>
+    <div class="tmst w">➕ ešte nemá prihlásenie · prístupy podľa funkcie <b>${esc(PRESET[x[4]].n)}</b></div>
+    <label class="tmlg">Mobil alebo e-mail<input name="login" required autocapitalize="off" inputmode="tel" placeholder="0905 123 456"></label>
+    <div class="btns"><button class="pri" type="submit">🔑 Vytvoriť prihlásenie a kód</button></div></form>`).join("")+`</div>`;
+  h+=`<details class="card tmmore"${TADD?" open":""}><summary>＋ Pridať iného človeka</summary>${addForm()}</details>`;
+  if(own.length)h+=`<details class="tmown"><summary>👑 Majitelia (${own.length})</summary><div class="ds-team">${own.map(staffCard).join("")}</div></details>`;
   return h};
 async function teamCode(login,name,role,extra){const pw=genPw()+"-"+String(10+((crypto.getRandomValues(new Uint32Array(1))[0])%90));
   const r=await sb.rpc("set_staff_login",{login_in:login,name_in:name,role_in:role,pw});if(r.error){toast("Nepodarilo sa: "+r.error.message,7000);return null}
@@ -135,6 +138,8 @@ document.addEventListener("click",async e=>{if(typeof ROLE==="undefined"||ROLE!=
   if(x=t.closest("[data-tcode]")){const p=(STATE.staff||[]).find(y=>y.email===x.dataset.tcode);if(!p||!confirm("Vytvoriť nový jednorazový kód pre "+p.name+"?\nStarý kód aj PIN prestanú platiť."))return;await teamCode(p.email.replace("@tel.ernte.sk",""),p.name,p.role);return}
 },true);
 document.addEventListener("submit",async e=>{const f=e.target;
+  if(f.dataset&&f.dataset.tnew){e.preventDefault();e.stopPropagation();const P=PEOPLE.find(x=>x[0]===f.dataset.tnew),lg=String(new FormData(f).get("login")||"").trim();if(!P||!lg)return;const b=f.querySelector("button[type=submit]");busy(b,true);
+    await teamCode(lg,P[1],PRESET[P[4]].role,{p:presetObj(P[4]),t:P[2],r:P[3]});busy(b,false);return}
   if(f.id==="fTeam2"){e.preventDefault();e.stopPropagation();const d=new FormData(f),k=d.get("preset"),b=f.querySelector("button[type=submit]");busy(b,true);
     const lg=await teamCode(String(d.get("login")).trim(),String(d.get("name")).trim(),PRESET[k].role,{p:presetObj(k),t:d.get("title"),r:d.get("region")});busy(b,false);if(lg)TADD=null;return}
   if(f.dataset&&f.dataset.tsave){e.preventDefault();e.stopPropagation();const d=new FormData(f),p={};PCAT.forEach(([k])=>p[k]=d.get("p_"+k)==="on");const b=f.querySelector("button[type=submit]");busy(b,true);
