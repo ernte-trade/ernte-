@@ -89,18 +89,21 @@ const _ss=window.startStaff;window.startStaff=async function(){await loadMe();if
 const _sf=window.startFarmer;window.startFarmer=async function(){if(FARMER&&FARMER.must_change)await pinModal();applyBig();return _sf.apply(this,arguments)};
 
 // ===== TÍM A PRÍSTUPY (iba majiteľ) =====
-let TOPEN=null,TADD=null;
+let TOPEN=null,TADD=null,TEDIT=null;
 function permRows(row,rec){const R=new Set(PRESET[rec].k);let g="",h="";
   for(const [k,l,grp,hint] of PCAT){if(grp!==g){if(g)h+=`</div>`;h+=`<div class="pgrp"><b>${esc(grp)}</b>`;g=grp}
     h+=`<label class="pck"><input type="checkbox" name="p_${k}"${pOn(row,k)?" checked":""}><span>${esc(l)}${R.has(k)?` <em class="prec" title="odporúčam">★</em>`:""}${hint?`<small>${esc(hint)}</small>`:""}</span></label>`}
   return h+`</div><div class="pgrp lock"><b>🔒 Iba majiteľ</b>${PLOCK.map(p=>`<div class="pck dis"><span>${esc(p[1])}</span></div>`).join("")}</div>`}
-function staffCard(p){const em=String(p.email||""),isT=em.endsWith("@tel.ernte.sk"),tel=p.phone||(isT?"+"+em.split("@")[0]:""),mail=isT?"":em,own=p.role==="owner",open=TOPEN===em,rec=recOf(p);
+function staffCard(p){const em=String(p.email||""),isT=em.endsWith("@tel.ernte.sk"),tel=p.phone||(isT?"+"+em.split("@")[0]:""),mail=p.mail||(isT?"":em),own=p.role==="owner",open=TOPEN===em,edit=TEDIT===em,rec=recOf(p);
   const wa=String(tel).replace(/\D/g,"").replace(/^00/,"").replace(/^0/,"421");
   const n=PCAT.filter(x=>pOn(p,x[0])).length;
   return `<div class="ds-fc tmc${open?" open":""}"><div class="ds-hd"><span class="ds-av" aria-hidden="true">${esc(dsIni(p.name))}</span><span class="ds-ttl"><b>${esc(p.name)}</b><small>${esc([p.title||(own?"majiteľ":({admin:"obchod",dispatch:"doprava",invoice:"fakturácia"})[p.role]),p.region].filter(Boolean).join(" · "))}</small><small>${esc([mail,tel].filter(Boolean).join(" · "))}</small></span></div>
    ${own?`<div class="tmst ok">👑 majiteľ – vidí všetko</div>`:`<div class="tmst ${p.must_change?"w":p.pin_at?"ok":""}">${p.must_change?"⏳ čaká na prvé prihlásenie a vlastný PIN":p.pin_at?"✓ vlastný PIN od "+new Date(p.pin_at).toLocaleDateString("sk-SK"):"prihlásenie zo staršej verzie"} · prístupy: <b>${n}</b> z ${PCAT.length}</div>`}
    <div class="btns">${tel?`<a class="btn lime" href="tel:${esc(String(tel).replace(/\s/g,""))}">📞 Volať</a><a class="btn" href="https://wa.me/${esc(wa)}" target="_blank" rel="noopener">WhatsApp</a>`:""}${mail?`<a class="btn" href="mailto:${esc(mail)}">✉️</a>`:""}
-    ${own?"":`<button type="button" class="pri" data-tperm="${esc(em)}">${open?"✕ Zavrieť":"⚙️ Prístupy"}</button><button type="button" data-tcode="${esc(em)}">🔑 Nový kód</button><button type="button" class="dng" data-trm="${esc(em)}">Odobrať</button>`}</div>
+    ${own?"":`<button type="button" data-tedit="${esc(em)}">${edit?"✕ Zavrieť":"✏️ Údaje"}</button><button type="button" class="pri" data-tperm="${esc(em)}">${open?"✕ Zavrieť":"⚙️ Prístupy"}</button><button type="button" data-tcode="${esc(em)}">🔑 Nový kód</button><button type="button" class="dng" data-trm="${esc(em)}">Odobrať</button>`}</div>
+   ${edit?`<form class="sub f tinfo" data-tinfo="${esc(em)}"><label class="w">Meno a titul<input name="name" required value="${esc(p.name||"")}"></label><label>Funkcia<input name="title" value="${esc(p.title||"")}" placeholder="napr. obchodník"></label><label>Kraj / oblasť<input name="region" value="${esc(p.region||"")}" placeholder="napr. Košický kraj"></label>
+     <label>Telefón<input name="phone" inputmode="tel" value="${esc(p.phone||tel||"")}" placeholder="0905 123 456"></label><label>E-mail (kontaktný)<input name="mail" type="email" autocapitalize="off" value="${esc(p.mail||(isT?"":em))}" placeholder="meno@ernte.sk"></label>
+     <div class="w s">Prihlasovacie meno: <b>${esc(isT?"+"+em.split("@")[0]:em)}</b> – zmeníš ho tlačidlom 🔑 Nový kód (nové prihlásenie na iný mobil / e-mail).</div><div class="w btns"><button class="pri" type="submit">💾 Uložiť údaje</button></div></form>`:""}
    ${open?`<form class="sub pform" data-tsave="${esc(em)}"><div class="f"><label>Funkcia<input name="title" value="${esc(p.title||"")}" placeholder="napr. obchodník"></label><label>Kraj / oblasť<input name="region" value="${esc(p.region||"")}" placeholder="napr. Košický kraj"></label><label>Telefón<input name="phone" inputmode="tel" value="${esc(p.phone||tel||"")}"></label></div>
      <div class="s">★ = moje odporúčanie pre funkciu <b>${esc(PRESET[rec].n)}</b>. Zaškrtni, čo má vidieť – platí hneď po uložení, aj v databáze.</div>
      <div class="btns">${Object.entries(PRESET).map(([k,v])=>`<button type="button" class="${k===rec?"lime":""}" data-tpreset="${k}">${k===rec?"★ ":""}${esc(v.n)}</button>`).join("")}</div>
@@ -132,7 +135,8 @@ async function teamCode(login,name,role,extra){const pw=genPw()+"-"+String(10+((
   await loadTeam();renderStaff();window.scrollTo(0,0);return r.data}
 const presetObj=k=>Object.fromEntries(PCAT.map(p=>[p[0],PRESET[k].k.includes(p[0])]));
 document.addEventListener("click",async e=>{if(typeof ROLE==="undefined"||ROLE!=="owner")return;const t=e.target;let x;
-  if(x=t.closest("[data-tperm]")){TOPEN=TOPEN===x.dataset.tperm?null:x.dataset.tperm;renderStaff();return}
+  if(x=t.closest("[data-tperm]")){TOPEN=TOPEN===x.dataset.tperm?null:x.dataset.tperm;TEDIT=null;renderStaff();return}
+  if(x=t.closest("[data-tedit]")){TEDIT=TEDIT===x.dataset.tedit?null:x.dataset.tedit;TOPEN=null;renderStaff();return}
   if(x=t.closest("[data-tadd]")){const P=PEOPLE.find(p=>p[0]===x.dataset.tadd);TADD=P?{name:P[1],title:P[2],region:P[3],preset:P[4]}:null;renderStaff();setTimeout(()=>{const i=document.querySelector("#fTeam2 input[name=login]");if(i){i.scrollIntoView({block:"center"});i.focus()}},60);return}
   if(x=t.closest("[data-tpreset]")){const f=x.closest("form"),k=PRESET[x.dataset.tpreset];if(!f||!k)return;f.querySelectorAll("input[type=checkbox]").forEach(c=>{c.checked=k.k.includes(c.name.slice(2))});toast("Nastavené podľa: "+k.n+" – ulož.");return}
   if(x=t.closest("[data-tcode]")){const p=(STATE.staff||[]).find(y=>y.email===x.dataset.tcode);if(!p||!confirm("Vytvoriť nový jednorazový kód pre "+p.name+"?\nStarý kód aj PIN prestanú platiť."))return;await teamCode(p.email.replace("@tel.ernte.sk",""),p.name,p.role);return}
@@ -142,6 +146,9 @@ document.addEventListener("submit",async e=>{const f=e.target;
     await teamCode(lg,P[1],PRESET[P[4]].role,{p:presetObj(P[4]),t:P[2],r:P[3]});busy(b,false);return}
   if(f.id==="fTeam2"){e.preventDefault();e.stopPropagation();const d=new FormData(f),k=d.get("preset"),b=f.querySelector("button[type=submit]");busy(b,true);
     const lg=await teamCode(String(d.get("login")).trim(),String(d.get("name")).trim(),PRESET[k].role,{p:presetObj(k),t:d.get("title"),r:d.get("region")});busy(b,false);if(lg)TADD=null;return}
+  if(f.dataset&&f.dataset.tinfo){e.preventDefault();e.stopPropagation();const d=new FormData(f),b=f.querySelector("button[type=submit]");busy(b,true);
+    const r=await sb.rpc("set_staff_info",{em:f.dataset.tinfo,nm:String(d.get("name")||"").trim(),t:String(d.get("title")||""),r:String(d.get("region")||""),ph:String(d.get("phone")||""),ml:String(d.get("mail")||"").trim()});busy(b,false);
+    if(r.error){toast(/set_staff_info/.test(r.error.message)?"Úprava údajov sa zapne po aktualizácii databázy (pár minút).":"Chyba: "+r.error.message,6000);return}TEDIT=null;await loadTeam();renderStaff();toast("✓ Údaje uložené.");return}
   if(f.dataset&&f.dataset.tsave){e.preventDefault();e.stopPropagation();const d=new FormData(f),p={};PCAT.forEach(([k])=>p[k]=d.get("p_"+k)==="on");const b=f.querySelector("button[type=submit]");busy(b,true);
     const r=await sb.rpc("set_staff_profile",{em:f.dataset.tsave,p,t:d.get("title")||"",r:d.get("region")||"",ph:d.get("phone")||""});busy(b,false);
     if(r.error){toast("Chyba: "+r.error.message,6000);return}TOPEN=null;await loadTeam();renderStaff();toast("✓ Prístupy uložené.");return}
