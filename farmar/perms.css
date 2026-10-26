@@ -132,3 +132,5 @@ html.big .fdk b{font-size:max(1.6rem,26px)}
 .zt{min-width:0;max-width:100%;display:grid;gap:12px}.zt>*{min-width:0;max-width:100%}.hrt{max-width:100%}
 .zsg{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(46%,160px),1fr));gap:8px}.zsg>div{display:grid;gap:2px;padding:10px 12px;border-radius:14px;border:1px solid var(--line2);background:rgba(255,255,255,.04);min-width:0}.zsg small{color:var(--muted);font-size:.74rem}.zsg b{font:700 1.05rem var(--f-num);overflow-wrap:anywhere}.zsg .hl{border-color:rgba(182,255,59,.55);background:rgba(182,255,59,.08)}.zsg .hl b{color:var(--lime)}.zsg .wn b{color:var(--warn)}
 .zform select{width:100%}
+.zbl{display:grid;gap:10px;margin:8px 0 12px}.zbc{display:grid;gap:8px;padding:12px;border-radius:16px;border:1px solid var(--line2);background:rgba(255,255,255,.03);min-width:0}.zbc.ok{border-color:rgba(182,255,59,.4)}.zbc.short,.zbc.over{border-color:rgba(255,190,60,.45)}.zbc .row{display:flex;justify-content:space-between;gap:8px;align-items:center}.zbc .row b{overflow-wrap:anywhere}.zbc .mini{padding:6px 10px;min-height:0}
+#fZbc{padding:4px 14px 14px}
