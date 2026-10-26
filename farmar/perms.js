@@ -28,7 +28,7 @@ const PCAT=[
  ["wx","Počasie","Ostatné",""],
  ["big","Veľké písmo a tlačidlá","Ostatné","lepšia čitateľnosť"]];
 const PLOCK=[["margin","Marža, zisk a predajné ceny odberateľom"],["payroll","Mzdy vodičov"],["costs","Pevné náklady firmy"],["ai","ERNTE AI Podpora"],["team","Tím a prístupy"]];
-const PDEF={admin:["req","price_view","price_edit","deals","farm","farm_login","calc","market","trans","remain","notes","wx","big"],
+const PDEF={admin:["req","price_view","deals","farm","farm_login","calc","market","trans","remain","notes","wx","big"],
  dispatch:["req","trans","deals_qty","farm","assign","farmer_gps","remain","notes","fleet","drivers","alarms","cams","yard","diesel","fleet_set","wx","big"],
  invoice:["req","price_view","deals","farm","trans","remain","wx"]};
 const PRESET={

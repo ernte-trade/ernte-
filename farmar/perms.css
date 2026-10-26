@@ -57,3 +57,21 @@ html.big .tabs .tl{font-size:max(.72rem,12.5px)!important}
 html.big .pck span{font-size:max(1rem,16.5px)}
 html.big .card{padding:18px}
 html.big .vnav button b{font-size:max(.8rem,13.5px)}
+/* ===== Bonus k cene (farmár + nastavenie) ===== */
+.bnr{grid-column:1/-1;display:grid;gap:8px;padding:10px 12px;border-radius:16px;background:linear-gradient(135deg,rgba(182,255,59,.12),rgba(34,211,238,.06));border:1px solid rgba(182,255,59,.35)}
+.bnl{display:flex;flex-wrap:wrap;justify-content:space-between;gap:4px 12px;align-items:baseline}.bnup{font-size:.9rem}.bnup b{color:var(--lime)}.bnto{font-size:.9rem}.bnto .num{color:var(--lime);font-size:1.05rem}
+.bnb{min-height:46px;font-weight:700}
+.bnc{display:grid;gap:10px}.bnin{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,150px),1fr));gap:8px}.bnin label{display:grid;gap:4px;font-size:.82rem;color:var(--muted)}
+.bnres{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.bnres>div{padding:10px 12px;border-radius:14px;background:rgba(0,0,0,.25);border:1px solid var(--line2);display:grid}.bnres small{color:var(--muted);font-size:.75rem}.bnres b{font-size:1.25rem;color:var(--lime)}
+.bnbar{position:relative;height:30px;border-radius:99px;background:rgba(255,255,255,.08);overflow:hidden;border:1px solid var(--line)}.bnbar i{position:absolute;inset:0 auto 0 0;background:var(--grad);border-radius:99px;transition:width .35s}.bnbar span{position:relative;display:flex;height:100%;align-items:center;justify-content:center;font-size:.78rem;font-weight:700;color:var(--ink);text-shadow:0 1px 3px rgba(0,0,0,.6)}
+.bnlist{list-style:none;margin:0;padding:0;display:grid;gap:6px}.bnlist li>span,.bnlist li>label{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:2px 10px;align-items:center;padding:9px 11px;border-radius:12px;border:1px solid var(--line2);background:rgba(255,255,255,.04)}
+.bnlist li.ok>span,.bnlist li.ok>label{border-color:rgba(182,255,59,.5);background:rgba(182,255,59,.08)}.bnlist i{font-style:normal;font-weight:800;width:22px;text-align:center;color:var(--muted)}.bnlist li.ok i{color:var(--lime)}
+.bnlist b{font-size:.9rem;overflow-wrap:anywhere}.bnlist em{font-style:normal;font-weight:700;color:var(--lime);white-space:nowrap}.bnlist small{grid-column:2/-1;color:var(--warn);font-size:.76rem}
+.bnck{cursor:pointer}.bnck input{position:absolute;opacity:0;pointer-events:none}.bnck:has(input:focus-visible){outline:2px solid var(--cyan)}
+.bntip{padding:9px 12px;border-radius:12px;background:rgba(255,207,90,.08);border:1px solid rgba(255,207,90,.35);font-size:.88rem}
+.bngrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,300px),1fr));gap:10px;margin-top:10px}
+.bncard{display:grid;gap:8px;align-content:start;padding:12px;border-radius:16px;border:1px solid var(--line2);background:rgba(255,255,255,.035);min-width:0}.bncard.on{border-color:rgba(182,255,59,.45)}
+.bnh{display:flex;justify-content:space-between;gap:8px;align-items:baseline}.bnsum{display:block;font-size:.95rem;line-height:1.5}.bnsum small{display:block}.bnsum b{color:var(--lime)}.bnsum small{color:var(--muted);font-size:.75rem;overflow-wrap:anywhere}
+.bnf{display:grid;gap:8px}.bnf label{display:grid;gap:4px;font-size:.82rem;color:var(--muted)}
+.bnrow{display:grid;grid-template-columns:minmax(0,1.6fr) minmax(0,.8fr) minmax(0,.7fr);gap:6px}.bnrow input[name^=l]{grid-column:1/-1}.bnrow select,.bnrow input{min-width:0;width:100%}
+html.big .bnlist b{font-size:max(1rem,16.5px)}html.big .bnres b{font-size:max(1.4rem,23px)}

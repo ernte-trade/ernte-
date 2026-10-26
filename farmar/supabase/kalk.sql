@@ -31,7 +31,7 @@ alter table public.kalk_store enable row level security;
 
 drop policy if exists kalk_store_select on public.kalk_store;
 create policy kalk_store_select on public.kalk_store for select to authenticated
-  using (public.has_perm('calc') and (path not in ('config','market_private') or public.is_owner()));
+  using (public.has_perm('calc'));
 
 drop policy if exists kalk_store_insert on public.kalk_store;
 create policy kalk_store_insert on public.kalk_store for insert to authenticated

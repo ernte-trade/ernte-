@@ -789,7 +789,7 @@ html[data-theme=light] .ftbl th{color:#0f172a}html[data-theme=light] .fdban{colo
 .rdel{min-width:40px;min-height:40px;padding:0;border-radius:10px}
 </style>
 <script>try{if(localStorage.getItem('ernte-theme')==='light')document.documentElement.dataset.theme='light'}catch(e){}</script>
-<link rel="stylesheet" href="perms.css?v=20261026-0800">
+<link rel="stylesheet" href="perms.css?v=20261026-0820">
 </head>
 <body>
 <div class="wrap">
@@ -990,7 +990,7 @@ function renderFarmer(){const F=FARMER,P=MK.map(m=>STATE.prices.find(x=>x.com===
   if((!window.fcan||fcan("f_prices"))){h+=`<h2>Výkupné ceny · FCA farma, bez DPH</h2>`;
   h+=P.length?`<div class="card">${P.map(p=>`<div class="prow">${comImg(p.com)}<div><div class="t">${esc(comName(p.com))}</div><div class="s">${esc(specLine(p.com))}</div></div><b class="num">${fmt(p.price)} €/t</b>
       ${SELL===p.com||(window.fcan&&!fcan("f_sell"))?"":`<button type="button" class="lime sell" data-sell="${esc(p.com)}">Predať</button>`}
-      ${SELL===p.com?`<form class="f sub" id="fSell"><div class="w"><b>Predať ${esc(comName(p.com))} za ${fmt(p.price)} €/t</b></div><label>Koľko ton?<input name="tons" inputmode="decimal" required placeholder="napr. 100"></label><label>Odkedy môžeme odviezť?<input name="date" type="date" min="${today()}"></label><label class="w">Poznámka (nepovinné)<input name="note" placeholder="napr. vlhkosť, miesto skladu"></label><div class="w btns"><button class="pri" type="submit">Odoslať ERNTE</button><button type="button" data-sell="">Zrušiť</button></div></form>`:""}</div>`).join("")}
+      ${SELL===p.com?`<form class="f sub" id="fSell"><div class="w"><b>Predať ${esc(comName(p.com))} za ${fmt(p.price)} €/t</b></div><label>Koľko ton?<input name="tons" inputmode="decimal" required placeholder="napr. 100"></label><label>Odkedy môžeme odviezť?<input name="date" type="date" min="${today()}"></label><label class="w">Poznámka (nepovinné)<input name="note" placeholder="napr. vlhkosť, miesto skladu"></label><div class="w btns"><button class="pri" type="submit">Odoslať ERNTE</button><button type="button" data-sell="">Zrušiť</button></div></form>`:""}${window.bonusRow?bonusRow(p):""}</div>`).join("")}
       <div class="s">${valid?`Ceny platia do ${esc(dSK(valid))}. `:""}Ťuknite na <b>Predať</b>, napíšte tony a odošlite. ERNTE sa vám ozve.</div><div class="s" style="font-size:.66rem;opacity:.7">Ilustračné fotografie: Wikimedia Commons</div></div>`
     :`<div class="card"><div class="s">Cenník práve pripravujeme.</div></div>`;}
   const R=STATE.reqs;
@@ -2705,6 +2705,7 @@ if("serviceWorker" in navigator&&location.protocol==="https:")navigator.serviceW
 if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",()=>boot());else boot();
 </script>
 <script src="ai.js?v=20261026-0600"></script>
-<script src="perms.js?v=20261026-0800"></script>
+<script src="perms.js?v=20261026-0820"></script>
+<script src="bonus.js?v=20261026-0820"></script>
 </body>
 </html>
