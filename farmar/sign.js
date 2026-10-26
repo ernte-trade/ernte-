@@ -3,7 +3,7 @@
 // Podpis aj pečiatka sú iba v databáze; do PDF zmluvy ich dá funkcia contract_sigs (iba majiteľ, obchod a farmár sám).
 (function(){
 const e=x=>typeof esc==="function"?esc(x):String(x??"");
-const tm=(t,ms)=>typeof toast==="function"?toast(t,ms):alert(t);
+const tm=(t,ms)=>{if(/could not find the function|schema cache|does not exist/i.test(String(t)))t="Podpisovanie sa zapne po aktualizácii databázy – skús o pár minút.";return typeof toast==="function"?toast(t,ms):alert(t)};
 const dt=x=>x?new Date(x).toLocaleString("sk-SK",{day:"numeric",month:"numeric",year:"numeric",hour:"2-digit",minute:"2-digit"}):"";
 const dd=x=>x?new Date(x).toLocaleDateString("sk-SK",{day:"numeric",month:"numeric",year:"numeric"}):"";
 let SF={},SS=null,SSload=false;
