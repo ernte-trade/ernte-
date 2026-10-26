@@ -207,3 +207,20 @@ html.big .agpr{font-size:1.9rem}html.big .agbig b{font-size:1.5rem}
 .agcr span{font-size:.86rem;min-width:0}.agcr small{color:var(--muted)}.agcr b{text-align:right;font:700 1rem var(--f-num)}
 .agcr b.win{color:var(--lime);text-shadow:0 0 12px rgba(182,255,59,.45)}.agcr b.win::before{content:"✓ ";font-size:.8em}
 html[data-theme=light] .agcr{background:rgba(255,255,255,.75)}html[data-theme=light] .agcr b.win{color:#3f6212;text-shadow:none}
+/* agro konfigurátor farmára + ponuka */
+.agcfg .seg2{margin-bottom:4px}.agcfg select{width:100%}
+.agha input{font:700 1.3rem var(--f-num);min-height:56px}
+.agquote{display:grid;gap:4px;padding:16px 18px;border-radius:20px;position:relative;overflow:hidden;border:1px solid rgba(182,255,59,.55);
+  background:radial-gradient(120% 160% at 100% 0%,rgba(182,255,59,.22),transparent 60%),linear-gradient(180deg,rgba(182,255,59,.10),rgba(94,234,212,.05));
+  box-shadow:inset 0 1px 0 rgba(236,255,200,.45),0 0 30px rgba(182,255,59,.18)}
+.agquote::before{content:"";position:absolute;left:0;right:0;top:0;height:1px;background:linear-gradient(90deg,transparent 2%,rgba(255,255,255,.55) 22%,rgba(210,245,255,.95) 50%,rgba(255,255,255,.55) 78%,transparent 98%)}
+.agqp{font:800 2rem var(--f-num);background:linear-gradient(90deg,#ecffc8,#b6ff3b 45%,#5eead4);-webkit-background-clip:text;background-clip:text;color:transparent;filter:drop-shadow(0 0 12px rgba(182,255,59,.35))}
+.agqp small{font:600 .8rem var(--f-ui);margin-left:8px;color:var(--muted);-webkit-text-fill-color:var(--muted)}.agqs{font-size:.88rem;color:var(--muted)}.agqs.wn{color:var(--warn)}
+.agchk{display:grid;gap:6px;grid-template-columns:repeat(auto-fill,minmax(min(100%,230px),1fr))}.agchk small{color:var(--muted);margin-left:4px}
+.agol{display:grid;gap:8px}.agoi{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:10px;align-items:center;padding:10px 12px;border-radius:16px;border:1px solid var(--line2);background:rgba(255,255,255,.04)}
+.agoi.off{opacity:.55}.agoi .pck{margin:0}.agoi .pck small{display:block;color:var(--muted)}.agop{display:grid;grid-template-columns:auto auto;gap:2px 6px;align-items:center;justify-items:end}
+.agop small{grid-column:1/-1;color:var(--muted);font-size:.72rem}.agop input{width:86px;min-height:42px;text-align:right;font:700 1rem var(--f-num)}
+@media (max-width:520px){.agoi{grid-template-columns:1fr}.agop{justify-items:start}}
+html[data-theme=light] .agquote{background:linear-gradient(180deg,#f4ffe0,#e6f9cf);border-color:rgba(77,124,15,.45)}
+html[data-theme=light] .agqp{background:none;color:#3f6212;-webkit-text-fill-color:#3f6212;filter:none}
+html.big .agqp{font-size:2.5rem}
