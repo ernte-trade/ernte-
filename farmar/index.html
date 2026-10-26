@@ -336,6 +336,7 @@ html[data-theme=light] .flt.region{background:rgba(180,83,9,.12);color:#92400e}h
 .xprof.bad>div{background:linear-gradient(150deg,rgba(239,68,68,.28),rgba(255,107,129,.08));border:1px solid rgba(255,107,129,.45)}.xprof.bad b{color:#ffc2cb}
 .xprof.bad .xpr{background:linear-gradient(150deg,rgba(239,68,68,.55),rgba(190,24,93,.25));border-color:rgba(255,107,129,.8);box-shadow:inset 0 1px 0 rgba(255,255,255,.2),0 0 30px rgba(255,80,100,.4)}.xprof.bad .xpr b{color:#fff;text-shadow:0 0 18px rgba(255,80,100,.9)}
 @media (prefers-reduced-motion:reduce){.toast,button{transition:none}}
+.dfp{display:grid;gap:8px;min-width:0}.dfl{display:grid;gap:6px;max-height:320px;overflow:auto}.dfl:empty{display:none}.dfl button{display:flex;justify-content:space-between;gap:10px;align-items:center;text-align:left;padding:12px 14px;border-radius:14px;border:1px solid var(--line2);background:rgba(255,255,255,.05);color:var(--ink);min-width:0}.dfl button b{overflow-wrap:anywhere}.dfl button small{color:var(--muted);flex:0 0 auto}
 </style>
 <style id="ds-diamant">
 /* ===== ERNTE dizajnový systém „sklo – diamant“ (zdieľané premenné a komponenty pre všetky záložky) ===== */
@@ -2613,7 +2614,7 @@ function vPrice(){const P=STATE.prices,valid=((STATE.settings||{}).pricelist||{}
   <label class="w ds-valid ${vc}">Platí do<input name="valid" type="date" value="${esc(valid)}"><small>${esc(vt)}</small></label><div class="w btns"><button class="pri" type="submit">Uložiť a zverejniť</button></div></form>`}
 function vDeals(){const F=STATE.farmers.filter(f=>f.active),pre=DEALF||{},OWN=ROLE==="owner";
   let h=`<form class="card f" id="fDeal"><div class="w t">Nový obchod</div>
-   <label class="w">Farmár<select name="farmer" required><option value="">– vyber –</option>${F.map(f=>`<option value="${esc(f.id)}"${pre.farmer_id===f.id?" selected":""}>${esc(f.name)}</option>`).join("")}</select></label>
+   <div class="w dfp"><label>Farmár – napíš meno alebo ID<input id="dfq" autocomplete="off" placeholder="napr. Hronec alebo C0102" value="${esc(((F.find(f=>f.id===pre.farmer_id)||{}).name)||"")}"></label><input type="hidden" name="farmer" value="${esc(F.some(f=>f.id===pre.farmer_id)?pre.farmer_id:"")}"><div class="dfl" id="dfl"></div></div>
    <label>Komodita<select name="com" id="dCom">${MK.map(m=>`<option value="${m[0]}"${pre.com===m[0]?" selected":""}>${esc(m[1])}</option>`).join("")}</select></label>
    <label>Množstvo t<input name="tons" inputmode="decimal" required value="${esc(pre.tons??"")}"></label>
    <label>Cena €/t FCA<input name="price" id="dPrice" inputmode="decimal" required value="${esc(pre.price!=null?String(pre.price).replace(".",","):"")}"></label>
@@ -2704,6 +2705,15 @@ document.addEventListener("submit",async e=>{if(!ROLE)return;const f=e.target,fd
 
 if("serviceWorker" in navigator&&location.protocol==="https:")navigator.serviceWorker.register("sw.js").catch(()=>{});
 if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",()=>boot());else boot();
+
+// výber farmára v Novom obchode (vyhľadávanie namiesto dlhého zoznamu)
+function dfList(q){const L=document.getElementById("dfl");if(!L)return;const n=s=>String(s||"").normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase().trim(),v=n(q);
+  const F=(STATE.farmers||[]).filter(f=>f.active!==false&&String(f.name||"").trim()).sort((a,b)=>String(a.name).trim().localeCompare(String(b.name).trim(),"sk"));
+  const M=v?F.filter(f=>n(f.name+" "+(f.code||"")+" "+(f.addr||"")).includes(v)):F;
+  L.innerHTML=M.slice(0,40).map(f=>`<button type="button" data-dfp="${esc(f.id)}"><b>${esc(String(f.name).trim())}</b><small>${esc([f.code,f.addr].filter(Boolean).join(" · "))}</small></button>`).join("")+(M.length>40?`<div class="s">…a ďalších ${M.length-40}, spresni hľadanie</div>`:"")+(!M.length?`<div class="s">Nenašiel sa žiadny farmár.</div>`:"")}
+document.addEventListener("focusin",e=>{if(e.target.id==="dfq")dfList(e.target.value)});
+document.addEventListener("input",e=>{if(e.target.id==="dfq"){const h=e.target.form&&e.target.form.elements.farmer;if(h)h.value="";dfList(e.target.value)}});
+document.addEventListener("click",e=>{const b=e.target.closest("[data-dfp]");if(!b)return;const fm=b.closest("form"),f=(STATE.farmers||[]).find(x=>x.id===b.dataset.dfp);if(!fm||!f)return;fm.elements.farmer.value=f.id;document.getElementById("dfq").value=String(f.name).trim();document.getElementById("dfl").innerHTML=`<div class="s">✓ Vybraný: <b>${esc(String(f.name).trim())}</b></div>`});
 </script>
 <script src="ai.js?v=20261026-0600"></script>
 <script src="perms.js?v=20261026-1000"></script>
