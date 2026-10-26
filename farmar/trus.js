@@ -199,7 +199,7 @@ function renderP(){const P=T.P,sup=P.me.kind==="dodavatel",LS=P.orders||[];
         ${L.map(o=>`<div class="card trmini"><div class="row"><b>${e(o.no)} · ${e(dSK(o.day))}</b>${pill(STS,o.status)}</div>${priceBox(o)}</div>`).join("")}`}
     else{h+=`<div class="card"><div class="s">Cena trusu <b>${f2(pr.sell)} €/t</b> + doprava MKD 40 t <b>${f2(pr.km)} €/km</b> otočky (náklad ~${f2(pr.load_t,0)} t). Ceny bez DPH, DPH ${f2(pr.vat,0)} %.</div></div>
       <div class="card trtab"><table><thead><tr><th>Miesto nakládky (HU)</th><th class="r">Km otočka</th><th class="r">Doprava €/jazda</th><th class="r">Doprava €/t</th><th class="r">Trus €/t</th><th class="r">Spolu €/t</th></tr></thead><tbody>${(P.pricelist||[]).map(s=>`<tr><td>${e(s.site)}</td><td class="r">${f2(s.km,0)}</td><td class="r">${f2(s.trans,0)}</td><td class="r">${f2(s.trans_t)}</td><td class="r">${f2(s.sell)}</td><td class="r"><b>${f2(s.total_t)}</b></td></tr>`).join("")}</tbody></table><div class="s">Km sú orientačné do overenia presnej trasy; fakturuje sa podľa km schválených pri vývoze.</div></div>`}}
-  document.getElementById("app").innerHTML=h+`</div>`}
+  document.getElementById("app").innerHTML=h+`</div>`;if(window.inboxDecor)inboxDecor()}
 const perFormP=()=>perForm("trPerP").replace(/>Od</,">"+tr("Od")+"<").replace(/>Do</,">"+tr("Do")+"<").replace("Tento mesiac",tr("Tento mesiac")).replace("Minulý mesiac",tr("Minulý mesiac")).replace(">Všetko<",">"+tr("Všetko")+"<");
 function supCard(o){const S=o.sum||{},st=STS[o.status]||[o.status,"g"];
   return `<div class="card agc trc ${o.status}"><div class="row"><span class="t">${e(o.no)} · ${e(o.site)}</span><span class="pill ${st[1]}">${e(tr(st[0]))}</span></div>
