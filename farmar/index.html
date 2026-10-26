@@ -2058,6 +2058,7 @@ function vFleet(){const F0=STATE.fleet;if(!F0)return `<div class="card"><div cla
   <div class="vnavw"><nav class="vnav" aria-label="Flotila">${FNAV.filter(n=>!window.secOK||secOK(n[0])).map(n=>`<button type="button" data-fsec="${n[0]}" aria-pressed="${sec===n[0]}"${(n[0]==="alarm"||n[0]==="fuel")&&BD[n[0]]?` class="hot"`:""}><span>${n[1]}</span><b>${esc(n[2])}</b>${bdg(BD[n[0]])}</button>`).join("")}</nav>${!window.secOK||secOK("set")?`<button type="button" class="vgear" data-fsec="set" aria-pressed="${sec==="set"}" aria-label="Nastavenia flotily" title="Nastavenia">⚙️${bdg(BD.set)}</button>`:""}</div>${!window.fleetAll||fleetAll()?FSEG:""}<div id="fsecTop"></div>`;
   if(sec==="dash"){
     o+=banner;if(OWNx)o+=rateWarnHTML();
+    o+=naftaBurzaHTML(CO,OWNx);
     o+=`<div class="qbar" role="toolbar" aria-label="Rýchle akcie">${[["todo","🔴","Čo riešiť dnes",1],["vyzva","📄","Pripraviť výzvu vodičovi",OWNx],["fuelm","⛽","Kontrola nafty mesiaca",1],["report","📊","Report mesiaca",1],["ai","🤖","Spýtaj sa AI",OWNx]].filter(x=>x[3]).map(x=>`<button type="button" data-qa="${x[0]}"><span>${x[1]}</span><b>${x[2]}</b></button>`).join("")}</div>`;
     {const sp=dsDaily(F.rides,F.since,CO);
      o+=`<h2>Prehľad · ${esc(perName)}</h2><div class="ds-kpis k5">`+[
@@ -2598,8 +2599,23 @@ function vTrans(){if(STATE.noTrans)return `<div class="card"><div class="t">Dopr
   return h}
 document.addEventListener("click",async e=>{const x=e.target.closest("[data-mktref]");if(!x)return;x.disabled=true;x.textContent="Zisťujem ceny…";const r=await sb.rpc("market_refresh_app");
   if(r.error){toast(/market_refresh_app|function/i.test(r.error.message)?"Burza sa zapne po aktualizácii databázy (pár minút).":"Chyba: "+r.error.message);x.disabled=false;x.textContent="↻ Obnoviť burzu";return}
-  toast(r.data==="čaká"?"Ceny sa práve zisťujú – o chvíľu.":"Zisťujem burzové ceny – do 2 minút.");setTimeout(()=>{STATE.mkt=undefined;if(TAB==="price")renderStaff()},90000)});
+  toast(r.data==="čaká"?"Ceny sa práve zisťujú – o chvíľu.":"Zisťujem burzové ceny – do 2 minút.");setTimeout(()=>{STATE.mkt=undefined;if(TAB==="price"||TAB==="fleet")renderStaff()},90000)});
 // burza (MATIF, CBOT) pri výkupných cenách – iba ERNTE, farmár burzu nikdy nevidí
+// ===== BURZA NAFTY (ICE Gasoil, Brent, priemer SK) – vidí majiteľ aj doprava; obnovuje sa každé 2 h a pri otvorení, ak je staršia =====
+function naftaBurzaHTML(CO,own){if(STATE.mkt===undefined){STATE.mkt=null;loadMkt().then(()=>{if(TAB==="fleet")renderStaff()})}
+  const M=STATE.mkt||{},g=M.gasoil,br=M.brent,sk=M.nafta_sk,fx=M.eurusd&&+M.eurusd.price,X=[g,br,sk].filter(Boolean);
+  const at=X.reduce((m,x)=>x.updated_at>m?x.updated_at:m,""),age=at?(Date.now()-new Date(at))/36e5:null;
+  if((!at||age>2.5)&&!naftaBurzaHTML.auto){naftaBurzaHTML.auto=1;sb.rpc("market_refresh_app").then(()=>setTimeout(()=>{STATE.mkt=undefined;if(TAB==="fleet")renderStaff()},100000),()=>{})}
+  const f3=x=>x==null||!isFinite(x)?"–":(+x).toFixed(3).replace(".",","),dd=x=>x?new Date(x).toLocaleDateString("sk-SK",{day:"numeric",month:"numeric"}):"";
+  const gl=g&&g.eur_t?(+g.eur_t)/1183:null; // €/t → €/l (1 t nafty ≈ 1 183 l), bez daní a marže
+  const my=+CO.diesel||null,skp=sk?+sk.price:null;
+  return `<div class="vd2 nbz"><div class="vdh"><b>⛽ Burza nafty</b><span class="${age!=null&&age<3?"vlv":"vof"}">${at?(age<3?"● ":"")+"aktualizované "+esc(ago(at)):"načítava sa…"}</span></div><div class="vtg">
+    <div class="vtl"><small>ICE Gasoil</small><b>${g?n0(g.price)+"<i> USD/t</i>":"–"}</b><em>${gl?"≈ "+f3(gl)+" €/l bez daní":""}${g&&g.contract?" · "+esc(g.contract):""}</em></div>
+    <div class="vtl"><small>Ropa Brent</small><b>${br?n1(br.price)+"<i> USD</i>":"–"}</b><em>${br?"za barel"+(br.quote_date?" · "+dd(br.quote_date):""):""}</em></div>
+    <div class="vtl on"><small>Nafta SK – priemer pumpy</small><b>${skp?f3(skp)+"<i> €/l</i>":"–"}</b><em>${sk?"s DPH"+(sk.quote_date?" · "+dd(sk.quote_date):""):""}</em></div>
+    ${own&&my?`<div class="vtl${skp&&my>skp*1.03?" bad":""}"><small>Naša cena v nastaveniach</small><b>${f3(my)}<i> €/l</i></b><em>${skp?(my>=skp?"+":"−")+f3(Math.abs(my-skp))+" € oproti priemeru":"s DPH"}</em></div>`:""}
+    ${fx?`<div class="vtl"><small>EUR/USD</small><b>${(+fx).toFixed(4).replace(".",",")}</b><em>kurz</em></div>`:""}</div>
+    <div class="vdn">${sk&&sk.src?"Zdroj SK: "+esc(sk.src)+" · ":""}${g&&g.src?"Gasoil: "+esc(g.src)+" · ":""}obnovuje sa automaticky každé 2 hodiny <button type="button" class="copy" data-mktref="1">↻ Obnoviť teraz</button></div></div>`}
 const MKB={repka:"repka",psenica_p:"psenica",psenica_k:"psenica",kukurica:"kukurica",soja:"soja_usc_bu"};
 function loadMkt(){if(loadMkt.p)return loadMkt.p;return loadMkt.p=sb.from("market_px").select("*").then(r=>{STATE.mkt=r.error?null:Object.fromEntries((r.data||[]).map(x=>[x.sym,x]));loadMkt.p=null;if(TAB==="price")renderStaff()})}
 function burzaTile(com,price){const M=STATE.mkt,s=MKB[com];if(!s)return `<span class="pbz na">bez burzovej ceny</span>`;const x=M&&M[s];if(!x||x.eur_t==null)return `<span class="pbz na">${s==="soja_usc_bu"?"CBOT":"MATIF"}: cena zatiaľ nie je</span>`;

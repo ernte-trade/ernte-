@@ -888,7 +888,8 @@ begin
       'system','Si dátový asistent. Vyhľadaj na webe aktuálne burzové ceny a odpovedz IBA jedným JSON objektom bez ďalšieho textu a bez ```.',
       'messages',jsonb_build_array(jsonb_build_object('role','user','content',
         'Zisti posledné uzatváracie (alebo aktuálne) ceny najbližšieho obchodovaného kontraktu: MATIF / Euronext Paris – repka (rapeseed, €/t), mlynárska pšenica (milling wheat, €/t), kukurica (corn, €/t); CBOT soja (soybeans, US centy za bušel); kurz EUR/USD. '||
-        'Formát: {"repka":{"cena":0,"kontrakt":"","datum":"YYYY-MM-DD","zdroj":""},"psenica":{...},"kukurica":{...},"soja_usc_bu":{...},"eurusd":0}. Ak cenu nenájdeš, daj null.')),
+        'NAFTA: ICE Low Sulphur Gasoil futures najbližší kontrakt (USD za metrickú tonu); ropa Brent najbližší kontrakt (USD za barel); priemerná cena motorovej nafty na čerpacích staniciach na Slovensku (€/l s DPH, najnovší dostupný denný alebo týždenný údaj – napr. Slovnaft, ŠÚ SR, EU Weekly Oil Bulletin, fuel-prices.eu – uveď zdroj a dátum). '||
+        'Formát: {"repka":{"cena":0,"kontrakt":"","datum":"YYYY-MM-DD","zdroj":""},"psenica":{...},"kukurica":{...},"soja_usc_bu":{...},"gasoil":{...},"brent":{...},"nafta_sk":{...},"eurusd":0}. Ak cenu nenájdeš, daj null.')),
       'tools',jsonb_build_array(jsonb_build_object('type','web_search_20250305','name','web_search','max_uses',6))),
     timeout_milliseconds:=180000);
   insert into ai_state(key,value) values('market_req',jsonb_build_object('req',rq,'at',now())) on conflict(key) do update set value=excluded.value, updated_at=now();
@@ -910,11 +911,14 @@ begin
   begin o:=substring(txt from '\{.*\}')::jsonb; exception when others then o:=null; end;
   if o is null then update ai_state set value=value||jsonb_build_object('done',now(),'err','neplatná odpoveď') where key='market_req'; return 0; end if;
   fx:=nullif(cmd_num(o->>'eurusd'),0);
-  for it in select * from (values ('repka','MATIF repka','€/t'),('psenica','MATIF pšenica','€/t'),('kukurica','MATIF kukurica','€/t'),('soja_usc_bu','CBOT sója','USc/bu')) v(sym,nm,un) loop
+  for it in select * from (values ('repka','MATIF repka','€/t'),('psenica','MATIF pšenica','€/t'),('kukurica','MATIF kukurica','€/t'),('soja_usc_bu','CBOT sója','USc/bu'),
+                                  ('gasoil','ICE Gasoil','USD/t'),('brent','Brent','USD/bbl'),('nafta_sk','Nafta SK priemer','€/l')) v(sym,nm,un) loop
     if cmd_num(o->it.sym->>'cena') is not null and cmd_num(o->it.sym->>'cena')>0 then
       insert into market_px(sym,name,price,unit,eur_t,contract,quote_date,src,updated_at)
         values(it.sym,it.nm,cmd_num(o->it.sym->>'cena'),it.un,
-          case when it.sym='soja_usc_bu' then case when fx is not null then round(cmd_num(o->it.sym->>'cena')/100*36.7437/fx,1) end else cmd_num(o->it.sym->>'cena') end,
+          case when it.sym='soja_usc_bu' then case when fx is not null then round(cmd_num(o->it.sym->>'cena')/100*36.7437/fx,1) end
+               when it.sym='gasoil' then case when fx is not null then round(cmd_num(o->it.sym->>'cena')/fx,1) end
+               when it.sym in ('brent','nafta_sk') then null else cmd_num(o->it.sym->>'cena') end,
           o->it.sym->>'kontrakt', case when o->it.sym->>'datum' ~ '^\d{4}-\d{2}-\d{2}$' then (o->it.sym->>'datum')::date end, left(o->it.sym->>'zdroj',200), now())
         on conflict(sym) do update set price=excluded.price, eur_t=coalesce(excluded.eur_t,market_px.eur_t), contract=excluded.contract, quote_date=excluded.quote_date, src=excluded.src, updated_at=now();
       k:=k+1;
@@ -944,5 +948,6 @@ begin
   begin perform market_collect(); exception when others then insert into check_err as c(fn,msg,at) values('market_collect',left(SQLERRM,300),now()) on conflict on constraint check_err_pkey do update set msg=excluded.msg, at=now(); end;
 end $$;
 revoke all on function public.ai_tick() from public, anon, authenticated;
--- burza v pracovné dni ráno a poobede
-select cron.schedule('burza','41 7,13 * * 1-5','select public.market_refresh()');
+-- burza (obilie aj nafta) každé 2 hodiny 6:00–20:00, aj cez víkend (ceny nafty na pumpách)
+select cron.unschedule(jobname) from cron.job where jobname='burza';
+select cron.schedule('burza','41 4,6,8,10,12,14,16,18 * * *','select public.market_refresh()');
