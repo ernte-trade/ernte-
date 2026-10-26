@@ -11,7 +11,7 @@ button.ok{background:linear-gradient(135deg,#b6ff3b,#5eead4);color:#06110a}a.b{b
 <ol><li>Otvor <a href="https://console.anthropic.com/settings/keys" target="_blank">console.anthropic.com → API Keys</a> a prihlás sa.</li><li><b>Billing</b> → pridaj kartu a kredit (napr. 20 $).</li><li><b>Create Key</b> → názov „ERNTE“ → skopíruj kľúč (začína <code>sk-ant-</code>).</li></ol>
 <label>Claude API kľúč<input id="k" type="password" autocomplete="off" placeholder="sk-ant-…"></label></div>
 <div class="box"><h2>2 · Úpravy aplikácie cez AI</h2>
-<ol><li>Otvor <a href="https://github.com/settings/personal-access-tokens/new" target="_blank">GitHub → nový token</a>.</li><li>Názov „ERNTE AI“, Expiration <b>No expiration</b>. <b>Repository access</b> → Only select → <b>ernte-trade/ernte-</b>.</li><li><b>Permissions</b> → <b>+</b> → <b>Issues</b> → <b>Read and write</b> → Generate token → ťukni ikonku kopírovať a <b>hneď</b> vlož sem (nič iné medzitým nekopíruj).</li></ol>
+<ol><li>Otvor <a href="https://github.com/settings/personal-access-tokens/new" target="_blank">GitHub → nový token</a>.</li><li>Názov „ERNTE AI“, Expiration <b>No expiration</b>. <b>Resource owner</b> → <b>ernte-trade</b>. <b>Repository access</b> → Only select → <b>ernte-trade/ernte-</b>.</li><li><b>Permissions</b> → <b>+</b> → <b>Contents</b> → <b>Read-only</b> a <b>+</b> → <b>Issues</b> → <b>Read and write</b> → Generate token → ťukni ikonku kopírovať a <b>hneď</b> vlož sem (nič iné medzitým nekopíruj).</li></ol>
 <label>GitHub token<input id="g" type="password" autocomplete="off" placeholder="github_pat_…"></label>
 <label>AI kľúč (dostal si ho v chate)<input id="s" autocomplete="off" autocapitalize="off" placeholder="ernte-…"></label></div>
 <button id="c">Kopírovať SQL</button>
