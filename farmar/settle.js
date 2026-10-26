@@ -75,7 +75,7 @@ function farmHTML(){const F=(STATE.farmers||[]).filter(f=>String(f.name||"").tri
    <b class="sth">Zmluva</b>
    <div class="zsg">${[["Zmluva",fmt(k.tons,0)+" t"],["Dodané (fakt.)",fmt(k.delivered_t,2)+" t"],[over?"Prebytok":"Dodať",fmt(Math.abs(k.remain_t),2)+" t",over?"wn":""],["% naplnenia",fmt(k.fill||0,1)+" %"],["Tolerancia ±"+fmt(k.tol_pct??5,0)+" %",fmt(tolOf(k),2)+" t"],["Min. na splnenie",fmt((+k.tons||0)-tolOf(k),2)+" t"],["Stav zmluvy",tolSt(k)[1],tolSt(k)[0]==="ok"?"hl":"wn"],["Lístkov zmluvy",String(LA.length)]].map(x=>`<div class="${x[2]||""}"><small>${x[0]}</small><b>${x[1]}</b></div>`).join("")}</div>
    <div class="opbar"><i style="width:${Math.min(100,k.fill||0)}%"></i></div><div class="s"><b>Stav fakturácie:</b> ${esc(st)}${per?` · obdobie tvorí ${A.w?fmt(S.w/A.w*100,1):"0"} % dodaného`:""}${k.wheat_bands?`<br>Pásma pšenice: ${k.wheat_bands.map(b=>(b.min?"od "+fmt(b.min,1)+" %":"do")+" → "+fmt(b.price,0)+" €/t").join(" · ")}`:""}</div>
-   <div class="btns"><button type="button" class="pri" data-zpdf="${esc(k.id)}">🖨️ Zúčtovanie PDF${per?" za obdobie":""}</button>${f.phone?`<button type="button" class="lime" data-zwa="${esc(k.id)}">WhatsApp farmárovi</button>`:""}</div>
+   <div class="btns"><button type="button" class="pri" data-zpdf="${esc(k.id)}">🖨️ Zúčtovanie PDF${per?" za obdobie":""}</button><button type="button" data-cpdf="${esc(k.id)}">📄 Kúpna zmluva PDF</button>${f.phone?`<button type="button" class="lime" data-zwa="${esc(k.id)}">WhatsApp farmárovi</button>`:""}</div>
    <b class="sth">Vážne lístky${per?" za obdobie":""} (${P.length})</b>${linesTable(P)}</div>`;
   return h}
 const tolOf=k=>k.tol_t!=null?+k.tol_t:(+k.tons||0)*0.05;

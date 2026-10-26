@@ -1008,7 +1008,7 @@ function renderFarmer(){const F=FARMER,P=MK.map(m=>STATE.prices.find(x=>x.com===
       <div class="kpis"><div class="kpi"><small>Dohodnuté</small><b>${fmt(d.tons)} t</b></div><div class="kpi"><small>Odvezené</small><b>${fmt(d.delivered_t)} t</b></div><div class="kpi"><small>Zostáva</small><b>${fmt(left)} t</b></div></div>
       ${d.note?`<div class="s">Pozn.: ${esc(d.note)}</div>`:""}
       ${(STATE.trips||[]).filter(t=>t.deal_id===d.id).length?`<details class="trips"><summary>Jazdy (${(STATE.trips||[]).filter(t=>t.deal_id===d.id).length})</summary>${(STATE.trips||[]).filter(t=>t.deal_id===d.id).map(tripRow).join("")}</details>`:""}
-      <div class="btns">${d.status==="navrh"?(waitAgree?`<span class="pill w">súhlas odoslaný</span>`:`<button type="button" class="pri" data-agree="${esc(d.id)}">Súhlasím so zmluvou</button>`):""}
+      <div class="btns">${(!window.fcan||fcan("f_deals"))?`<button type="button" data-cpdf="${esc(d.id)}">📄 Zmluva PDF</button>`:""}${d.status==="navrh"?(waitAgree?`<span class="pill w">súhlas odoslaný</span>`:`<button type="button" class="pri" data-agree="${esc(d.id)}">Súhlasím so zmluvou</button>`):""}
         ${["podpisany","odvoz"].includes(d.status)&&left>0&&ORDER!==d.id&&(!window.fcan||fcan("f_transport"))?`<button type="button" class="lime" data-order="${esc(d.id)}">Objednať odvoz</button>`:""}</div>
       ${ORDER===d.id?`<form class="f sub" id="fOrder" data-deal="${esc(d.id)}"><div class="w"><b>Objednávka odvozu VALKO</b></div><label>Počet kamiónov<input name="trucks" inputmode="numeric" value="${Math.max(1,Math.ceil(left/25))}"></label><label>Deň<input name="date" type="date" min="${today()}" required></label><label>Od koľkej<input name="time" type="time" value="07:00"></label><label>Miesto nakládky<input name="place" placeholder="sklad farmy"></label><label class="w">Poznámka<input name="note"></label><div class="w btns"><button class="pri" type="submit">Odoslať objednávku</button><button type="button" data-order="">Zrušiť</button></div></form>`:""}
     </div>`}).join(""):`<div class="card"><div class="s">Zatiaľ nemáte žiadny obchod. Keď si vyberiete cenu a ťuknete na Predať, ERNTE vám pripraví zmluvu.</div></div>`;}
@@ -2641,6 +2641,7 @@ function vDeals(){const F=STATE.farmers.filter(f=>f.active),pre=DEALF||{},OWN=RO
   h+=STATE.deals.map(d=>{const df=OWN?(STATE.dfin||{})[d.id]:null,sell=df&&df.sell_price!=null?+df.sell_price:null,m=sell!=null?sell-(+d.price):null;
     return `<div class="card"><div class="ds-hd"><span class="ds-ic" aria-hidden="true">🤝</span><span class="ds-ttl"><b>${esc(fName(d.farmer_id))}</b><small>${esc(d.no)}${d.term?" · termín "+esc(d.term):""}</small></span>${pill(DST[d.status]||[d.status])}</div>
     <div class="ds-chips">${dsChip("Plodina",esc(comName(d.com)))}${dsChip("Množstvo",fmt(d.tons)+" t")}${dsChip("Odvezené",fmt(d.delivered_t)+" t")}${dsChip("Nákup",fmt(d.price)+" €/t")}${OWN?dsChip("Predaj",sell!=null?fmt(sell)+" €/t":"nezadané",sell!=null?"":"na",1)+dsChip("Marža €/t",m!=null?dsSg2(m):"–",m==null?"na":m>=0?"pos":"neg",1)+dsChip("Marža spolu",m!=null?dsSg(m*(+d.tons))+" €":"–",m==null?"na":m>=0?"pos":"neg",1):""}</div>
+    <div class="btns"><button type="button" data-cpdf="${esc(d.id)}">📄 Kúpna zmluva PDF</button></div>
     <form class="f sub" data-dedit="${esc(d.id)}"><label>Stav<select name="status">${Object.keys(DST).map(k=>`<option value="${k}"${d.status===k?" selected":""}>${esc(DST[k][0])}</option>`).join("")}</select></label><label>Odvezené t<input name="delivered_t" inputmode="decimal" value="${String(d.delivered_t??0).replace(".",",")}"></label>${OWN?`<label class="w">Predajná cena €/t (vidíš iba ty)<input name="sell" inputmode="decimal" placeholder="nezadané" value="${sell!=null?String(sell).replace(".",","):""}"></label>`:""}<div class="w btns"><button type="submit">Uložiť zmenu</button></div></form></div>`}).join("");
   return h}
 function vFarm(){const q=FQ.toLowerCase().trim(),qd=q.replace(/\s/g,""),L=STATE.farmers.filter(f=>!q||[f.name,f.email,f.addr,f.phone].join(" ").toLowerCase().includes(q)||(qd&&String(f.ico||"").replace(/\s/g,"").includes(qd)));const E=EDITF==="new"?{}:STATE.farmers.find(f=>f.id===EDITF);
@@ -2741,7 +2742,8 @@ document.addEventListener("click",e=>{const b=e.target.closest("[data-dfp]");if(
 <script src="perms.js?v=20261026-1815"></script>
 <script src="bonus.js?v=20261026-1000"></script>
 <script src="hub.js?v=20261026-1830"></script>
-<script src="settle.js?v=20261026-1430"></script>
+<script src="settle.js?v=20261026-1930"></script>
+<script src="contract.js?v=20261026-1930"></script>
 <script src="agro.js?v=20261026-1600"></script>
 </body>
 </html>
