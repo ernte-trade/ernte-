@@ -8,7 +8,7 @@ async function rules(){if(RUL)return RUL;try{if(typeof FARMER!=="undefined"&&FAR
   else{const r=await sb.from("settle_rules").select("value").eq("key","main").maybeSingle();RUL=Object.assign({},DEF_R,(r.data&&r.data.value)||{})}}catch(e){RUL=Object.assign({},DEF_R)}return RUL}
 const n2=x=>typeof fmt==="function"?fmt(x):String(x);
 const e=x=>typeof esc==="function"?esc(x):String(x??"");
-function html(d,F,R){const S=(typeof SPEC!=="undefined"&&SPEC[d.com])||[14,2],tol=+(R.tol_pct??5),norm=(R.norm&&R.norm[d.com])!=null?R.norm[d.com]:S[0],today=new Date().toLocaleDateString("sk-SK");
+function html(d,F,R,ST){const S=(typeof SPEC!=="undefined"&&SPEC[d.com])||[14,2],tol=+(R.tol_pct??5),norm=(R.norm&&R.norm[d.com])!=null?R.norm[d.com]:S[0],today=new Date().toLocaleDateString("sk-SK");
   const total=(+d.tons||0)*(+d.price||0),wheat=d.com==="psenica_p";
   return `<!doctype html><html lang="sk"><head><meta charset="utf-8"><title>Kúpna zmluva ${e(d.no)} – ${e(F.name)}</title><style>
   @page{size:A4;margin:16mm 16mm 18mm}body{font:11.5px/1.5 "Inter",-apple-system,Segoe UI,Roboto,sans-serif;color:#111;margin:24px auto;max-width:820px}
@@ -17,7 +17,7 @@ function html(d,F,R){const S=(typeof SPEC!=="undefined"&&SPEC[d.com])||[14,2],to
   .pt{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:10px 0 14px}.pt div{border:1px solid #d6dccd;border-radius:8px;padding:10px 12px;background:#fafcf7}.pt h3{margin:0 0 4px;font-size:11px;letter-spacing:.08em;color:#5a8f1c;text-transform:uppercase}
   h2{font-size:12.5px;margin:14px 0 4px}p,li{margin:3px 0}ol{margin:0;padding-left:18px}
   table{border-collapse:collapse;width:100%;margin:6px 0}td,th{border:1px solid #d6dccd;padding:6px 8px;text-align:left}th{background:#f2f6ec;width:38%}
-  .sg{display:grid;grid-template-columns:1fr 1fr;gap:40px;margin-top:30px;page-break-inside:avoid}.sg>div{text-align:center}.sg .ln{margin-top:48px;border-top:1px solid #333;padding-top:6px}.sg small{display:block;color:#555}
+  .sg{display:grid;grid-template-columns:1fr 1fr;gap:40px;margin-top:30px;page-break-inside:avoid}.sg>div{text-align:center;display:flex;flex-direction:column;justify-content:flex-end}.sg .stp{display:block;margin:4px auto -8px;height:118px;width:auto;transform:rotate(-2deg);mix-blend-mode:multiply;position:relative;z-index:1}.sg .stp+.ln{margin-top:0}.sg .ln{margin-top:48px;border-top:1px solid #333;padding-top:6px}.sg small{display:block;color:#555}
   .ft{margin-top:18px;color:#666;font-size:10px}.pb{margin:16px 0}@media print{.pb{display:none}body{margin:0;max-width:none}}</style></head><body>
   <div class="hd"><div><b>ERNTE</b><small>Trade &amp; Logistic</small></div><div style="text-align:right"><small>${e(KUP.a)} · IČO ${e(KUP.ico)}</small><small>${e(KUP.tel)} · ${e(KUP.mail)}</small></div></div>
   <h1>KÚPNA ZMLUVA č. ${e(d.no)}</h1><div class="sub">uzavretá podľa § 409 a nasl. zákona č. 513/1991 Zb. Obchodný zákonník v platnom znení</div>
@@ -40,13 +40,14 @@ function html(d,F,R){const S=(typeof SPEC!=="undefined"&&SPEC[d.com])||[14,2],to
   <h2>Čl. V – Záverečné ustanovenia</h2><ol><li>Zmluva nadobúda platnosť a účinnosť podpisom oboch strán alebo potvrdením súhlasu predávajúceho v aplikácii ERNTE.</li>
    <li>Práva a povinnosti neupravené touto zmluvou sa riadia Obchodným zákonníkom. Osobné údaje sa spracúvajú podľa GDPR a zákona č. 18/2018 Z. z. len na účely plnenia zmluvy.</li>
    <li>Zmluva je vyhotovená v dvoch rovnopisoch, každá strana dostane jeden.</li></ol>
-  <div class="sg"><div>V ........................ dňa ............<div class="ln">Predávajúci<small>${e(F.name)}</small></div></div><div>V Zbudzi dňa ${e(today)}<div class="ln">Kupujúci<small>${e(KUP.n)}</small></div></div></div>
+  <div class="sg"><div>V ........................ dňa ............<div class="ln">Predávajúci<small>${e(F.name)}</small></div></div><div>V Zbudzi dňa ${e(today)}${ST?`<img class="stp" src="${e(ST)}" alt="Pečiatka a podpis ERNTE">`:""}<div class="ln">Kupujúci<small>${e(KUP.n)}</small></div></div></div>
   <div class="ft">Zmluva č. ${e(d.no)} · vygenerované v aplikácii ERNTE Trade &amp; Logistic ${e(today)}.${d.status&&d.status!=="navrh"?" Stav: súhlas predávajúceho potvrdený v aplikácii.":""}</div>
   <div class="pb"><button onclick="print()" style="font-size:15px;padding:10px 18px">🖨️ Tlačiť / uložiť ako PDF</button></div></body></html>`}
 async function open(id){const d=(STATE.deals||[]).find(x=>x.id===id);if(!d){toast("Zmluva sa nenašla.");return}
   const F=(typeof FARMER!=="undefined"&&FARMER)?FARMER:((STATE.farmers||[]).find(f=>f.id===d.farmer_id)||{name:""});
   const w=window.open("","_blank");if(!w){toast("Povoľ vyskakovacie okná pre zmluvu.");return}w.document.write("<p style='font:16px sans-serif;padding:20px'>Pripravujem zmluvu…</p>");
-  const R=await rules();w.document.open();w.document.write(html(d,F,R));w.document.close();setTimeout(()=>{try{w.focus();w.print()}catch(x){}},600)}
+  const R=await rules();let ST=null;try{const r=await sb.rpc("contract_stamp",{p_deal:d.id});if(!r.error&&typeof r.data==="string"&&/^data:image\/(png|jpeg);base64,/.test(r.data))ST=r.data}catch(x){}
+  w.document.open();w.document.write(html(d,F,R,ST));w.document.close();setTimeout(()=>{try{w.focus();w.print()}catch(x){}},600)}
 window.contractPdf=open;window.contractHTML=html;
 document.addEventListener("click",e=>{const b=e.target.closest("[data-cpdf]");if(!b)return;e.preventDefault();open(b.dataset.cpdf)});
 })();
