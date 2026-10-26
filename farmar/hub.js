@@ -110,8 +110,8 @@ try{Object.assign(HELP,{home:{t:"Prehľad",i:"🏠",r:"Všetko dôležité na je
 // ===== VÁŽNE LÍSTKY (z Excelu / váhy) =====
 let DV=null,DVQ="",DVN=60;
 function dvLoad(){DV=undefined;sb.rpc("deliveries_staff").then(r=>{DV=r.error?{err:r.error.message}:r.data||[];if(TAB==="deals")renderStaff()})}
-function dvCard(){if(!canAny("deals","deals_qty","remain"))return "";if(DV===null)setTimeout(dvLoad,0);
-  let h=`<details class="card hsec" id="hs-dv"${DVQ?" open":""}><summary><span>⚖️</span><b>Vážne lístky</b><small>každá dodávka od farmára – čistá váha, nečistoty, ŠPZ, obchod</small></summary>`;
+function dvCard(){if(ROLE!=="owner")return "";if(DV===null)setTimeout(dvLoad,0);
+  let h=`<details class="card hsec" id="hs-dv"${DVQ?" open":""}><summary><span>⚖️</span><b>Vážne lístky</b><small>🔒 iba ty · každá dodávka od farmára – čistá váha, nečistoty, ŠPZ, zmluva</small></summary>`;
   if(!Array.isArray(DV))return h+`<div class="s">${DV&&DV.err?"Zapne sa po aktualizácii databázy (pár minút).":"Načítavam…"}</div></details>`;
   const q=String(DVQ).toLowerCase(),L=DV.filter(d=>!q||[d.ticket,d.farmer_name,d.plate,d.deal_no,comName(d.com)].join(" ").toLowerCase().includes(q));
   const sum=L.reduce((s,d)=>s+(+d.net_kg||0),0)/1000;
@@ -131,5 +131,5 @@ function farmDelivHTML(){if(typeof FARMER==="undefined"||!FARMER||(window.fcan&&
   return `<h2>⚖️ Moje dodávky – vážne lístky</h2><div class="card fdc"><div class="ops-k">${Object.entries(by).slice(0,3).map(([k,t])=>`<div><small>${esc(comName(k))}</small><b>${fmt(t,1)} t</b></div>`).join("")}</div>
    ${FD.slice(0,40).map(d=>`<details class="fdi"><summary><b>${esc(dSK(d.day))}</b><span>${esc(comName(d.com))} · <b class="num">${fmt((+d.net_kg||0)/1000,3)} t</b></span><small>${esc(d.plate||"")}</small></summary><div class="s">Lístok ${esc(d.ticket)} · hrubá ${fmt((+d.gross_kg||0)/1000,3)} t · nečistoty ${d.impurity_pct!=null?fmt(d.impurity_pct,2)+" %":"–"}${d.buy_price!=null?" · cena "+fmt(d.buy_price)+" €/t":""}${d.deal_no?" · zmluva "+esc(d.deal_no):""}${d.quality?"<br>Rozbor: "+esc(d.quality):""}</div></details>`).join("")}
    ${FD.length>40?`<div class="s">…a ďalších ${FD.length-40} lístkov.</div>`:""}</div>`}
-const _fn2=window.farmNotesHTML;window.farmNotesHTML=function(){return farmDelivHTML()+(_fn2?_fn2.apply(this,arguments):"")};
+// vážne lístky farmárom nezobrazujeme – údaje z Excelu sú prísne tajné (iba majiteľ)
 })();
