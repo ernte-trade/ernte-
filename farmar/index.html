@@ -2058,7 +2058,7 @@ function vFleet(){const F0=STATE.fleet;if(!F0)return `<div class="card"><div cla
   <div class="vnavw"><nav class="vnav" aria-label="Flotila">${FNAV.filter(n=>!window.secOK||secOK(n[0])).map(n=>`<button type="button" data-fsec="${n[0]}" aria-pressed="${sec===n[0]}"${(n[0]==="alarm"||n[0]==="fuel")&&BD[n[0]]?` class="hot"`:""}><span>${n[1]}</span><b>${esc(n[2])}</b>${bdg(BD[n[0]])}</button>`).join("")}</nav>${!window.secOK||secOK("set")?`<button type="button" class="vgear" data-fsec="set" aria-pressed="${sec==="set"}" aria-label="Nastavenia flotily" title="Nastavenia">⚙️${bdg(BD.set)}</button>`:""}</div>${!window.fleetAll||fleetAll()?FSEG:""}<div id="fsecTop"></div>`;
   if(sec==="dash"){
     o+=banner;if(OWNx)o+=rateWarnHTML();
-    o+=naftaBurzaHTML(CO,OWNx);
+    if(OWNx||!window.can||can("diesel"))o+=naftaBurzaHTML(CO,OWNx);
     o+=`<div class="qbar" role="toolbar" aria-label="Rýchle akcie">${[["todo","🔴","Čo riešiť dnes",1],["vyzva","📄","Pripraviť výzvu vodičovi",OWNx],["fuelm","⛽","Kontrola nafty mesiaca",1],["report","📊","Report mesiaca",1],["ai","🤖","Spýtaj sa AI",OWNx]].filter(x=>x[3]).map(x=>`<button type="button" data-qa="${x[0]}"><span>${x[1]}</span><b>${x[2]}</b></button>`).join("")}</div>`;
     {const sp=dsDaily(F.rides,F.since,CO);
      o+=`<h2>Prehľad · ${esc(perName)}</h2><div class="ds-kpis k5">`+[
@@ -2082,7 +2082,7 @@ function vFleet(){const F0=STATE.fleet;if(!F0)return `<div class="card"><div cla
     o+=S.map||"";
     if(OWNx&&STATE.payCur==null&&!loadPayCur.p)loadPayCur().then(renderStaff);
     if(STATE.repOpen&&FPER==="m"){STATE.repOpen=0;setTimeout(reportSheet,50)}
-  }else if(sec==="fuel"){o+=fswHTML("fuel");const s2=fsub("fuel");o+=s2==="yard"?vYard(F):s2==="cams"?camHTML():banner+vFuelTab(F,{AX:AXF,FST,perName})}
+  }else if(sec==="fuel"){o+=fswHTML("fuel");const s2=fsub("fuel");o+=s2==="yard"?vYard(F):s2==="cams"?camHTML():banner+(OWNx||!window.can||can("diesel")?naftaBurzaHTML(CO,OWNx):"")+vFuelTab(F,{AX:AXF,FST,perName})}
   else if(sec==="alarm")o+=S.alarm||"";
   else if(sec==="money"){o+=S.perf||"";if(OWNx)o+=vLoss(LOSS,perName);if(OWNx)o+=`<div class="xnote">👷 Mzdy v zisku: ${esc(payIncTxt(F.cfg.pay))}${pay!=null&&FPER==="m"&&payF(curMon)<1?" · základ pomerne k dnešku":""} – prepínač v ⚙️ Nastaveniach. Pevné náklady po skupinách zadáš v ⚙️ Nastaveniach.</div>`}
   else if(sec==="drv")o+=(S.drv||"")+vDrvIssues(F,AX);
