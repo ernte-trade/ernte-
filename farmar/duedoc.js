@@ -58,7 +58,20 @@ const hist=()=>ld(HK)||{},people=()=>ld(RK)||[];
 const idOf=d=>d[0]+"|"+String(d[2]).slice(0,40);
 const telOf=v=>{let t=String(v||"").replace(/[^\d+]/g,"");if(!t)return "";if(t.startsWith("+"))return t.slice(1);if(t.startsWith("00"))return t.slice(2);if(t.startsWith("0"))return "421"+t.slice(1);return t};
 const isMail=v=>/@/.test(String(v||""))&&!/@tel\.ernte\.sk$/.test(v);
-function team(){const L=(typeof STATE!=="undefined"&&STATE.staff)||[];return L.filter(p=>p.role!=="owner").map(p=>{const em=String(p.email||""),tel=p.phone||(em.endsWith("@tel.ernte.sk")?"+"+em.split("@")[0]:"");return {n:p.name,c:tel||(isMail(em)?em:""),t:"tím"}}).filter(p=>p.c)}
+// všetci zamestnanci z aplikácie: prihlásení (Tím), tím VALKO (Firma VALKO) a vodiči áut – telefón aj e-mail ako samostatné riadky
+window.ernteContacts=function(){const out=[],seen=new Set(),nk=v=>String(v||"").toLowerCase().replace(/\s/g,"");
+  const add=(n,c,t)=>{n=String(n||"").trim();c=String(c||"").trim();if(!n||!c)return;const k=nk(n)+"|"+(isMail(c)?nk(c):telOf(c));if(seen.has(k))return;seen.add(k);out.push({n,c,t})};
+  const ST=(typeof STATE!=="undefined"&&STATE)||{};
+  for(const p of ST.staff||[]){if(p.role==="owner")continue;const em=String(p.email||""),tel=p.phone||(em.endsWith("@tel.ernte.sk")?"+"+em.split("@")[0]:"");const tt="tím"+(p.title?" · "+p.title:"");add(p.name,tel,tt);add(p.name,p.mail||(isMail(em)?em:""),tt)}
+  for(const r of ((ST.staffcfg||{}).valko_team)||[]){if(!Array.isArray(r))continue;const tt="VALKO"+(r[1]?" · "+r[1]:"");add(r[0],r[2],tt);add(r[0],r[3],tt)}
+  for(const t of ST.trucks||[]){if(t.driver&&t.phone)add(t.driver,t.phone,"vodič"+(t.spz?" · "+t.spz:""))}
+  return out.sort((a,b)=>a.n.localeCompare(b.n,"sk"))};
+function team(){return window.ernteContacts()}
+function teamLoad(){const ST=(typeof STATE!=="undefined"&&STATE)||null;if(!ST)return;const q=[];
+  if(!ST.staff&&typeof loadTeam==="function")q.push(loadTeam());
+  if(!ST.staffcfg)q.push(sb.from("staff_cfg").select("key,value").then(r=>{ST.staffcfg=ST.staffcfg||{};for(const x of r.data||[])ST.staffcfg[x.key]=x.value}));
+  if(!ST.trucks)q.push(sb.from("trucks").select("*").order("no").then(r=>{ST.trucks=r.data||[]}));
+  if(q.length)Promise.all(q.map(p=>Promise.resolve(p).catch(()=>{}))).then(()=>{if(PK)paint()})}
 function log(d,r,how,kind){const H=hist(),k=idOf(d);(H[k]=H[k]||[]).unshift({n:r.n,c:r.c,how,kind,at:new Date().toISOString()});H[k]=H[k].slice(0,30);sv(HK,H);
   const P=people().filter(p=>!(p.n===r.n&&p.c===r.c));P.unshift({n:r.n,c:r.c});sv(RK,P.slice(0,30));if(typeof renderStaff==="function")renderStaff()}
 const dt=x=>new Date(x).toLocaleString("sk-SK",{day:"numeric",month:"numeric",hour:"2-digit",minute:"2-digit"});
@@ -66,12 +79,12 @@ const HOW={wa:"WhatsApp",sms:"SMS",mail:"e-mail",share:"menu telefónu"};
 window.dueBtns=i=>{const d=(window.ERNTE_DUE||[])[i];const H=d?(hist()[idOf(d)]||[]):[];
   return `<div class="btns duebtns"><button type="button" class="lime" data-duemsg="${i}">💬 Poslať správu</button><button type="button" data-duepdf="${i}">📄 Poslať PDF</button></div>${H.length?`<details class="duehist"><summary>✓ Odoslané ${H.length}× · naposledy ${e(H[0].n)} (${e(dt(H[0].at))})</summary>${H.map(h=>`<div>${h.kind==="pdf"?"📄":"💬"} <b>${e(h.n)}</b> · ${e(HOW[h.how]||h.how)} · ${e(dt(h.at))}</div>`).join("")}</details>`:""}`};
 let PK=null;
-function picker(i,kind){const d=(window.ERNTE_DUE||[])[i];if(!d)return;if(typeof loadTeam==="function"&&typeof STATE!=="undefined"&&!STATE.staff)loadTeam().then(()=>{if(PK)paint()});
+function picker(i,kind){const d=(window.ERNTE_DUE||[])[i];if(!d)return;teamLoad();
   PK={i,kind,d,sel:null,q:""};paint()}
 function cands(){const H=hist()[idOf(PK.d)]||[],seen=new Set(),out=[];const add=(r,tag)=>{const k=r.n+"|"+r.c;if(seen.has(k)||!r.c)return;seen.add(k);out.push({...r,tag})};
-  H.forEach(h=>add({n:h.n,c:h.c},"✓ už dostal"));people().forEach(p=>add(p,"naposledy"));team().forEach(p=>add(p,"tím"));return out}
+  H.forEach(h=>add({n:h.n,c:h.c},"✓ už dostal"));people().forEach(p=>add(p,"naposledy"));team().forEach(p=>add(p,p.t||"tím"));return out}
 function paint(){let o=document.getElementById("duePk");if(!PK){if(o)o.remove();return}if(!o){o=document.createElement("div");o.id="duePk";o.className="duepk";document.body.appendChild(o);o.addEventListener("click",ev=>{if(ev.target===o){PK=null;paint()}})}
-  const C=cands(),q=PK.q.toLowerCase(),L=C.filter(r=>!q||(r.n+" "+r.c).toLowerCase().includes(q)),H=hist()[idOf(PK.d)]||[];
+  const dn=v=>String(v||"").normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase(),C=cands(),q=dn(PK.q).trim(),qd=q.replace(/\D/g,""),L=C.filter(r=>!q||dn(r.n+" "+r.c+" "+(r.tag||"")).includes(q)||(qd.length>=3&&String(r.c).replace(/\D/g,"").includes(qd))),H=hist()[idOf(PK.d)]||[];
   o.innerHTML=`<div class="duepb" role="dialog" aria-modal="true" aria-label="Komu poslať"><div class="duehd"><b>${PK.kind==="pdf"?"📄 Poslať PDF":"💬 Poslať správu"} – komu?</b><button type="button" class="duex" data-duex aria-label="Zavrieť">✕</button></div>
    <div class="s">${PK.d[1]} ${e(PK.d[2])}</div>
    ${H.length?`<div class="duesent">✓ Už odoslané: ${[...new Set(H.map(h=>h.n))].map(e).join(", ")}</div>`:""}
