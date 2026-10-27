@@ -8,6 +8,7 @@ const tst=(t,ms)=>(typeof toast==="function"?toast:alert)(t,ms);
 const today=()=>new Date(Date.now()-new Date().getTimezoneOffset()*6e4).toISOString().slice(0,10);
 const dSK=d=>d?new Date(String(d).slice(0,10)+"T12:00:00").toLocaleDateString("sk-SK",{day:"numeric",month:"numeric",year:"numeric"}):"";
 const OWN=()=>typeof ROLE!=="undefined"&&ROLE==="owner";
+const CE=()=>OWN()||(typeof can==="function"&&can("ev"));   // vedúci: ceny, bločky, nákupy, inventúra; strojník iba berie a pridáva
 const KAT={diel:"🔩 Náhradné diely",spojovaci:"🪛 Spojovací materiál",elektro:"💡 Elektro",olej_chemia:"🛢️ Oleje, spreje, chémia",ochranne:"🧤 Ochranné pomôcky",material:"🪵 Materiál",naradie:"🧰 Náradie a zariadenia",kancelaria:"📎 Kancelária",potraviny:"🥖 Potraviny",ine:"📦 Iné"};
 const DRUH={sklad:["📦 na sklad","b"],majetok:["🧰 náradie / majetok","b"],spotreba:["spotreba hneď","g"],phm:["PHM","g"],sluzba:["služba","g"],nie:["nepatrí na sklad","g"]};
 const pill=(k)=>{const x=DRUH[k]||[k,"g"];return `<span class="pill ${x[1]}">${e(x[0])}</span>`};
@@ -20,7 +21,7 @@ async function loadPoh(id){const r=await sb.from("ev_sklad_poh").select("*").eq(
 const ent=()=>window.evData?window.evData():null;
 
 window.vSklad=function(){
-  const tabs=[["stav","📦 Stav skladu"],["foto","📸 Odfotiť"],["nak","🧾 Z nákupov"]];
+  const tabs=CE()?[["stav","📦 Stav skladu"],["foto","📸 Odfotiť"],["nak","🧾 Z nákupov"]]:[["stav","📦 Sklad"],["foto","📸 Odfotiť diel"]];if(!CE()&&S.sv==="nak")S.sv="stav";
   let h=`<div class="btns seg2 sktabs">${tabs.map(t=>`<button type="button" data-sksv="${t[0]}" aria-pressed="${S.sv===t[0]}">${t[1]}${t[0]==="nak"?nakCnt():""}</button>`).join("")}</div>`;
   if(S.sv==="foto")return h+fotoHTML();if(S.sv==="nak")return h+nakHTML();return h+stavHTML()};
 function nakCnt(){const E=ent();if(!E||!E.ent)return "";const n=E.ent.filter(r=>r.typ==="naklad"&&!r.archiv&&!r.sklad&&["sklad","majetok"].includes(r.sklad_navrh)).length;return n?` <span class="cnt">${n}</span>`:""}
@@ -29,7 +30,7 @@ function nakCnt(){const E=ent();if(!E||!E.ent)return "";const n=E.ent.filter(r=>
 function stavHTML(){if(!S.it){loadIt();return `<div class="card"><div class="s">Načítavam sklad…</div></div>`}if(S.it.err)return `<div class="card"><div class="s">${e(S.it.err)}</div></div>`;
   const q=nrm(S.q),hit=A=>!q||q.split(" ").every(w=>A.some(v=>nrm(v).includes(w))),L=S.it.filter(i=>i.aktivny&&(!S.kat||i.kat===S.kat||(S.kat==="naradie"&&i.druh==="majetok"))&&(!S.low||(i.min_mn!=null&&+i.stav<=+i.min_mn))&&hit([i.nazov,i.kod,i.miesto,i.stroj,i.vyrobca,i.pozn]));
   const val=S.it.filter(i=>i.aktivny&&i.druh==="sklad").reduce((s,i)=>s+Math.max(0,+i.stav)*(+i.cena_j||0),0),low=S.it.filter(i=>i.aktivny&&i.min_mn!=null&&+i.stav<=+i.min_mn).length;
-  let h=`<div class="hrk"><div><small>Položiek</small><b>${S.it.filter(i=>i.aktivny).length}</b></div><div><small>Hodnota zásob (bez DPH)</small><b>${f2(val)} €</b></div><div class="${low?"wn":""}"><small>Dochádza (pod minimom)</small><b>${low}</b></div></div>
+  let h=`<div class="hrk"><div><small>Položiek</small><b>${S.it.filter(i=>i.aktivny).length}</b></div>${CE()?`<div><small>Hodnota zásob (bez DPH)</small><b>${f2(val)} €</b></div>`:""}<div class="${low?"wn":""}"><small>Dochádza (pod minimom)</small><b>${low}</b></div></div>
    <form class="card f skflt" id="skFlt"><label>Hľadať<input name="q" value="${e(S.q)}" placeholder="názov, kód, stroj, regál…"></label>
    <label>Druh<select name="kat"><option value="">všetko</option>${Object.entries(KAT).filter(k=>!["potraviny","kancelaria"].includes(k[0])).map(k=>`<option value="${k[0]}"${S.kat===k[0]?" selected":""}>${k[1]}</option>`).join("")}</select></label>
    <label class="evck"><input type="checkbox" name="low"${S.low?" checked":""}> iba čo dochádza</label></form>
@@ -55,20 +56,20 @@ function nkCard(r){const t=[r.podkat,r.pozn].filter(Boolean).join(" · ")||r.str
 function itemCard(i){const op=S.open===i.id,low=i.min_mn!=null&&+i.stav<=+i.min_mn;
   let h=`<div class="card skit${low?" sklow":""}"><div class="row">${i.foto?`<img class="skimg" src="${e(i.foto)}" alt="">`:""}<div class="skn"><b>${e(i.nazov)}</b><small>${[i.kod,i.vyrobca,i.stroj&&"🚜 "+i.stroj,i.miesto&&"📍 "+i.miesto].filter(Boolean).map(e).join(" · ")}</small></div>
     <div class="skst"><b>${f2(i.stav,+i.stav%1?2:0)}</b><small>${e(i.jed)}${low?" · dochádza":""}</small></div></div>
-    <div class="btns skb"><button type="button" data-skact="vydaj" data-id="${i.id}">➖ Vydať</button><button type="button" data-skact="prijem" data-id="${i.id}">➕ Prijať</button><button type="button" data-skact="inv" data-id="${i.id}">📝 Inventúra</button><button type="button" class="evmini" data-skop="${i.id}">${op?"Zavrieť":"Viac"}</button></div>`;
+    <div class="btns skb"><button type="button" data-skact="vydaj" data-id="${i.id}">➖ Vydať</button><button type="button" data-skact="prijem" data-id="${i.id}">➕ Prijať</button>${CE()?`<button type="button" data-skact="inv" data-id="${i.id}">📝 Inventúra</button>`:""}<button type="button" class="evmini" data-skop="${i.id}">${op?"Zavrieť":"Viac"}</button></div>`;
   if(S.act&&S.act.id===i.id){const a=S.act.k;h+=`<form class="f skmv" data-skmv="${a}" data-id="${i.id}"><label>${a==="inv"?"Skutočný stav ("+e(i.jed)+")":"Množstvo ("+e(i.jed)+")"}<input name="mn" inputmode="decimal" required autofocus></label>
-    <label>Dátum<input type="date" name="d" value="${today()}"></label>${a==="vydaj"?`<label>Na čo / stroj<input name="stroj" list="skStr" value="${e(i.stroj||"")}" placeholder="Xerion, Ranger…"></label>`:""}${a==="prijem"?`<label>Cena €/j bez DPH<input name="cena" inputmode="decimal" value="${iv(i.cena_j)}"></label>`:""}
+    <label>Dátum<input type="date" name="d" value="${today()}"></label>${a==="vydaj"?`<label>Na čo / stroj<input name="stroj" list="skStr" value="${e(i.stroj||"")}" placeholder="Xerion, Ranger…"></label>`:""}${a==="prijem"&&CE()?`<label>Cena €/j bez DPH<input name="cena" inputmode="decimal" value="${iv(i.cena_j)}"></label>`:""}
     <label class="w">Poznámka<input name="pozn"></label><div class="w btns"><button class="lime" type="submit">✓ Zapísať</button><button type="button" data-skx>Zrušiť</button></div></form>`}
   if(op){if(!S.poh[i.id])loadPoh(i.id);const P=S.poh[i.id]||[];
-    h+=`<div class="trlw"><span>cena ${i.cena_j!=null?f2(i.cena_j)+" €/"+e(i.jed):"–"}</span><span>hodnota ${f2(Math.max(0,+i.stav)*(+i.cena_j||0))} €</span>${i.min_mn!=null?`<span>minimum ${f2(i.min_mn,0)}</span>`:""}</div>
+    h+=`<div class="trlw">${CE()?`<span>cena ${i.cena_j!=null?f2(i.cena_j)+" €/"+e(i.jed):"–"}</span><span>hodnota ${f2(Math.max(0,+i.stav)*(+i.cena_j||0))} €</span>`:""}${i.min_mn!=null?`<span>minimum ${f2(i.min_mn,0)}</span>`:""}</div>
     ${P.length?`<div class="trtab skpoh"><table><tbody>${P.map(p=>`<tr><td>${e(dSK(p.d))}</td><td>${p.druh==="prijem"?"➕ príjem":p.druh==="vydaj"?"➖ výdaj":"📝 inventúra"}</td><td class="r"><b>${p.druh==="vydaj"?"−":p.mn>0&&p.druh==="inventura"?"+":""}${f2(p.mn,+p.mn%1?2:0)}</b></td><td>${e([p.stroj,p.pozn].filter(Boolean).join(" · "))}</td><td><small>${e(String(p.created_by||"").split("@")[0])}</small></td></tr>`).join("")}</tbody></table></div>`:`<div class="s">Zatiaľ bez pohybov.</div>`}
-    ${S.act&&S.act.k==="edit"&&S.act.id===i.id?itemForm(i):`<div class="btns"><button type="button" data-skact="edit" data-id="${i.id}">✏️ Upraviť položku</button></div>`}`}
+    ${!CE()?"":S.act&&S.act.k==="edit"&&S.act.id===i.id?itemForm(i):`<div class="btns"><button type="button" data-skact="edit" data-id="${i.id}">✏️ Upraviť položku</button></div>`}`}
   return h+`</div>`}
 function itemForm(i){return `<form class="card f skif" data-skitem="${i.id||""}"><div class="w t">${i.id?"✏️ Upraviť":"➕ Nová položka"}</div>${i.foto?`<img class="skimg w" src="${e(i.foto)}" alt="">`:""}
   <label>Názov<input name="nazov" required value="${e(i.nazov||"")}"></label><label>Druh<select name="kat">${Object.entries(KAT).filter(k=>!["potraviny","kancelaria"].includes(k[0])).map(k=>`<option value="${k[0]}"${(i.kat||"diel")===k[0]?" selected":""}>${k[1]}</option>`).join("")}</select></label>
   <label>Kód / označenie<input name="kod" value="${e(i.kod||"")}"></label><label>Výrobca<input name="vyrobca" value="${e(i.vyrobca||"")}"></label>
   <label>Jednotka<input name="jed" list="skJ" value="${e(i.jed||"ks")}"></label>${i.id?"":`<label>Počet teraz na sklade<input name="mn" inputmode="decimal" value="${iv(i.mn)}"></label>`}
-  <label>Cena €/j bez DPH<input name="cena_j" inputmode="decimal" value="${iv(i.cena_j)}"></label><label>Pre stroj<input name="stroj" list="skStr" value="${e(i.stroj||"")}"></label>
+  ${CE()?`<label>Cena €/j bez DPH<input name="cena_j" inputmode="decimal" value="${iv(i.cena_j)}"></label>`:""}<label>Pre stroj<input name="stroj" list="skStr" value="${e(i.stroj||"")}"></label>
   <label>Miesto (regál, dielňa)<input name="miesto" value="${e(i.miesto||"")}"></label><label>Upozorniť pod (min. stav)<input name="min_mn" inputmode="decimal" value="${iv(i.min_mn)}"></label>
   <label class="w">Poznámka<input name="pozn" value="${e(i.pozn||i.popis||"")}"></label>${i.id?`<label class="evck"><input type="checkbox" name="aktivny"${i.aktivny!==false?" checked":""}> aktívna položka</label>`:""}
   <input type="hidden" name="foto" value="${e(i.foto||"")}"><datalist id="skJ"><option value="ks"><option value="l"><option value="kg"><option value="m"><option value="bal"></datalist>
@@ -77,9 +78,9 @@ function itemForm(i){return `<form class="card f skif" data-skitem="${i.id||""}"
 // ---------- foto (Claude) ----------
 function fotoHTML(){const X=S.scan;
   let h=`<div class="card skfoto"><div class="t">📸 Odfoť a appka to zapíše sama</div>
-   <div class="skbig"><label class="zbtn skcam"><span>🧾</span><b>Bloček / faktúra</b><small>položky → náklady a sklad</small><input type="file" accept="image/*" capture="environment" data-skfile="blocek" hidden></label>
+   <div class="skbig">${CE()?`<label class="zbtn skcam"><span>🧾</span><b>Bloček / faktúra</b><small>položky → náklady a sklad</small><input type="file" accept="image/*" capture="environment" data-skfile="blocek" hidden></label>`:""}
    <label class="zbtn skcam"><span>🔩</span><b>Súčiastka / tovar</b><small>rozpozná diel → pridá na sklad</small><input type="file" accept="image/*" capture="environment" data-skfile="diel" hidden></label></div>
-   <div class="btns"><label class="skgal">🖼️ Bloček z galérie<input type="file" accept="image/*" data-skfile="blocek" hidden></label><label class="skgal">🖼️ Súčiastka z galérie<input type="file" accept="image/*" data-skfile="diel" hidden></label></div>
+   <div class="btns">${CE()?`<label class="skgal">🖼️ Bloček z galérie<input type="file" accept="image/*" data-skfile="blocek" hidden></label>`:""}<label class="skgal">🖼️ Súčiastka z galérie<input type="file" accept="image/*" data-skfile="diel" hidden></label></div>
    <div class="s">Fotku prečíta Claude (AI). Pred uložením všetko skontroluješ a opravíš. Odfoť celý doklad, rovno a pri dobrom svetle.</div></div>`;
   if(!X)return h;
   if(X.status==="wait")return h+`<div class="card skwait">${X.thumb?`<img class="skimg" src="${e(X.thumb)}" alt="">`:""}<div><b>⏳ Čítam ${X.mode==="blocek"?"bloček":"súčiastku"}…</b><small>zvyčajne 10–30 sekúnd</small></div></div>`;
@@ -157,7 +158,7 @@ document.addEventListener("submit",async ev=>{const f=ev.target;if(typeof TAB===
     else{const c=num(d.get("cena"));Object.assign(o,{druh:"prijem",mn,cena_j:c});if(c!=null)await sb.from("ev_sklad").update({cena_j:c}).eq("id",id)}
     busy(b,true);const r=await sb.from("ev_sklad_poh").insert(o);busy(b,false);if(r.error){tst("⚠️ "+r.error.message);return}tst("✓ Zapísané.");S.act=null;delete S.poh[id];await loadIt();return}
   if(f.dataset.skitem!=null){ev.preventDefault();const d=new FormData(f),id=+f.dataset.skitem||0;const o={nazov:String(d.get("nazov")).trim(),kat:d.get("kat"),kod:String(d.get("kod")||"").trim()||null,vyrobca:String(d.get("vyrobca")||"").trim()||null,jed:String(d.get("jed")||"ks").trim()||"ks",
-      cena_j:num(d.get("cena_j")),stroj:String(d.get("stroj")||"").trim()||null,miesto:String(d.get("miesto")||"").trim()||null,min_mn:num(d.get("min_mn")),pozn:String(d.get("pozn")||"").trim()||null};
+      cena_j:CE()?num(d.get("cena_j")):undefined,stroj:String(d.get("stroj")||"").trim()||null,miesto:String(d.get("miesto")||"").trim()||null,min_mn:num(d.get("min_mn")),pozn:String(d.get("pozn")||"").trim()||null};
     o.druh=o.kat==="naradie"?"majetok":"sklad";if(d.get("foto"))o.foto=d.get("foto");if(id)o.aktivny=d.get("aktivny")==="on";
     busy(b,true);const r=id?await sb.from("ev_sklad").update(o).eq("id",id).select().single():await sb.from("ev_sklad").insert(o).select().single();
     if(r.error){busy(b,false);tst("⚠️ "+r.error.message);return}

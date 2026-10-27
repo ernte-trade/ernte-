@@ -39,10 +39,11 @@ window.vEvid=function(){
   if(CAN("ev"))SEC.push(["zap","🧾","Náklady a výnosy","PHM, nákupy, služby, servis – zápis s dátumom, strojom a poľom"]);
   if(CAN("ev_doch"))SEC.push(["doch","🗓️","Dochádzka",OWN()?"dni, dovolenka, PN, pole, víkendy, nadčasy":"zapíš dni, pole, víkendy a nadčasy – bez peňazí"]);
   if(OWN())SEC.push(["mzdy","💶","Výplaty podľa zákona","hrubá → odvody → daň → čistá · cena práce · výplatné pásky"],["prehl","📊","Prehľad a výsledok","výnosy, náklady, mzdy, výsledok po mesiacoch"]);
-  if(CAN("ev"))SEC.splice(1,0,["sklad","📦","Sklad","diely, materiál, náradie · odfoť bloček alebo súčiastku"]);
+  if(CAN("ev")||CAN("sklad"))SEC.splice(CAN("ev")?1:0,0,["sklad","📦","Sklad",CAN("ev")?"diely, materiál, náradie · odfoť bloček alebo súčiastku":"vziať diel do stroja · pridať na sklad"]);
   if(CAN("ev"))SEC.push(["vyk","🌾","Výkony","žatva po kombajnoch, vápnenie po podnikoch"]);
   if(OWN())SEC.push(["kon","✅","Kontrola a opravy","čo bolo v Exceli zle a ako je to teraz · sadzby 2025/2026"]);
-  let h=`<div class="zt evz"><h2>📒 Evidencia ERNTE ${E.sec?`<button type="button" class="ztb" data-evsec="">← späť</button>`:""}</h2>`;
+  if(SEC.length===1&&!E.sec)E.sec=SEC[0][0];
+  let h=`<div class="zt evz"><h2>${SEC.length===1&&SEC[0][0]==="sklad"?"📦 Sklad ERNTE":"📒 Evidencia ERNTE"} ${E.sec&&SEC.length>1?`<button type="button" class="ztb" data-evsec="">← späť</button>`:""}</h2>`;
   if(!E.sec)return h+`<div class="zgrid">${SEC.map(s=>`<button type="button" class="zbtn" data-evsec="${s[0]}"><span>${s[1]}</span><b>${s[2]}</b><small>${e(s[3])}</small></button>`).join("")}</div>
     <div class="s">🔒 Mzdy, cenu práce, výnosy a výsledok vidí iba majiteľ. Vedúci zapisuje náklady a dochádzku; svoje zápisy môže 14 dní opraviť.</div></div>`;
   let b="";try{b=({sklad:()=>{if(!E.ent)loadEnt();return (window.vSklad?vSklad():"")+`<datalist id="skStr">${[...new Set((E.ent||[]).map(r=>r.stroj).filter(Boolean))].slice(0,120).map(x=>`<option value="${e(x)}">`).join("")}</datalist>`},zap:zapHTML,doch:dochHTML,mzdy:mzdyHTML,prehl:prehlHTML,vyk:vykHTML,kon:konHTML})[E.sec]()}catch(x){b=`<div class="card"><div class="s">Chyba zobrazenia: ${e(x.message)}</div></div>`}
