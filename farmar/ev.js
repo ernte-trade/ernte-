@@ -69,8 +69,8 @@ function entForm(x){x=x||{};const own=OWN(),K=[...new Set((E.ent||[]).map(r=>r.k
   <datalist id="evS">${ST.map(k=>`<option value="${e(k)}">`).join("")}</datalist><datalist id="evP">${PA.map(k=>`<option value="${e(k)}">`).join("")}</datalist>
   <div class="w btns"><button class="lime" type="submit">💾 Uložiť</button>${x.id?`<button type="button" data-evcancel>Zrušiť</button><button type="button" class="red" data-evdel="${x.id}">🗑️ Zmazať</button>`:""}</div>
   ${own?"":`<div class="w s">Zápis uvidí majiteľ. Opraviť alebo zmazať ho môžeš do 14 dní.</div>`}</form>`}
-function entFilter(){const R=E.ent||[],q=E.fq.trim().toLowerCase();
-  return R.filter(r=>String(r.d).startsWith(String(E.y))&&(!E.fm||r.d.slice(5,7)===E.fm)&&(!E.ft||r.typ===E.ft)&&(!E.fk||r.kat===E.fk)&&(!E.ff||r.firma===E.ff)&&
+function entFilter(){const R=(E.ent||[]).filter(r=>E.ft==="archiv"?r.archiv:!r.archiv),q=E.fq.trim().toLowerCase();
+  return R.filter(r=>String(r.d).startsWith(String(E.y))&&(!E.fm||r.d.slice(5,7)===E.fm)&&(!E.ft||E.ft==="archiv"||r.typ===E.ft)&&(!E.fk||r.kat===E.fk)&&(!E.ff||r.firma===E.ff)&&
     (!q||[r.kat,r.podkat,r.partner,r.stroj,r.pole,r.plodina,r.pozn].some(v=>String(v||"").toLowerCase().includes(q))))}
 function zapHTML(){if(!E.ent){loadEnt();return `<div class="card"><div class="s">Načítavam…</div></div>`}
   if(E.err)return `<div class="card"><div class="s">${e(E.err)}</div></div>`;
@@ -80,7 +80,7 @@ function zapHTML(){if(!E.ent){loadEnt();return `<div class="card"><div class="s"
   let h=E.edit===0?entForm():E.edit?entForm((E.ent||[]).find(r=>r.id===E.edit)):`<div class="btns"><button class="lime" data-evnew>➕ Nový zápis</button></div>`;
   h+=`<form class="card f evflt" id="evFlt"><label>Rok<select name="y">${Y.map(y=>`<option${y===E.y?" selected":""}>${y}</option>`).join("")}</select></label>
    <label>Mesiac<select name="m"><option value="">celý rok</option>${MES.map((m,i)=>{const v=String(i+1).padStart(2,"0");return `<option value="${v}"${E.fm===v?" selected":""}>${m}</option>`}).join("")}</select></label>
-   <label>Typ<select name="t"><option value="">všetko</option><option value="naklad"${E.ft==="naklad"?" selected":""}>náklady</option>${own?`<option value="zisk"${E.ft==="zisk"?" selected":""}>výnosy</option>`:""}</select></label>
+   <label>Typ<select name="t"><option value="">všetko</option><option value="naklad"${E.ft==="naklad"?" selected":""}>náklady</option>${own?`<option value="zisk"${E.ft==="zisk"?" selected":""}>výnosy</option><option value="archiv"${E.ft==="archiv"?" selected":""}>🗄️ archív (vyradené)</option>`:""}</select></label>
    <label>Kategória<select name="k"><option value="">všetky</option>${K.map(k=>`<option${E.fk===k?" selected":""}>${e(k)}</option>`).join("")}</select></label>
    <label>Firma<select name="f"><option value="">obe</option><option${E.ff==="ERNTE"?" selected":""}>ERNTE</option><option${E.ff==="VALKO"?" selected":""}>VALKO</option></select></label>
    <label>Hľadať<input name="q" value="${e(E.fq)}" placeholder="stroj, partner, pole…"></label></form>`;
@@ -203,7 +203,7 @@ function rekHTML(m){const L=monthRows(m),Z=L.filter(y=>person(y.person_id).druh!
 
 // ================= PREHĽAD (majiteľ) =================
 function prehlHTML(){if(!E.ent){loadEnt();return `<div class="card"><div class="s">Načítavam…</div></div>`}if(!E.pay){loadPay();return `<div class="card"><div class="s">Načítavam…</div></div>`}
-  const Y=String(E.y),R=(E.ent||[]).filter(r=>String(r.d).startsWith(Y)),P=(E.pay||[]).filter(y=>String(y.mes).startsWith(Y));
+  const Y=String(E.y),R=(E.ent||[]).filter(r=>!r.archiv&&String(r.d).startsWith(Y)),P=(E.pay||[]).filter(y=>String(y.mes).startsWith(Y));
   const yrs=[...new Set((E.ent||[]).map(r=>+String(r.d).slice(0,4)).concat((E.pay||[]).map(y=>+String(y.mes).slice(0,4))))].sort((a,b)=>b-a);
   const M=[...Array(12)].map((_,i)=>{const mm=Y+"-"+String(i+1).padStart(2,"0"),r=R.filter(x=>x.d.startsWith(mm)),p=P.filter(y=>String(y.mes).startsWith(mm));
     const vyn=r.filter(x=>x.typ==="zisk").reduce((s,x)=>s+(+x.suma||0),0),nk=r.filter(x=>x.typ==="naklad"&&!presun(x.kat)).reduce((s,x)=>s+(+x.suma||0),0);
@@ -257,14 +257,14 @@ function konHTML(){if(!E.ent){loadEnt();return `<div class="card"><div class="s"
    <li><b>Náklad na mzdy</b> = súčet hrubej + odvodov zamestnanca + dane + bonusu – odvody a daň sa započítali <b>dvakrát</b> a <b>chýbali odvody firmy</b> (SP 25,2 % + ZP 11 %). App počíta <b>cenu práce</b> = hrubá + odvody firmy + stravné + sociálny fond 0,6 %.</li>
    <li><b>Čistá mzda s príplatkami</b> pripočítala pole, prémie a zrážky <b>druhýkrát</b>; zrážky (zálohy, exekúcie) sa strhávajú z čistej, nie z hrubej.</li>
    <li><b>Stravné</b> sa platilo aj ľuďom s nulovou mzdou a za pevných 21/22 dní (raz aj −3,5 dňa). App ráta podľa odpracovaných dní a stráži daňový limit (2025: 4,57 €, 2026: 5,12 €/deň) – 4,84 € v roku 2025 bolo nad limitom.</li>
-   <li><b>Výbery hotovosti</b> boli v nákladoch – nie sú to náklady, iba presun peňazí.</li>
+   <li><b>Výbery hotovosti</b> boli v nákladoch. Čistý výber je iba presun peňazí; výbery, za ktoré sa platila oprava, nákup alebo kolok, som preradil do nákladov.</li>
    <li><b>Dátumy:</b> časť riadkov v hárku 2026 mala rok 2025 – v prehľadoch Excelu chýbali v oboch rokoch. Preklepy app zaradila do 2026, neskoro zapísané faktúry 2025 ostali v 2025 (⚠️ pri zápise).</li>
    <li><b>Prehľad 2026</b> rátal október–december ako hotové mzdy (odhad). App ráta iba skutočné mesiace.</li>
    <li><b>Žatva:</b> súčet v hlavičke rátal iba 4 z 9 sekcií – app sčíta všetky záznamy.</li></ol></div>`;
   for(const yr of yrs){const L=X.filter(y=>String(y.mes).startsWith(yr)),ex=L.reduce((s,y)=>s+(+y.excel_cost||0),0),ok=L.reduce((s,y)=>s+(+(y.calc||{}).cena_prace||0),0);
     const net=L.filter(y=>person(y.person_id).druh!=="szco"),exn=net.reduce((s,y)=>s+(+y.excel_net||0),0),okn=net.reduce((s,y)=>s+(+(y.calc||{}).k_vyplate||0),0);
     h+=`<div class="hrk"><div><small>Mzdy ${yr} – náklad v Exceli</small><b>${eur(ex)}</b></div><div class="ng"><small>Správna cena práce</small><b>${eur(ok)}</b></div><div><small>Rozdiel</small><b>${eur(ok-ex)}</b></div><div><small>Na účty: Excel / podľa zákona</small><b>${f2(exn,0)} / ${f2(okn,0)} €</b></div></div>`}
-  const fl=(E.ent||[]).filter(r=>r.flag),pres=(E.ent||[]).filter(r=>presun(r.kat)),vypl=(E.ent||[]).filter(r=>/vyplat/i.test(r.kat||""));
+  const AE=(E.ent||[]).filter(r=>!r.archiv),fl=AE.filter(r=>r.flag),pres=AE.filter(r=>presun(r.kat)),vypl=AE.filter(r=>/vyplat|mzdy hot/i.test(r.kat||""));
   const lm=[...new Set((E.pay||[]).map(y=>String(y.mes).slice(0,7)))].sort().pop()||"",low=[...new Set((E.pay||[]).filter(y=>String(y.mes).startsWith(lm)&&((y.calc||{}).warn||[]).some(w=>/minimáln/.test(w))).map(y=>person(y.person_id).meno))];
   const both=[];const byM=new Map;for(const y of (E.pay||[])){const p=person(y.person_id),k=String(y.mes).slice(0,7)+"|"+String(p.meno||"").toLowerCase();byM.set(k,(byM.get(k)||new Set).add(p.druh))}
   for(const [k,s] of byM)if(s.size>1)both.push(k.split("|"));
@@ -276,6 +276,7 @@ function konHTML(){if(!E.ent){loadEnt();return `<div class="card"><div class="s"
    <li>⚠️ Opravené zápisy pri importe: ${fl.length} (v denníku označené ⚠️).</li>
    ${low.length?`<li>📉 <b>Pod minimálnym mzdovým nárokom</b> (pri zadanom úväzku): ${low.map(e).join(", ")} – doplň skutočný úväzok alebo uprav mzdu.</li>`:""}
    <li>📄 Pri mzdách ešte doplň v „Ľudia a podmienky“: kto podpísal vyhlásenie na nezdaniteľnú časť, počet a vek detí, úväzok, dôchodcov a stupeň náročnosti pre traktoristov.</li></ul></div>`;
+  h+=upratHTML();
   const PR=(E.par||[]).slice().sort((a,b)=>b.rok-a.rok);
   if(PR.length){const K=[["mm","Minimálna mzda €"],["mm_h","Minimálna hodinová mzda €"],["nczd","Nezdaniteľná časť €/mes."],["zp_zam","ZP zamestnanec"],["zp_zav","ZP zamestnávateľ"],["vz_max","Max. vymeriavací základ SP €"],["bon15","Daňový bonus do 15 r. €"],["bon_lim","Krátenie bonusu od ZD €/mes."],["strav_den","Stravné firmy €/deň"],["pole","Práca na poli €/deň"]];
     h+=`<div class="card trtab evsad"><table><thead><tr><th>Sadzby</th>${PR.map(p=>`<th class="r">${p.rok}</th>`).join("")}</tr></thead><tbody>${K.map(k=>`<tr><td>${k[1]}</td>${PR.map(p=>{const v=p.p[k[0]];return `<td class="r">${typeof v==="number"&&v<1?f2(v*100,1)+" %":f2(v,v%1?2:0)}</td>`}).join("")}</tr>`).join("")}
@@ -284,6 +285,15 @@ function konHTML(){if(!E.ent){loadEnt();return `<div class="card"><div class="s"
      <form class="card f" id="evPar"><div class="w t">Firemné nastavenie ${PR[0].rok}</div><label>Stravné €/deň<input name="strav_den" inputmode="decimal" value="${iv(PR[0].p.strav_den)}"></label><label>Práca na poli €/deň<input name="pole" inputmode="decimal" value="${iv(PR[0].p.pole)}"></label><div class="w btns"><button class="lime">💾 Uložiť</button></div>
      <div class="w s">Zákonné sadzby menia iba zákony – pri novom roku ich doplním. Nevyplatené mesiace sa po zmene prepočítajú.</div></form>`}
   return h+`<div class="s">⚖️ Nie som daňový poradca ani právnik – výpočty sú podľa platných sadzieb, ale mzdy, PN a ročné zúčtovanie nechaj skontrolovať mzdovej účtovníčke.</div>`}
+
+// ---------- upratanie dát ----------
+function upratHTML(){const A=(E.ent||[]).filter(r=>r.archiv),P=(E.ent||[]).filter(r=>!r.archiv&&/\[súkromné\?\]/.test(r.flag||"")),U=(E.ent||[]).filter(r=>!r.archiv&&/\[upratanie\]/.test(r.flag||""));
+  const row=(r,btn)=>`<tr><td>${e(dSK(r.d))}</td><td>${e([r.kat,r.podkat,r.pozn,r.stroj].filter(Boolean).join(" · "))}<br><small>${e(r.archiv||String(r.flag||"").replace(/.*\[(upratanie|súkromné\?)\]\s*/,""))}</small></td><td class="r">${f2(r.suma)}</td><td>${btn}</td></tr>`;
+  return `<div class="card"><div class="t">🧹 Upratanie dát</div><div class="s">Nič sa natrvalo nezmazalo okrem 1 prázdneho riadku. Zdvojené a nepotrebné zápisy sú v archíve – nerátajú sa do výsledku a jedným ťuknutím sa dajú vrátiť.</div>
+   <div class="hrk"><div><small>V archíve</small><b>${A.length} · ${f2(A.reduce((s,r)=>s+(+r.suma||0),0),0)} €</b></div><div><small>Preradené výbery a opravy</small><b>${U.length}</b></div><div class="${P.length?"wn":""}"><small>Možno súkromné</small><b>${P.length}</b></div></div>
+   ${A.length?`<details class="trap"><summary>🗄️ Archív (${A.length})</summary><div class="trtab"><table><tbody>${A.map(r=>row(r,`<button type="button" class="evmini" data-evarch="${r.id}" data-v="">↩ Vrátiť</button>`)).join("")}</tbody></table></div></details>`:""}
+   ${P.length?`<details class="trap"><summary>🤔 Možno súkromné / nie daňový výdavok (${P.length})</summary><div class="trtab"><table><tbody>${P.map(r=>row(r,`<button type="button" class="evmini" data-evarch="${r.id}" data-v="Súkromný výdavok – nie je náklad firmy">🗄️ Vyradiť</button>`)).join("")}</tbody></table></div></details>`:""}
+   ${U.length?`<details class="trap"><summary>🔁 Čo som preradil (${U.length})</summary><div class="trtab"><table><tbody>${U.map(r=>row(r,"")).join("")}</tbody></table></div></details>`:""}</div>`}
 
 // ================= UDALOSTI =================
 document.addEventListener("click",async ev=>{const g=s=>ev.target.closest&&ev.target.closest(s);let x;
@@ -297,6 +307,7 @@ document.addEventListener("click",async ev=>{const g=s=>ev.target.closest&&ev.ta
   if(x=g("[data-evy]")){E.y=+x.dataset.evy;rr();return}
   if(x=g("[data-evdel]")){if(!confirmEv("Zmazať tento zápis?"))return;const r=await sb.from("ev_entries").delete().eq("id",+x.dataset.evdel);if(r.error){tst("⚠️ "+r.error.message);return}E.ent=E.ent.filter(y=>y.id!==+x.dataset.evdel);E.edit=null;tst("Zmazané.");rr();return}
   if(x=g("[data-evodel]")){const r=await sb.from("ev_ops").delete().eq("id",+x.dataset.evodel);if(r.error){tst("⚠️ "+r.error.message);return}E.ops=E.ops.filter(y=>y.id!==+x.dataset.evodel);rr();return}
+  if(x=g("[data-evarch]")){const v=x.dataset.v||null,id=+x.dataset.evarch;const r=await sb.from("ev_entries").update({archiv:v,archiv_at:v?new Date().toISOString():null}).eq("id",id).select().single();if(r.error){tst("⚠️ "+r.error.message);return}E.ent=E.ent.map(y=>y.id===id?r.data:y);tst(v?"🗄️ Vyradené do archívu.":"↩ Vrátené.");rr();return}
   if(x=g("[data-evop]")){const id=+x.dataset.evop;E.open=E.open===id?null:id;rr();return}
   if(x=g("[data-evpv]")){E.pv=x.dataset.evpv;E.edit=null;rr();return}
   if(g("[data-evpnew]")){E.edit="p0";rr();return}

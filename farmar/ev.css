@@ -35,3 +35,14 @@ html.big .evbd{font-size:1rem}html.big .evmon b{font-size:1.25rem}
 .skitems{display:grid;gap:10px}.skli{display:grid;gap:8px;grid-template-columns:repeat(auto-fit,minmax(min(46%,120px),1fr));align-items:end;padding:10px;border-radius:14px;border:1px solid var(--line2,rgba(255,255,255,.16));background:rgba(255,255,255,.03)}
 .skli .w2{grid-column:span 2}.skli:has(input[type=checkbox]:not(:checked)){opacity:.5}.skli .evck{grid-column:1/-1;min-height:32px}
 @media (prefers-reduced-motion:reduce){.skwait b{animation:none}}
+/* kalkulačka sušenia */
+.susbtn{display:flex!important;align-items:center;gap:14px;width:100%;text-align:left;padding:16px!important;border:1px solid rgba(182,255,59,.45)!important;background:linear-gradient(150deg,rgba(182,255,59,.16),rgba(34,211,238,.08))!important;cursor:pointer}
+.susbtn span{font-size:1.9rem}.susbtn div{display:grid;gap:3px;flex:1}.susbtn small{color:var(--muted);font-weight:500}.susbtn i{font-style:normal;font-size:1.6rem;opacity:.7}
+.sus{display:grid;gap:10px}.sus .row{display:flex;align-items:center;gap:8px}.susf{grid-template-columns:repeat(auto-fit,minmax(min(46%,150px),1fr));align-items:end}.susf small{color:var(--muted);font-weight:500;font-size:.72rem}
+.sushr b{font-size:1.15rem}.sust{min-width:0!important}.sust tr.susme td{font-weight:800;color:var(--lime,#b6ff3b)}
+html[data-theme=light] .susbtn{background:linear-gradient(150deg,rgba(132,204,22,.16),rgba(34,211,238,.08))!important}
+.sus,.sus>*,.sus #susOut,.sus #susOut>*{min-width:0;max-width:100%}.sus{overflow:hidden}
+.sus .evbd{table-layout:fixed}.sus .evbd td:first-child{white-space:normal;overflow-wrap:anywhere}.sus .evbd td.r{width:7.5em}
+.sushr{grid-template-columns:repeat(2,minmax(0,1fr))!important}.sushr b{font-size:1.05rem;overflow-wrap:anywhere}
+.sus .trtab{overflow-x:auto}.sus .sust{width:100%;min-width:0!important}.sus .sust th,.sus .sust td{padding:7px 6px}
+.sus .sust{table-layout:fixed;font-size:.86rem}.sus .sust th:first-child,.sus .sust td:first-child{width:26%}

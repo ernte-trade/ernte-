@@ -792,7 +792,7 @@ html[data-theme=light] .ftbl th{color:#0f172a}html[data-theme=light] .fdban{colo
 <script>try{if(localStorage.getItem('ernte-theme')==='light')document.documentElement.dataset.theme='light'}catch(e){}</script>
 <link rel="stylesheet" href="perms.css?v=20261026-1955">
 <link rel="stylesheet" href="trus.css?v=20261027-0140">
-<link rel="stylesheet" href="ev.css?v=20261027-0710">
+<link rel="stylesheet" href="ev.css?v=20261027-0730">
 </head>
 <body>
 <div class="wrap">
@@ -994,6 +994,7 @@ function renderFarmer(){const F=FARMER,P=MK.map(m=>STATE.prices.find(x=>x.com===
   if(window.bigBtn)h+=`<div class="hrow">${bigBtn()}</div>`;
   if(window.farmDashHTML)h+=farmDashHTML();
   if(window.farmAgroHTML)h+=farmAgroHTML();
+  if(window.susCardHTML)h+=susCardHTML();
   if((!window.fcan||fcan("f_prices"))){h+=`<h2>Výkupné ceny · FCA farma, bez DPH</h2>`;
   h+=P.length?`<div class="card">${P.map(p=>`<div class="prow">${comImg(p.com)}<div><div class="t">${esc(comName(p.com))}</div><div class="s">${esc(specLine(p.com))}</div></div><b class="num">${fmt(p.price)} €/t</b>
       ${SELL===p.com||expired||(window.fcan&&!fcan("f_sell"))?"":`<button type="button" class="lime sell" data-sell="${esc(p.com)}">Predať</button>`}
@@ -2765,7 +2766,7 @@ document.addEventListener("input",e=>{if(e.target.id==="dfq"){const h=e.target.f
 document.addEventListener("click",e=>{const b=e.target.closest("[data-dfp]");if(!b)return;const fm=b.closest("form"),f=(STATE.farmers||[]).find(x=>x.id===b.dataset.dfp);if(!fm||!f)return;fm.elements.farmer.value=f.id;document.getElementById("dfq").value=String(f.name).trim();document.getElementById("dfl").innerHTML=`<div class="s">✓ Vybraný: <b>${esc(String(f.name).trim())}</b></div>`});
 </script>
 <script src="ai.js?v=20261027-0030"></script>
-<script src="perms.js?v=20261027-0300"></script>
+<script src="perms.js?v=20261027-0730"></script>
 <script src="bonus.js?v=20261026-2100"></script>
 <script src="hub.js?v=20261026-1830"></script>
 <script src="settle.js?v=20261026-1930"></script>
@@ -2773,8 +2774,9 @@ document.addEventListener("click",e=>{const b=e.target.closest("[data-dfp]");if(
 <script src="agro.js?v=20261026-1600"></script>
 <script src="activity.js?v=20261026-1955"></script>
 <script src="trus.js?v=20261027-0140"></script>
-<script src="ev.js?v=20261027-0710"></script>
-<script src="sklad.js?v=20261027-0710"></script>
+<script src="ev.js?v=20261027-0730"></script>
+<script src="sklad.js?v=20261027-0730"></script>
+<script src="sus.js?v=20261027-0730"></script>
 <script src="sign.js?v=20261027-0035"></script>
 <script src="outbox.js?v=20261027-0120"></script>
 <script src="farmact.js?v=20261027-0150"></script>

@@ -23,7 +23,7 @@ window.vSklad=function(){
   const tabs=[["stav","📦 Stav skladu"],["foto","📸 Odfotiť"],["nak","🧾 Z nákupov"]];
   let h=`<div class="btns seg2 sktabs">${tabs.map(t=>`<button type="button" data-sksv="${t[0]}" aria-pressed="${S.sv===t[0]}">${t[1]}${t[0]==="nak"?nakCnt():""}</button>`).join("")}</div>`;
   if(S.sv==="foto")return h+fotoHTML();if(S.sv==="nak")return h+nakHTML();return h+stavHTML()};
-function nakCnt(){const E=ent();if(!E||!E.ent)return "";const n=E.ent.filter(r=>r.typ==="naklad"&&!r.sklad&&["sklad","majetok"].includes(r.sklad_navrh)).length;return n?` <span class="cnt">${n}</span>`:""}
+function nakCnt(){const E=ent();if(!E||!E.ent)return "";const n=E.ent.filter(r=>r.typ==="naklad"&&!r.archiv&&!r.sklad&&["sklad","majetok"].includes(r.sklad_navrh)).length;return n?` <span class="cnt">${n}</span>`:""}
 
 // ---------- stav ----------
 function stavHTML(){if(!S.it){loadIt();return `<div class="card"><div class="s">Načítavam sklad…</div></div>`}if(S.it.err)return `<div class="card"><div class="s">${e(S.it.err)}</div></div>`;
@@ -103,7 +103,7 @@ async function doScan(file,mode){try{const big=await imgTo(file,1600,.85),th=awa
 
 // ---------- z nákupov ----------
 function nakHTML(){const E=ent();if(!E||!E.ent){window.evLoadEnt&&window.evLoadEnt();return `<div class="card"><div class="s">Načítavam nákupy…</div></div>`}
-  const all=E.ent.filter(r=>r.typ==="naklad"&&!r.sklad&&["sklad","majetok","spotreba"].includes(r.sklad_navrh));
+  const all=E.ent.filter(r=>r.typ==="naklad"&&!r.archiv&&!r.sklad&&["sklad","majetok","spotreba"].includes(r.sklad_navrh));
   const L=all.filter(r=>S.nf==="all"||(S.nf==="navrh"?["sklad","majetok"].includes(r.sklad_navrh):r.sklad_navrh===S.nf));
   const old=all.filter(r=>(Date.now()-new Date(r.d+"T12:00:00"))>90*864e5).length;
   let h=`<div class="s">Nákupy z evidencie, o ktorých sa ešte nerozhodlo. Appka navrhla, čo patrí na sklad (diely, spojovací materiál, oleje, spreje, rukavice, materiál) a čo je náradie. Služby, PHM, poplatky a jedlo sem nepatria.</div>
