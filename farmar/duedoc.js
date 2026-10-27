@@ -65,6 +65,7 @@ window.ernteContacts=function(){const out=[],seen=new Set(),nk=v=>String(v||"").
   for(const p of ST.staff||[]){if(p.role==="owner")continue;const em=String(p.email||""),tel=p.phone||(em.endsWith("@tel.ernte.sk")?"+"+em.split("@")[0]:"");const tt="tím"+(p.title?" · "+p.title:"");add(p.name,tel,tt);add(p.name,p.mail||(isMail(em)?em:""),tt)}
   for(const r of ((ST.staffcfg||{}).valko_team)||[]){if(!Array.isArray(r))continue;const tt="VALKO"+(r[1]?" · "+r[1]:"");add(r[0],r[2],tt);add(r[0],r[3],tt)}
   for(const t of ST.trucks||[]){if(t.driver&&t.phone)add(t.driver,t.phone,"vodič"+(t.spz?" · "+t.spz:""))}
+  for(const r of ((ST.staffcfg||{}).contacts_ext)||[]){if(r&&r.n)add(r.n,r.c,r.t||"kontakt")}
   return out.sort((a,b)=>a.n.localeCompare(b.n,"sk"))};
 function team(){return window.ernteContacts()}
 function teamLoad(){const ST=(typeof STATE!=="undefined"&&STATE)||null;if(!ST)return;const q=[];
@@ -90,7 +91,7 @@ function paint(){let o=document.getElementById("duePk");if(!PK){if(o)o.remove();
    ${H.length?`<div class="duesent">✓ Už odoslané: ${[...new Set(H.map(h=>h.n))].map(e).join(", ")}</div>`:""}
    <input class="dueq" id="dueQ" type="search" placeholder="🔎 Hľadať meno alebo číslo…" value="${e(PK.q)}">
    <div class="duel">${L.length?L.map((r,k)=>`<button type="button" class="duer" data-duepick="${C.indexOf(r)}"><span><b>${e(r.n)}</b><small>${e(r.c)}</small></span><em>${e(r.tag)}</em></button>`).join(""):`<div class="s">Zatiaľ nikto uložený – pridaj príjemcu nižšie. Aplikácia si ho zapamätá.</div>`}</div>
-   <form class="duenew" id="dueNew"><b>➕ Nový príjemca</b><input name="n" placeholder="Meno (napr. Janka – účtovníčka)" required><input name="c" placeholder="Mobil alebo e-mail" required inputmode="email" autocapitalize="off"><button type="submit" class="lime">Pokračovať</button></form>
+   <form class="duenew" id="dueNew"><b>➕ Nový príjemca</b>${("contacts" in navigator&&navigator.contacts&&"select" in navigator.contacts)?`<button type="button" class="duego" data-duecontact>📱 Vybrať z kontaktov telefónu</button>`:`<div class="s">📱 Kontakty telefónu tento prehliadač neotvorí – v Kontaktoch otvor osobu, podrž číslo → Kopírovať a vlož ho sem.</div>`}<input name="n" placeholder="Meno (napr. Bachman)" required value="${e(L.length?"":PK.q)}"><input name="t" placeholder="Funkcia (napr. ISCC certifikáty)"><input name="c" placeholder="Mobil alebo e-mail" required inputmode="email" autocapitalize="off"><label class="duesv"><input type="checkbox" name="sv" checked> Uložiť do zoznamu natrvalo (aj na iných zariadeniach)</label><button type="submit" class="lime">Uložiť a pokračovať</button></form>
    <button type="button" class="dueany" data-dueany>Bez výberu – otvoriť menu telefónu</button></div>`;
   const qi=o.querySelector("#dueQ");qi.addEventListener("input",()=>{PK.q=qi.value;const p=qi.selectionStart;paint();const n=document.getElementById("dueQ");n.focus();n.setSelectionRange(p,p)})}
 function how(r){const o=document.getElementById("duePk");const tel=telOf(r.c),mail=isMail(r.c);
@@ -111,7 +112,7 @@ async function go(h,btn){const r=PK.sel,d=PK.d,t=text(d),tel=telOf(r.c);
 html[data-theme=light] .duepb{background:#fff;color:#0f172a}.duehd{display:flex;justify-content:space-between;align-items:center;gap:10px}.duex{min-height:40px;min-width:40px;padding:0;border-radius:50%}
 .duesent{font-size:.85rem;color:#7ee787}.dueq,.duenew input{width:100%;min-height:48px;font-size:16px;border-radius:14px;padding:0 14px}
 .duel{display:grid;gap:6px}.duer{display:flex;justify-content:space-between;align-items:center;gap:10px;text-align:left;min-height:56px;padding:8px 14px;border-radius:14px;width:100%}.duer b{display:block}.duer small{opacity:.7}.duer em{font-style:normal;font-size:.72rem;opacity:.75;white-space:nowrap}
-.duenew{display:grid;gap:8px;padding:12px;border-radius:16px;border:1px dashed rgba(255,255,255,.2)}.duego{min-height:52px;width:100%;font-weight:700}.dueany{min-height:44px;background:none;border:0;opacity:.8;text-decoration:underline}`;document.head.appendChild(s)}
+.duesv{display:flex;gap:8px;align-items:center;font-size:.85rem}.duesv input{width:20px!important;min-height:20px!important}.duenew{display:grid;gap:8px;padding:12px;border-radius:16px;border:1px dashed rgba(255,255,255,.2)}.duego{min-height:52px;width:100%;font-weight:700}.dueany{min-height:44px;background:none;border:0;opacity:.8;text-decoration:underline}`;document.head.appendChild(s)}
 {const s=document.createElement("style");s.textContent=`.duebtns{margin-top:6px;gap:8px}.duebtns button{min-height:40px;padding:0 14px;font-size:.85rem}`;document.head.appendChild(s)}
 document.addEventListener("click",ev=>{const g=s=>ev.target.closest&&ev.target.closest(s);let b;
   if(b=g("[data-duemsg],[data-duepdf]")){ev.preventDefault();ev.stopPropagation();picker(+(b.dataset.duemsg??b.dataset.duepdf),b.dataset.duemsg!=null?"msg":"pdf");return}
@@ -121,7 +122,17 @@ document.addEventListener("click",ev=>{const g=s=>ev.target.closest&&ev.target.c
   if(b=g("[data-duepick]")){how(cands()[+b.dataset.duepick]);return}
   if(b=g("[data-duehow]")){go(b.dataset.duehow,b);return}
   if(g("[data-dueany]")){const d=PK.d,k=PK.kind;PK=null;paint();if(k==="pdf")sendPdf(d,null);else shareText(d);return}},true);
-document.addEventListener("submit",ev=>{if(ev.target.id!=="dueNew")return;ev.preventDefault();const f=new FormData(ev.target),r={n:String(f.get("n")||"").trim(),c:String(f.get("c")||"").trim()};if(!r.n||!r.c)return;
-  const P=people().filter(p=>!(p.n===r.n&&p.c===r.c));P.unshift(r);sv(RK,P.slice(0,30));how(r)},true);
+document.addEventListener("submit",async ev=>{if(ev.target.id!=="dueNew")return;ev.preventDefault();const f=new FormData(ev.target),r={n:String(f.get("n")||"").trim(),c:String(f.get("c")||"").trim()},t=String(f.get("t")||"").trim();if(!r.n||!r.c)return;
+  const P=people().filter(p=>!(p.n===r.n&&p.c===r.c));P.unshift(r);sv(RK,P.slice(0,30));
+  if(f.get("sv"))await saveExt({n:r.n,c:r.c,t:t||"kontakt"});how(r)},true);
+// trvalý zoznam ďalších kontaktov (účtovníčka, certifikácia ISCC…) – staff_cfg contacts_ext, zapisuje iba majiteľ
+async function saveExt(x){try{const ST=STATE;const r=await sb.from("staff_cfg").select("value").eq("key","contacts_ext").maybeSingle();const L=(r.data&&Array.isArray(r.data.value)?r.data.value:[]).filter(y=>!(y.n===x.n&&y.c===x.c));L.push(x);
+  const w=await sb.from("staff_cfg").upsert({key:"contacts_ext",value:L,updated_at:new Date().toISOString()});if(w.error)throw w.error;ST.staffcfg=ST.staffcfg||{};ST.staffcfg.contacts_ext=L;say("✓ "+x.n+" uložený v zozname")}
+  catch(err){say("Uložené iba v tomto telefóne ("+((err&&err.message)||err)+")")}}
+window.ernteSaveContact=saveExt;
+document.addEventListener("click",async ev=>{const b=ev.target.closest&&ev.target.closest("[data-duecontact]");if(!b)return;ev.preventDefault();
+  try{const R=await navigator.contacts.select(["name","tel","email"],{multiple:false});const c=R&&R[0];if(!c)return;const f=document.getElementById("dueNew");if(!f)return;
+    f.n.value=(c.name&&c.name[0])||f.n.value;const tel=(c.tel||[]).find(Boolean),em=(c.email||[]).find(Boolean);f.c.value=String(tel||em||"").trim();
+    if((c.tel||[]).length>1||(tel&&em))say("Vybraté "+(tel||em)+" – ak chceš iné číslo, prepíš ho.");if(!f.t.value)f.t.focus()}catch(x){if(!x||x.name!=="AbortError")say("Kontakty sa nepodarilo otvoriť – vlož číslo ručne.")}},true);
 window.dueText=text;
 })();
