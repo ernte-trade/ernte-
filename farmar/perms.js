@@ -54,7 +54,7 @@ const FREC=["f_prices","f_sell","f_deals","f_remain","f_transport","f_trucks","f
 const FDEF=["f_prices","f_sell","f_deals","f_remain","f_trucks","f_gps","f_transport","f_wx","f_big","f_agro"];
 const FNEVER="Farmár nikdy nevidí: odberateľa, miesto vykládky, burzu, predajné ceny, maržu ani iných farmárov.";
 const norm=s=>String(s||"").toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g,"");
-const PKEYS=new Set(PCAT.map(p=>p[0])),LOCKK=new Set(PLOCK.map(p=>p[0]));
+window.PCAT_KEYS=PCAT.map(p=>p[0]);const PKEYS=new Set(PCAT.map(p=>p[0])),LOCKK=new Set(PLOCK.map(p=>p[0]));
 const recOf=p=>{const t=norm((p&&p.title)||"");return t.includes("dopr")?"doprava":t.includes("vedu")?"veduci":t.includes("stroj")||t.includes("rolni")||t.includes("traktor")?"strojnik":t.includes("manaz")?"manazer":t.includes("obchod")?"obchodnik":t.includes("faktur")?"fakt":({dispatch:"doprava",admin:"obchodnik",invoice:"fakt"})[p&&p.role]||"obchodnik"};
 function pOn(row,k){if(!row)return false;if(row.role==="owner")return true;if(LOCKK.has(k))return false;const v=(row.perms||{})[k];return v===true||v===false?v:(PDEF[row.role]||[]).includes(k)}
 window.can=k=>{if(typeof ROLE==="undefined"||!ROLE)return false;if(ROLE==="owner")return true;return pOn(STATE.me||{role:ROLE,perms:{}},k)};

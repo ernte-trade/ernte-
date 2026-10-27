@@ -51,8 +51,9 @@ window.vDanube=function(){if(!D.d){loadD();return `<div class="card"><div class=
    <div class="card dnhero"><b>${e(C.name||"Danube Trade")}</b><span>${T("obchod s komoditami · odvoz VALKO · služby strojmi","terménykereskedelem · szállítás VALKO · gépi szolgáltatások")}</span>
    <small>${T("Požiadavky a objednávky farmárov priradených k Danube majú značku 🌊 DANUBE. Odvozy idú logistike (Tóth), služby strojmi vedúcemu (Štofa, T. Vaľko). Zmluvy sa robia podľa maďarského práva v maďarčine aj slovenčine.","A Danube-hoz rendelt gazdák kérései és megrendelései 🌊 DANUBE jelölést kapnak. Az elszállítás a logisztikához (Tóth), a gépi szolgáltatások a vezetőhöz (Štofa, T. Vaľko) kerülnek. A szerződések a magyar jog szerint, magyarul és szlovákul készülnek.")}</small></div>
    <div class="hrk"><div class="${(X.req||[]).some(x=>x.status==="nova")?"wn":""}"><small>${T("Nové požiadavky","Új kérések")}</small><b>${(X.req||[]).filter(x=>x.status==="nova").length}</b></div><div><small>${T("Nové služby","Új szolgáltatások")}</small><b>${(X.agro||[]).filter(x=>x.status==="nova").length}</b></div><div><small>${T("Farmári Danube","Danube gazdák")}</small><b>${dn.length}</b></div><div><small>${T("Zmluvy","Szerződések")}</small><b>${(D.K||[]).length}</b></div></div>
-   <div class="btns seg2">${[["nova",T("Otvorené","Nyitott")],["done",T("Vybavené","Elintézett")],["all",T("Všetky","Összes")],["zml",T("📝 Zmluvy","📝 Szerződések")]].map(x=>`<button type="button" data-dnf="${x[0]}" aria-pressed="${D.flt===x[0]}">${x[1]}</button>`).join("")}</div>`;
+   <div class="btns seg2">${[["nova",T("Otvorené","Nyitott")],["done",T("Vybavené","Elintézett")],["all",T("Všetky","Összes")],["zml",T("📝 Zmluvy","📝 Szerződések")],["ludia",T("👥 Noví ľudia","👥 Új felhasználók")]].map(x=>`<button type="button" data-dnf="${x[0]}" aria-pressed="${D.flt===x[0]}">${x[1]}</button>`).join("")}</div>`;
   if(D.flt==="zml")return h+zmlHTML(X)+`</div>`;
+  if(D.flt==="ludia")return h+ludiaHTML()+`</div>`;
   h+=`<h3 class="skh">📥 ${T("Požiadavky","Kérések")} <small>${R.length}</small></h3>${R.length?`<div class="agl">${R.map(r=>`<div class="card"><div class="row">${FB("DANUBE")}<b>${e(KN(r.kind))}</b>${pl(r.status)}</div>
      <div class="trlw"><span>${e(r.farmer)}</span>${r.com?`<span>${e(cnm(r.com))}</span>`:""}${r.tons!=null?`<span>${e(r.tons)} t</span>`:""}${r.pickup_date?`<span>${T("od","ettől")} ${e(r.pickup_date)}</span>`:""}${r.place?`<span>${e(r.place)}</span>`:""}</div>${r.note?`<div class="s">„${e(r.note)}“</div>`:""}${r.accepted_by?`<div class="s">✓ ${T("prijal","átvette")} ${e(r.accepted_by)}</div>`:""}
      <div class="btns">${r.status==="nova"?`<button type="button" class="lime" data-pacc="req|${e(r.id)}">✓ ${T("Prijať do spracovania","Feldolgozásra átvesz")}</button>`:""}${r.phone?`<a class="btn" href="tel:${e(String(r.phone).replace(/\s/g,""))}">📞 ${T("Volať","Hívás")}</a>`:""}${r.kind==="sell"?`<button type="button" data-dnzml="${e(r.id)}">📝 ${T("Zmluva","Szerződés")}</button>`:""}<button type="button" data-firm="req|${e(r.id)}|ERNTE">${T("Patrí ERNTE","ERNTE-hez tartozik")}</button></div></div>`).join("")}</div>`:`<div class="card"><div class="s">${T("Žiadne.","Nincs.")}</div></div>`}
@@ -89,6 +90,32 @@ function zmlHTML(X){const C=D.cfg||{},dn=(X.farmers||[]).filter(f=>f.firma==="DA
    ${[["name",T("Obchodné meno","Cégnév")],["addr",T("Sídlo","Székhely")],["cegj",T("Cégjegyzékszám","Cégjegyzékszám")],["adosz",T("Adószám","Adószám")],["eu",T("IČ DPH (EU)","Közösségi adószám")],["bank",T("Banka","Bank")],["iban","IBAN"],["kepv",T("Zastúpená","Képviseli")],["email","E-mail"],["tel",T("Telefón","Telefon")],["clean",T("Čistenie €/t","Tisztítás €/t")],["dry",T("Sušenie €/t za 1 %","Szárítás €/t/%")]].map(x=>`<label>${x[1]}<input name="${x[0]}" value="${e(C[x[0]]??"")}"></label>`).join("")}
    <div class="w btns"><button class="lime">💾 ${T("Uložiť","Mentés")}</button></div></form>`;
   return h}
+// ---------- noví farmári a obchodníci Danube ----------
+const canF=()=>OWN()||(typeof can==="function"&&can("farm_login"));
+function invHTML(I){const t=window.appLinkHTML?appLinkHTML(I.txt):e(I.txt);
+  return `<div class="card dninv"><b>✅ ${T("Prístup pre","Hozzáférés:")} ${e(I.name)} ${T("je pripravený","elkészült")}</b><pre class="trpre">${t}</pre>
+   <div class="btns">${I.tel?`<a class="btn lime" target="_blank" rel="noopener" href="https://wa.me/${e(I.tel)}?text=${encodeURIComponent(I.txt)}">WhatsApp</a><a class="btn" href="sms:+${e(I.tel)}?body=${encodeURIComponent(I.txt)}">SMS</a>`:""}<button type="button" data-dncopy>📋 ${T("Kopírovať","Másolás")}</button><button type="button" data-dninvx>${T("Hotovo","Kész")}</button></div>
+   <div class="s">${T("Heslo sa nikde neukladá – pošli ho teraz.","A jelszót sehol nem tároljuk – küldje el most.")}</div></div>`}
+function ludiaHTML(){let h=D.inv?invHTML(D.inv):"";
+  if(canF())h+=`<form class="card f dnz" id="dnNF"><div class="w t">👨‍🌾 ${T("Nový farmár / dodávateľ Danube","Új termelő / beszállító (Danube)")}</div>
+   <label>${T("Názov / meno","Név / cégnév")}<input name="name" required></label><label>${T("Telefón","Telefon")}<input name="phone" inputmode="tel" placeholder="+36 30 … / 0905 …"></label>
+   <label>E-mail<input name="email" type="email"></label><label class="w">${T("Adresa","Cím")}<input name="addr"></label>
+   <label>${T("IČO / reg. číslo","Nyilvántartási szám")}<input name="ico"></label><label>${T("Daňové číslo","Adószám")}<input name="dic"></label>
+   <label>${T("Jazyk správy","Üzenet nyelve")}<select name="lang"><option value="hu"${D.lang==="hu"?" selected":""}>🇭🇺 magyar</option><option value="sk"${D.lang==="sk"?" selected":""}>🇸🇰 slovensky</option></select></label>
+   <label class="evck"><input type="checkbox" name="login" checked> ${T("Hneď vytvoriť prihlásenie a poslať","Belépés létrehozása és küldése most")}</label>
+   <div class="w btns"><button class="lime">➕ ${T("Pridať farmára","Termelő hozzáadása")}</button></div></form>`;
+  if(OWN())h+=`<form class="card f dnz" id="dnNO"><div class="w t">💼 ${T("Nový obchodník Danube","Új kereskedő (Danube)")}</div>
+   <label>${T("Meno a priezvisko","Név")}<input name="name" required></label><label>${T("Telefón alebo e-mail (prihlásenie)","Telefon vagy e-mail (belépés)")}<input name="login" required></label>
+   <label>${T("Funkcia","Beosztás")}<input name="title" value="${T("Obchodník Danube","Danube kereskedő")}"></label><label>${T("Kraj / región","Régió")}<input name="region"></label>
+   <label>${T("Jazyk správy","Üzenet nyelve")}<select name="lang"><option value="hu"${D.lang==="hu"?" selected":""}>🇭🇺 magyar</option><option value="sk"${D.lang==="sk"?" selected":""}>🇸🇰 slovensky</option></select></label>
+   <div class="w s">${T("Dostane: Danube Trade, požiadavky, obchody, farmárov, kalkulačku a vytváranie prihlásení farmárom. Upraviť to môžeš v Tíme → ⚙️ Prístupy.","Hozzáférés: Danube Trade, kérések, üzletek, termelők, kalkulátor és termelői belépések. A Csapat → ⚙️ Jogosultságok alatt módosítható.")}</div>
+   <div class="w btns"><button class="lime">➕ ${T("Vytvoriť prístup","Hozzáférés létrehozása")}</button></div></form>`;
+  if(!canF()&&!OWN())h+=`<div class="card"><div class="s">${T("Nových ľudí pridáva majiteľ alebo obchodník s právom vytvárať prihlásenia.","Új felhasználót a tulajdonos vagy belépés-létrehozási joggal rendelkező kereskedő ad hozzá.")}</div></div>`;
+  return h}
+const telN=x=>{let d=String(x||"").replace(/\D/g,"").replace(/^00/,"");if(/^06/.test(d))return "36"+d.slice(2);if(/^0[1-9]/.test(d))return "421"+d.slice(1);return d};
+function invTxt(hu,who,pw,kind){const app=typeof APP_URL!=="undefined"?APP_URL:location.href.split("#")[0];
+  return hu?`Jó napot! Elkészült a hozzáférése a Danube Trade / ERNTE Trade & Logistic alkalmazáshoz${kind==="f"?" (felvásárlási árak, szerződések, szállítások)":""}.\n\nFelhasználónév: ${who}\nEgyszeri kód: ${pw}\n\nAz első belépés után saját PIN-kódot állít be (a kód ezután érvényét veszti). A PIN-t senkinek ne küldje el.\nTegye ki a kezdőképernyőre (Megosztás → Főképernyőhöz adás).\n\n👉 ERNTE Trade & Logistic: ${app}`
+   :`Dobrý deň, tu je váš prístup do aplikácie Danube Trade / ERNTE Trade & Logistic${kind==="f"?" s výkupnými cenami, zmluvami a odvozmi":""}.\n\nPrihlasovacie meno: ${who}\nJednorazový kód: ${pw}\n\nPo prvom prihlásení si nastavíte vlastný PIN (kód potom prestane platiť). PIN nikomu neposielajte.\nAplikáciu si dajte na plochu (Zdieľať → Pridať na plochu).\n\n👉 ERNTE Trade & Logistic: ${app}`}
 const QN={kukurica:[14,2,1,3],soja:[13,2,null,5],psenica_k:[14,2,null,null],psenica_p:[14,2,null,null],repka:[9,2,null,null],slnecnica:[9,3,null,null],jacmen:[14,2,null,null]};
 function contractHTML(no,d,lg){const C=D.cfg||{},F=d.farmer||{},hu=lg==="hu",L=(a,b)=>hu?b:a,q=QN[d.com]||[14,2,null,null],cur=d.mena||"EUR",fd=x=>x?new Date(x+"T12:00:00").toLocaleDateString(hu?"hu-HU":"sk-SK"):L("[doplniť]","[kitöltendő]"),
   cn=COM[d.com]?COM[d.com][hu?1:0]:d.com,v=x=>x?e(x):`<span class="ph">${L("[doplniť]","[kitöltendő]")}</span>`;
@@ -140,6 +167,8 @@ document.addEventListener("click",async ev=>{const g=s=>ev.target.closest&&ev.ta
   if(x=g("[data-pgo]")){if(typeof TAB!=="undefined"){TAB=x.dataset.pgo;rr();window.scrollTo({top:0})}return}
   if(g("[data-pall]")){P.all=!P.all;rr();return}
   if(x=g("[data-dnf]")){D.flt=x.dataset.dnf;rr();return}
+  if(g("[data-dninvx]")){D.inv=null;rr();return}
+  if(g("[data-dncopy]")&&D.inv){try{await navigator.clipboard.writeText(D.inv.txt);tst(T("Skopírované.","Másolva."))}catch(z){tst(T("Kopírovanie nefunguje – označ text.","A másolás nem működik."))}return}
   if(x=g("[data-dnlang]")){D.lang=x.dataset.dnlang;try{localStorage.setItem("ernte-dn-lang",D.lang)}catch(z){}rr();return}
   if(x=g("[data-dnzml]")){const r=(D.d.req||[]).find(y=>y.id===x.dataset.dnzml);const f=r&&(D.d.farmers||[]).find(y=>y.name===r.farmer);D.pre={farmer:f&&f.id,com:r&&r.com,t:r&&r.tons,od:r&&r.pickup_date,miesto:r&&r.place};D.flt="zml";rr();window.scrollTo({top:0});return}
   if(x=g("[data-dnprint]")){const [id,lg]=x.dataset.dnprint.split("|");const k=(D.K||[]).find(y=>String(y.id)===id);if(k)printContract(k.no,k.data,lg);return}
@@ -150,6 +179,19 @@ document.addEventListener("submit",async ev=>{const f=ev.target;
   if(f.id==="dnZ"){ev.preventDefault();const d=new FormData(f),fid=d.get("farmer");if(!fid){tst(T("Vyber predávajúceho.","Válassza ki az eladót."));return}const b=f.querySelector("button.lime");busy(b,true);
     const fr=await sb.rpc("danube_farmer",{p:fid});const o={farmer:fr.data||{},com:d.get("com"),rok:d.get("rok"),t:d.get("t"),cena:d.get("cena"),mena:d.get("mena"),od:d.get("od"),do:d.get("do"),miesto:d.get("miesto"),spl:Math.min(30,+d.get("spl")||30),pok:d.get("pok")};
     const r=await sb.rpc("danube_contract_save",{p_farmer:fid,p_data:o});busy(b,false);if(r.error){tst("⚠️ "+r.error.message);return}D.K=[r.data,...(D.K||[])];D.pre=null;printContract(r.data.no,o,d.get("lang"));rr();return}
+  if(f.id==="dnNF"){ev.preventDefault();const d=new FormData(f),b=f.querySelector("button.lime"),row={firma:"DANUBE",active:true};["name","email","phone","addr","ico","dic"].forEach(k=>{const v=String(d.get(k)||"").trim();row[k]=v||null});
+    if(row.email)row.email=row.email.toLowerCase();if(!row.name){tst(T("Zadaj meno.","Adja meg a nevet."));return}busy(b,true);
+    const r=await sb.from("farmers").insert(row).select().single();if(r.error){busy(b,false);tst(r.error.code==="23505"?T("Tento e-mail už má iný farmár.","Ez az e-mail már másik termelőé."):"⚠️ "+r.error.message,6000);return}
+    if(d.get("login")==="on"&&(row.email||row.phone)){const usePhone=!row.email,pw=typeof genPw==="function"?genPw():Math.random().toString(36).slice(2,10);
+      const q=await sb.rpc("set_farmer_password",{fid:r.data.id,pw,use_phone:usePhone});busy(b,false);if(q.error){tst("⚠️ "+q.error.message,7000)}
+      else D.inv={name:row.name,tel:row.phone?telN(row.phone):"",txt:invTxt(d.get("lang")==="hu",usePhone?row.phone:row.email,pw,"f")}}else busy(b,false);
+    tst(T("✓ Farmár pridaný do Danube.","✓ Termelő hozzáadva (Danube)."));D.d=null;if(typeof loadStaff==="function")loadStaff();rr();window.scrollTo({top:0});return}
+  if(f.id==="dnNO"){ev.preventDefault();const d=new FormData(f),b=f.querySelector("button.lime"),name=String(d.get("name")).trim(),login=String(d.get("login")).trim();busy(b,true);
+    const pw=(typeof genPw==="function"?genPw():"Danube")+"-"+String(10+((crypto.getRandomValues(new Uint32Array(1))[0])%90));
+    const r=await sb.rpc("set_staff_login",{login_in:login,name_in:name,role_in:"admin",pw});if(r.error){busy(b,false);tst("⚠️ "+r.error.message,7000);return}
+    const K=["req","price_view","deals","farm","farm_login","calc","market","remain","notes","wx","big","danube"],p={};(window.PCAT_KEYS||[]).forEach(k=>p[k]=false);K.forEach(k=>p[k]=true);
+    const q=await sb.rpc("set_staff_profile",{em:r.data,p,t:String(d.get("title")||""),r:String(d.get("region")||""),ph:/@/.test(login)?"":login});busy(b,false);if(q.error)tst("⚠️ "+q.error.message,6000);
+    const isT=String(r.data).endsWith("@tel.ernte.sk");D.inv={name,tel:isT?String(r.data).split("@")[0]:"",txt:invTxt(d.get("lang")==="hu",isT?login:r.data,pw,"o")};tst(T("✓ Obchodník vytvorený.","✓ Kereskedő létrehozva."));rr();window.scrollTo({top:0});return}
   if(f.id==="dnC"){ev.preventDefault();const d=new FormData(f),v={...(D.cfg||{})};for(const [k,x] of d.entries())v[k]=["clean","dry"].includes(k)?(parseFloat(String(x).replace(",","."))||null):String(x).trim();
     const r=await sb.from("danube_cfg").upsert({key:"firma",value:v,updated_at:new Date().toISOString()});if(r.error){tst("⚠️ "+r.error.message);return}D.cfg=v;tst(T("✓ Uložené.","✓ Mentve."));rr();return}
   if(f.id!=="dnR")return;ev.preventDefault();const d=new FormData(f),rows=Object.keys(RT).map(k=>({key:k,emails:d.getAll(k),updated_at:new Date().toISOString()}));
