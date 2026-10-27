@@ -48,11 +48,11 @@ const PRESET={
  obchodnik:{n:"Obchodník",role:"admin",k:["req","price_view","deals","farm","farm_login","calc","market","trans","remain","notes","wx","big"]},
  fakt:{n:"Fakturácia",role:"invoice",k:["req","price_view","deals","farm","trans","remain","wx"]}};
 let PEOPLE=[],PPL=0;async function loadPeople(){PPL=1;try{const r=await sb.from("staff_cfg").select("value").eq("key","team_people").maybeSingle();if(r.data&&Array.isArray(r.data.value)&&r.data.value.length){PEOPLE=r.data.value;if(TAB==="team")renderStaff()}}catch(e){PPL=0}}
-const FCAT=[["f_prices","Výkupné ceny (cenník)",""],["f_sell","Ponúknuť komoditu na predaj",""],["f_deals","Moje obchody a dohodnutá cena",""],["f_remain","Zostatok na vývoz (koľko ešte odvezieme)",""],
+const FCAT=[["f_prices","Výkupné ceny (cenník)",""],["f_sell","Ponúknuť komoditu na predaj",""],["f_offer","Navrhnúť vlastnú cenu + fotky zo skladu (GPS pre ISCC)",""],["f_deals","Moje obchody a dohodnutá cena",""],["f_remain","Zostatok na vývoz (koľko ešte odvezieme)",""],
  ["f_transport","Objednať odvoz",""],["f_trucks","Pridelené autá – ŠPZ, vodič, telefón",""],["f_gps","Poloha auta cestou na nakládku","len keď ju doprava zapne"],
  ["f_notes","Poznámky k vývozu (posielať a čítať)",""],["f_agro","Agro služby – cenník a objednávka prác strojmi",""],["f_wx","Počasie",""],["f_big","Veľké písmo a tlačidlá",""]];
 const FREC=["f_prices","f_sell","f_deals","f_remain","f_transport","f_trucks","f_gps","f_notes","f_agro","f_wx","f_big"];
-const FDEF=["f_prices","f_sell","f_deals","f_remain","f_trucks","f_gps","f_transport","f_wx","f_big","f_agro"];
+const FDEF=["f_prices","f_sell","f_offer","f_deals","f_remain","f_trucks","f_gps","f_transport","f_wx","f_big","f_agro"];
 const FNEVER="Farmár nikdy nevidí: odberateľa, miesto vykládky, burzu, predajné ceny, maržu ani iných farmárov.";
 const norm=s=>String(s||"").toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g,"");
 window.PCAT_KEYS=PCAT.map(p=>p[0]);const PKEYS=new Set(PCAT.map(p=>p[0])),LOCKK=new Set(PLOCK.map(p=>p[0]));

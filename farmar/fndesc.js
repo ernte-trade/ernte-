@@ -48,6 +48,9 @@ const SECD={
 const H2=[
  ["Výkupné ceny","Ceny, za ktoré ERNTE kúpi vašu komoditu na farme (bez DPH). Ťuknite Predať, napíšte tony – ERNTE sa vám ozve."],
  ["Moje požiadavky","Čo ste poslali ERNTE (predaj, odvoz, otázky) a v akom je to stave."],
+ ["Navrhnite svoju cenu","Napíšte, za koľko chcete predať a koľko ton máte. Pridajte fotky zo skladu – ich poloha slúži na certifikáciu ISCC."],
+ ["Návrhy cien od farmárov","Ceny a množstvá, ktoré navrhli farmári, s fotkami skladu a GPS bodmi pre ISCC. Prijmi, daj protinávrh alebo zamietni."],
+ ["Ostatné požiadavky","Predaj, odvoz, súhlasy so zmluvou a správy od farmárov."],
  ["Odvoz tovaru bez zmluvy","Tovar, na ktorý ešte nie je zmluva. Zmluvný tovar má pri odvoze prednosť – zmluvný odvoz objednáte pri zmluve v Moje obchody."],
  ["Moje obchody","Vaše zmluvy: dohodnutá cena, množstvo, koľko je odvezené a čo ostáva. Tu zmluvu aj podpíšete a stiahnete."],
  ["Moja cieľová cena","Napíšte cenu, za ktorú chcete predať. Keď ju ERNTE dosiahne, príde vám upozornenie."],

@@ -14,6 +14,7 @@ function tiles(){if(typeof FARMER==="undefined"||!FARMER||typeof STATE==="undefi
   const L=[];const add=(k,ic,t,sub,go,cls)=>L.push({k,ic,t,sub,go,cls});
   if(F("f_prices")&&F("f_sell"))add("sell","🌾","Predať komoditu",nP?nP+" komodít v cenníku":"cenník","h:Výkupné ceny");
   else if(F("f_prices"))add("prices","💶","Výkupné ceny",nP?nP+" komodít":"","h:Výkupné ceny");
+  if(F("f_offer"))add("offer","💰","Navrhnúť cenu","vaša cena + fotky skladu","offer");
   if(F("f_transport")){add("ordc","🚛","Odvoz zmluvného tovaru",ord.length?`${f2(left)} t na odvoz · prednosť`:"zatiaľ nie je čo odviezť","ordc",ord.length?"hot":"");
     add("ordf","🚚","Odvoz tovaru bez zmluvy","požiadať ERNTE","ordf")}
   if(sign)add("sign","✍️","Podpísať zmluvu",sign===1?"1 zmluva čaká":sign+" zmluvy čakajú","sign","warn");
@@ -46,6 +47,7 @@ function toH(txt){const H=[...document.querySelectorAll("#app h2")].find(h=>h.te
 function toSel(sel){setTimeout(()=>{const el=document.querySelector(sel);if(el){el.scrollIntoView({behavior:"smooth",block:"start"});const i=el.querySelector("input,select");if(i)try{i.focus({preventScroll:true})}catch(x){}}},80)}
 document.addEventListener("click",ev=>{const b=ev.target.closest&&ev.target.closest("[data-ftl]");if(!b)return;ev.preventDefault();const g=b.dataset.ftl;
   if(g.startsWith("h:"))return toH(g.slice(2));
+  if(g==="offer"){if(window.offerOpen)offerOpen();return}
   if(g==="ordf"){try{ORDER="__free"}catch(x){}renderFarmer();return toSel("#fOrderFree")}
   if(g==="ordc"){const L=(STATE.deals||[]).filter(okOrder);if(!L.length){toH("Moje obchody");if(typeof toast==="function")toast("Zatiaľ nemáte podpísanú zmluvu s tovarom na odvoz. Použite „Odvoz tovaru bez zmluvy“.",6000);return}
     if(L.length===1){try{ORDER=L[0].id}catch(x){}renderFarmer();return toSel("#fOrder")}toH("Moje obchody");if(typeof toast==="function")toast("Pri zmluve ťuknite „Objednať odvoz“.",4000);return}
