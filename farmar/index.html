@@ -802,11 +802,11 @@ html[data-theme=light] .ftbl th{color:#0f172a}html[data-theme=light] .fdban{colo
 <script>try{if(localStorage.getItem('ernte-theme')==='light')document.documentElement.dataset.theme='light'}catch(e){}</script>
 <link rel="stylesheet" href="perms.css?v=20261026-1955">
 <link rel="stylesheet" href="trus.css?v=20261027-0140">
-<link rel="stylesheet" href="ev.css?v=20261027-0855">
+<link rel="stylesheet" href="ev.css?v=20261027-0910">
 </head>
 <body>
 <div class="wrap">
-  <header class="top"><img src="logo.png" alt="ERNTE"><div class="tt"><h1 id="hT">ERNTE Farmár</h1><small id="hS">výkup komodít</small></div><button type="button" class="topref" id="refBtn" data-refresh="1" hidden aria-label="Obnoviť údaje" title="Obnoviť"><span>↻</span></button><button type="button" class="aibtn" id="aiBtn" hidden aria-label="AI Podpora"><i></i><span>Podpora</span></button><button type="button" class="out" id="outBtn" hidden aria-label="Odhlásiť" title="Odhlásiť"><span class="oi">⏻</span><span class="ot">Odhlásiť</span></button></header>
+  <header class="top"><img src="logo.png" alt="ERNTE"><div class="tt"><h1 id="hT">ERNTE Trade &amp; Logistic</h1><small id="hS">výkup komodít</small></div><button type="button" class="topref" id="refBtn" data-refresh="1" hidden aria-label="Obnoviť údaje" title="Obnoviť"><span>↻</span></button><button type="button" class="aibtn" id="aiBtn" hidden aria-label="AI Podpora"><i></i><span>Podpora</span></button><button type="button" class="out" id="outBtn" hidden aria-label="Odhlásiť" title="Odhlásiť"><span class="oi">⏻</span><span class="ot">Odhlásiť</span></button></header>
   <main id="app" class="wrap" aria-live="polite"><div class="card"><div class="t">Načítavam…</div></div></main>
   <div class="privl"><a href="sukromie.html">🔒 Ochrana osobných údajov</a></div>
 </div>
@@ -1030,7 +1030,7 @@ function renderFarmer(){const F=FARMER,P=MK.map(m=>STATE.prices.find(x=>x.com===
     </div>`}).join(""):`<div class="card"><div class="s">Zatiaľ nemáte žiadny obchod. Keď si vyberiete cenu a ťuknete na Predať, ERNTE vám pripraví zmluvu.</div></div>`;}
   if(window.farmNotesHTML)h+=farmNotesHTML();
   h+=`<h2>Kontakt ERNTE</h2><div class="card"><div class="row"><span>Telefón</span><a class="copy" href="tel:${esc(String(c.phone||"").replace(/\s/g,""))}">${esc(c.phone)}</a></div><div class="row"><span>E-mail</span><a class="copy" href="mailto:${esc(c.email)}">${esc(c.email)}</a></div></div>`;
-  h+=pwCard()+installHint();
+  h+=pwCard();
   $("app").innerHTML=h;mountR()}
 
 document.addEventListener("click",async e=>{if(!FARMER)return;const t=e.target;
@@ -2806,6 +2806,7 @@ document.addEventListener("click",e=>{const b=e.target.closest("[data-dfp]");if(
 <script src="praca.js?v=20261027-0810"></script>
 <script src="novinky.js?v=20261027-0845"></script>
 <script src="danube.js?v=20261027-0900"></script>
+<script src="installapp.js?v=20261027-0910"></script>
 <script src="fndesc.js?v=20261027-0900"></script>
 <script src="sign.js?v=20261027-0855"></script>
 <script src="outbox.js?v=20261027-0120"></script>
