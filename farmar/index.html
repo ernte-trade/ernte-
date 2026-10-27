@@ -1398,7 +1398,7 @@ function renderStaff(){const nNew=STATE.reqs.filter(r=>r.status==="nova").length
   h+=`<div class="hrow"><button type="button" class="ds-theme" data-dstheme aria-label="Prepnúť svetlý / tmavý režim" title="Svetlý / tmavý režim">${document.documentElement.dataset.theme==="light"?"🌙":"☀️"}</button>${window.bigBtn?bigBtn():""}${helpBtn(TAB)}</div>`;
   if(tabs.some(t=>t[0]==="price")&&(TAB==="price"||TAB==="req"))h+=priceBanner();
   if(TAB==="wx"&&!WXD)loadWx().then(renderStaff);if(TAB==="fleet"&&!STATE.fleet)loadFleet().then(renderStaff);if(TAB==="team"&&!STATE.staff)loadTeam().then(renderStaff);h+=({req:vReq,price:vPrice,trans:vTrans,deals:vDeals,farm:vFarm,wx:wxCard,fleet:vFleet,team:vTeam,calc:()=>window.vCalc?vCalc():"",home:()=>window.vHome?vHome():"",zuct:()=>window.vZuct?vZuct():"",agro:()=>window.vAgro?vAgro():"",trus:()=>window.vTrus?vTrus():"",evid:()=>window.vEvid?vEvid():"",nov:()=>window.vNovinky?vNovinky():"",danube:()=>window.vDanube?vDanube():""})[TAB]();if(TAB==="req")h+=pwCard();$("app").innerHTML=h;mountR();dsAfter()}
-function vReq(){const R=STATE.reqs;if(!R.length)return `<div class="card"><div class="s">Zatiaľ žiadne požiadavky od farmárov.</div></div>`;
+function vReq(){const R=ROLE==="owner"||!window.can||can("req")?STATE.reqs:STATE.reqs.filter(r=>r.kind==="transport");if(!R.length)return `<div class="card"><div class="s">Zatiaľ žiadne požiadavky od farmárov.</div></div>`;
   const pri=r=>r.kind==="transport"?(r.deal_id?0:1):0,bySt=st=>R.filter(r=>r.status===st).sort((a,b)=>pri(a)-pri(b)),ord=[...bySt("nova"),...bySt("v_spracovani"),...R.filter(r=>r.status!=="nova"&&r.status!=="v_spracovani")],OWN=ROLE==="owner",RI={sell:"🌾",transport:"🚚",agree:"✍️",message:"💬"};
   return ord.map(r=>{const fr=STATE.farmers.find(x=>x.id===r.farmer_id)||{},d=r.deal_id?STATE.deals.find(x=>x.id===r.deal_id):null;
     const com=r.com||(d&&d.com),tons=r.tons!=null?+r.tons:d?+d.tons:null,buy=r.price!=null?+r.price:d?+d.price:null,df=OWN&&d?(STATE.dfin||{})[d.id]:null,sell=df&&df.sell_price!=null?+df.sell_price:null;
@@ -2638,6 +2638,7 @@ function vTrans(){if(STATE.noTrans)return `<div class="card"><div class="t">Dopr
   let h="";const OWN=ROLE==="owner";
   if(OWN&&!STATE.fleet&&!STATE._dsFl){STATE._dsFl=1;loadFleet().then(renderStaff).catch(()=>{})}
   h+="@@KPI@@";
+  if(!R.length)h+=`<h2>Objednávky odvozu od farmárov</h2><div class="card"><div class="s">Žiadna objednávka odvozu nečaká na autá. Načítané požiadavky: ${(STATE.reqs||[]).length}, z toho odvozy: ${(STATE.reqs||[]).filter(r=>r.kind==="transport").length}.${ROLE!=="owner"?" Ak čakáš objednávku a nevidíš ju, ťukni ↻ Obnoviť alebo požiadaj majiteľa o prístup „Požiadavky farmárov“ a „Doprava“.":""}</div></div>`;
   h+=R.length?`<h2>Objednávky odvozu od farmárov</h2>`+R.map(r=>{const d=STATE.deals.find(x=>x.id===r.deal_id);const open=ASSIGN===r.id;
     return `<div class="card"><div class="row"><span class="t">${esc(fName(r.farmer_id))}</span>${pill([r.status==="v_spracovani"?"prijaté"+(r.accepted_by?" · "+r.accepted_by:"")+" · čaká na autá":"nové · čaká na autá",r.status==="v_spracovani"?"b":"w"])}</div><div>${r.deal_id?`<span class="pill">📄 zmluvný · prednosť</span>`:`<span class="pill w">⚠️ bez zmluvy</span>`}</div>
     <div class="s">${[d&&d.no,r.com&&comName(r.com),r.tons&&fmt(r.tons)+" t",r.trucks&&r.trucks+" kamión(y)",r.pickup_date&&"od "+dSK(r.pickup_date)+(r.pickup_time?" "+r.pickup_time:""),r.place].filter(Boolean).map(esc).join(" · ")}</div>${r.note?`<div class="s">„${esc(r.note)}“</div>`:""}
@@ -2815,7 +2816,7 @@ document.addEventListener("input",e=>{if(e.target.id==="dfq"){const h=e.target.f
 document.addEventListener("click",e=>{const b=e.target.closest("[data-dfp]");if(!b)return;const fm=b.closest("form"),f=(STATE.farmers||[]).find(x=>x.id===b.dataset.dfp);if(!fm||!f)return;fm.elements.farmer.value=f.id;document.getElementById("dfq").value=String(f.name).trim();document.getElementById("dfl").innerHTML=`<div class="s">✓ Vybraný: <b>${esc(String(f.name).trim())}</b></div>`});
 </script>
 <script src="ai.js?v=20261027-0030"></script>
-<script src="perms.js?v=20261027-1340c"></script>
+<script src="perms.js?v=20261027-1400"></script>
 <script src="bonus.js?v=20261026-2100"></script>
 <script src="hub.js?v=20261027-1340b"></script>
 <script src="settle.js?v=20261026-1930"></script>
