@@ -103,7 +103,7 @@ function dochHTML(){if(!E.doch||E.dochM!==E.m){loadDoch();return monthNav()+`<di
   const R=D.rows||[];let h=monthNav()+`<div class="s">Pracovných dní v mesiaci: <b>${D.prac_dni}</b> (po–pi bez sviatkov). Prázdne „odpracované dni“ = všetky pracovné dni mínus dovolenka a PN.</div>`;
   if(!R.length)return h+`<div class="card"><div class="s">Zatiaľ nie sú pridaní pracovníci.${OWN()?" Pridaj ich vo Výplatách → Ľudia.":""}</div></div>`;
   return h+`<div class="agl">${R.map(r=>{const lock=r.stav!=="navrh"&&!D.own,sz=r.druh==="szco";const F=sz?DF.filter(f=>["dni_prac","dni_pole"].includes(f[0])):DF;
-    return `<form class="card f evdoch" data-evdoch="${r.pid}"><div class="w row"><b>${e(r.meno)}</b><span class="pill ${sz?"w":"b"}">${sz?"živnostník":"zamestnanec"}</span>${r.stav!=="navrh"?`<span class="pill g">${r.stav==="vyplatene"?"vyplatené":"schválené"}</span>`:""}</div>
+    return `<form class="card f evdoch" data-evdoch="${r.pid}"><div class="w row"><b>${e(r.meno)}</b>${r.funkcia?`<small>${e(r.funkcia)}</small>`:""}<span class="pill ${sz?"w":"b"}">${sz?"živnostník":"zamestnanec"}</span>${r.stav!=="navrh"?`<span class="pill g">${r.stav==="vyplatene"?"vyplatené":"schválené"}</span>`:""}</div>
       ${F.map(f=>`<label>${sz&&f[0]==="dni_prac"?"Odpracované dni (faktúra)":f[1]}<input name="${f[0]}" inputmode="decimal" value="${iv(r[f[0]])}"${lock?" disabled":""} placeholder="${f[0]==="dni_prac"&&!sz?D.prac_dni+"":"0"}"></label>`).join("")}
       ${OWN()&&r.warn&&r.warn.length?`<div class="w evwarn">${r.warn.map(w=>`⚠️ ${e(w)}`).join("<br>")}</div>`:""}
       <div class="w row"><small>${r.doch_at?`zapísal ${e(r.doch_by||"")} · ${e(new Date(r.doch_at).toLocaleString("sk-SK"))}`:""}</small>${lock?`<small>🔒 schválené – zmeny iba majiteľ</small>`:`<button class="lime" type="submit">💾 Uložiť</button>`}</div></form>`}).join("")}</div>`}
@@ -131,7 +131,7 @@ function mzdyHTML(){if(!E.pay){loadPay();return `<div class="card"><div class="s
   return h+`<div class="agl">${L.map(payCard).join("")}</div>`}
 function payCard(y){const p=person(y.person_id),c=y.calc||{},sz=p.druh==="szco",op=E.open===y.id,W=c.warn||[],lock=y.stav==="vyplatene";
   const top=sz?`<span>na faktúru <b>${eur(c.faktura_suma)}</b></span>`:`<span>hrubá <b>${eur(c.hruba)}</b></span><span>čistá <b>${eur(c.cista)}</b></span><span>na účet <b>${eur(c.k_vyplate)}</b></span><span>cena práce <b>${eur(c.cena_prace)}</b></span>`;
-  let h=`<div class="card evpay${W.length?" evw":""}"><div class="row"><b>${e(p.meno)}</b><span class="pill ${sz?"w":"b"}">${sz?"živnostník":p.dochodca?"dôchodca":"zamestnanec"}</span><span class="pill ${STS[y.stav][1]}">${STS[y.stav][0]}</span>${W.length?`<span class="pill r">⚠️ ${W.length}</span>`:""}
+  let h=`<div class="card evpay${W.length?" evw":""}"><div class="row"><b>${e(p.meno)}</b>${p.funkcia?`<small>${e(p.funkcia)}</small>`:""}<span class="pill ${sz?"w":"b"}">${sz?"živnostník":p.dochodca?"dôchodca":"zamestnanec"}</span><span class="pill ${STS[y.stav][1]}">${STS[y.stav][0]}</span>${W.length?`<span class="pill r">⚠️ ${W.length}</span>`:""}
     <button type="button" class="evmini" data-evop="${y.id}" aria-expanded="${op}">${op?"Zavrieť":"Detail"}</button></div><div class="trlw">${top}</div>`;
   if(!op)return h+`</div>`;
   if(W.length)h+=`<div class="evwarn">${W.map(w=>`⚠️ ${e(w)}`).join("<br>")}</div>`;
@@ -156,13 +156,14 @@ function breakdown(c,y){const r=(l,v,cl)=>v?`<tr${cl?` class="${cl}"`:""}><td>${
 function pplHTML(){const P=E.ppl||[];let h=`<div class="btns"><button type="button" data-evpv="">← Výplaty</button><button type="button" class="lime" data-evpnew>➕ Pridať človeka</button></div>
   <div class="s">Zamestnanec: hrubá mzda, úväzok, stupeň náročnosti (minimálny mzdový nárok), podpísané vyhlásenie na nezdaniteľnú časť a deti na daňový bonus. Živnostník: sadzba za deň alebo paušál – platí sa na faktúru.</div>`;
   if(E.edit==="p0")h+=pForm({});
-  return h+`<div class="agl">${P.map(p=>E.edit==="p"+p.id?pForm(p):`<div class="card evppl${p.aktivny?"":" off"}"><div class="row"><b>${e(p.meno)}</b><span class="pill ${p.druh==="szco"?"w":"b"}">${p.druh==="szco"?"živnostník":"zamestnanec"}</span><small>${e(p.firma)}</small>${p.aktivny?"":`<span class="pill g">neaktívny</span>`}<button type="button" class="evmini" data-evpe="${p.id}">✏️</button></div>
+  return h+`<div class="agl">${P.map(p=>E.edit==="p"+p.id?pForm(p):`<div class="card evppl${p.aktivny?"":" off"}"><div class="row"><b>${e(p.meno)}</b>${p.funkcia?`<span class="pill b">${e(p.funkcia)}</span>`:""}<span class="pill ${p.druh==="szco"?"w":"b"}">${p.druh==="szco"?"živnostník":"zamestnanec"}</span><small>${e(p.firma)}</small>${p.aktivny?"":`<span class="pill g">neaktívny</span>`}<button type="button" class="evmini" data-evpe="${p.id}">✏️</button></div>
     <div class="trlw">${p.druh==="szco"?`<span>${p.pausal?`paušál <b>${eur(p.pausal)}</b>`:`sadzba <b>${eur(p.sadzba||0)}</b>/deň`}</span>${p.ico?`<span>IČO ${e(p.ico)}</span>`:""}`:`<span>hrubá <b>${eur(p.hruba||0)}</b></span><span>úväzok ${f2(p.uvazok,0)} h</span><span>${p.stupen}. stupeň</span><span>${p.nczd?"NČZD ✓":"bez NČZD"}</span>${p.deti15+p.deti18?`<span>deti ${p.deti15}+${p.deti18}</span>`:""}${p.dochodca?"<span>dôchodca</span>":""}`}</div></div>`).join("")}</div>`}
 function pForm(p){const sz=p.druh==="szco",ch=(n,l,v)=>`<label class="evck"><input type="checkbox" name="${n}"${v?" checked":""}> ${l}</label>`;
   return `<form class="card f" data-evperson="${p.id||""}"><div class="w t">${p.id?"✏️ "+e(p.meno):"➕ Nový človek"}</div>
   <label>Meno a priezvisko<input name="meno" required value="${e(p.meno||"")}"></label>
   <label>Druh<select name="druh"><option value="zam"${!sz?" selected":""}>Zamestnanec (pracovný pomer)</option><option value="szco"${sz?" selected":""}>Živnostník (faktúra)</option></select></label>
   <label>Firma<select name="firma">${["ERNTE","VALKO"].map(f=>`<option${(p.firma||"ERNTE")===f?" selected":""}>${f}</option>`).join("")}</select></label>
+  <label>Funkcia<input name="funkcia" list="evFn" value="${e(p.funkcia||"")}" placeholder="strojník"></label><datalist id="evFn"><option value="vedúci služieb a strojov"><option value="zástupca vedúceho"><option value="strojník"><option value="vodič"><option value="administratíva"></datalist>
   <label>Hrubá mzda €/mes.<input name="hruba" inputmode="decimal" value="${iv(p.hruba)}"></label>
   <label>Úväzok hod./týždeň<input name="uvazok" inputmode="decimal" value="${iv(p.uvazok??40)}"></label>
   <label>Stupeň náročnosti práce (1–6)<input name="stupen" inputmode="numeric" value="${iv(p.stupen??1)}"><small>traktorista spravidla 2.–3. stupeň</small></label>
@@ -339,7 +340,7 @@ document.addEventListener("submit",async ev=>{const f=ev.target;if(!f.closest||t
     for(const [k] of (sz?PFS:PF)){const v=num(d.get(k));o[k]=v}const NN=["dni_dov","dni_pn","nahrada_pn","dni_pole","hod_so","hod_ne","hod_noc","hod_sv","hod_nad","bonus","zrazky","zaloha","odmeny"];for(const k of NN)if(k in o&&o[k]==null)o[k]=0;
     if(sz)o.faktura=String(d.get("faktura")||"").trim()||null;o.pozn=String(d.get("pozn")||"").trim()||null;
     busy(b,true);const r=await sb.from("ev_pay").update(o).eq("id",id).select().single();busy(b,false);if(r.error){tst("⚠️ "+r.error.message);return}repPay(r.data);tst("✓ Prepočítané podľa zákona.");return}
-  if(f.dataset.evperson!=null){ev.preventDefault();const d=new FormData(f),o={meno:String(d.get("meno")).trim(),druh:d.get("druh"),firma:d.get("firma"),ico:String(d.get("ico")||"").trim()||null,pozn:String(d.get("pozn")||"").trim()||null,
+  if(f.dataset.evperson!=null){ev.preventDefault();const d=new FormData(f),o={meno:String(d.get("meno")).trim(),druh:d.get("druh"),firma:d.get("firma"),funkcia:String(d.get("funkcia")||"").trim()||null,ico:String(d.get("ico")||"").trim()||null,pozn:String(d.get("pozn")||"").trim()||null,
       hruba:num(d.get("hruba")),uvazok:num(d.get("uvazok"))||40,stupen:Math.min(6,Math.max(1,parseInt(d.get("stupen"))||1)),deti15:parseInt(d.get("deti15"))||0,deti18:parseInt(d.get("deti18"))||0,
       strava_den:num(d.get("strava_den")),sadzba:num(d.get("sadzba")),pausal:num(d.get("pausal")),nczd:d.get("nczd")==="on",dochodca:d.get("dochodca")==="on",aktivny:d.get("aktivny")==="on"};
     busy(b,true);const id=+f.dataset.evperson||0;const r=id?await sb.from("ev_people").update(o).eq("id",id).select().single():await sb.from("ev_people").insert(o).select().single();busy(b,false);

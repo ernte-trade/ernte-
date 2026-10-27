@@ -27,7 +27,7 @@ function nakCnt(){const E=ent();if(!E||!E.ent)return "";const n=E.ent.filter(r=>
 
 // ---------- stav ----------
 function stavHTML(){if(!S.it){loadIt();return `<div class="card"><div class="s">Načítavam sklad…</div></div>`}if(S.it.err)return `<div class="card"><div class="s">${e(S.it.err)}</div></div>`;
-  const q=S.q.trim().toLowerCase(),L=S.it.filter(i=>i.aktivny&&(!S.kat||i.kat===S.kat)&&(!S.low||(i.min_mn!=null&&+i.stav<=+i.min_mn))&&(!q||[i.nazov,i.kod,i.miesto,i.stroj,i.vyrobca].some(v=>String(v||"").toLowerCase().includes(q))));
+  const q=nrm(S.q),hit=A=>!q||q.split(" ").every(w=>A.some(v=>nrm(v).includes(w))),L=S.it.filter(i=>i.aktivny&&(!S.kat||i.kat===S.kat||(S.kat==="naradie"&&i.druh==="majetok"))&&(!S.low||(i.min_mn!=null&&+i.stav<=+i.min_mn))&&hit([i.nazov,i.kod,i.miesto,i.stroj,i.vyrobca,i.pozn]));
   const val=S.it.filter(i=>i.aktivny&&i.druh==="sklad").reduce((s,i)=>s+Math.max(0,+i.stav)*(+i.cena_j||0),0),low=S.it.filter(i=>i.aktivny&&i.min_mn!=null&&+i.stav<=+i.min_mn).length;
   let h=`<div class="hrk"><div><small>Položiek</small><b>${S.it.filter(i=>i.aktivny).length}</b></div><div><small>Hodnota zásob (bez DPH)</small><b>${f2(val)} €</b></div><div class="${low?"wn":""}"><small>Dochádza (pod minimom)</small><b>${low}</b></div></div>
    <form class="card f skflt" id="skFlt"><label>Hľadať<input name="q" value="${e(S.q)}" placeholder="názov, kód, stroj, regál…"></label>
@@ -35,10 +35,23 @@ function stavHTML(){if(!S.it){loadIt();return `<div class="card"><div class="s">
    <label class="evck"><input type="checkbox" name="low"${S.low?" checked":""}> iba čo dochádza</label></form>
    <div class="btns"><button type="button" class="lime" data-sksv="foto">📸 Odfotiť bloček / súčiastku</button><button type="button" data-sknew>➕ Pridať ručne</button></div>`;
   if(S.act==="new")h+=itemForm(S.pre||{});
-  if(!L.length)return h+`<div class="card"><div class="s">${S.it.length?"Nič nezodpovedá výberu.":"Sklad je zatiaľ prázdny. Odfoť bloček alebo súčiastku, alebo prijmi tovar zo starších nákupov v záložke „Z nákupov“."}</div></div>`;
+  const NK=(q||S.kat)&&!S.low?nakHits(q,hit):[];
+  if(!L.length&&!NK.length)return h+`<div class="card"><div class="s">${S.it.length||q||S.kat?"Na sklade ani v nákupoch nič nezodpovedá výberu.":"Sklad je zatiaľ prázdny. Odfoť bloček alebo súčiastku, alebo prijmi tovar zo starších nákupov v záložke „Z nákupov“."}</div></div>`;
+  if(!L.length)h+=`<div class="card"><div class="s">Na sklade zatiaľ nie je nič takéto – nižšie sú nákupy z evidencie. Ťukni 📦 a prijmi, čo ešte máte.</div></div>`;
   const G=new Map;for(const i of L){const k=i.druh==="majetok"?"naradie":i.kat;if(!G.has(k))G.set(k,[]);G.get(k).push(i)}
   for(const [k,A] of G)h+=`<h3 class="skh">${e(KAT[k]||k)} <small>${A.length}</small></h3><div class="agl">${A.map(itemCard).join("")}</div>`;
+  if(NK.length)h+=`<h3 class="skh">🧾 Nakúpené podľa evidencie <small>${NK.length}</small></h3><div class="agl">${NK.slice(0,80).map(nkCard).join("")}</div>`;
   return h}
+// nákupy z evidencie, ktoré zodpovedajú hľadaniu / druhu
+function nakHits(q,hit){const E=ent();if(!E||!E.ent){window.evLoadEnt&&window.evLoadEnt();return []}
+  return E.ent.filter(r=>r.typ==="naklad"&&!r.archiv&&["sklad","majetok","spotreba"].includes(r.sklad_navrh)&&(!S.kat||r.sklad_kat===S.kat||(S.kat==="naradie"&&r.sklad_navrh==="majetok"))&&hit([r.podkat,r.pozn,r.stroj,r.partner,r.kat]))}
+const SKS={sklad:"📦 prijaté na sklad",majetok:"🧰 prijaté ako náradie",spotreba:"✔ spotrebované",nie:"✖ nepatrí na sklad"};
+function nkCard(r){const t=[r.podkat,r.pozn].filter(Boolean).join(" · ")||r.stroj||r.kat,stTitle=!r.podkat&&!r.pozn&&r.stroj,op=S.open==="e"+r.id;
+  return `<div class="card sknk"><div class="row"><b>${e(t)}</b>${r.sklad?`<span class="pill g">${e(SKS[r.sklad]||r.sklad)}</span>`:pill(r.sklad_navrh)}</div>
+   <div class="trlw"><span>${e(dSK(r.d))}</span><span>${e(r.partner||"")}</span>${r.stroj&&!stTitle?`<span>🚜 ${e(r.stroj)}</span>`:""}<span>${r.mn!=null?f2(r.mn,r.mn%1?2:0)+" "+e(r.jed||""):""}</span>${OWN()?`<span><b>${f2(r.suma)} €</b></span>`:""}</div>
+   ${r.sklad?"":op?`<form class="f skfe" data-ske="${r.id}"><label>Názov na sklade<input name="nazov" value="${e(r.podkat||r.pozn||r.stroj||"")}"></label><label>Koľko je ešte na sklade<input name="mn" inputmode="decimal" value="${iv(r.mn)}"></label>
+     <label>Druh<select name="kat">${Object.entries(KAT).map(k=>`<option value="${k[0]}"${(r.sklad_kat||"ine")===k[0]?" selected":""}>${k[1]}</option>`).join("")}</select></label><div class="w btns"><button class="lime" type="submit">📦 Prijať na sklad</button><button type="button" data-skx>Zrušiť</button></div></form>`:
+   `<div class="btns"><button type="button" class="lime" data-skeop="${r.id}">📦 Na sklad</button><button type="button" data-ske2="spotreba" data-id="${r.id}">✔ Spotrebované</button></div>`}</div>`}
 function itemCard(i){const op=S.open===i.id,low=i.min_mn!=null&&+i.stav<=+i.min_mn;
   let h=`<div class="card skit${low?" sklow":""}"><div class="row">${i.foto?`<img class="skimg" src="${e(i.foto)}" alt="">`:""}<div class="skn"><b>${e(i.nazov)}</b><small>${[i.kod,i.vyrobca,i.stroj&&"🚜 "+i.stroj,i.miesto&&"📍 "+i.miesto].filter(Boolean).map(e).join(" · ")}</small></div>
     <div class="skst"><b>${f2(i.stav,+i.stav%1?2:0)}</b><small>${e(i.jed)}${low?" · dochádza":""}</small></div></div>
