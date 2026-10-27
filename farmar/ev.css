@@ -1,0 +1,21 @@
+/* ===== ERNTE · Evidencia – diamantové sklo ===== */
+.evz{gap:12px}
+.evflt{grid-template-columns:repeat(auto-fit,minmax(min(100%,140px),1fr));align-items:end}
+.evf{grid-template-columns:repeat(auto-fit,minmax(min(100%,170px),1fr));align-items:end}
+.evf label small,.evpf label small{display:block;color:var(--muted);font-weight:500;font-size:.72rem}
+.evtab table{min-width:720px}.evtab td small{color:var(--muted)}
+.evtab tr.evzi td{color:#6ee7b7}.evtab tr.evpr td{opacity:.6;font-style:italic}
+.evmini{min-height:36px!important;padding:0 10px!important;font-size:.85rem!important;margin-left:auto}
+.evmon{align-items:center;gap:8px;flex-wrap:wrap}.evmon b{font-size:1.05rem;min-width:9em;text-align:center;text-transform:capitalize}.evmon button{min-width:48px}
+.evdoch{grid-template-columns:repeat(auto-fit,minmax(min(46%,120px),1fr));align-items:end}
+.evdoch .row,.evpay .row,.evppl .row{display:flex;align-items:center;gap:8px;flex-wrap:wrap}.evdoch .row small{color:var(--muted)}
+.evwarn{padding:10px 12px;border-radius:14px;border:1px solid rgba(251,191,36,.5);background:linear-gradient(150deg,rgba(251,191,36,.14),rgba(255,255,255,.02));font-size:.86rem;line-height:1.45}
+.evpay{display:grid;gap:8px}.evpay.evw{border-color:rgba(251,191,36,.45)}
+.evpf{grid-template-columns:repeat(auto-fit,minmax(min(46%,150px),1fr));align-items:end;padding:6px 0}
+.evbd{width:100%;border-collapse:collapse;font-size:.88rem;font-variant-numeric:tabular-nums}.evbd td{padding:6px 8px;border-bottom:1px solid var(--line,rgba(255,255,255,.1))}
+.evbd td.r{text-align:right;white-space:nowrap}.evbd tr.t td{font-weight:800;border-top:1px solid var(--line2,rgba(255,255,255,.22))}.evbd td.evsub{color:var(--muted);font-size:.74rem;text-transform:uppercase;letter-spacing:.05em;padding-top:12px}
+.evppl.off{opacity:.6}.evck{display:flex!important;align-items:center;gap:10px;min-height:48px;grid-column:1/-1}.evck input{width:22px;height:22px;min-height:0;flex:none;accent-color:#b6ff3b}
+.evol{margin:6px 0 0;padding-left:20px;display:grid;gap:8px;line-height:1.45}
+html[data-theme=light] .evtab tr.evzi td{color:#047857}
+html.big .evbd{font-size:1rem}html.big .evmon b{font-size:1.25rem}
+.evsad table{min-width:0}.evsad td,.evsad th{white-space:normal}.evsad td.r{white-space:nowrap}
