@@ -1,6 +1,6 @@
 // ===== ERNTE · TERMÍNY A POVINNOSTI: odoslať správu alebo PDF =====
 // Pri každej povinnosti: 💬 Poslať správu (WhatsApp, e-mail… cez menu telefónu) a 📄 PDF (upozornenie s logom).
-// Údaje berie z hub.js (window.ERNTE_DUE). Nič sa neukladá na server.
+// Údaje berie z hub.js (window.ERNTE_DUE). Komu a kedy bolo odoslané sa ukladá do send_log (vidí iba majiteľ).
 (function(){
 const e=x=>typeof esc==="function"?esc(x):String(x??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const say=(t,ms)=>{if(typeof toast==="function")toast(t,ms||4000)};
@@ -17,8 +17,8 @@ function todo(t){const s=String(t).toLowerCase();
 function text(d){const n=left(d[0]),T=todo(d[2]);
   return `📅 *Termín a povinnosť – ERNTE · VALKO*\n\n${d[1]} *${d[2]}*\n🗓️ Termín: *${dSK(d[0])}* (${leftTxt(n)})\n📜 ${d[3]}\n\n*Čo treba urobiť:*\n${T.map((x,i)=>`${i+1}. ${x}`).join("\n")}\n\nKonkrétny postup prosím overte s účtovníčkou alebo právnikom.\n\n👉 ERNTE Trade & Logistic: ${typeof APP_URL!=="undefined"?APP_URL:location.href.split("#")[0]}`}
 async function shareText(d){const t=text(d);
-  if(navigator.share){try{await navigator.share({text:t});return}catch(x){if(x&&x.name==="AbortError")return}}
-  location.href="https://wa.me/?text="+encodeURIComponent(t)}
+  if(navigator.share){try{await navigator.share({text:t});return "share"}catch(x){if(x&&x.name==="AbortError")return false}}
+  location.href="https://wa.me/?text="+encodeURIComponent(t);return "wa"}
 // ---------- PDF (A4, logo, termín, kroky) ----------
 const img=src=>new Promise(ok=>{const i=new Image();i.onload=()=>ok(i);i.onerror=()=>ok(null);i.src=src});
 function rr(g,x,y,w,h,r){g.beginPath();g.moveTo(x+r,y);g.arcTo(x+w,y,x+w,y+h,r);g.arcTo(x+w,y+h,x,y+h,r);g.arcTo(x,y+h,x,y,r);g.arcTo(x,y,x+w,y,r);g.closePath()}
@@ -48,13 +48,21 @@ async function sendPdf(d,btn){const lab=btn&&btn.textContent;if(btn){btn.disable
     const blob=window.inviteCardPdf?inviteCardPdf(cv,link,url):await new Promise(r=>cv.toBlob(r,"image/png"));
     const name="ERNTE-povinnost-"+d[0]+"-"+String(d[2]).normalize("NFD").replace(/[̀-ͯ]/g,"").replace(/[^A-Za-z0-9]+/g,"-").slice(0,40).replace(/-$/,"")+(window.inviteCardPdf?".pdf":".png");
     const file=new File([blob],name,{type:blob.type});
-    if(navigator.canShare&&navigator.canShare({files:[file]})){try{await navigator.share({files:[file],title:d[2]});return}catch(x){if(x&&x.name==="AbortError")return}}
-    const a=document.createElement("a"),u=URL.createObjectURL(file);a.href=u;a.download=name;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(u),6e4);say("PDF uložené – pošlite ho cez WhatsApp ako dokument.",5000)}
-  catch(x){say("PDF sa nepodarilo pripraviť.")}finally{if(btn){btn.disabled=false;btn.textContent=lab}}}
+    if(navigator.canShare&&navigator.canShare({files:[file]})){try{await navigator.share({files:[file],title:d[2]});return "share"}catch(x){if(x&&x.name==="AbortError")return false}}
+    const a=document.createElement("a"),u=URL.createObjectURL(file);a.href=u;a.download=name;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(u),6e4);say("PDF uložené – pošlite ho cez WhatsApp ako dokument.",5000);return "dl"}
+  catch(x){say("PDF sa nepodarilo pripraviť.");return false}finally{if(btn){btn.disabled=false;btn.textContent=lab}}}
 // ---------- komu: pamätá si príjemcov a históriu odoslaní (v tomto zariadení) ----------
 const HK="ernte-due-sent",RK="ernte-due-people";
 const ld=k=>{try{return JSON.parse(localStorage.getItem(k)||"null")}catch(x){return null}},sv=(k,v)=>{try{localStorage.setItem(k,JSON.stringify(v))}catch(x){}};
-const hist=()=>ld(HK)||{},people=()=>ld(RK)||[];
+// história odoslaní: v telefóne + v databáze (send_log) – vidno ju na každom zariadení
+let SENT=null;function loadSent(){if(SENT!==null||typeof sb==="undefined")return;SENT=[];sb.from("send_log").select("*").order("at",{ascending:false}).limit(500).then(r=>{SENT=r.error?[]:r.data||[];if(typeof renderStaff==="function"&&typeof TAB!=="undefined"&&TAB==="home")renderStaff()})}
+window.sendLog=function(x){const row={kind:x.kind||"msg",ref:String(x.ref||"").slice(0,200),title:String(x.title||"").slice(0,300),to_name:String(x.n||"").slice(0,120),to_contact:String(x.c||"").slice(0,120),how:x.how||null};
+  if(Array.isArray(SENT))SENT.unshift({...row,at:new Date().toISOString()});try{sb.from("send_log").insert(row).then(()=>{})}catch(e){}};
+window.loadSent=loadSent;window.sentKind=k=>{loadSent();return (SENT||[]).filter(r=>r.kind===k)};
+window.sentFor=ref=>(SENT||[]).filter(r=>r.ref===ref).map(r=>({n:r.to_name,c:r.to_contact,how:r.how,kind:r.kind==="due_pdf"?"pdf":r.kind==="due_msg"?"msg":r.kind,at:r.at}));
+const histL=()=>ld(HK)||{};
+const hist=()=>{const H=JSON.parse(JSON.stringify(histL()));for(const r of SENT||[]){if(!/^due_/.test(r.kind))continue;const L=H[r.ref]=H[r.ref]||[];const t=Date.parse(r.at);if(!L.some(h=>h.n===r.to_name&&Math.abs(Date.parse(h.at)-t)<120000))L.push({n:r.to_name,c:r.to_contact,how:r.how,kind:r.kind==="due_pdf"?"pdf":"msg",at:r.at})}
+  for(const k in H)H[k].sort((a,b)=>Date.parse(b.at)-Date.parse(a.at));return H},people=()=>ld(RK)||[];
 const idOf=d=>d[0]+"|"+String(d[2]).slice(0,40);
 const telOf=v=>{let t=String(v||"").replace(/[^\d+]/g,"");if(!t)return "";if(t.startsWith("+"))return t.slice(1);if(t.startsWith("00"))return t.slice(2);if(t.startsWith("0"))return "421"+t.slice(1);return t};
 const isMail=v=>/@/.test(String(v||""))&&!/@tel\.ernte\.sk$/.test(v);
@@ -73,12 +81,13 @@ function teamLoad(){const ST=(typeof STATE!=="undefined"&&STATE)||null;if(!ST)re
   if(!ST.staffcfg)q.push(sb.from("staff_cfg").select("key,value").then(r=>{ST.staffcfg=ST.staffcfg||{};for(const x of r.data||[])ST.staffcfg[x.key]=x.value}));
   if(!ST.trucks)q.push(sb.from("trucks").select("*").order("no").then(r=>{ST.trucks=r.data||[]}));
   if(q.length)Promise.all(q.map(p=>Promise.resolve(p).catch(()=>{}))).then(()=>{if(PK)paint()})}
-function log(d,r,how,kind){const H=hist(),k=idOf(d);(H[k]=H[k]||[]).unshift({n:r.n,c:r.c,how,kind,at:new Date().toISOString()});H[k]=H[k].slice(0,30);sv(HK,H);
+function log(d,r,how,kind){const H=histL(),k=idOf(d);(H[k]=H[k]||[]).unshift({n:r.n,c:r.c,how,kind,at:new Date().toISOString()});H[k]=H[k].slice(0,30);sv(HK,H);window.sendLog({kind:"due_"+kind,ref:k,title:d[2],n:r.n,c:r.c,how});
+  say(`✅ Odoslané: ${r.n}${r.c?" ("+r.c+")":""} · ${HOW[how]||how}`,6000);
   const P=people().filter(p=>!(p.n===r.n&&p.c===r.c));P.unshift({n:r.n,c:r.c});sv(RK,P.slice(0,30));if(typeof renderStaff==="function")renderStaff()}
 const dt=x=>new Date(x).toLocaleString("sk-SK",{day:"numeric",month:"numeric",hour:"2-digit",minute:"2-digit"});
-const HOW={wa:"WhatsApp",sms:"SMS",mail:"e-mail",share:"menu telefónu"};
-window.dueBtns=i=>{const d=(window.ERNTE_DUE||[])[i];const H=d?(hist()[idOf(d)]||[]):[];
-  return `<div class="btns duebtns"><button type="button" class="lime" data-duemsg="${i}">💬 Poslať správu</button><button type="button" data-duepdf="${i}">📄 Poslať PDF</button></div>${H.length?`<details class="duehist"><summary>✓ Odoslané ${H.length}× · naposledy ${e(H[0].n)} (${e(dt(H[0].at))})</summary>${H.map(h=>`<div>${h.kind==="pdf"?"📄":"💬"} <b>${e(h.n)}</b> · ${e(HOW[h.how]||h.how)} · ${e(dt(h.at))}</div>`).join("")}</details>`:""}`};
+const HOW={wa:"WhatsApp",sms:"SMS",mail:"e-mail",share:"menu telefónu",dl:"stiahnuté PDF"};
+window.dueBtns=i=>{loadSent();const d=(window.ERNTE_DUE||[])[i];const H=d?(hist()[idOf(d)]||[]):[];
+  return `<div class="btns duebtns"><button type="button" class="lime" data-duemsg="${i}">💬 Poslať správu</button><button type="button" data-duepdf="${i}">📄 Poslať PDF</button></div>${H.length?`<div class="duesentok">✅ Odoslané: <b>${[...new Set(H.map(h=>h.n))].map(e).join(", ")}</b><small>naposledy ${e(H[0].n)} · ${H[0].kind==="pdf"?"📄 PDF":"💬 správa"} · ${e(HOW[H[0].how]||H[0].how||"")} · ${e(dt(H[0].at))}</small></div><details class="duehist"><summary>História odoslaní (${H.length}×)</summary>${H.map(h=>`<div>${h.kind==="pdf"?"📄":"💬"} <b>${e(h.n)}</b> · ${e(HOW[h.how]||h.how)} · ${e(dt(h.at))}</div>`).join("")}</details>`:""}`};
 let PK=null;
 function picker(i,kind){const d=(window.ERNTE_DUE||[])[i];if(!d)return;teamLoad();
   PK={i,kind,d,sel:null,q:""};paint()}
@@ -100,17 +109,17 @@ function how(r){const o=document.getElementById("duePk");const tel=telOf(r.c),ma
    :`${tel&&!mail?`<button type="button" class="lime duego" data-duehow="wa">🟢 WhatsApp priamo ${e(r.n)}</button><button type="button" class="duego" data-duehow="sms">✉️ SMS</button>`:""}${mail?`<button type="button" class="lime duego" data-duehow="mail">📧 E-mail</button>`:""}<button type="button" class="duego" data-duehow="share">📤 Iné (menu telefónu)</button>`}
    <button type="button" class="dueany" data-dueback>← späť na výber</button>`;PK.sel=r}
 async function go(h,btn){const r=PK.sel,d=PK.d,t=text(d),tel=telOf(r.c);
-  if(PK.kind==="pdf"){const k=PK;PK=null;paint();await sendPdf(d,btn);log(d,r,"share","pdf");return}
+  if(PK.kind==="pdf"){PK=null;paint();const ok=await sendPdf(d,btn);if(ok)log(d,r,ok==="dl"?"dl":"share","pdf");else say("Neodoslané – zrušené.");return}
   if(h==="wa"){window.open("https://wa.me/"+tel+"?text="+encodeURIComponent(t),"_blank")}
   else if(h==="sms"){location.href="sms:+"+tel+"?&body="+encodeURIComponent(t)}
   else if(h==="mail"){location.href="mailto:"+encodeURIComponent(r.c)+"?subject="+encodeURIComponent("Termín: "+d[2])+"&body="+encodeURIComponent(t.replace(/\*/g,""))}
   else{try{await navigator.share({text:t})}catch(x){if(x&&x.name==="AbortError")return}}
-  log(d,r,h,"msg");PK=null;paint();say("✓ Zapísané: "+r.n)}
+  log(d,r,h,"msg");PK=null;paint()}
 {const s=document.createElement("style");s.textContent=`.duehist{margin-top:6px;font-size:.8rem;opacity:.85}.duehist summary{cursor:pointer;color:var(--ok,#7ee787);list-style:none}.duehist summary::-webkit-details-marker{display:none}.duehist div{padding:3px 0}
 .duepk{position:fixed;inset:0;z-index:10060;background:rgba(0,0,0,.66);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);display:flex;align-items:flex-end;justify-content:center}@media(min-width:700px){.duepk{align-items:center}}
 .duepb{width:min(560px,100%);max-height:90vh;overflow:auto;display:grid;gap:10px;padding:16px 16px calc(16px + env(safe-area-inset-bottom,0px));border-radius:24px 24px 0 0;background:linear-gradient(160deg,rgba(28,34,46,.98),rgba(12,16,24,.99));border:1px solid rgba(255,255,255,.16);color:#eef2f7}@media(min-width:700px){.duepb{border-radius:24px}}
 html[data-theme=light] .duepb{background:#fff;color:#0f172a}.duehd{display:flex;justify-content:space-between;align-items:center;gap:10px}.duex{min-height:40px;min-width:40px;padding:0;border-radius:50%}
-.duesent{font-size:.85rem;color:#7ee787}.dueq,.duenew input{width:100%;min-height:48px;font-size:16px;border-radius:14px;padding:0 14px}
+.duesent{font-size:.85rem;color:#7ee787}.duesentok{margin-top:8px;padding:8px 12px;border-radius:12px;background:rgba(126,231,135,.12);border:1px solid rgba(126,231,135,.35);font-size:.9rem}.duesentok small{display:block;opacity:.8;margin-top:2px}.dueq,.duenew input{width:100%;min-height:48px;font-size:16px;border-radius:14px;padding:0 14px}
 .duel{display:grid;gap:6px}.duer{display:flex;justify-content:space-between;align-items:center;gap:10px;text-align:left;min-height:56px;padding:8px 14px;border-radius:14px;width:100%}.duer b{display:block}.duer small{opacity:.7}.duer em{font-style:normal;font-size:.72rem;opacity:.75;white-space:nowrap}
 .duesv{display:flex;gap:8px;align-items:center;font-size:.85rem}.duesv input{width:20px!important;min-height:20px!important}.duenew{display:grid;gap:8px;padding:12px;border-radius:16px;border:1px dashed rgba(255,255,255,.2)}.duego{min-height:52px;width:100%;font-weight:700}.dueany{min-height:44px;background:none;border:0;opacity:.8;text-decoration:underline}`;document.head.appendChild(s)}
 {const s=document.createElement("style");s.textContent=`.duebtns{margin-top:6px;gap:8px}.duebtns button{min-height:40px;padding:0 14px;font-size:.85rem}`;document.head.appendChild(s)}
@@ -121,7 +130,7 @@ document.addEventListener("click",ev=>{const g=s=>ev.target.closest&&ev.target.c
   if(g("[data-dueback]")){paint();return}
   if(b=g("[data-duepick]")){how(cands()[+b.dataset.duepick]);return}
   if(b=g("[data-duehow]")){go(b.dataset.duehow,b);return}
-  if(g("[data-dueany]")){const d=PK.d,k=PK.kind;PK=null;paint();if(k==="pdf")sendPdf(d,null);else shareText(d);return}},true);
+  if(g("[data-dueany]")){const d=PK.d,k=PK.kind;PK=null;paint();(k==="pdf"?sendPdf(d,null):shareText(d)).then(ok=>{if(ok)log(d,{n:"bez výberu (menu telefónu)",c:""},ok==="dl"?"dl":"share",k)});return}},true);
 document.addEventListener("submit",async ev=>{if(ev.target.id!=="dueNew")return;ev.preventDefault();const f=new FormData(ev.target),r={n:String(f.get("n")||"").trim(),c:String(f.get("c")||"").trim()},t=String(f.get("t")||"").trim();if(!r.n||!r.c)return;
   const P=people().filter(p=>!(p.n===r.n&&p.c===r.c));P.unshift(r);sv(RK,P.slice(0,30));
   if(f.get("sv"))await saveExt({n:r.n,c:r.c,t:t||"kontakt"});how(r)},true);
