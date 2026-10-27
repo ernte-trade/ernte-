@@ -1004,7 +1004,7 @@ function renderFarmer(){const F=FARMER,P=MK.map(m=>STATE.prices.find(x=>x.com===
   if(window.bigBtn)h+=`<div class="hrow">${bigBtn()}</div>`;
   if(window.farmDashHTML)h+=farmDashHTML();
   if(window.farmAgroHTML)h+=farmAgroHTML();
-  if(window.novFarmHTML)h+=novFarmHTML();
+  /* Novinky farmár nevidí */
   if(window.susCardHTML)h+=susCardHTML();
   if((!window.fcan||fcan("f_prices"))){h+=`<h2>Výkupné ceny · FCA farma, bez DPH</h2>`;
   h+=P.length?`<div class="card">${P.map(p=>`<div class="prow">${comImg(p.com)}<div><div class="t">${esc(comName(p.com))}</div><div class="s">${esc(specLine(p.com))}</div></div><b class="num">${fmt(p.price)} €/t</b>
