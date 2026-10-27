@@ -3,6 +3,7 @@
   "short_name": "ERNTE",
   "description": "ERNTE Trade & Logistic – výkupné ceny, obchody, odvoz VALKO a služby strojmi",
   "lang": "sk",
+  "id": "./",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
