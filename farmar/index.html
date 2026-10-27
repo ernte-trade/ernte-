@@ -792,7 +792,7 @@ html[data-theme=light] .ftbl th{color:#0f172a}html[data-theme=light] .fdban{colo
 <script>try{if(localStorage.getItem('ernte-theme')==='light')document.documentElement.dataset.theme='light'}catch(e){}</script>
 <link rel="stylesheet" href="perms.css?v=20261026-1955">
 <link rel="stylesheet" href="trus.css?v=20261027-0140">
-<link rel="stylesheet" href="ev.css?v=20261027-0300">
+<link rel="stylesheet" href="ev.css?v=20261027-0710">
 </head>
 <body>
 <div class="wrap">
@@ -1056,6 +1056,7 @@ evid:{t:"Evidencia",i:"📒",r:"Náklady, výnosy, výkony, dochádzka a výplat
  ["Náklady","V časti <b>Náklady a výnosy</b> ťukni ➕, zadaj dátum, kategóriu (PHM, nakup, služby…), množstvo a cenu – suma sa vypočíta sama. Pridaj stroj a pole, aby bolo vidno, kde peniaze idú."],
  ["Dochádzka","Vedúci každý mesiac zapíše pri každom človeku odpracované dni, dovolenku, PN, dni na poli a hodiny v sobotu, nedeľu, v noci, vo sviatok a nadčasy. Peniaze nevidí."],
  ["Výplaty","Majiteľ v <b>Výplatách</b> pripraví mesiac, skontroluje výpočet (odvody, daň, bonus, stravné), schváli a po zaplatení označí <b>Vyplatené</b> – vtedy sa mesiac zmrazí. Výplatné pásky a rekapitulácia pre účtovníčku sa dajú vytlačiť."],
+ ["Sklad","V <b>Sklade</b> ťukni 📸 a odfoť bloček – Claude prečíta položky, ty skontroluješ a jedným ťuknutím ich zapíšeš do nákladov aj na sklad. Súčiastku odfotíš a appka ju rozpozná. Pri vydaní zapíš, do ktorého stroja išla. V „Z nákupov“ rozhodneš o starších nákupoch."],
  ["Prístupy","Vedúcim zapneš v Tíme → ⚙️ Prístupy: „Evidencia“ (zápis nákladov) a „Dochádzka“. Výnosy, mzdy a výsledok vidí iba majiteľ."]]},
 trus:{t:"Kurací trus",i:"🐔",r:"Vývozy kuracieho trusu z fariem Baromfi (HU) do BPS Kamenica nad Cirochou – od nahlásenia po faktúru.",s:[
  ["Ako to ide","<b>1.</b> Baromfi v aplikácii nahlási vývoz: farma, dátum, čas, počet áut. Príde ti upozornenie. <b>2.</b> VALKO dispečing zaškrtne autá (ŠPZ) a schváli. <b>3.</b> BPS hneď vidí, kedy a koľko ton príde, ktoré autá a koľko zaplatí, a doplní miesto vykládky pre vodiča. <b>4.</b> Baromfi zadá netto pri nakládke, BPS pri prevzatí."],
@@ -2772,7 +2773,8 @@ document.addEventListener("click",e=>{const b=e.target.closest("[data-dfp]");if(
 <script src="agro.js?v=20261026-1600"></script>
 <script src="activity.js?v=20261026-1955"></script>
 <script src="trus.js?v=20261027-0140"></script>
-<script src="ev.js?v=20261027-0300"></script>
+<script src="ev.js?v=20261027-0710"></script>
+<script src="sklad.js?v=20261027-0710"></script>
 <script src="sign.js?v=20261027-0035"></script>
 <script src="outbox.js?v=20261027-0120"></script>
 <script src="farmact.js?v=20261027-0150"></script>

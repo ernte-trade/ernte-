@@ -19,6 +19,7 @@ const curM=()=>today().slice(0,7);
 const errTxt=r=>{const m=(r&&r.error&&r.error.message)||"";return /ev_|does not exist|could not find/i.test(m)&&/does not exist|could not find/i.test(m)?"Evidencia sa zapne po aktualizácii databázy (pár minút).":m};
 const meMail=()=>String((typeof ME!=="undefined"&&ME&&ME.email)||(typeof STATE!=="undefined"&&STATE.me&&STATE.me.email)||"").toLowerCase();
 let E={sec:"",y:+today().slice(0,4),m:curM(),fm:"",ft:"",fk:"",ff:"",fq:"",lim:150,ent:null,kat:null,ppl:null,pay:null,par:null,doch:null,dochM:null,ops:null,open:null,edit:null,pv:"",err:""};
+window.evData=()=>E;window.evLoadEnt=()=>loadEnt();
 const rr=()=>{if(typeof TAB!=="undefined"&&TAB==="evid"&&typeof renderStaff==="function")renderStaff()};
 
 // ---------- načítanie ----------
@@ -38,12 +39,13 @@ window.vEvid=function(){
   if(CAN("ev"))SEC.push(["zap","🧾","Náklady a výnosy","PHM, nákupy, služby, servis – zápis s dátumom, strojom a poľom"]);
   if(CAN("ev_doch"))SEC.push(["doch","🗓️","Dochádzka",OWN()?"dni, dovolenka, PN, pole, víkendy, nadčasy":"zapíš dni, pole, víkendy a nadčasy – bez peňazí"]);
   if(OWN())SEC.push(["mzdy","💶","Výplaty podľa zákona","hrubá → odvody → daň → čistá · cena práce · výplatné pásky"],["prehl","📊","Prehľad a výsledok","výnosy, náklady, mzdy, výsledok po mesiacoch"]);
+  if(CAN("ev"))SEC.splice(1,0,["sklad","📦","Sklad","diely, materiál, náradie · odfoť bloček alebo súčiastku"]);
   if(CAN("ev"))SEC.push(["vyk","🌾","Výkony","žatva po kombajnoch, vápnenie po podnikoch"]);
   if(OWN())SEC.push(["kon","✅","Kontrola a opravy","čo bolo v Exceli zle a ako je to teraz · sadzby 2025/2026"]);
   let h=`<div class="zt evz"><h2>📒 Evidencia ERNTE ${E.sec?`<button type="button" class="ztb" data-evsec="">← späť</button>`:""}</h2>`;
   if(!E.sec)return h+`<div class="zgrid">${SEC.map(s=>`<button type="button" class="zbtn" data-evsec="${s[0]}"><span>${s[1]}</span><b>${s[2]}</b><small>${e(s[3])}</small></button>`).join("")}</div>
     <div class="s">🔒 Mzdy, cenu práce, výnosy a výsledok vidí iba majiteľ. Vedúci zapisuje náklady a dochádzku; svoje zápisy môže 14 dní opraviť.</div></div>`;
-  let b="";try{b=({zap:zapHTML,doch:dochHTML,mzdy:mzdyHTML,prehl:prehlHTML,vyk:vykHTML,kon:konHTML})[E.sec]()}catch(x){b=`<div class="card"><div class="s">Chyba zobrazenia: ${e(x.message)}</div></div>`}
+  let b="";try{b=({sklad:()=>{if(!E.ent)loadEnt();return (window.vSklad?vSklad():"")+`<datalist id="skStr">${[...new Set((E.ent||[]).map(r=>r.stroj).filter(Boolean))].slice(0,120).map(x=>`<option value="${e(x)}">`).join("")}</datalist>`},zap:zapHTML,doch:dochHTML,mzdy:mzdyHTML,prehl:prehlHTML,vyk:vykHTML,kon:konHTML})[E.sec]()}catch(x){b=`<div class="card"><div class="s">Chyba zobrazenia: ${e(x.message)}</div></div>`}
   return h+b+`</div>`};
 
 // ================= NÁKLADY A VÝNOSY =================
