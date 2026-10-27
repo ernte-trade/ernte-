@@ -991,14 +991,14 @@ async function loadFarmer(){const [p,s,d,r]=await Promise.all([
   sb.from("prices").select("com,price,updated_at"),sb.from("settings").select("key,value"),
   sb.from("deals").select("*").order("created_at",{ascending:false}),
   sb.from("requests").select("*").order("created_at",{ascending:false}).limit(20)]);
-  try{const t=await sb.from("trips").select("id,deal_id,spz,driver,driver_phone,day,time,status,netto,note").order("day",{ascending:true});STATE.trips=t.data||[]}catch(e){STATE.trips=[]}
+  try{const t=await sb.from("trips").select("id,deal_id,spz,driver_phone,day,time,status,netto,note").order("day",{ascending:true});STATE.trips=t.data||[]}catch(e){STATE.trips=[]}
   STATE.prices=(p.data||[]).filter(x=>x.price!=null);STATE.settings=Object.fromEntries((s.data||[]).map(x=>[x.key,x.value]));STATE.deals=d.data||[];STATE.reqs=r.data||[]}
 function contact(){return (STATE.settings||{}).contact||{phone:"+421 918 449 991",email:"jana.valkova@ernte.sk"}}
 function miniMap(lat,lon,label){return lmapHTML([{lat,lon,label,mv:true}],"sm")}
 const ago=d=>{const m=Math.round((Date.now()-new Date(d))/60000);return m<1?"práve teraz":m<60?`pred ${m} min`:`pred ${Math.round(m/60)} h`};
 async function loadPos(){try{const r=await sb.rpc("my_truck_positions");STATE.pos=r.data||[]}catch(e){STATE.pos=[]}}
 function tripRow(t){const d=new Date(t.day+"T12:00").toLocaleDateString("sk-SK",{weekday:"short",day:"numeric",month:"numeric"});
-  return `<div class="trip"><div class="tr1"><b>${esc(d)}${t.time?" · "+esc(t.time):""}</b>${pill(TST[t.status]||[t.status])}</div><div class="tr2">🚛 <b>${esc(t.spz||"auto VALKO")}</b>${t.driver?" · "+esc(t.driver):""}${t.driver_phone&&!["vylozene","zrusena"].includes(t.status)?` · <a class="copy" href="tel:${esc(String(t.driver_phone).replace(/\s/g,""))}">volať vodiča</a>`:""}</div>${t.netto!=null?`<div class="tr2">Netto: <b class="num">${fmt(t.netto,3)} t</b></div>`:""}${t.note?`<div class="s">${esc(t.note)}</div>`:""}${(()=>{const q=(STATE.pos||[]).find(x=>x.trip_id===t.id);return q&&q.lat?`<div class="tr2">📍 Poloha auta ${esc(ago(q.at))}${q.speed?` · ${q.speed} km/h`:""}</div>`+miniMap(+q.lat,+q.lon,t.spz||"auto"):""})()}</div>`}
+  return `<div class="trip"><div class="tr1"><b>${esc(d)}${t.time?" · "+esc(t.time):""}</b>${pill(TST[t.status]||[t.status])}</div><div class="tr2">🚛 <b>${esc(t.spz||"auto VALKO")}</b>${t.driver_phone&&!["vylozene","zrusena"].includes(t.status)?` · <a class="copy" href="tel:${esc(String(t.driver_phone).replace(/\s/g,""))}">volať vodiča</a>`:""}</div>${t.netto!=null?`<div class="tr2">Netto: <b class="num">${fmt(t.netto,3)} t</b></div>`:""}${t.note?`<div class="s">${esc(t.note)}</div>`:""}${(()=>{const q=(STATE.pos||[]).find(x=>x.trip_id===t.id);return q&&q.lat?`<div class="tr2">📍 Poloha auta ${esc(ago(q.at))}${q.speed?` · ${q.speed} km/h`:""}</div>`+miniMap(+q.lat,+q.lon,t.spz||"auto"):""})()}</div>`}
 function renderFarmer(){const F=FARMER,P=MK.map(m=>STATE.prices.find(x=>x.com===m[0])).filter(Boolean),valid=((STATE.settings||{}).pricelist||{}).valid,c=contact(),expired=!!valid&&valid<today();
   let h=`<div class="hero"><small>Prihlásený dodávateľ</small><b>${esc(F.name)}</b><small>${esc(ME.email)}</small></div>`;
   if(window.bigBtn)h+=`<div class="hrow">${bigBtn()}</div>`;
