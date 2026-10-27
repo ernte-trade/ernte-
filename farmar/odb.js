@@ -2,7 +2,7 @@
 // Excel od odberateľa (Agro-Somotor…) má všetky lístky na ERNTE. Tu ho nahráš do aplikácie a lístky rozdelíš farmárom
 // (aj novým zákazníkom). Pridelené lístky sa hneď zarátajú do zmlúv farmára a do Zúčtovania farmára.
 (function(){
-const O={imp:null,L:null,busy:false,d0:"",d1:"",only:"nerozd",com:"",plate:"",sel:new Set(),fq:"",nf:false,buyer:""};
+const O={M:null,imp:null,L:null,busy:false,d0:"",d1:"",only:"nerozd",com:"",plate:"",sel:new Set(),fq:"",nf:false,buyer:""};
 try{O.buyer=localStorage.getItem("ernte-odb-buyer")||"Agro-Somotor s.r.o."}catch(x){O.buyer="Agro-Somotor s.r.o."}
 const iso=d=>d.toISOString().slice(0,10);
 if(!O.d0){const t=new Date();O.d1=iso(t);t.setDate(t.getDate()-21);O.d0=iso(t)}
@@ -42,16 +42,19 @@ function impHTML(){const I=O.imp;
    <div class="btns"><button type="button" class="pri" data-odsave="1">💾 Uložiť ${I.rows.length} lístkov do aplikácie</button><button type="button" data-odx="1">Zrušiť</button></div></div>`;
   return h}
 function load(){if(O.busy)return;O.busy=true;sb.rpc("buyer_tickets",{d0:O.d0||null,d1:O.d1||null}).then(r=>{O.busy=false;O.L=r.error?{err:/does not exist|could not find/i.test(r.error.message)?"Zapne sa po aktualizácii databázy (pár minút).":r.error.message}:r.data||[];renderStaff()})}
-function view(){const L=Array.isArray(O.L)?O.L:[];return L.filter(x=>(O.only==="all"||(O.only==="nerozd"?!x.f:!!x.f))&&(!O.com||x.k===O.com)&&(!O.plate||x.p===O.plate))}
+function view(){const L=Array.isArray(O.L)?O.L:[];return L.filter(x=>(O.only==="all"||(O.only==="nerozd"?!x.f:O.only==="auto"?x.f&&x.by==="auto":!!x.f))&&(!O.com||x.k===O.com)&&(!O.plate||x.p===O.plate))}
 function listHTML(){let h=`<div class="card f"><h2 class="w odh">2️⃣ Rozdeliť lístky farmárom</h2>
    <label>Od<input type="date" id="odD0" value="${esc(O.d0)}"></label><label>Do<input type="date" id="odD1" value="${esc(O.d1)}"></label>`;
   if(O.L===null){load();return h+`<div class="w s">Načítavam lístky…</div></div>`}
   if(O.L.err)return h+`<div class="w s">${esc(O.L.err)}</div></div>`;
   const A=O.L,nr=A.filter(x=>!x.f),V=view(),coms=[...new Set(A.map(x=>x.k))],plates=[...new Set(A.filter(x=>!O.com||x.k===O.com).map(x=>x.p).filter(Boolean))].sort();
-  h+=`<div class="w btns seg2">${[["nerozd",`Nerozdelené (${nr.length})`],["rozd",`Pridelené (${A.length-nr.length})`],["all",`Všetky (${A.length})`]].map(k=>`<button type="button" data-odonly="${k[0]}" aria-pressed="${O.only===k[0]}">${k[1]}</button>`).join("")}</div>
+  h+=`<div class="w btns seg2">${[["nerozd",`Nerozdelené (${nr.length})`],["auto",`🤖 Samé (${A.filter(x=>x.f&&x.by==="auto").length})`],["rozd",`Pridelené (${A.length-nr.length})`],["all",`Všetky (${A.length})`]].map(k=>`<button type="button" data-odonly="${k[0]}" aria-pressed="${O.only===k[0]}">${k[1]}</button>`).join("")}</div>
    <div class="w s">Nerozdelené: <b>${nr.length} lístkov · ${fmt(sumBy(nr,x=>x.g)/1000,3)} t hrubá · ${fmt(sumBy(nr,x=>x.v),2)} €</b></div>
    <label>Komodita<select id="odCom"><option value="">všetky</option>${coms.map(k=>`<option value="${esc(k)}"${O.com===k?" selected":""}>${esc(comName(k))}</option>`).join("")}</select></label>
    <label>ŠPZ<select id="odPlate"><option value="">všetky</option>${plates.map(k=>`<option value="${esc(k)}"${O.plate===k?" selected":""}>${esc(k)}</option>`).join("")}</select></label></div>`;
+  const M=O.M,sug=V.filter(x=>!x.f&&x.af),aut=V.filter(x=>x.f&&x.by==="auto");if(M===null){O.M=0;sb.rpc("odb_model").then(r=>{O.M=r.error?{}:r.data||{};renderStaff()})}
+  h+=`<div class="card odai"><b>🤖 Automatické rozdelenie</b><div class="s">Aplikácia hľadá farmára sama: <b>jazda VALKO</b> naplánovaná farmárovi (ŠPZ + deň) · <b>GPS miesto nakládky</b> auta pred príchodom k odberateľovi · <b>vlastné auto farmára</b> · jediná otvorená zmluva. Isté prideľuje sama (🤖), ostatné navrhne. Každé tvoje pridelenie ju naučí, kde farmár nakladá.${M&&M.spots!=null?`<br>Model pozná <b>${M.spots}</b> miest nakládky (${M.farmers} farmárov) · GPS nakládka pri ${M.gps} lístkoch${M.buyer_places?"":" · ⚠️ vo Flotile → Miesta chýba miesto typu Odberateľ – pridaj Agro-Somotor, presnosť stúpne"}.`:""}</div>
+   <div class="btns"><button type="button" data-odauto="1">🤖 Spustiť automatiku</button>${sug.length?`<button type="button" class="pri" data-odconf="1">✓ Potvrdiť návrhy (${sug.length})</button>`:""}${aut.length?`<button type="button" data-odok="1">👍 Potvrdiť samé (${aut.length})</button>`:""}</div></div>`;
   // výber farmára + pridelenie
   const sel=[...O.sel].filter(t=>A.some(x=>x.t===t)),SL=A.filter(x=>O.sel.has(x.t));
   h+=`<div class="card f odbar"><label class="w">Farmár / zákazník<input id="odFq" list="odFarms" value="${esc(O.fq)}" placeholder="začni písať meno…" autocomplete="off"></label>
@@ -63,7 +66,7 @@ function listHTML(){let h=`<div class="card f"><h2 class="w odh">2️⃣ Rozdeli
   if(!V.length)return h+`<div class="card"><div class="s">${O.only==="nerozd"&&A.length?"✅ Všetky lístky v tomto období sú rozdelené.":"Žiadne lístky v tomto období. Nahraj Excel hore alebo zmeň dátumy."}</div></div>`;
   h+=`<div class="card odl">${V.map(x=>`<label class="odr${O.sel.has(x.t)?" on":""}"><input type="checkbox" data-odt="${esc(x.t)}"${O.sel.has(x.t)?" checked":""}>
      <span class="odm"><b>${esc(x.t)}</b> · ${esc(dSK(x.d))} · ${esc(comName(x.k))} · <span class="klp">${esc(x.p||"–")}</span><small>${fmt(x.g/1000,3)} t hrubá · nečist. ${fmt(x.i,1)} % · čistá ${fmt(x.n/1000,3)} t${x.m!=null?` · vlhkosť ${fmt(x.m,1)} %`:""}${x.dk?` · sušenie ${fmt(x.dk,0)} kg`:""}${x.pr!=null?` · bielk. ${fmt(x.pr,1)} %`:""}</small></span>
-     <span class="odv"><b>${fmt(x.v,2)} €</b>${x.f?`<em class="odf">👨‍🌾 ${esc(x.fn||"")}${x.dn?` · ${esc(x.dn)}`:" · bez zmluvy"}</em>`:`<em class="odf no">nerozdelené</em>`}</span></label>`).join("")}</div>`;
+     <span class="odv"><b>${fmt(x.v,2)} €</b>${x.f?`<em class="odf">${x.by==="auto"?"🤖":"👨‍🌾"} ${esc(x.fn||"")}${x.dn?` · ${esc(x.dn)}`:" · bez zmluvy"}</em>`:`<em class="odf no">nerozdelené</em>`}</span>${!x.f&&x.af?`<span class="odsg ${x.as>=85?"hi":x.as>=60?"mid":"lo"}">🤖 návrh: <b>${esc(x.afn||"")}</b> · ${x.as} %<small>${esc(x.aw||"")}</small></span>`:!x.f&&x.aw?`<span class="odsg lo"><small>${esc(x.aw)}</small></span>`:x.by==="auto"&&x.aw?`<span class="odsg hi"><small>🤖 ${esc(x.aw)}</small></span>`:""}</label>`).join("")}</div>`;
   return h}
 window.odbHTML=function(){if(ROLE!=="owner")return "";return impHTML()+listHTML()+`<div class="s">🔒 Vidíš iba ty. Farmár po pridelení vidí len svoje lístky a svoje zúčtovanie – nikdy odberateľa ani predajnú cenu.</div>`};
 const farmId=n=>{const v=nz(n);const f=(STATE.farmers||[]).find(x=>nz(x.name)===v);return f?f.id:null};
@@ -84,7 +87,13 @@ document.addEventListener("click",async e=>{const t=e.target;if(!t.closest||ROLE
     for(let i=0;i<I.rows.length;i+=200){r=await sb.rpc("buyer_import",{rows:I.rows.slice(i,i+200),p_buyer:O.buyer||null});if(r.error)break;for(const k in tot)tot[k]+=+r.data[k]||0}
     busy(x,false);if(r.error){toast("Chyba: "+r.error.message,8000);return}
     const ds=I.rows.map(x=>x.d).sort();O.d0=ds[0];O.d1=ds[ds.length-1];O.imp=null;O.L=null;O.only="nerozd";
-    toast(`✓ ${tot.nove} nových, ${tot.aktualizovane} aktualizovaných lístkov. Nerozdelených: ${tot.nerozdelene} – rozdeľ ich nižšie.`,8000);renderStaff();return}
+    const au=(r.data&&r.data.auto)||{};O.M=null;toast(`✓ ${tot.nove} nových, ${tot.aktualizovane} aktualizovaných lístkov. 🤖 Pridelené samo: ${au.pridelene||0}, návrhy: ${au.navrhy||0}, nerozdelené: ${au.zostava!=null?au.zostava:tot.nerozdelene}.`,9000);renderStaff();return}
+  if(x=t.closest("[data-odauto]")){busy(x,true);const r=await sb.rpc("deliveries_auto",{p_apply:true});busy(x,false);if(r.error){toast("Chyba: "+r.error.message,7000);return}const d=r.data||{};O.L=null;O.M=null;
+    toast(`🤖 Pridelené samo: ${d.pridelene} · návrhy: ${d.navrhy} · GPS nájdené: ${d.gps} · nerozdelené: ${d.zostava}`,8000);renderStaff();return}
+  if(x=t.closest("[data-odconf]")){const T=view().filter(v=>!v.f&&v.af).map(v=>v.t);if(!T.length)return;busy(x,true);const r=await sb.rpc("deliveries_confirm",{p_tickets:T});busy(x,false);if(r.error){toast("Chyba: "+r.error.message,7000);return}
+    O.L=null;O.M=null;toast(`✓ ${r.data.n} návrhov potvrdených a pridelených. Model sa z nich naučil.`,6000);renderStaff();return}
+  if(x=t.closest("[data-odok]")){const T=view().filter(v=>v.f&&v.by==="auto").map(v=>v.t);busy(x,true);const r=await sb.rpc("deliveries_ok",{p_tickets:T});busy(x,false);if(r.error){toast("Chyba: "+r.error.message,7000);return}
+    O.L=null;O.M=null;toast(`👍 ${r.data} automatických pridelení potvrdených.`,5000);renderStaff();return}
   if(t.closest("[data-odx]")){O.imp=null;renderStaff();return}
   if(x=t.closest("[data-odonly]")){O.only=x.dataset.odonly;renderStaff();return}
   if(t.closest("[data-odall]")){view().forEach(v=>O.sel.add(v.t));renderStaff();return}

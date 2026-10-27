@@ -105,3 +105,6 @@ html[data-theme=light] .pill.dnb{color:#1e40af}html[data-theme=light] .pill.ern{
 .odnf{display:grid;gap:8px;padding:10px;border-radius:14px;border:1px dashed rgba(255,255,255,.2)}
 :root[data-theme="light"] .odr{border-color:rgba(0,0,0,.1);background:rgba(0,0,0,.02)}
 .odh{font-size:1.05rem;margin:0}
+.odr{flex-wrap:wrap}.odsg{flex-basis:100%;margin-left:32px;font-size:.85em;padding:6px 10px;border-radius:10px;background:rgba(255,255,255,.05)}
+.odsg small{display:block;opacity:.75}.odsg.hi{background:rgba(190,242,100,.12)}.odsg.mid{background:rgba(251,191,36,.12)}.odsg.lo{opacity:.8}
+.odai .btns{margin-top:8px}
