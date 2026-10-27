@@ -126,7 +126,7 @@ function staffCard(p){const em=String(p.email||""),isT=em.endsWith("@tel.ernte.s
      <div class="s">★ = moje odporúčanie pre funkciu <b>${esc(PRESET[rec].n)}</b>. Zaškrtni, čo má vidieť – platí hneď po uložení, aj v databáze.</div>
      <div class="btns">${Object.entries(PRESET).map(([k,v])=>`<button type="button" class="${k===rec?"lime":""}" data-tpreset="${k}">${k===rec?"★ ":""}${esc(v.n)}</button>`).join("")}</div>
      <div class="pgrid">${permRows(p,rec)}</div><div class="btns"><button class="pri" type="submit">💾 Uložiť prístupy</button></div></form>`:""}</div>`}
-function addForm(){const A=TADD||{};return `<form class="card f" id="fTeam2"><div class="w t">${A.name?"Pridať: "+esc(A.name):"Pridať človeka do tímu"}</div>
+function addForm(){const A=TADD||{};return `<form class="card f" id="fTeam2">${A.name?`<div class="w s" style="margin-bottom:2px">Pridávaš: <b>${esc(A.name)}</b></div>`:""}
   <label class="w">Meno a titul<input name="name" required value="${esc(A.name||"")}" placeholder="napr. Ján Novák"></label>
   <label>Funkcia<input name="title" value="${esc(A.title||"")}" placeholder="obchodník"></label><label>Kraj / oblasť<input name="region" value="${esc(A.region||"")}" placeholder="Prešovský kraj"></label>
   <label class="w">Mobil alebo e-mail (prihlasovacie meno)<input name="login" required autocapitalize="off" inputmode="email" placeholder="0905 123 456"></label>
