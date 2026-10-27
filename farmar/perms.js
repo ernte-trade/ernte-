@@ -34,13 +34,14 @@ const PCAT=[
  ["sklad","Sklad – vziať a pridať diely (bez cien)","Evidencia","strojníci"],
  ["ev_doch","Dochádzka – dni, dovolenka, PN, pole, víkendy, nadčasy","Evidencia","bez peňazí"],
  ["wx","Počasie","Ostatné",""],
+ ["nov","Novinky v aplikácii","Ostatné","čo je v aplikácii nové"],
  ["big","Veľké písmo a tlačidlá","Ostatné","lepšia čitateľnosť"]];
 const PLOCK=[["margin","Marža, zisk a predajné ceny odberateľom"],["payroll","Mzdy vodičov"],["costs","Pevné náklady firmy"],["ai","ERNTE AI Podpora"],["team","Tím a prístupy"]];
-const PDEF={admin:["req","price_view","deals","farm","farm_login","calc","market","trans","remain","notes","wx","big"],
- dispatch:["req","trans","trus","deals_qty","farm","assign","farmer_gps","remain","notes","fleet","drivers","alarms","cams","yard","diesel","fleet_set","wx","big","ev","ev_doch","sklad","praca"],
- invoice:["req","price_view","deals","farm","trans","remain","wx"]};
+const PDEF={admin:["req","price_view","deals","farm","farm_login","calc","market","trans","remain","notes","wx","big","nov"],
+ dispatch:["req","trans","trus","deals_qty","farm","assign","farmer_gps","remain","notes","fleet","drivers","alarms","cams","yard","diesel","fleet_set","wx","big","ev","ev_doch","sklad","praca","nov"],
+ invoice:["req","price_view","deals","farm","trans","remain","wx","nov"]};
 const PRESET={
- doprava:{n:"Vedúci dopravy",role:"dispatch",k:["req","trans","trus","deals_qty","farm","assign","farmer_gps","remain","notes","fleet","drivers","alarms","diesel","yard","cams","fleet_set","wx","big","ev","ev_doch","sklad"]},
+ doprava:{n:"Vedúci dopravy",role:"dispatch",k:["trans","trus","deals_qty","assign","farmer_gps","remain","notes","fleet","drivers","alarms","diesel","yard","cams","fleet_set","big"]},
  veduci:{n:"Vedúci (farma, dielňa)",role:"dispatch",k:["ev","ev_doch","sklad","praca","wx","big"]},
  strojnik:{n:"Strojník / roľník",role:"dispatch",k:["praca","sklad","wx","big"]},
  manazer:{n:"Manažér obchodu",role:"admin",k:["req","price_view","price_edit","deals","farm","farm_login","calc","market","trans","remain","notes","wx","big"]},
@@ -62,7 +63,7 @@ window.canAny=(...k)=>k.some(x=>can(x));
 function fDefs(){const g=((STATE.settings||{}).farmer_perms)||{};return g}
 window.fcan=k=>{if(typeof FARMER==="undefined"||!FARMER)return true;const v=(FARMER.perms||{})[k];if(v===true||v===false)return v;const g=fDefs()[k];if(g===true||g===false)return g;return FDEF.includes(k)};
 // hlavné záložky
-const TABP={req:["req"],price:["price_view","price_edit","market"],trans:["trans","assign"],fleet:["fleet"],deals:["deals","deals_qty","remain","notes"],farm:["farm"],wx:["wx"],calc:["calc"],team:["team"],agro:["agro"],trus:["trus","trus_price"],evid:["ev","ev_doch","sklad","praca"],danube:["danube"]};
+const TABP={req:["req"],price:["price_view","price_edit","market"],trans:["trans","assign"],fleet:["fleet"],deals:["deals","deals_qty","remain","notes"],farm:["farm"],wx:["wx"],calc:["calc"],team:["team"],agro:["agro"],trus:["trus","trus_price"],evid:["ev","ev_doch","sklad","praca"],danube:["danube"],nov:["nov"]};
 window.tabOK=k=>ROLE==="owner"||(TABP[k]?TABP[k].some(can):true);
 // sekcie flotily
 const FSP={dash:["fleet"],fuel:["diesel","yard","cams"],alarm:["alarms"],money:["fleet_cost"],drv:["drivers"],veh:["drivers"],map:["fleet"],set:["fleet_set"]};

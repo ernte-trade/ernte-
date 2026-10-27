@@ -27,7 +27,7 @@ window.vHome=function(){if(!H.at&&!H.busy)setTimeout(load,0);
   let h=`<div class="hub"><div class="hubh"><div><small>${esc(new Date().toLocaleDateString("sk-SK",{weekday:"long",day:"numeric",month:"long"}))}</small><h2 class="hubt">Prehľad ERNTE · VALKO</h2></div><button type="button" class="hubr" data-hubre="1" aria-label="Obnoviť prehľad">↻</button></div>`;
   // ---- ALARMY NAVRCHU ----
   const AL=[];
-  if(nNew)AL.push(["w","📥",`${nNew} ${nNew===1?"nová požiadavka":"nové požiadavky"} od farmárov${auto?` · ${auto}× 🎯 cieľová cena dosiahnutá`:""}`,"req"]);
+  if(nNew)AL.push(["w","📥",`${nNew} ${nNew===1?"nová požiadavka":"nové požiadavky"} od farmárov${auto?` · ${auto}× 🎯 cieľová cena dosiahnutá`:""}`,can("req")?"req":"trans"]);
   if(Array.isArray(H.mob)){const bad=H.mob.filter(v=>v.active&&v.days!=null&&v.days>=MOB[1]),warn=H.mob.filter(v=>v.active&&v.days!=null&&v.days>=MOB[0]&&v.days<MOB[1]);
     if(bad.length)AL.push(["r","🚛",`Balík mobility: ${bad.length} ${bad.length===1?"auto":"áut"} nebolo na dvore 8+ týždňov (${bad.slice(0,3).map(v=>esc(v.plate)).join(", ")})`,"mob"]);
     else if(warn.length)AL.push(["w","🚛",`Balík mobility: ${warn.length} ${warn.length===1?"auto":"áut"} sa musí do ${MOB[1]-Math.max(...warn.map(v=>v.days))} dní vrátiť na dvor`,"mob"])}
