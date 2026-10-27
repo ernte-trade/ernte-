@@ -25,8 +25,6 @@ const nm=c=>(MKL().find(m=>m[0]===c)||[c,c])[1];
 const PLANTS=[
   {id:"martfu",buyer:"bunge",name:"Bunge · Martfű",cs:["lo","ho","repka"],reg:null},
   {id:"tallya",buyer:"bunge",name:"Bunge · Tállya",cs:["lo","ho","repka"],reg:null},
-  {id:"gyor",buyer:"bunge",name:"Bunge · Győr",cs:["lo","ho","repka"],reg:"wien"},
-  {id:"bruck",buyer:"bunge",name:"Bunge · Bruck",cs:["lo","ho","repka"],reg:"wien"},
   {id:"somotor",buyer:"somotor",name:"Agro-Somotor",cs:["repka","soja","psenica","jacmen","kukurica"]}];
 const ROUTES={martfu:{ke:[243,25,218],po:[283,65,218],chop:[250,0,245]},tallya:{ke:[74,25,49],po:[114,65,49],chop:[109,0,104]},gyor:{ke:[381,25,356],po:[421,65,356],chop:[423,0,415]},bruck:{ke:[438,400,0,38,0.2677],po:[443,405,0,38,0.2677],chop:[504,0,470,34]},somotor:{ke:[65,65,0],po:[100,100,0],chop:[63,8,50]}};
 const ROUTE_T=25,ROUTE_EKM0=1.60,HU_TOLL_FT=192.38,SK_TOLL=0.1942,AT_TOLL=0.5724;
@@ -69,19 +67,20 @@ const bzName=r=>r?(r.kind==="regburza"?"Börse Wien":/cbo?t|soja_usc/i.test(r.ma
 function dap(pl,c,dop){if(!A.mk)return null;const mc=C2M[c],lim=Date.now()-60*864e5;
   const rows=(A.mk.rows||[]).filter(r=>r.c===mc&&r.kind!=="burza"&&r.kind!=="regburza"&&!/porovnanie/.test(r.market)&&(!r.date||Date.parse(r.date)>=lim));
   const hu=rows.filter(r=>!r.chop&&/^Maďarsko/.test(r.market)),sk=rows.filter(r=>!r.chop&&/^Slovensko/.test(r.market));
-  const U=(pl.buyer==="bunge"?hu:sk.concat(hu)).map(r=>({v:R2(r.price+dop),d:r.date}));
+  const RR=pl.buyer==="bunge"?hu:sk.concat(hu),U=RR.map(r=>({v:R2(r.price+dop),d:r.date}));
   const bz=burza(pl,mc);
-  if(!U.length)return bz?{dap:R2(bz.price),src:bzName(bz)+(bz.term?" "+bz.term:""),date:bz.date,bz}:null;
-  const m=R2(U.reduce((s,a)=>s+a.v,0)/U.length),dmax=U.map(a=>a.d).sort().pop();
-  return bz&&bz.price>=m?{dap:R2(bz.price),src:bzName(bz)+(bz.term?" "+bz.term:""),date:bz.date,bz}:{dap:m,src:"región + doprava",date:dmax,bz}}
+  // cena DAP = za koľko farmári z regiónu vozia na sklad odberateľa (cena farmárov v regióne + doprava); burza iba keď región chýba
+  if(!U.length)return bz?{dap:R2(bz.price),src:"burza "+bzName(bz)+(bz.term?" "+bz.term:"")+" (región chýba)",date:bz.date,bz,reg:false}:null;
+  const m=R2(U.reduce((s,a)=>s+a.v,0)/U.length),dmax=U.map(a=>a.d).sort().pop(),farm=R2(RR.reduce((s,r)=>s+r.price,0)/RR.length);
+  return {dap:m,farm,src:"farmári v regióne "+(pl.buyer==="bunge"?"(HU)":"(SK+HU)")+" + doprava",mk:RR.map(r=>r.market.replace(/^(Maďarsko|Slovensko) – /,"$1 ")).join(", "),date:dmax,bz,reg:true}}
 function margin(){const c=A.cfg&&A.cfg.marginOwn;if(Number.isFinite(+c)&&c!==""&&c!=null)return +c;const r=A.mg&&+A.mg.rec;return Number.isFinite(r)?r:20}
 function calc(){const out={},M=margin();
   for(const pl of PLANTS){const {dop}=route(pl.id);
-    for(const c of pl.cs){const E=dap(pl,c,dop);if(!E||!Number.isFinite(E.dap))continue;const com=C2M[c];let fca=R2(E.dap-dop-M),cap=false;
-      // bezpečnostný strop: nikdy nad burzou − doprava − odpočet (výkup nad burzou = strata)
-      if(E.bz&&Number.isFinite(+E.bz.price)&&fca>R2(E.bz.price-dop-M)){fca=R2(E.bz.price-dop-M);cap=true}
-      const age=E.date?(Date.now()-Date.parse(E.date))/864e5:99,ok=age<=(E.src.startsWith("región")?60:12);
-      if(!out[com]||(ok&&!out[com].ok)||(ok===out[com].ok&&fca>out[com].fca))out[com]={fca,p:Math.floor(fca),dap:E.dap,dop,pl:pl.name,buyer:pl.buyer,src:E.src,date:E.date,ok,cap,bz:E.bz?+E.bz.price:null}}}
+    for(const c of pl.cs){const E=dap(pl,c,dop);if(!E||!Number.isFinite(E.dap))continue;const com=C2M[c];const fca=R2(E.dap-dop-M);
+      const age=E.date?(Date.now()-Date.parse(E.date))/864e5:99,ok=age<=(E.reg?60:12),bzp=E.bz&&Number.isFinite(+E.bz.price)?+E.bz.price:null;
+      const it={fca,p:Math.floor(fca),dap:E.dap,farm:E.farm,dop,pl:pl.name,buyer:pl.buyer,src:E.src,mk:E.mk||"",date:E.date,ok,bz:bzp,over:bzp!=null&&E.dap>bzp};
+      const all=(out[com]&&out[com].all)||[];all.push(it);
+      if(!out[com]||(ok&&!out[com].ok)||(ok===out[com].ok&&fca>out[com].fca))out[com]=Object.assign({},it,{all});else out[com].all=all}}
   return out}
 
 // ---- zverejnenie ----
@@ -141,7 +140,7 @@ function bannerHTML(){if(!OWN()||!A.cfg)return "";let h="";const U=unseen();
   if(U.length){const last={};U.forEach(x=>last[x.com]=Object.assign({},x,{old:last[x.com]?last[x.com].old:x.old}));const L=Object.values(last);
     h+=`<div class="acn-b" role="alert"><div class="acn-bh"><span aria-hidden="true">💶</span><b>Zmena v zverejnenom cenníku${L.length>1?" ("+L.length+")":""}</b></div><ul>${L.map(x=>`<li><b>${e(nm(x.com))}</b> ${x.old==null?"–":f0(x.old)} → <b>${x.new==null?"skryté":f0(x.new)+" €/t"}</b> <small>${x.new!=null&&x.old!=null?(x.new>x.old?"▲ +":"▼ −")+f0(Math.abs(x.new-x.old))+" · ":""}${srcL(x)} · ${hm(x.at)}</small></li>`).join("")}</ul>
     <div class="btns"><button type="button" class="pri" data-acn="seen">✓ Videl som</button>${typeof TAB!=="undefined"&&TAB!=="price"?`<button type="button" data-acn="open">Otvoriť cenník</button>`:""}</div></div>`}
-  const P=Object.entries(A.pend||{});if(P.length)h+=`<div class="acn-b warn" role="alert"><div class="acn-bh"><span aria-hidden="true">⚠️</span><b>Veľká zmena ceny čaká na tvoje potvrdenie</b></div><ul>${P.map(([c,x])=>`<li><b>${e(nm(c))}</b> ${f0(x.old)} → <b>${f0(x.tgt)} €/t</b> <small>${x.tgt>x.old?"▲":"▼"} ${f0(Math.abs(x.tgt-x.old))} €/t (${f0(Math.abs(x.tgt-x.old)/x.old*100)} %) · ${e(x.pl)}</small> <button type="button" data-acn="allow:${e(c)}">Zverejniť</button></li>`).join("")}</ul><div class="s">Automatika zmenu nad ${f0(A.cfg.maxJump)} % sama nezverejní. Ak ju nechceš, prepíš cenu v cenníku (platí ako tvoja).</div></div>`;
+  const P=Object.entries(A.pend||{});if(P.length)h+=`<div class="acn-b warn" role="alert"><div class="acn-bh"><span aria-hidden="true">⚠️</span><b>Veľká zmena ceny čaká na tvoje potvrdenie</b></div><ul>${P.map(([c,x])=>`<li><b>${e(nm(c))}</b> ${f0(x.old)} → <b>${f0(x.tgt)} €/t</b> <small>${x.tgt>x.old?"▲":"▼"} ${f0(Math.abs(x.tgt-x.old))} €/t (${f0(Math.abs(x.tgt-x.old)/x.old*100)} %) · ${e(x.pl)}</small> <button type="button" data-acn="allow:${e(c)}">Zverejniť</button></li>`).join("")}</ul><div class="btns"><button type="button" class="pri" data-acn="allowall">✓ Zverejniť všetky</button></div><div class="s">Automatika zmenu nad ${f0(A.cfg.maxJump)} % sama nezverejní. Ak ju nechceš, prepíš cenu v cenníku (platí ako tvoja).</div></div>`;
   if((A.expired||[]).length)h+=`<div class="acn-b"><div class="acn-bh"><span aria-hidden="true">⏰</span><b>Tvoja cena vypršala – späť na automatickú</b></div><ul>${A.expired.map(x=>`<li><b>${e(nm(x.com))}</b> ${f0(x.price)} €/t platila do ${dk(x.till)}${A.cfg.auto[x.com]?"":" · komodita nemá automatickú cenu, cena zostala"}</li>`).join("")}</ul><div class="btns"><button type="button" data-acn="expok">OK</button></div></div>`;
   // pripomienka: zapíš svoje ceny (raz za X dní)
   const rd=+A.cfg.remindDays||0,lm=Date.parse(A.cfg.lastMineAt||A.cfg.since||"")||0,snz=+gs(SNZ)||0;
@@ -156,11 +155,13 @@ function cardHTML(){if(!ED())return "";if(!A.cfg)return `<div class="card acn-ca
     const st=mv?`<span class="acn-m">✍️ moja do <input type="date" data-acntill="${e(c)}" value="${e(mine.till||"")}" aria-label="Moja cena ${e(n)} platí do"></span><button type="button" class="acn-x" data-acn="back:${e(c)}">↩ auto</button>`
       :has?`<label class="acn-sw"><input type="checkbox" data-acnauto="${e(c)}"${au?" checked":""}> 🤖 automaticky</label>`:`<span class="acn-n">bez odberateľa – iba tvoja cena</span>`;
     const av=a?`<b>${f0(a.p)}</b>${a.ok?"":` <em class="acn-old" title="Trhová cena je stará – nezverejňuje sa">staré dáta</em>`}`:"<b>–</b>";
-    const dt=a?`${e(a.pl)} · ${e(a.src)}${a.date?" · "+dk(a.date):""}${own?` · DAP ${f2(a.dap)} − doprava ${f2(a.dop)} − odpočet ${f2(margin())}${a.cap?` · obmedzené burzou ${f2(a.bz)} (nikdy nad burzou)`:""}`:""}`:(has?"bez trhových dát":"");
+    const pd=A.pend&&A.pend[c];
+    const dt=a?`<div class="acn-dap">${a.all.slice().sort((x,y)=>y.dap-x.dap).map(x=>`<span class="${x.pl===a.pl?"best":""}"><b>DAP ${e(x.pl.replace("Bunge · ","Bunge "))}</b> ${f0(x.dap)} €/t<small>${x.farm!=null?`farmári v regióne ${f0(x.farm)} + doprava ${f0(x.dop)}`:e(x.src)}${x.date?" · "+dk(x.date):""}</small></span>`).join("")}</div>
+      <div>→ FCA pre farmára = DAP ${e(a.pl)} ${f2(a.dap)} − doprava ${f2(a.dop)}${own?` − odpočet ${f2(margin())}`:""} = <b>${f2(a.fca)}</b> → <b>${f0(a.p)} €/t</b>${a.over?` · <em class="acn-old">nad burzou ${f0(a.bz)}</em>`:""}${a.mk?`<br><small>Zdroj: ${e(a.mk)}</small>`:""}</div>${pd?`<div class="acn-pd">⏳ čaká na tvoje potvrdenie (${f0(pd.old)} → ${f0(pd.tgt)}) <button type="button" data-acn="allow:${e(c)}">Zverejniť</button></div>`:""}`:(has?"bez trhových dát":"");
     return `<div class="acn-r${mv?" mine":au&&has?" on":""}"><div class="acn-rh"><b class="n">${e(n)}</b><span class="v"><small>zverejnené</small>${cur[c]==null?"<b class='no'>–</b>":"<b>"+f0(cur[c])+"</b>"}</span><span class="v a"><small>automatická</small>${av}</span></div>${dt?`<div class="acn-rd">${dt}</div>`:""}<div class="acn-rm">${st}</div></div>`}).join("");
   const L=(A.log||[]).slice(-40).reverse();
   return `<div class="card acn-card"><div class="tdh"><b>🤖 Automatický cenník · Somotor a Bunge</b><label class="acn-sw big"><input type="checkbox" data-acnon${A.cfg.on?" checked":""}${own?"":" disabled"}> ${A.cfg.on?"zapnutý":"vypnutý"}</label></div>
-   <div class="s">Ceny pre farmárov (FCA farma, bez DPH) sa počítajú samy z cien odberateľov <b>Agro-Somotor</b> a <b>Bunge</b> (burza alebo región + doprava) mínus doprava${own?" a tvoj odpočet":""} – pre každú komoditu z lepšieho odberateľa – a hneď sa zverejnia. Zaokrúhľuje sa nadol na celé € a nikdy nie nad burzu (MATIF/CBOT) mínus doprava${own?" a odpočet":""}.
+   <div class="s">Ceny pre farmárov (FCA farma, bez DPH) sa počítajú samy z cien odberateľov <b>Agro-Somotor</b> a <b>Bunge</b> – <b>DAP Somotor, DAP Bunge Tállya a DAP Bunge Martfű</b> = za koľko farmári z regiónu vozia na sklad (cena farmárov v regióne + doprava). Od najlepšej DAP sa odpočíta doprava${own?" a tvoj odpočet":""} a výsledok sa zverejní. Zaokrúhľuje sa nadol na celé €. Burza sa použije iba vtedy, keď regionálna cena chýba.
    Kto čo vidí, sa nemení: farmári vidia iba výslednú cenu ako doteraz, nikdy odberateľa ani burzu. <b>Tvoje ceny</b> zapíš v tabuľke nižšie – majú prednosť do dátumu, potom sa vráti automatická.</div>
    <div class="acn-rows">${rows}</div>
    ${own?`<div class="acn-cfg"><label>Odpočet ERNTE €/t<input data-acncfg="marginOwn" inputmode="decimal" value="${e(A.cfg.marginOwn??"")}" placeholder="${e(f2(A.mg&&A.mg.rec!=null?A.mg.rec:20))}"><small>${A.mg&&A.mg.rec!=null?"prázdne = z Kalkulačky ("+f2(A.mg.rec)+")":"prázdne = 20 €/t"}</small></label>
@@ -178,7 +179,7 @@ function css(){if(document.getElementById("acnCss"))return;const s=document.crea
 .acn-rows{display:grid;gap:8px;margin:12px 0}.acn-r{border:1px solid rgba(255,255,255,.1);border-radius:16px;padding:10px 12px;background:rgba(255,255,255,.03)}
 .acn-r.on{border-color:rgba(182,255,59,.35)}.acn-r.mine{border-color:rgba(255,196,87,.55)}.acn-rh{display:grid;grid-template-columns:1fr auto auto;gap:12px;align-items:end}
 .acn-rh .n{font-size:.95rem}.acn-r.on .n{color:#B6FF3B}.acn-r.mine .n{color:#FFC457}.acn-rh .v{display:grid;justify-items:end;line-height:1.1}.acn-rh .v small{font-size:.66rem;opacity:.6}.acn-rh .v b{font-size:1.15rem}.acn-rh .v b.no{opacity:.4}.acn-rh .v.a b{opacity:.85}
-.acn-rd{font-size:.74rem;opacity:.65;margin-top:4px;line-height:1.35}.acn-rm{margin-top:6px;display:flex;flex-wrap:wrap;gap:6px;align-items:center}html[data-theme=light] .acn-r.on .n{color:#4d7c00}html[data-theme=light] .acn-r.mine .n{color:#b26b00}.acn-old{color:#FFC457;font-style:normal;font-size:.72rem}.acn-sw{display:inline-flex;gap:6px;align-items:center;white-space:nowrap;font-size:.82rem}.acn-sw input{width:auto;min-height:0}
+.acn-rd{font-size:.76rem;opacity:.85;margin-top:6px;line-height:1.4}.acn-dap{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:6px}.acn-dap span{display:grid;padding:6px 10px;border-radius:12px;border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.04)}.acn-dap span.best{border-color:rgba(182,255,59,.6);background:rgba(182,255,59,.08)}.acn-dap small{opacity:.7;font-size:.7rem}.acn-pd{margin-top:6px;color:#FFC457}.acn-pd button{min-height:30px;padding:0 12px;margin-left:6px}.acn-rm{margin-top:6px;display:flex;flex-wrap:wrap;gap:6px;align-items:center}html[data-theme=light] .acn-r.on .n{color:#4d7c00}html[data-theme=light] .acn-r.mine .n{color:#b26b00}.acn-old{color:#FFC457;font-style:normal;font-size:.72rem}.acn-sw{display:inline-flex;gap:6px;align-items:center;white-space:nowrap;font-size:.82rem}.acn-sw input{width:auto;min-height:0}
 .acn-sw.big{font-size:.86rem;font-weight:600}.acn-m{display:inline-flex;gap:4px;align-items:center;white-space:nowrap;font-size:.8rem}.acn-m input{width:auto;min-height:32px;padding:2px 6px;font-size:.8rem}.acn-x{min-height:30px;padding:0 10px;font-size:.78rem;margin-top:4px}.acn-n{font-size:.76rem;opacity:.65}
 .acn-cfg{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin:6px 0 10px}.acn-cfg small{display:block;opacity:.65;font-size:.72rem}
 .acn-st{font-size:.78rem;opacity:.75;margin:6px 0}.acn-st .bad{color:#ff7b7b}.acn-h ul{list-style:none;padding:0;margin:8px 0;display:grid;gap:4px;font-size:.82rem}.acn-h li span{opacity:.6;font-size:.76rem}.acn-h li small{opacity:.7}
@@ -202,6 +203,7 @@ document.addEventListener("click",async ev=>{const b=ev.target.closest&&ev.targe
   if(k==="none"){A.cfg.lastMineAt=new Date().toISOString();await saveCfg();inject();return}
   if(k==="write"){try{TAB="price"}catch(x){}renderStaff();setTimeout(()=>{const f=document.getElementById("fPrice");if(f){f.scrollIntoView({behavior:"smooth",block:"start"});const i=f.querySelector("input");i&&i.focus({preventScroll:true})}},120);return}
   if(k==="run"){if(typeof busy==="function")busy(b,true);await run(true);if(typeof toast==="function"&&!A.err&&!A.lastCh)toast("Cenník je aktuálny – nič sa nezmenilo.");return}
+  if(k==="allowall"){Object.keys(A.pend||{}).forEach(c=>A.allow[c]=1);await run(true);return}
   if(k.startsWith("allow:")){A.allow[k.slice(6)]=1;await run(true);return}
   if(k.startsWith("back:")){const c=k.slice(5);delete A.cfg.mine[c];A.cfg.auto[c]=true;await saveCfg();await run(true);return}},true);
 document.addEventListener("change",async ev=>{const t=ev.target;if(!t||!A.cfg)return;

@@ -1109,7 +1109,7 @@ req:{t:"Požiadavky",i:"📥",r:"Všetko, čo ti farmári pošlú z aplikácie �
 price:{t:"Cenník",i:"💶",r:"Výkupné ceny, ktoré vidia všetci prihlásení farmári.",s:[
  ["Ako zadávať","Ceny sú <b>€/t FCA farma bez DPH</b> (na farmárovom dvore). Prázdne pole = farmár komoditu nevidí. Vyplň <b>Platí do</b> – farmár vidí, dokedy cena platí."],
  ["Uložiť a zverejniť","Po uložení ich farmári vidia <b>okamžite</b> a môžu ťuknúť Predať. Keď sa blíži koniec platnosti (7 dní), hore ťa upozorní žltý pás, po vypršaní červený."],
- ["🤖 Automatický cenník","Ceny sa vypĺňajú samy podľa odberateľov <b>Agro-Somotor a Bunge</b> (rovnaký výpočet ako Kalkulačka: cena odberateľa − doprava − odpočet ERNTE, nikdy nad burzou) a hneď sa zverejnia. Kontroluje sa každých 20 minút, keď je aplikácia otvorená. Zmenu nad 10 % najprv potvrdíš."],
+ ["🤖 Automatický cenník","Ceny sa vypĺňajú samy podľa odberateľov <b>Agro-Somotor a Bunge</b> z regionálnych cien DAP Somotor, DAP Bunge Tállya a DAP Bunge Martfű (za koľko farmári z regiónu vozia na sklad) mínus doprava a odpočet ERNTE a hneď sa zverejnia. Burza iba vtedy, keď regionálna cena chýba. Kontroluje sa každých 20 minút, keď je aplikácia otvorená. Zmenu nad 10 % najprv potvrdíš."],
  ["✍️ Moje ceny","Keď máš vlastné ceny, prepíš ich v tabuľke a ulož – zverejnia sa hneď a platia do zvoleného dátumu (predvolene 7 dní), potom sa cena vráti na automatickú. Raz za čas ťa aplikácia pripomenie, aby si ich zapísal."],
  ["💶 Upozornenie","Pri každej zmene zverejnenej ceny (automatika, ty alebo tím) ti hore vyskočí pás s cenou pred a po. Celá história je v karte Automatický cenník."],
  ["Prepojenie","ERNTE AI porovnáva tvoj cenník s burzou (MATIF, CBOT) a upozorní, keď je cena nad burzou alebo máš veľkú rezervu. Farmár nikdy nevidí burzu ani odberateľa."]]},
@@ -2867,7 +2867,7 @@ document.addEventListener("click",e=>{const b=e.target.closest("[data-dfp]");if(
 <script src="offers.js?v=20261027-2000"></script>
 <script src="feedback.js?v=20261027-1930"></script>
 <script src="cancel.js?v=20261027-2345"></script>
-<script src="autocennik.js?v=20261028-0050"></script>
+<script src="autocennik.js?v=20261028-0100"></script>
 <script src="desktop.js?v=20261028-0050"></script>
 <script src="guard.js?v=20261028-0050"></script>
 <script src="astro.js?v=20261027-2030"></script>
