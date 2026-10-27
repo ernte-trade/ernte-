@@ -960,7 +960,7 @@ const WMO=c=>c===0?["☀️","jasno"]:c<=2?["🌤️","polojasno"]:c===3?["☁�
 async function loadWx(force){if(!force&&WXD&&Date.now()-WXAT<15*60e3)return;
   const u=`https://api.open-meteo.com/v1/forecast?latitude=${WXLOC.lat}&longitude=${WXLOC.lon}&hourly=temperature_2m,precipitation,precipitation_probability,weather_code,wind_speed_10m&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_sum,precipitation_probability_max,wind_speed_10m_max&timezone=Europe%2FBratislava&forecast_days=7`;
   try{const r=await fetch(u);WXD=await r.json();WXAT=Date.now()}catch(e){WXD={err:1}}}
-function wxCard(){if(!WXD)return `<div class="card"><div class="s">Načítavam počasie…</div></div>`;if(WXD.err||!WXD.daily)return `<div class="card"><div class="s">Počasie sa nepodarilo načítať.</div></div>`;
+function wxCard(){if(!WXD)return `<div class="card"><div class="s">Načítavam počasie…</div></div>`;if(WXD.err||!WXD.daily)return `<div class="card"><div class="row"><span class="t">📍 ${esc(WXLOC.name)}</span><button type="button" class="out" data-wxpick>📍 Zmeniť miesto</button></div><div class="s">Počasie sa nepodarilo načítať.</div></div>`;
   const H=WXD.hourly,D=WXD.daily,now=Date.now();let i0=H.time.findIndex(t=>new Date(t).getTime()>now-3600e3);if(i0<0)i0=0;
   const hrs=H.time.slice(i0,i0+24).map((t,k)=>{const i=i0+k,w=WMO(H.weather_code[i]);return `<div class="wxh"><small>${new Date(t).getHours()}:00</small><span>${w[0]}</span><b>${Math.round(H.temperature_2m[i])}°</b><em>${H.precipitation[i]>0?H.precipitation[i].toFixed(1)+" mm":(H.precipitation_probability[i]??0)+" %"}</em></div>`}).join("");
   const tmin=Math.min(...D.temperature_2m_min),tmax=Math.max(...D.temperature_2m_max),rng=Math.max(1,tmax-tmin);
@@ -972,7 +972,7 @@ function wxCard(){if(!WXD)return `<div class="card"><div class="s">Načítavam p
     if(wd>=40)add(wd>=60?"r":"w","💨","Vietor · "+nm,"až "+Math.round(wd)+" km/h")});
   const days=D.time.map((t,i)=>{const w=WMO(D.weather_code[i]),a=(D.temperature_2m_min[i]-tmin)/rng*100,b=(D.temperature_2m_max[i]-tmin)/rng*100;
     return `<div class="ds-wd ds-g${i===0?" today":""}${LV[i]?" "+LV[i]:""}"><span class="dn">${esc(dName(t,i))}</span><span class="di" title="${w[1]}">${w[0]}</span><span class="tt">${Math.round(D.temperature_2m_max[i])}°<span> / ${Math.round(D.temperature_2m_min[i])}°</span></span><i class="bar"><i style="left:${a}%;right:${100-b}%"></i></i><small><span>💧 zrážky</span><b>${D.precipitation_sum[i]>0?D.precipitation_sum[i].toFixed(1).replace(".",",")+" mm":"–"} · ${D.precipitation_probability_max[i]??0} %</b></small><small><span>💨 vietor</span><b>${W[i]!=null?Math.round(W[i])+" km/h":"–"}</b></small></div>`}).join("");
-  return `<div class="card wx"><div class="row"><span class="t">📍 ${esc(WXLOC.name)}</span><button type="button" class="out" data-wxloc>Moja poloha</button></div><div class="wxhs">${hrs}</div></div>
+  return `<div class="card wx"><div class="row"><span class="t">📍 ${esc(WXLOC.name)}${WXLOC.sub?` <small style="opacity:.7;font-weight:500;font-size:.75em">${esc(WXLOC.sub)}</small>`:""}</span><button type="button" class="out" data-wxpick>📍 Zmeniť miesto</button></div><div class="wxhs">${hrs}</div></div>
     ${WN.length?`<h2>Upozornenia</h2><div class="ds-warns">${WN.map(x=>`<div class="ds-wn ${x[0]}"><span aria-hidden="true">${x[1]}</span><div><b>${esc(x[2])}</b><small>${esc(x[3])}</small></div></div>`).join("")}</div>`:""}
     <h2>Najbližších 7 dní</h2><div class="ds-wx">${days}</div>
     <div class="card"><div class="t">🛰️ Radar zrážok</div><div class="rdbox" id="radarBox"></div>
@@ -2824,6 +2824,7 @@ document.addEventListener("click",e=>{const b=e.target.closest("[data-dfp]");if(
 <script src="outbox.js?v=20261027-0120"></script>
 <script src="invitecard.js?v=20261027-0940"></script>
 <script src="loginalert.js?v=20261027-0950"></script>
+<script src="wxplaces.js?v=20261027-1000"></script>
 <script src="farmact.js?v=20261027-0150"></script>
 </body>
 </html>
