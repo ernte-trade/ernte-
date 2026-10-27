@@ -37,7 +37,7 @@ if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",
 // ---------- Danube Trade (SK / HU) ----------
 try{D.lang=localStorage.getItem("ernte-dn-lang")||"sk"}catch(x){D.lang="sk"}
 const T=(sk,hu)=>D.lang==="hu"?hu:sk;
-async function loadD(){const r=await sb.rpc("danube_view");D.d=r.error?{err:/could not find|does not exist/i.test(r.error.message)?T("Danube Trade sa zapne po aktualizácii databázy (pár minút).","A Danube Trade az adatbázis frissítése után indul (pár perc)."):r.error.message}:r.data;
+async function loadD(){const r=await sb.rpc("danube_view");D.d=r.error?{err:/could not find|does not exist/i.test(r.error.message)?T("Danube Trade sa zapne po aktualizácii databázy (pár minút).","A Danube Trade az adatbázis frissítése után indul (pár perc)."):r.error.message}:(r.data||{req:[],agro:[],farmers:[],routes:{},staff:[]});
   if(!D.d.err){const c=await sb.from("danube_cfg").select("*").eq("key","firma").maybeSingle();D.cfg=(c.data&&c.data.value)||{};const k=await sb.from("danube_contracts").select("*").order("id",{ascending:false}).limit(200);D.K=k.data||[]}rr()}
 const RS={nova:[["nová","új"],"w"],v_spracovani:[["v spracovaní","feldolgozás alatt"],"b"],vybavena:[["vybavená","elintézve"],""],zamietnuta:[["zamietnutá","elutasítva"],"r"],potvrdena:[["prijatá","elfogadva"],"b"],v_praci:[["v práci","folyamatban"],"b"],hotova:[["hotová","kész"],""],zrusena:[["zrušená","törölve"],"r"]};
 const pl=s=>{const x=RS[s];return x?`<span class="pill ${x[1]}">${e(T(x[0][0],x[0][1]))}</span>`:`<span class="pill g">${e(s)}</span>`};
