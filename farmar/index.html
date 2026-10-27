@@ -792,7 +792,7 @@ html[data-theme=light] .ftbl th{color:#0f172a}html[data-theme=light] .fdban{colo
 <script>try{if(localStorage.getItem('ernte-theme')==='light')document.documentElement.dataset.theme='light'}catch(e){}</script>
 <link rel="stylesheet" href="perms.css?v=20261026-1955">
 <link rel="stylesheet" href="trus.css?v=20261027-0140">
-<link rel="stylesheet" href="ev.css?v=20261027-0810">
+<link rel="stylesheet" href="ev.css?v=20261027-0820">
 </head>
 <body>
 <div class="wrap">
@@ -1053,6 +1053,21 @@ async function loadStaff(){const [f,p,s,d,r]=await Promise.all([sb.from("farmers
 const fName=id=>{const f=STATE.farmers.find(x=>x.id===id);return f?f.name:"?"};
 // ===== NÁPOVEDA „Ako to funguje“ =====
 const HELP={
+home:{t:"Prehľad",i:"🏠",r:"Ranný prehľad firmy: čo je nové, čo čaká na teba, termíny, upozornenia a počasie.",s:[
+ ["Dlaždice","Každá dlaždica ukazuje jednu vec (nové požiadavky, odvozy, alarmy, sklad…). Ťukni a prejdeš rovno do detailu."],
+ ["Upozornenia","Hore sú veci, ktoré treba vybaviť dnes – napríklad nepodpísané zmluvy, chýbajúce váženia alebo nezapísaná práca."],
+ ["Obnoviť","Údaje sa obnovujú samé. Tlačidlom ↻ ich načítaš hneď."]]},
+calc:{t:"Kalkulačky",i:"🧮",r:"Kalkulačka sušenia a čistenia a kalkulačka nákupnej ceny ERNTE.",s:[
+ ["Sušenie a čistenie","Zadaj komoditu, tony, vlhkosť, nečistoty a cenu. Uvidíš fakturačnú hmotnosť, sumu a ako ju mení vlhkosť – rovnako ako vo vyúčtovaní. Farmári majú tú istú kalkulačku."],
+ ["Nákupná cena","Z ceny odberateľa, dopravy a burzy vypočíta, za koľko môže ERNTE kúpiť od farmára."]]},
+zuct:{t:"Zúčtovanie",i:"🧾",r:"Vyúčtovanie dodávok od farmárov podľa vážnych lístkov.",s:[
+ ["Vážne lístky","Každý lístok: hrubá váha, nečistoty, vlhkosť. App odráta čistenie a sušenie a vypočíta fakturačnú hmotnosť a sumu."],
+ ["Zmluvy","Pri každej zmluve vidíš, koľko je dodané, čo ostáva a či je splnená tolerancia."],
+ ["Pravidlá","Normy vlhkosti a sadzby čistenia a sušenia nastavíš v Pravidlách – platia aj pre kalkulačku farmárov."]]},
+agro:{t:"Agro služby",i:"🚜",r:"Práce strojmi ERNTE pre farmárov – objednávky, cenník a náklady strojov.",s:[
+ ["Objednávky","Farmár si v aplikácii objedná prácu. Ty ju potvrdíš, naplánuješ a označíš hotovú."],
+ ["Cenník","Ceny prác, ktoré vidia farmári (za ha alebo hodinu)."],
+ ["Náklady","Iba majiteľ: náklady strojov a marža za prácu."]]},
 evid:{t:"Evidencia",i:"📒",r:"Náklady, výnosy, výkony, dochádzka a výplaty podľa zákona – namiesto Excelu.",s:[
  ["Náklady","V časti <b>Náklady a výnosy</b> ťukni ➕, zadaj dátum, kategóriu (PHM, nakup, služby…), množstvo a cenu – suma sa vypočíta sama. Pridaj stroj a pole, aby bolo vidno, kde peniaze idú."],
  ["Dochádzka","Vedúci každý mesiac zapíše pri každom človeku odpracované dni, dovolenku, PN, dni na poli a hodiny v sobotu, nedeľu, v noci, vo sviatok a nadčasy. Peniaze nevidí."],
@@ -2778,6 +2793,7 @@ document.addEventListener("click",e=>{const b=e.target.closest("[data-dfp]");if(
 <script src="sklad.js?v=20261027-0800"></script>
 <script src="sus.js?v=20261027-0730"></script>
 <script src="praca.js?v=20261027-0810"></script>
+<script src="fndesc.js?v=20261027-0820"></script>
 <script src="sign.js?v=20261027-0035"></script>
 <script src="outbox.js?v=20261027-0120"></script>
 <script src="farmact.js?v=20261027-0150"></script>
