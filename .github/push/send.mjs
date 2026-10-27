@@ -3,13 +3,14 @@ import fs from "node:fs";
 import webpush from "web-push";
 const cfg = fs.readFileSync("../../farmar/config.js", "utf8");
 const URL_ = cfg.match(/SUPABASE_URL:\s*"([^"]+)"/)[1], KEY = cfg.match(/SUPABASE_KEY:\s*"([^"]+)"/)[1];
-const id = String(process.env.JOB_ID || "");
+const id = (String(process.env.JOB_ID || "").match(/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/i) || [""])[0];
 if (!/^[0-9a-f-]{36}$/i.test(id)) { console.log("bez ID"); process.exit(0); }
 const rpc = async (fn, body) => {
   const r = await fetch(`${URL_}/rest/v1/rpc/${fn}`, { method: "POST", headers: { apikey: KEY, Authorization: `Bearer ${KEY}`, "Content-Type": "application/json" }, body: JSON.stringify(body) });
   const t = await r.text(); if (!r.ok) throw new Error(fn + " " + r.status); return t ? JSON.parse(t) : null;
 };
-const job = await rpc("push_job_take", { p_id: id });
+let job;
+try { job = await rpc("push_job_take", { p_id: id }); } catch (e) { console.log("databáza nedostupná: " + e.message); process.exit(1); }
 if (!job) { console.log("úloha už vybavená alebo neplatná"); process.exit(0); }
 const v = job.vapid, P = job.payload;
 webpush.setVapidDetails(v.subject || "mailto:ernte@ernte.sk", v.pub, v.priv);
