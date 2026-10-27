@@ -24,11 +24,11 @@ function parseWheat(txt){const out=[];let hdr=null;for(const r of rowsOf(txt)){c
 
 // ===== MAJITEĽ =====
 let Z={sec:"",com:"",deal:"",farm:"",fq:"",C:null,L:{},open:null,d0:"",d1:"",rep:null,rules:null,paste:{kind:"tk",txt:"",prev:null,com:"jacmen_k"}};
-const SECS=[["paste","⬇️","Vložiť z Excelu","lístky · zmluvy · ceny pšenice"],["farm","👨‍🌾","Zúčtovanie farmára","zmluvy · lístky · PDF"],["rep","📊","Prehľady","týždeň · odberateľ · ŠPZ"],["rules","⚙️","Pravidlá","normy · sadzby · výnimky"]];
-window.vZuct=function(){if(ROLE!=="owner")return `<div class="card"><div class="s">Zúčtovanie vidí iba majiteľ.</div></div>`;
+const SECS=[["odb","📥","Zúčtovanie odberateľa","nahrať Excel odberateľa · rozdeliť lístky farmárom"],["paste","⬇️","Vložiť z Excelu","lístky · zmluvy · ceny pšenice"],["farm","👨‍🌾","Zúčtovanie farmára","zmluvy · lístky · PDF"],["rep","📊","Prehľady","týždeň · odberateľ · ŠPZ"],["rules","⚙️","Pravidlá","normy · sadzby · výnimky"]];
+window.zuctSec=k=>{Z.sec=k};window.vZuct=function(){if(ROLE!=="owner")return `<div class="card"><div class="s">Zúčtovanie vidí iba majiteľ.</div></div>`;
   let h=`<div class="zt"><h2>🧾 Zúčtovanie ${Z.sec?`<button type="button" class="ztb" data-zsec="">← späť</button>`:""}</h2>`;
   if(!Z.sec)return h+`<div class="zgrid">${SECS.map(s=>`<button type="button" class="zbtn" data-zsec="${s[0]}"><span>${s[1]}</span><b>${s[2]}</b><small>${s[3]}</small></button>`).join("")}</div><div class="s">🔒 Zúčtovanie, predaj, marže a prehľady vidíš iba ty. Farmár vidí len svoje lístky, svoju zmluvu, cenu a zúčtovanie.</div></div>`;
-  if(Z.sec==="paste")h+=pasteHTML();else if(Z.sec==="farm")h+=farmHTML();else if(Z.sec==="rep")h+=repHTML();else if(Z.sec==="rules")h+=rulesHTML();
+  if(Z.sec==="odb")h+=(window.odbHTML?odbHTML():"");else if(Z.sec==="paste")h+=pasteHTML();else if(Z.sec==="farm")h+=farmHTML();else if(Z.sec==="rep")h+=repHTML();else if(Z.sec==="rules")h+=rulesHTML();
   return h+`</div>`};
 // --- vkladanie ---
 function pasteHTML(){const P=Z.paste;
