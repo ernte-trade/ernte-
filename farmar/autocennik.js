@@ -39,7 +39,7 @@ const A={mk:null,px:null,mg:null,cfg:null,log:null,calc:{},pend:{},allow:{},last
 const BAS0={soja:28,repka:-15,psenica_p:-15,kukurica:-15};
 const BLBL={soja:"prémia non-GMO nad CBOT",repka:"báza pod MATIF",psenica_p:"báza pod MATIF",kukurica:"báza pod MATIF"};
 const basis=c=>{const b=A.cfg&&A.cfg.basis&&A.cfg.basis[c];return Number.isFinite(+b)&&b!==""&&b!=null?+b:BAS0[c]};
-const meth=c=>(A.cfg&&A.cfg.method&&A.cfg.method[c])||(arxRow(c)?"VSK":"region");
+const meth=c=>arxRow(c)?"VSK":((A.cfg&&A.cfg.method&&A.cfg.method[c]==="burza")?"burza":"region"); // VSK vždy, keď má cenu
 // VSK: cena FCA východné Slovensko (vsk). Ich logika = burza + báza; bázu zistíme z ich ceny a burzy v deň ich ceny
 // a cenu posúvame podľa dnešnej burzy: trh FCA = burza dnes + (VSK − burza v deň VSK).
 const HK={repka:"matif_repka",psenica_p:"matif_psenica",psenica_k:"matif_psenica",kukurica:"matif_kukurica",soja:"cbot_soja"};
@@ -49,7 +49,7 @@ function arx(c,M){const r=arxRow(c);if(!r)return null;const k=HK[c];let now=null
   if(k){const bz=burza({reg:null},c==="psenica_k"?"psenica_p":c);if(bz&&Number.isFinite(+bz.price)){now=+bz.price;bzN=bzName(bz)+(bz.term?" "+bz.term:"")}then=histAt(k,r.date)}
   const b=now!=null&&then?R2(+r.price-then.v):null,mkt=b!=null?R2(now+b):+r.price,fca=R2(mkt-M);
   return {fca,p:Math.floor(fca),arx:{price:+r.price,date:r.date,bzThen:then,bzNow:now,bzN,basis:b,mkt},pl:"VSK · FCA vých. Slovensko",src:"VSK + burza",date:r.date,ok:true,dap:mkt,dop:0}}
-const DEF={on:true,auto:null,mine:{},mineDays:7,remindDays:7,step:1,maxJump:10,lastMineAt:null,since:null};
+const DEF={on:true,auto:null,mine:{},mineDays:7,remindDays:7,step:1,maxJump:0,lastMineAt:null,since:null};
 
 async function kget(path,id){try{const r=await sb.from("kalk_store").select("data,updated_at").eq("path",path).eq("id",id).maybeSingle();return r.error?undefined:(r.data?r.data.data:null)}catch(x){return undefined}}
 async function kset(path,id,data){try{const r=await sb.from("kalk_store").upsert({path,id,data},{onConflict:"path,id"});return !r.error}catch(x){return false}}
@@ -64,6 +64,7 @@ async function loadAll(force){if(!force&&Date.now()-A.loadedAt<4*60e3&&A.cfg)ret
   A.cfg=Object.assign({},DEF,cfg||{});A.cfg.mine=A.cfg.mine||{};
   if(!A.cfg.auto){// prvé zapnutie: automaticky iba komodity, ktoré majú odberateľa a sú dnes v cenníku
     A.cfg.auto={};for(const c of AUTO_COMS){const p=(STATE.prices||[]).find(x=>x.com===c);A.cfg.auto[c]=!!(p&&p.price!=null)}}
+  A.cfg.maxJump=0;for(const [c] of MKL())if(arxRow(c)&&!A.cfg.auto[c]&&!A.cfg.mine[c])A.cfg.auto[c]=true; // VSK vždy automaticky, bez percentového potvrdzovania
   A.cfgSaved=!!cfg;A.log=(log&&log.items)||[];A.loadedAt=Date.now()}
 
 // ---- výpočet (kópia logiky z Kalkulačky) ----
@@ -120,7 +121,7 @@ async function run(force){if(!ED()||running)return;if(!force&&Date.now()-A.lastR
         if(!A.cfg.auto[com])continue;const a=C[com];if(!a||!a.ok||!(a.p>0))continue;tgt=a.p;src="auto";pl=a.pl}
       const old=cur[com]??null;if(tgt==null||!isFinite(tgt))continue;
       if(old!=null&&Math.abs(tgt-old)<(+A.cfg.step||1))continue;
-      if(src==="auto"&&old!=null&&old>0&&Math.abs(tgt-old)/old*100>(+A.cfg.maxJump||10)&&!A.allow[com]){pend[com]={old,tgt,pl};continue}
+      if(false&&src==="auto"){pend[com]={old,tgt,pl};continue}
       ch.push({com,old,new:tgt,src,pl})}
     A.pend=pend;A.expired=exp;
     if(dirty&&!(await saveCfg()))A.cfg.mine=Object.assign({},A.cfg.mine);
@@ -175,13 +176,13 @@ function cardHTML(){if(!ED())return "";if(!A.cfg)return `<div class="card acn-ca
   const C=A.calc||{},own=OWN(),cur=Object.fromEntries((STATE.prices||[]).map(p=>[p.com,p.price==null?null:+p.price])),t=T();
   const rows=MKL().map(([c,n])=>{const a=C[c],mine=A.cfg.mine[c],mv=mine&&(!mine.till||mine.till>=t),au=!!A.cfg.auto[c],has=AUTO_COMS.includes(c);
     const st=mv?`<span class="acn-m">✍️ moja do <input type="date" data-acntill="${e(c)}" value="${e(mine.till||"")}" aria-label="Moja cena ${e(n)} platí do"></span><button type="button" class="acn-x" data-acn="back:${e(c)}">↩ auto</button>`
-      :has?`<label class="acn-sw"><input type="checkbox" data-acnauto="${e(c)}"${au?" checked":""}> 🤖 automaticky</label>`:`<span class="acn-n">bez odberateľa – iba tvoja cena</span>`;
+      :arxRow(c)?`<span class="acn-sw">🏷️ VSK · vždy automaticky</span>`:has?`<label class="acn-sw"><input type="checkbox" data-acnauto="${e(c)}"${au?" checked":""}> 🤖 automaticky</label>`:`<span class="acn-n">bez odberateľa – iba tvoja cena</span>`;
     const av=a?`<b>${f0(a.p)}</b>${a.ok?"":` <em class="acn-old" title="Trhová cena je stará – nezverejňuje sa">staré dáta</em>`}`:"<b>–</b>";
     const pd=A.pend&&A.pend[c];
     const dt=a?`<div class="acn-dap">${a.all.slice().sort((x,y)=>y.dap-x.dap).map(x=>`<span class="${x.pl===a.pl?"best":""}"><b>DAP ${e(x.pl.replace("Bunge · ","Bunge "))}</b> ${f0(x.dap)} €/t<small>${x.farm!=null?`farmári v regióne ${f0(x.farm)} + doprava ${f0(x.dop)}`:e(x.src)}${x.date?" · "+dk(x.date):""}</small></span>`).join("")}</div>
       ${a.arx?`<div class="acn-arx">🏷️ <b>VSK FCA vých. SK ${f0(a.arx.price)} €/t</b> (${dk(a.arx.date)})${a.arx.basis!=null?` = ${e(a.arx.bzN.split(" ")[0])} v ten deň ${f2(a.arx.bzThen.v)} ${a.arx.basis>=0?"+":"−"} báza ${f2(Math.abs(a.arx.basis))}<br>→ dnes ${e(a.arx.bzN)} ${f2(a.arx.bzNow)} ${a.arx.basis>=0?"+":"−"} ${f2(Math.abs(a.arx.basis))} = trh FCA <b>${f2(a.arx.mkt)}</b>`:" · bez burzy, cena VSK"}${own?` − odpočet ${f2(margin())}`:""} = <b>${f2(a.fca)}</b> → <b>${f0(a.p)} €/t</b></div>`:""}
       ${(()=>{const b=a.arx?a.rg:a;return b?`<div${a.arx?' class="acn-cmp"':""}>${a.arx?"Pre porovnanie región: ":""}→ FCA pre farmára = DAP ${e(b.pl)} ${f2(b.dap)} − doprava ${f2(b.dop)}${own?` − odpočet ${f2(margin())}`:""} = <b>${f2(b.fca)}</b> → <b>${f0(b.p)} €/t</b>${b.over?` · <em class="acn-old">nad burzou ${f0(b.bz)}</em>`:""}${b.mk?`<br><small>Zdroj: ${e(b.mk)}</small>`:""}</div>`:""})()}${BAS0[c]!=null&&a.bzDap!=null?`<div class="acn-bl"><b>📈 Logika spracovateľa podľa burzy:</b> ${e(a.bzName)} ${f0(a.bz)} ${basis(c)>=0?"+":"−"} ${f0(Math.abs(basis(c)))} ${e(BLBL[c])} = DAP ${f0(a.bzDap)} → FCA <b>${f0(Math.floor(a.bzFca))} €/t</b>${a.bzOk?"":" (burza je stará)"}${a.byBz?" · <b>používa sa</b>":` · oproti regiónu ${Math.floor(a.bzFca)-a.p>=0?"+":"−"}${f0(Math.abs(Math.floor(a.bzFca)-a.p))} €/t`}
-        ${own?`<div class="acn-blc"><label>Cenu počítať<select data-acnmeth="${e(c)}"><option value="region"${meth(c)==="region"?" selected":""}>z regiónu (DAP farmárov)</option><option value="burza"${meth(c)==="burza"?" selected":""}>podľa burzy (logika spracovateľa)</option>${arxRow(c)?`<option value="VSK"${meth(c)==="VSK"?" selected":""}>podľa VSK + burza (odporúčané)</option>`:""}</select></label><label>${e(BLBL[c])} €/t<input data-acnbas="${e(c)}" inputmode="decimal" value="${e(String(basis(c)).replace(".",","))}"></label></div>`:""}</div>`:""}${pd?`<div class="acn-pd">⏳ čaká na tvoje potvrdenie (${f0(pd.old)} → ${f0(pd.tgt)}) <button type="button" data-acn="allow:${e(c)}">Zverejniť</button></div>`:""}`:(has?"bez trhových dát":"");
+        ${own&&!arxRow(c)?`<div class="acn-blc"><label>Cenu počítať<select data-acnmeth="${e(c)}"><option value="region"${meth(c)==="region"?" selected":""}>z regiónu (DAP farmárov)</option><option value="burza"${meth(c)==="burza"?" selected":""}>podľa burzy (logika spracovateľa)</option></select></label><label>${e(BLBL[c])} €/t<input data-acnbas="${e(c)}" inputmode="decimal" value="${e(String(basis(c)).replace(".",","))}"></label></div>`:""}</div>`:""}${pd?`<div class="acn-pd">⏳ čaká na tvoje potvrdenie (${f0(pd.old)} → ${f0(pd.tgt)}) <button type="button" data-acn="allow:${e(c)}">Zverejniť</button></div>`:""}`:(has?"bez trhových dát":"");
     return `<div class="acn-r${mv?" mine":au&&has?" on":""}"><div class="acn-rh"><b class="n">${e(n)}</b><span class="v"><small>zverejnené</small>${cur[c]==null?"<b class='no'>–</b>":"<b>"+f0(cur[c])+"</b>"}</span><span class="v a"><small>automatická</small>${av}</span></div>${dt?`<div class="acn-rd">${dt}</div>`:""}<div class="acn-rm">${st}</div></div>`}).join("");
   const L=(A.log||[]).slice(-40).reverse();
   return `<div class="card acn-card"><div class="tdh"><b>🤖 Automatický cenník · Somotor a Bunge</b><label class="acn-sw big"><input type="checkbox" data-acnon${A.cfg.on?" checked":""}${own?"":" disabled"}> ${A.cfg.on?"zapnutý":"vypnutý"}</label></div>
@@ -191,7 +192,7 @@ function cardHTML(){if(!ED())return "";if(!A.cfg)return `<div class="card acn-ca
    ${own?`<div class="acn-cfg"><label>Odpočet ERNTE €/t<input data-acncfg="marginOwn" inputmode="decimal" value="${e(A.cfg.marginOwn??"")}" placeholder="${e(f2(A.mg&&A.mg.rec!=null?A.mg.rec:20))}"><small>${A.mg&&A.mg.rec!=null?"prázdne = z Kalkulačky ("+f2(A.mg.rec)+")":"prázdne = 20 €/t"}</small></label>
      <label>Moja cena platí dní<input data-acncfg="mineDays" inputmode="numeric" value="${e(A.cfg.mineDays)}"></label>
      <label>Pripomenúť moje ceny každých dní<input data-acncfg="remindDays" inputmode="numeric" value="${e(A.cfg.remindDays)}"><small>0 = nepripomínať</small></label>
-     <label>Bez potvrdenia najviac %<input data-acncfg="maxJump" inputmode="decimal" value="${e(A.cfg.maxJump)}"><small>väčšiu zmenu najprv potvrdíš</small></label></div>`:""}
+</div>`:""}
    <div class="acn-st">${A.err?`<b class="bad">${e(A.err)}</b> · `:""}${A.lastRun?"Skontrolované "+hm(A.lastRun)+(A.lastCh?" · zmenené "+A.lastCh:" · bez zmeny"):"Ešte neprebehlo"} · automaticky každých 20 min, keď je aplikácia otvorená${A.mk&&A.mk.updatedAt?" · trh "+hm(A.mk.updatedAt):""}</div>
    <div class="btns"><button type="button" class="pri" data-acn="run">↻ Prepočítať a zverejniť teraz</button></div>
    ${L.length?`<details class="acn-h"><summary>📜 História zmien cien (${(A.log||[]).length})</summary><ul>${L.map(x=>`<li><span>${hm(x.at)}</span> <b>${e(nm(x.com))}</b> ${x.old==null?"–":f0(x.old)} → <b>${x.new==null?"skryté":f0(x.new)}</b> <small>${srcL(x)}</small></li>`).join("")}</ul></details>`:""}</div>`}
