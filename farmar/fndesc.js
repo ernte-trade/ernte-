@@ -20,7 +20,7 @@ const TABD={
  zuct:"Vyúčtovanie dodávok od farmárov podľa vážnych lístkov: čistenie, sušenie, fakturačná hmotnosť a suma ku každej zmluve.",
  agro:"Služby strojmi ERNTE pre farmárov: objednávky, cenník prác a pri majiteľovi aj náklady strojov a marža.",
  trus:"Vývozy kuracieho trusu z fariem Baromfi (HU) do BPS Kamenica – nahlásenie, pridelenie áut, váženie a podklady k faktúram.",
- pred:"Iba pre majiteľa, zamknuté PIN-om: kde kúpiť a kam predať komodity, marža po doprave, kedy predať podľa burzy a prehodnotenie minulých odporúčaní.",
+ pred:"Iba pre majiteľa, zamknuté PIN-om: kde kúpiť a kam predať komodity, marža po doprave, kedy predať podľa burzy, vesmír (karty, Mesiac, horoskop) s nastaviteľnou váhou a meranie, ktorá zložka funguje.",
  danube:"Firma Danube Trade: obchod s komoditami, odvoz VALKO a služby strojmi. Požiadavky a objednávky Danube, prepínač SK / HU a kúpne zmluvy podľa maďarského práva.",
  nov:"Čo je v aplikácii nové: po dňoch, kde to nájdeš a kto to vidí. Dopĺňa sa automaticky pri každej úprave cez Claude aj ERNTE AI.",
  evid:"Firemná evidencia namiesto Excelu: náklady a výnosy, sklad, denník prác, dochádzka, výplaty podľa zákona a výsledok."};

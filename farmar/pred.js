@@ -2,7 +2,8 @@
 // Vyhodnocuje nákup a predaj komodít z čísel: ponuky farmárov, výkupný cenník, fyzické trhy (market.json),
 // burza (market_px + termíny v market.json), ponuky odberateľov a zmluvy s odberateľmi, doprava podľa vzdialenosti.
 // Odporúčania sa ukladajú a neskôr porovnávajú s vývojom burzy (prehodnotenie).
-// „Karta dňa“ je iba pre zábavu – do výpočtov ani odporúčaní NEVSTUPUJE.
+// Vesmír (karty, Mesiac, planéty, osobný horoskop) vstupuje do odporúčania s nastaviteľnou váhou; zisk/strata obchodu ostáva z čísel.
+// Úspešnosť každej zložky sa meria voči burze (sekcia „Funguje vesmír?“).
 // Dáta sú v ai_state (RLS: iba is_owner()), PIN je uložený len ako PBKDF2 hash.
 (function(){
 const e=x=>typeof esc==="function"?esc(x):String(x??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
@@ -13,12 +14,12 @@ const CN=c=>typeof comName==="function"?comName(c):c;
 const f0=x=>Number.isFinite(+x)&&x!==null&&x!==""?Math.round(+x).toLocaleString("sk-SK"):"–";
 const f1=x=>Number.isFinite(+x)&&x!==null?(+x).toLocaleString("sk-SK",{maximumFractionDigits:1}):"–";
 const sg=x=>(x>0?"+":x<0?"−":"±")+f0(Math.abs(x));
-const N=v=>{const x=parseFloat(String(v??"").replace(/\s/g,"").replace(",","."));return Number.isFinite(x)?x:null};
+const N_=v=>N(v);const N=v=>{const x=parseFloat(String(v??"").replace(/\s/g,"").replace(",","."));return Number.isFinite(x)?x:null};
 const today=()=>{const d=new Date();return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0")};
 const dAgo=s=>Math.round((new Date(today())-new Date(String(s).slice(0,10)))/864e5);
 
 // ---------- nastavenia (predvolené) ----------
-const DEF={rate:1.5,payload:25,ret:true,store:2.5,handle:0,tmin:4,defKm:120,basis:45};
+const DEF={w:20,rate:1.5,payload:25,ret:true,store:2.5,handle:0,tmin:4,defKm:120,basis:45};
 const MKB2={repka:"repka",psenica_p:"psenica",psenica_k:"psenica",kukurica:"kukurica",soja:"soja_usc_bu"};
 // približné polohy miest, ktoré sa objavujú v market.json (na odhad dopravy)
 const GEO=[[/batyovo|батьово|батьево/i,48.29,22.40],[/záhony/i,48.41,22.18],[/čop|chop/i,48.43,22.21],[/odesa|odessa/i,46.48,30.73],[/kyjev|kyiv/i,50.45,30.52],
@@ -44,7 +45,7 @@ async function stGet(keys){const r=await sb.from("ai_state").select("key,value")
 // ---------- načítanie ----------
 async function load(force){if(!OWN()||S.busy)return;if(!force&&S.at&&Date.now()-S.at<5*6e4)return;S.busy=true;S.err="";
   try{
-    const st=await stGet(["pred_cfg","pred_pin","pred_hist","pred_log","pred_nov"]);
+    const st=await stGet(["pred_cfg","pred_pin","pred_hist","pred_log","pred_nov","pred_natal"]);S.natal=st.pred_natal||null;
     S.cfg=Object.assign({},DEF,{quotes:[]},st.pred_cfg||{});S.pin=st.pred_pin||null;S.hist=st.pred_hist||[];S.log=st.pred_log||[];S.nov=st.pred_nov||null;
     if(!unlocked()){S.at=0;S.busy=false;rr();return}
     const q=await Promise.all([
@@ -128,21 +129,90 @@ const coms=()=>{const M=typeof MK!=="undefined"?MK.map(m=>m[0]):["repka","lo","h
 // ---------- uloženie odporúčaní (na neskoršie prehodnotenie) ----------
 async function logRecs(){const d=today();if(S.log.some(l=>l.d===d))return;const add=[];
   for(const c of coms()){const R=evalCom(c),b=R.best;if(!b&&R.trend.now==null)continue;
-    add.push({d,c,buy:b?b.a.price:null,sell:b?b.b.price:null,net:b?Math.round(b.net):null,from:b?b.a.name:null,to:b?b.b.name:null,bz:R.trend.now,hold:R.timing?R.timing.hold:null})}
+    add.push({d,c,buy:b?b.a.price:null,sell:b?b.b.price:null,net:b?Math.round(b.net):null,from:b?b.a.name:null,to:b?b.b.name:null,bz:R.trend.now,hold:R.timing?R.timing.hold:null,dir:(()=>{try{const M=mix(R);return{num:+M.nd.toFixed(2),cards:+M.cz.cards.toFixed(2),moon:M.cz.moon,tr:+M.cz.tr.toFixed(2),cos:+M.cz.cos.toFixed(2),k:+M.k.toFixed(2),w:M.w}}catch(x){return null}})()})}
   if(!add.length)return;S.log=[...S.log,...add].slice(-600);try{await stSet("pred_log",S.log)}catch(x){}}
 async function novinka(){if(S.nov)return;try{const r=await sb.from("app_novinky").insert({titul:"🔮 Predikcia obchodu",kde:"záložka Predikcia (iba majiteľ, PIN)",kto:"majiteľ",aud:"owner",
   popis:"Kde kúpiť a kam predať komodity, marža po doprave, časovanie podľa burzy, prehodnotenie minulých odporúčaní. Zamknuté PIN-om.",zdroj:"majiteľ"});
   if(!r.error){S.nov={at:new Date().toISOString()};await stSet("pred_nov",S.nov)}}catch(x){}}
 
-// ---------- karta dňa (iba pre zábavu) ----------
-const CARDS=[["Jazdec","rýchla správa"],["Ďatelina","malé šťastie"],["Loď","cesta, obchod do diaľky"],["Dom","stabilita"],["Strom","pomalý rast"],["Oblaky","neistota"],["Had","opatrne s partnermi"],["Kytica","príjemné prekvapenie"],["Kosa","rýchle rozhodnutie"],["Vtáky","veľa rozhovorov"],["Líška","pozor na lesť"],["Medveď","sila, kapitál"],["Hviezdy","jasný smer"],["Bocian","zmena"],["Pes","verný partner"],["Veža","úrady, formality"],["Hora","prekážka"],["Cesta","voľba"],["Myši","drobné straty"],["Srdce","dobrý vzťah"],["Prsteň","zmluva"],["Kniha","niečo skryté"],["List","dokument"],["Ľalie","trpezlivosť"],["Slnko","úspech"],["Mesiac","uznanie"],["Kľúč","riešenie"],["Ryby","peniaze, obchod"],["Kotva","istota"],["Kríž","povinnosť"]];
-function card(){const d=today();let h=0;for(const ch of d+"ernte")h=(h*31+ch.charCodeAt(0))>>>0;const c=CARDS[h%CARDS.length];
-  return `<div class="card prd-card"><div class="row"><b>🃏 Karta dňa: ${e(c[0])}</b><span class="pill g">len pre zábavu</span></div><div class="s">${e(c[1])}. Karta nemá žiadny vplyv na výpočty ani odporúčania vyššie – tie stoja iba na cenách, doprave a burze.</div></div>`}
+// ---------- 🔮 VESMÍR: karty + Mesiac + planéty + osobný horoskop ----------
+// Každá zložka dáva smer ceny v rozsahu −1…+1 (+ = rast → kúp/drž, − = pokles → predaj hneď).
+// Spojenie: (1 − váha) × čísla + váha × vesmír. Úspešnosť každej zložky sa meria voči burze po 7 a 30 dňoch.
+const TMAJ=[["Blázon",1],["Mág",2],["Veľkňažka",0],["Cisárovná",2],["Cisár",1],["Veľkňaz",0],["Milenci",1],["Voz",2],["Sila",1],["Pustovník",-1],["Koleso šťastia",2],["Spravodlivosť",0],["Obesenec",-1],["Smrť",-1],["Miernosť",0],["Diabol",-1],["Veža",-2],["Hviezda",1],["Mesiac",-1],["Slnko",2],["Súd",1],["Svet",2]];
+const TR=["Eso","Dvojka","Trojka","Štvorka","Päťka","Šestka","Sedmička","Osmička","Deviatka","Desiatka","Páža","Rytier","Kráľovná","Kráľ"];
+const TSU=[["palíc",[2,1,1,1,-1,2,0,1,0,-1,0,1,1,1]],["pohárov",[1,1,1,-1,-1,0,-1,-1,2,2,0,1,1,1]],["mečov",[1,-1,-2,-1,-1,0,-1,-1,-2,-2,0,0,0,0]],["mincí",[2,0,1,1,-2,1,0,1,2,2,1,0,1,2]]];
+const TAROT=[...TMAJ,...TSU.flatMap(s=>TR.map((r,i)=>[r+" "+s[0],s[1][i]]))];
+const LEN=[["Jazdec",1],["Ďatelina",1],["Loď",1],["Dom",1],["Strom",1],["Oblaky",-1],["Had",-1],["Rakva",-2],["Kytica",2],["Kosa",-1],["Metla",-1],["Vtáky",0],["Dieťa",1],["Líška",-1],["Medveď",2],["Hviezdy",2],["Bocian",1],["Pes",1],["Veža",0],["Záhrada",1],["Hora",-2],["Cesta",0],["Myši",-2],["Srdce",1],["Prsteň",1],["Kniha",0],["List",0],["Muž",0],["Žena",0],["Ľalie",1],["Slnko",2],["Mesiac",1],["Kľúč",2],["Ryby",2],["Kotva",1],["Kríž",-1]];
+const CIG=[["Láska",1],["Svadba",1],["Stretnutie",1],["Dobrá správa",2],["Falošnosť",-2],["Zmena",0],["Cesta",0],["Veľa peňazí",2],["Smútok",-1],["Myšlienky",0],["Dar",1],["Dieťa",1],["Dom",1],["Súd",-1],["Krádež",-2],["Nádej",1],["Samota",-1],["Nečakané šťastie",2],["Vernosť",1],["Zisk",2],["Strata",-2],["Choroba",-1],["Hádka",-1],["Priateľ",1],["Úradník",0],["Rozlúčka",-1],["Návšteva",0],["Bohatý pán",2],["Dobrá pani",1],["Nepriateľ",-2],["Smrť (koniec)",-1],["Úspech",2]];
+const PN={sun:"Slnko",moon:"Mesiac",mercury:"Merkúr",venus:"Venuša",mars:"Mars",jupiter:"Jupiter",saturn:"Saturn",asc:"ASC",mc:"MC"};
+const ASP=[[0,"konjunkcia"],[60,"sextil"],[90,"kvadratúra"],[120,"trigon"],[180,"opozícia"]];
+const clamp=x=>Math.max(-1,Math.min(1,x));
+function rng(str){let h=1779033703^str.length;for(let i=0;i<str.length;i++){h=Math.imul(h^str.charCodeAt(i),3432918353);h=h<<13|h>>>19}
+  return()=>{h=Math.imul(h^h>>>16,2246822507);h=Math.imul(h^h>>>13,3266489909);h^=h>>>16;return(h>>>0)/4294967296}}
+// SEČ/SELČ podľa pravidiel platných v SR/ČSSR od 1979 (koniec letného času: do 1995 posledná nedeľa septembra, potom októbra)
+function lastSun(y,m){const d=new Date(Date.UTC(y,m+1,0));d.setUTCDate(d.getUTCDate()-d.getUTCDay());return d}
+function toUTC(date,time){const [y,m,d]=date.split("-").map(Number),[hh,mm]=(time||"12:00").split(":").map(Number);
+  let off=1;if(y>=1979){const s=lastSun(y,2),en=lastSun(y,y<1996?8:9),loc=Date.UTC(y,m-1,d,hh,mm);if(loc>=s.getTime()+2*36e5&&loc<en.getTime()+3*36e5)off=2}
+  return new Date(Date.UTC(y,m-1,d,hh-off,mm))}
+function natal(){const N=S.natal;if(!N||!N.date||!window.ASTRO)return null;if(S._nat&&S._nat.k===JSON.stringify(N))return S._nat.v;
+  const t=toUTC(N.date,N.time),P=ASTRO.positions(t),am=ASTRO.ascmc(t,+N.lat,+N.lon);const v={t,P:Object.assign({},P,{asc:am.asc,mc:am.mc})};S._nat={k:JSON.stringify(N),v};return v}
+function sky(){const k=today();if(S._sky&&S._sky.k===k)return S._sky.v;const t=new Date(),P=ASTRO.positions(t),mp=ASTRO.moonPhase(t),nt=ASTRO.nextTurn(t);
+  const R={};for(const p of ["mercury","venus","mars","jupiter","saturn"])R[p]=ASTRO.retro(p,t);const v={t,P,mp,nt,R};S._sky={k,v};return v}
+function transits(){const n=natal(),s=sky();if(!n)return{score:0,list:[]};const L=[];let sc=0;
+  const good=["jupiter","venus"],bad=["saturn","mars"],tgt=["sun","moon","venus","jupiter","mc","asc"];
+  for(const tp of [...good,...bad,"sun"])for(const np of tgt){const sp=ASTRO.sep(s.P[tp],n.P[np]);for(const [ang,nm] of ASP){const orb=Math.abs(sp-ang),lim=tp==="sun"?1.5:2;if(orb>lim)continue;
+    const soft=ang===60||ang===120,v=good.includes(tp)?(soft||ang===0?1:0.4):bad.includes(tp)?(soft?0.3:-1):(soft||ang===0?0.4:-0.3);
+    sc+=v;L.push({t:`${PN[tp]} – ${nm} – natál ${PN[np]}`,v,orb})}}
+  const ms=ASTRO.sep(s.P.moon,n.P.sun),mj=ASTRO.sep(s.P.moon,n.P.jupiter);if(ms<6){sc+=0.3;L.push({t:"Mesiac na tvojom Slnku",v:0.3})}if(mj<6){sc+=0.3;L.push({t:"Mesiac na tvojom Jupiteri",v:0.3})}
+  const h=Math.floor(ASTRO.rev(s.P.moon-Math.floor(n.P.asc/30)*30)/30)+1;
+  return{score:clamp(sc/2),list:L,moonHouse:h}}
+function cosmo(c){const s=sky(),n=natal(),r=rng(today()+"|"+c+"|"+(n?n.t.toISOString():"x"));
+  const ti=Math.floor(r()*TAROT.length),rv=r()<0.3,li=Math.floor(r()*LEN.length),ci=Math.floor(r()*CIG.length),T=TAROT[ti],L=LEN[li],C=CIG[ci];
+  const cards=clamp(((rv?-T[1]:T[1])+L[1]+C[1])/6);
+  const hrs=s.nt?(s.nt-Date.now())/36e5:99,moon=hrs<18?0:s.mp.waxing?0.6:-0.6;
+  const tr=transits(),risk=[];if(s.R.mercury)risk.push("Merkúr je spätný – nové zmluvy a dohody over dvakrát");if(s.R.venus)risk.push("Venuša je spätná – pozor na precenenie");
+  const cos=clamp(0.5*cards+0.25*moon+0.25*tr.score);
+  return{cards,moon,tr:tr.score,cos,draw:{t:T[0]+(rv?" (obrátená)":""),tv:rv?-T[1]:T[1],l:L[0],lv:L[1],c:C[0],cv:C[1]},risk,hrs}}
+// smer podľa čísel: termíny burzy, inak 7-dňový trend
+function numDir(R){if(R.timing)return clamp(R.timing.gain/30);if(R.trend.d7!=null)return clamp(R.trend.d7/20);return 0}
+function verdict(R,dir){const b=R.best;if(b&&b.net>0)return dir>0.15?"kúp a drž (skladuj)":dir<-0.15?"kúp a predaj hneď":"kúp a predávaj priebežne";
+  if(b)return dir>0.3?"zatiaľ nekupuj – počkaj na rast ceny":"nekupuj";return dir>0.15?"cena skôr porastie – drž, čo máš":dir<-0.15?"cena skôr klesne – predaj, čo máš":"bez jasného smeru"}
+function mix(R){const w=Math.max(0,Math.min(100,+S.cfg.w||0))/100,cz=cosmo(R.c),nd=numDir(R),k=clamp((1-w)*nd+w*cz.cos);
+  return{w,cz,nd,k,vn:verdict(R,nd),vk:verdict(R,k)}}
+function cosmoBox(R){const M=mix(R),z=M.cz,d=z.draw,s=sky();
+  return `<div class="prd-cos"><div class="row"><b>🔮 Vesmír</b><span class="pill ${z.cos>0.1?"":z.cos<-0.1?"r":"g"}">${z.cos>0?"+":""}${f1(z.cos*100)} %</span></div>
+   <div class="s">🃏 ${e(d.t)} (${d.tv>0?"+":""}${d.tv}) · ${e(d.l)} (${d.lv>0?"+":""}${d.lv}) · ${e(d.c)} (${d.cv>0?"+":""}${d.cv}) → karty ${sg(z.cards*100)} %</div>
+   <div class="s">🌙 ${e(s.mp.name)}${z.hrs<18?" – blízko obratu, neutrálne":s.mp.waxing?" – rast":" – pokles"} · 🪐 tranzity ${sg(z.tr*100)} %</div>
+   ${z.risk.map(x=>`<div class="s">⚠️ ${e(x)}</div>`).join("")}
+   <div class="prd-vs"><div><small>🔢 len čísla</small><b>${e(M.vn)}</b></div><div><small>🔮 s vesmírom (${Math.round(M.w*100)} %)</small><b>${e(M.vk)}</b></div></div>
+   ${M.vn!==M.vk?`<div class="prd-w">⚖️ Vesmír mení odporúčanie oproti číslam.</div>`:""}</div>`}
+function natalCard(){const n=natal(),N=S.natal||{},o=S.open.__nat||!n,s=window.ASTRO?sky():null,tr=n?transits():null;
+  let h=`<div class="card"><button type="button" class="prd-hd" data-prdo="__nat" aria-expanded="${!!o}"><b>🌌 Vesmír a tvoj horoskop</b><small>váha ${Math.round(+S.cfg.w||0)} %</small><span aria-hidden="true">${o?"▴":"▾"}</span></button>`;
+  if(s)h+=`<div class="s">Dnes: Slnko ${e(ASTRO.sign(s.P.sun))} · Mesiac ${e(ASTRO.sign(s.P.moon))} (${e(s.mp.name)}, ${Math.round(s.mp.illum*100)} %)${s.nt?` · ${s.mp.waxing?"spln":"nov"} ${e(s.nt.toLocaleString("sk-SK",{day:"numeric",month:"numeric",hour:"2-digit",minute:"2-digit"}))}`:""}${Object.entries(s.R).filter(x=>x[1]).map(x=>" · "+PN[x[0]]+" ℞").join("")}</div>`;
+  if(n)h+=`<div class="s">${e(N.name||"Ty")}: Slnko ${e(ASTRO.sign(n.P.sun))} · Mesiac ${e(ASTRO.sign(n.P.moon))} · ASC ${e(ASTRO.sign(n.P.asc))} · MC ${e(ASTRO.sign(n.P.mc))} · Jupiter ${e(ASTRO.sign(n.P.jupiter))}</div>
+    ${tr.list.length?`<div class="s">Tvoje tranzity dnes: ${tr.list.map(x=>`${x.v>0?"✅":"⛔"} ${e(x.t)}`).join(" · ")}</div>`:`<div class="s">Dnes žiadne silné osobné tranzity.</div>`}
+    ${tr.moonHouse===2||tr.moonHouse===8?`<div class="s">💰 Mesiac prechádza tvojím ${tr.moonHouse}. domom (peniaze).</div>`:""}`;
+  if(o)h+=`<form class="f" id="fPrdN"><label class="w">Váha vesmíru v odporúčaní: <b id="prdWv">${Math.round(+S.cfg.w||0)} %</b><input type="range" name="w" min="0" max="100" step="5" value="${Math.round(+S.cfg.w||0)}" data-prdw></label>
+    <label>Meno<input name="name" value="${e(N.name||"")}"></label><label>Dátum narodenia<input name="date" type="date" value="${e(N.date||"")}" required></label>
+    <label>Čas narodenia<input name="time" type="time" value="${e(N.time||"")}" required></label><label>Miesto<input name="place" value="${e(N.place||"")}" placeholder="napr. Sobrance"></label>
+    <label>Zem. šírka<input name="lat" inputmode="decimal" value="${e(N.lat??"")}" placeholder="48.745"></label><label>Zem. dĺžka<input name="lon" inputmode="decimal" value="${e(N.lon??"")}" placeholder="22.181"></label>
+    <div class="w s">Údaje sú uložené len v tvojom súkromnom úložisku (vidí ich iba majiteľ). Čas sa prepočíta podľa letného/zimného času v deň narodenia.</div>
+    <div class="w btns"><button class="pri" type="submit">Uložiť</button></div></form>`;
+  return h+"</div>"}
+// úspešnosť zložiek: smer odporúčania vs. skutočný pohyb burzy
+function accCard(){const comp=[["num","🔢 Čísla"],["cards","🃏 Karty"],["moon","🌙 Mesiac"],["tr","🪐 Tranzity"],["cos","🔮 Vesmír spolu"],["k","⚖️ Kombinácia"]];
+  const ev=days=>{const o={};for(const [k] of comp)o[k]={n:0,h:0};for(const l of S.log){if(!l.dir||l.bz==null||dAgo(l.d)<days)continue;
+    const lim=new Date(new Date(l.d).getTime()+days*864e5).toISOString().slice(0,10),s=MKB2[l.c],H=s&&S.hist.find(h=>h.d>=lim&&h.px[s]!=null);if(!H)continue;
+    const ch=H.px[s]-l.bz;if(Math.abs(ch)<1)continue;for(const [k] of comp){const v=l.dir[k];if(!v||Math.abs(v)<0.1)continue;o[k].n++;if(Math.sign(v)===Math.sign(ch))o[k].h++}}return o};
+  const a7=ev(7),a30=ev(30),cell=x=>x.n?`<b>${Math.round(100*x.h/x.n)} %</b><small>${x.h}/${x.n}</small>`:`<small>–</small>`,tot=a7.num.n+a7.cards.n;
+  return `<div class="card"><b>📊 Funguje vesmír? Úspešnosť smeru</b><div class="s">Koľkokrát zložka správne odhadla, či burza o 7 / 30 dní stúpne alebo klesne. 50 % = ako hod mincou. Spoľahlivé až po desiatkach záznamov.</div>
+   <div class="prd-tb"><div class="prd-r hd prd-a"><span>Zložka</span><span>7 dní</span><span>30 dní</span></div>${comp.map(([k,n])=>`<div class="prd-r prd-a"><span>${n}</span><span>${cell(a7[k])}</span><span>${cell(a30[k])}</span></div>`).join("")}</div>
+   ${tot<20?`<div class="s">Zatiaľ málo dát – prvé výsledky o týždeň, zmysluplné asi po 1–2 mesiacoch.</div>`:""}</div>`}
 
 // ---------- zobrazenie ----------
 const KN={offer:"ponuka farmára",list:"cenník",mkt:"trh",quote:"ponuka odberateľa",contract:"zmluva",burza:"odhad"};
 function msg(all){const ok=all.filter(r=>r.best&&r.best.net>0).sort((a,b)=>(b.best.tot??b.best.net)-(a.best.tot??a.best.net));
-  const L=[];for(const r of ok.slice(0,4)){const b=r.best;L.push(`<li><b>${e(CN(r.c))}:</b> kúp – <b>${e(b.a.name)}</b> za ${f0(b.a.price)} €/t${b.a.tons?` (${f1(b.a.tons)} t)`:""}, predaj – <b>${e(b.b.name)}</b> za ${f0(b.b.price)} €/t. Doprava ~${f0(b.t)} €/t${b.km!=null?` (${f0(b.km)} km)`:""} → marža <b>${sg(b.net)} €/t</b>${b.tot!=null?` ≈ <b>${f0(b.tot)} €</b>`:""}.${r.timing?(r.timing.hold?` Ak môžeš skladovať, burza ${e(r.timing.b.t)} platí po skladovaní o ${f0(r.timing.gain)} €/t viac.`:" Predávať priebežne, držanie sa podľa burzy neoplatí."):""}</li>`)}
+  const L=[];for(const r of ok.slice(0,4)){const b=r.best;L.push(`<li><b>${e(CN(r.c))}:</b> kúp – <b>${e(b.a.name)}</b> za ${f0(b.a.price)} €/t${b.a.tons?` (${f1(b.a.tons)} t)`:""}, predaj – <b>${e(b.b.name)}</b> za ${f0(b.b.price)} €/t. Doprava ~${f0(b.t)} €/t${b.km!=null?` (${f0(b.km)} km)`:""} → marža <b>${sg(b.net)} €/t</b>${b.tot!=null?` ≈ <b>${f0(b.tot)} €</b>`:""}.${(()=>{const M=mix(r);return ` 🔢 ${e(M.vn)}${M.vk!==M.vn?` · 🔮 s vesmírom: <b>${e(M.vk)}</b>`:""}.`})()}${r.timing?(r.timing.hold?` Ak môžeš skladovať, burza ${e(r.timing.b.t)} platí po skladovaní o ${f0(r.timing.gain)} €/t viac.`:" Predávať priebežne, držanie sa podľa burzy neoplatí."):""}</li>`)}
   const neg=all.filter(r=>r.best&&r.best.net<=0).map(r=>CN(r.c)),miss=all.filter(r=>!r.best&&(r.src.length||r.trend.now!=null)).map(r=>CN(r.c));
   return `<div class="card prd-msg"><div class="row"><b>📩 Správa na dnes</b><small>${new Date().toLocaleDateString("sk-SK")}</small></div>
    ${L.length?`<ol class="prd-ol">${L.join("")}</ol>`:`<div class="s">Dnes nie je žiadna overená zisková kombinácia nákup → predaj. Doplň ponuky odberateľov nižšie, potom ti vypočítam, kam predať.</div>`}
@@ -157,6 +227,7 @@ function comCard(R){const o=S.open[R.c],b=R.best,t=R.trend;
   if(!o)return h+"</div>";
   if(b)h+=`<div class="box"><div><b>Najlepšie teraz:</b> kúp: <b>${e(b.a.name)}</b> (${e(KN[b.a.k])}) ${f0(b.a.price)} €/t → predaj: <b>${e(b.b.name)}</b> (${e(KN[b.b.k])}) ${f0(b.b.price)} €/t</div>
     <div class="s">Doprava ${f0(b.t)} €/t${b.km!=null?` · ${f0(b.km)} km`:" · vzdialenosť neznáma, použitých "+f0(S.cfg.defKm)+" km"}${+S.cfg.handle?` · manipulácia ${f0(S.cfg.handle)} €/t`:""} · marža <b>${sg(b.net)} €/t</b>${b.tot!=null?` · spolu ≈ ${f0(b.tot)} €`:""}</div></div>`;
+  h+=cosmoBox(R);
   if(R.warn.length)h+=`<div class="prd-w">${R.warn.map(w=>`<div>⚠️ ${e(w)}</div>`).join("")}</div>`;
   // trend a časovanie
   const tl=[];if(t.now!=null)tl.push(`Burza teraz ${f0(t.now)} €/t${t.d7!=null?`, za 7 dní ${sg(t.d7)}`:""}${t.d30!=null?`, za 30 dní ${sg(t.d30)}`:""}.`);
@@ -215,7 +286,7 @@ window.vPred=function(){if(!OWN())return "";
    <div class="s">Kde kúpiť, kam predať a kedy – z ponúk farmárov, tvojho cenníka, trhov (HU, SK, UA hranica), burzy, ponúk a zmlúv odberateľov a nákladov dopravy.${S.mj&&S.mj.updatedAt?` Trhy: ${e(new Date(S.mj.updatedAt).toLocaleDateString("sk-SK"))}.`:""}</div>${S.err?`<div class="prd-w">⚠️ ${e(S.err)}</div>`:""}</div>`;
   h+=msg(all);
   h+=all.filter(r=>r.src.length||r.snk.some(s=>!s.ind)||r.trend.now!=null).map(comCard).join("")||`<div class="card"><div class="s">Zatiaľ chýbajú ceny.</div></div>`;
-  h+=quotes()+cfgCard()+review()+card();
+  h+=natalCard()+accCard()+quotes()+cfgCard()+review();
   return h};
 
 // ---------- udalosti ----------
@@ -229,7 +300,7 @@ document.addEventListener("click",async ev=>{if(!OWN())return;const t=ev.target;
   if(t.closest("[data-prdforgot]")){const u=(await sb.auth.getUser()).data.user;if(!u||!u.email){tst("Nepodarilo sa overiť účet.");return}
     const pw=prompt("Na zrušenie PIN-u zadaj heslo k svojmu účtu ERNTE:");if(!pw)return;const r=await sb.auth.signInWithPassword({email:u.email,password:pw});
     if(r.error){tst("Nesprávne heslo.");return}try{await sb.from("ai_state").delete().eq("key","pred_pin");S.pin=null;setFails({n:0,t:0});S.pinErr="";rr();tst("PIN zrušený, nastav nový.")}catch(er){tst("Chyba: "+er.message)}return}});
-document.addEventListener("submit",async ev=>{const f=ev.target;if(!OWN()||!["fPrdPin","fPrdQ","fPrdC"].includes(f.id))return;ev.preventDefault();ev.stopPropagation();
+document.addEventListener("submit",async ev=>{const f=ev.target;if(!OWN()||!["fPrdPin","fPrdQ","fPrdC","fPrdN"].includes(f.id))return;ev.preventDefault();ev.stopPropagation();
   const d=new FormData(f),b=f.querySelector("button[type=submit]");
   if(f.id==="fPrdPin"){const pin=String(d.get("pin")||"");if(!/^\d{4,8}$/.test(pin)){S.pinErr="PIN musí mať 4 až 8 číslic.";rr();return}
     if(!crypto||!crypto.subtle){S.pinErr="Prehliadač nepodporuje bezpečné overenie PIN.";rr();return}
@@ -245,8 +316,12 @@ document.addEventListener("submit",async ev=>{const f=ev.target;if(!OWN()||!["fP
     const q={id:Date.now().toString(36)+Math.random().toString(36).slice(2,6),buyer:String(d.get("buyer")).trim().slice(0,80),com:d.get("com"),price,place:d.get("place")||null,km:N(d.get("km")),till:d.get("till")||null,at:today()};
     const C=Object.assign({},S.cfg,{quotes:[...(S.cfg.quotes||[]),q].slice(-300)});if(typeof busy==="function")busy(b,true);
     try{await stSet("pred_cfg",C);S.cfg=C;tst("Ponuka pridaná.");rr()}catch(er){tst("Chyba: "+er.message,6000)}if(typeof busy==="function")busy(b,false);return}
+  if(f.id==="fPrdN"){const N={name:String(d.get("name")||"").trim().slice(0,60),date:d.get("date"),time:d.get("time"),place:String(d.get("place")||"").trim().slice(0,80),lat:N_(d.get("lat")),lon:N_(d.get("lon"))};
+    if(N.lat==null||N.lon==null){tst("Zadaj zemepisnú šírku a dĺžku miesta narodenia.");return}const C=Object.assign({},S.cfg,{w:Math.max(0,Math.min(100,+d.get("w")||0))});
+    try{await stSet("pred_natal",N);await stSet("pred_cfg",C);S.natal=N;S.cfg=C;S.open.__nat=false;tst("Uložené.");rr()}catch(er){tst("Chyba: "+er.message,6000)}return}
   if(f.id==="fPrdC"){const C=Object.assign({},S.cfg);for(const k of ["rate","payload","store","handle","tmin","defKm","basis"]){const v=N(d.get(k));if(v!=null&&v>=0)C[k]=v}C.ret=!!d.get("ret");if(!(C.payload>0))C.payload=25;
     try{await stSet("pred_cfg",C);S.cfg=C;S.open.__cfg=false;tst("Uložené.");rr()}catch(er){tst("Chyba: "+er.message,6000)}}},true);
+document.addEventListener("input",ev=>{const r=ev.target.closest&&ev.target.closest("[data-prdw]");if(r){const o=document.getElementById("prdWv");if(o)o.textContent=r.value+" %"}});
 // zamknutie po nečinnosti a pri odchode zo záložky
 setInterval(()=>{if(OWN()&&typeof TAB!=="undefined"&&TAB==="pred"&&S.cfg&&!unlocked()&&!document.querySelector("#fPrdPin"))rr()},30000);
 document.addEventListener("click",ev=>{const b=ev.target.closest("[data-tab]");if(b&&b.dataset.tab!=="pred")lock()},true);
@@ -263,6 +338,10 @@ const st=document.createElement("style");st.textContent=`
 .prd-r.ind{opacity:.75}.prd-r .pos{color:var(--lime)}.prd-r .neg{color:var(--bad)}
 .prd-q .row{padding:6px 0;border-top:1px solid var(--line)}.prd-q .row.old{opacity:.5}
 .prd-msg{border-color:rgba(182,255,59,.4)}
+.prd-cos{border:1px solid rgba(124,196,255,.35);background:rgba(124,196,255,.06);border-radius:16px;padding:10px 12px;display:grid;gap:5px}
+.prd-vs{display:grid;grid-template-columns:1fr 1fr;gap:8px}.prd-vs>div{display:grid;gap:2px;font-size:.84rem}.prd-vs small{color:var(--muted);font-size:.72rem}
+.prd-r.prd-a{grid-template-columns:1.4fr 1fr 1fr}.prd-r.prd-a small{display:inline;margin-left:6px}
+input[type=range][data-prdw]{width:100%}
 @media(max-width:520px){.prd-r{grid-template-columns:1fr 1fr}.prd-r.hd{display:none}}`;
 document.head.appendChild(st);
 })();
