@@ -1,5 +1,5 @@
 // ===== ERNTE · BONUSOVÝ VZOREC (−5 % a bonus až +5 %) – ZRUŠENÝ 28. 10. 2026 na žiadosť majiteľa =====
-// Farmári, obchodníci aj tím vidia jednu cenu: presne tú, ktorá je zverejnená v cenníku (automaticky z VSK + burza).
+// Farmári, obchodníci aj tím vidia jednu cenu: presne tú, ktorá je zverejnená v cenníku (automaticky podľa výkupu VSK + burza).
 // Žiadne percentá, žiadna zľava ani bonusová kalkulačka.
 // Databáza (farmer_price, cieľové ceny, predaj od farmára) berie zľavu z nastavenia price_bonus –
 // preto ho majiteľ / človek s cenníkom pri otvorení aplikácie raz nastaví na 0 %.

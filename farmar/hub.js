@@ -116,7 +116,7 @@ function dvCard(){if(ROLE!=="owner")return "";if(DV===null)setTimeout(dvLoad,0);
   if(!Array.isArray(DV))return h+`<div class="s">${DV&&DV.err?"Zapne sa po aktualizácii databázy (pár minút).":"Načítavam…"}</div></details>`;
   const q=String(DVQ).toLowerCase(),L=DV.filter(d=>!q||[d.ticket,d.farmer_name,d.plate,d.deal_no,comName(d.com)].join(" ").toLowerCase().includes(q));
   const sum=L.reduce((s,d)=>s+(+d.net_kg||0),0)/1000;
-  h+=`<div class="f"><label class="w">Hľadať (farmár, lístok, ŠPZ, zmluva)<input id="dvQ" value="${esc(DVQ)}" placeholder="napr. VSK alebo MI680FU"></label></div>
+  h+=`<div class="f"><label class="w">Hľadať (farmár, lístok, ŠPZ, zmluva)<input id="dvQ" value="${esc(DVQ)}" placeholder="napr. Hronec alebo MI680FU"></label></div>
    <div class="s"><b>${L.length}</b> lístkov · spolu <b>${fmt(sum,1)} t</b> čistej váhy</div>
    <div class="hrt"><table><thead><tr><th>Dátum</th><th>Farmár</th><th>Komodita</th><th>Čistá váha</th><th>Nečist.</th><th>ŠPZ</th><th>Zmluva</th>${can("deals")?"<th>Nákup €/t</th>":""}</tr></thead><tbody>${L.slice(0,DVN).map(d=>`<tr><td>${esc(dSK(d.day))}<small>${esc(d.ticket)}</small></td><td>${esc(d.farmer_name||"")}</td><td>${esc(comName(d.com))}</td><td>${fmt((+d.net_kg||0)/1000,3)} t</td><td>${d.impurity_pct!=null?fmt(d.impurity_pct,2)+" %":"–"}</td><td>${esc(d.plate||"")}</td><td class="${d.deal_no?"":"wn"}">${esc(d.deal_no||"bez zmluvy")}</td>${can("deals")?`<td>${d.buy_price!=null?fmt(d.buy_price):"<span class=wn>chýba</span>"}</td>`:""}</tr>`).join("")}</tbody></table></div>
    ${L.length>DVN?`<div class="btns"><button type="button" data-dvmore="1">Zobraziť ďalších ${Math.min(200,L.length-DVN)}</button></div>`:""}

@@ -39,32 +39,46 @@ const A={mk:null,px:null,mg:null,cfg:null,log:null,calc:{},pend:{},allow:{},last
 const BAS0={soja:28,repka:-15,psenica_p:-15,kukurica:-15};
 const BLBL={soja:"prémia non-GMO nad CBOT",repka:"báza pod MATIF",psenica_p:"báza pod MATIF",kukurica:"báza pod MATIF"};
 const basis=c=>{const b=A.cfg&&A.cfg.basis&&A.cfg.basis[c];return Number.isFinite(+b)&&b!==""&&b!=null?+b:BAS0[c]};
-const meth=c=>arxRow(c)?"VSK":((A.cfg&&A.cfg.method&&A.cfg.method[c]==="burza")?"burza":"region"); // VSK vždy, keď má cenu
-// VSK: cena FCA východné Slovensko (vsk). Ich logika = burza + báza; bázu zistíme z ich ceny a burzy v deň ich ceny
-// a cenu posúvame podľa dnešnej burzy: trh FCA = burza dnes + (VSK − burza v deň VSK).
+const meth=c=>arxRow(c)?"ref":((A.cfg&&A.cfg.method&&A.cfg.method[c]==="burza")?"burza":"region"); // referenčný výkup VSK vždy, keď má cenu
+// Referenčný výkup VSK (FCA východné Slovensko, zdroj iba v internom súbore). Ich logika = burza + báza.
+// Pri každej ich novej cene sa uloží báza = ich cena − burza v ten deň (história báz). Cena pre farmára = burza dnes + báza.
+// Keď 30 dní nezmenia cenu, počíta sa ich logikou: burza dnes + ich priemerná báza z posledných cien.
 const HK={repka:"matif_repka",psenica_p:"matif_psenica",psenica_k:"matif_psenica",kukurica:"matif_kukurica",soja:"cbot_soja"};
-function arxRow(c){const lim=Date.now()-30*864e5;return ((A.mk&&A.mk.rows)||[]).filter(r=>r.c===c&&/VSK/i.test(r.market)&&+r.price>0&&(!r.date||Date.parse(r.date)>=lim)).sort((a,b)=>String(b.date).localeCompare(String(a.date)))[0]||null}
+const isRef=r=>r&&(r.src==="vsk"||/\(VSK výkup\)/.test(r.market||""));
+function arxRow(c){return ((A.mk&&A.mk.rows)||[]).filter(r=>r.c===c&&isRef(r)&&+r.price>0).sort((a,b)=>String(b.date).localeCompare(String(a.date)))[0]||null}
 function histAt(k,d){const H=((A.mk&&A.mk.hist)||[]).filter(h=>h[k]!=null).sort((a,b)=>a.d.localeCompare(b.d));if(!H.length)return null;let x=H.filter(h=>h.d<=d).pop();if(!x)x=H[0];return {v:+x[k],d:x.d}}
-function arx(c,M){const r=arxRow(c);if(!r)return null;const k=HK[c];let now=null,then=null,bzN="";
-  if(k){const bz=burza({reg:null},c==="psenica_k"?"psenica_p":c);if(bz&&Number.isFinite(+bz.price)){now=+bz.price;bzN=bzName(bz)+(bz.term?" "+bz.term:"")}then=histAt(k,r.date)}
-  const b=now!=null&&then?R2(+r.price-then.v):null,mkt=b!=null?R2(now+b):+r.price,fca=R2(mkt-M);
-  return {fca,p:Math.floor(fca),arx:{price:+r.price,date:r.date,bzThen:then,bzNow:now,bzN,basis:b,mkt},pl:"VSK · FCA vých. Slovensko",src:"VSK + burza",date:r.date,ok:true,dap:mkt,dop:0}}
+function bzNowOf(c){const bz=burza({reg:null},c==="psenica_k"?"psenica_p":c);return bz&&Number.isFinite(+bz.price)?{v:+bz.price,n:bzName(bz)+(bz.term?" "+bz.term:""),d:bz.date}:null}
+// história báz (kalk_store pricelist/vsk) – doplní sa pri každej novej cene
+async function trackRef(){if(!ED()||!A.mk)return;const H=A.vsk||{};let ch=false;const today=T();
+  for(const [c] of MKL()){const r=arxRow(c);if(!r)continue;const L=H[c]||(H[c]=[]);if(L.some(x=>x.d===r.date&&+x.p===+r.price))continue;
+    const k=HK[c],now=k?bzNowOf(c):null;let bz=null;
+    if(k){const ageD=(Date.parse(today)-Date.parse(r.date))/864e5;bz=now&&ageD<=1?{v:now.v,d:today}:histAt(k,r.date)}
+    L.push({d:r.date,p:+r.price,bz:bz?bz.v:null,bzd:bz?bz.d:null,b:bz?R2(+r.price-bz.v):null,at:new Date().toISOString()});L.sort((a,b)=>a.d.localeCompare(b.d));if(L.length>60)L.splice(0,L.length-60);ch=true}
+  A.vsk=H;if(ch)await kset("pricelist","vsk",H)}
+function refMargin(){const v=A.cfg&&A.cfg.refMargin;return Number.isFinite(+v)&&v!==""&&v!=null?+v:0} // ako oni: bez odpočtu
+function arx(c){const r=arxRow(c);if(!r)return null;const M=refMargin(),k=HK[c],now=k?bzNowOf(c):null,age=(Date.now()-Date.parse(r.date))/864e5;
+  const L=((A.vsk||{})[c]||[]).filter(x=>x.b!=null);const last=L.find(x=>x.d===r.date&&+x.p===+r.price)||null;
+  let b=null,then=null,mode="cena";
+  if(k&&now){if(age<=30){if(last){b=last.b;then={v:last.bz,d:last.bzd}}else{then=histAt(k,r.date);b=then?R2(+r.price-then.v):null}mode="burza"}
+    else{const T5=L.slice(-5);if(T5.length){b=R2(T5.reduce((s,x)=>s+x.b,0)/T5.length);mode="logika"}else{then=histAt(k,r.date);b=then?R2(+r.price-then.v):null;mode="burza"}}}
+  const mkt=b!=null&&now?R2(now.v+b):+r.price,fca=R2(mkt-M);
+  return {fca,p:Math.floor(fca),arx:{price:+r.price,date:r.date,bzThen:then,bzNow:now?now.v:null,bzN:now?now.n:"",basis:b,mkt,mode,age:Math.floor(age),n:L.length,M},pl:"Výkup VSK · FCA vých. Slovensko",src:"výkup VSK + burza",date:r.date,ok:true,dap:mkt,dop:0}}
 const DEF={on:true,auto:null,mine:{},mineDays:7,remindDays:7,step:1,maxJump:0,lastMineAt:null,since:null};
 
 async function kget(path,id){try{const r=await sb.from("kalk_store").select("data,updated_at").eq("path",path).eq("id",id).maybeSingle();return r.error?undefined:(r.data?r.data.data:null)}catch(x){return undefined}}
 async function kset(path,id,data){try{const r=await sb.from("kalk_store").upsert({path,id,data},{onConflict:"path,id"});return !r.error}catch(x){return false}}
 async function loadAll(force){if(!force&&Date.now()-A.loadedAt<4*60e3&&A.cfg)return;
-  const [mf,ml,px,mg,cfg,log]=await Promise.all([
+  const [mf,ml,px,mg,cfg,log,vsk]=await Promise.all([
     fetch("market.json",{cache:"no-store"}).then(r=>r.ok?r.json():null).catch(()=>null),
     kget("market","latest"),
     sb.from("market_px").select("*").then(r=>r.error?null:r.data).catch(()=>null),
-    kget("config","margins"),kget("pricelist","auto"),kget("pricelist","log")]);
+    kget("config","margins"),kget("pricelist","auto"),kget("pricelist","log"),kget("pricelist","vsk")]);
   const t=v=>v&&v.updatedAt?Date.parse(v.updatedAt):0;A.mk=t(ml)>t(mf)?ml:(mf||ml||null);
   A.px=px?Object.fromEntries(px.map(x=>[x.sym,x])):null;A.mg=mg||null;
   A.cfg=Object.assign({},DEF,cfg||{});A.cfg.mine=A.cfg.mine||{};
   if(!A.cfg.auto){// prvé zapnutie: automaticky iba komodity, ktoré majú odberateľa a sú dnes v cenníku
     A.cfg.auto={};for(const c of AUTO_COMS){const p=(STATE.prices||[]).find(x=>x.com===c);A.cfg.auto[c]=!!(p&&p.price!=null)}}
-  A.cfg.maxJump=0;for(const [c] of MKL())if(arxRow(c)&&!A.cfg.auto[c]&&!A.cfg.mine[c])A.cfg.auto[c]=true; // VSK vždy automaticky, bez percentového potvrdzovania
+  A.vsk=vsk||{};A.cfg.maxJump=0;for(const [c] of MKL())if(arxRow(c)&&!A.cfg.auto[c]&&!A.cfg.mine[c])A.cfg.auto[c]=true; // výkup VSK vždy automaticky, bez percentového potvrdzovania
   A.cfgSaved=!!cfg;A.log=(log&&log.items)||[];A.loadedAt=Date.now()}
 
 // ---- výpočet (kópia logiky z Kalkulačky) ----
@@ -103,7 +117,7 @@ function calc(){const out={},M=margin();
         bzDap,bzFca:bzDap!=null?R2(bzDap-dop-M):null,bzName:bzr?bzName(bzr)+(bzr.term?" "+bzr.term:""):"",bzOk:bzAge<=12,byBz:!!E.byBz};
       const all=(out[com]&&out[com].all)||[];all.push(it);
       if(!out[com]||(ok&&!out[com].ok)||(ok===out[com].ok&&fca>out[com].fca))out[com]=Object.assign({},it,{all});else out[com].all=all}}
-  for(const [c] of MKL()){if(meth(c)!=="VSK")continue;const x=arx(c,M);if(!x)continue;out[c]=Object.assign({},out[c]||{},x,{all:(out[c]&&out[c].all)||[],over:false,byBz:false,rg:out[c]&&out[c].dop?out[c]:null})}
+  for(const [c] of MKL()){if(meth(c)!=="ref")continue;const x=arx(c);if(!x)continue;out[c]=Object.assign({},out[c]||{},x,{all:(out[c]&&out[c].all)||[],over:false,byBz:false,rg:out[c]&&out[c].dop?out[c]:null})}
   return out}
 
 // ---- zverejnenie ----
@@ -111,7 +125,7 @@ let running=false;
 async function logAdd(items){if(!items.length)return;await loadAll();const L=(A.log||[]).concat(items).slice(-300);A.log=L;await kset("pricelist","log",{items:L})}
 async function saveCfg(){A.cfg.since=A.cfg.since||new Date().toISOString();const ok=await kset("pricelist","auto",A.cfg);if(ok)A.cfgSaved=true;return ok}
 async function run(force){if(!ED()||running)return;if(!force&&Date.now()-A.lastRun<5*60e3)return;running=true;A.err="";
-  try{await loadAll(force);if(!A.cfgSaved&&OWN())await saveCfg();if(!A.cfg.on){A.lastRun=Date.now();return}
+  try{await loadAll(force);await trackRef();if(!A.cfgSaved&&OWN())await saveCfg();if(!A.cfg.on){A.lastRun=Date.now();return}
     if(!A.mk&&!A.px){A.err="Trhové ceny sa nenačítali – cenník zostal bez zmeny.";return}
     const C=calc();A.calc=C;const cur=Object.fromEntries((STATE.prices||[]).map(p=>[p.com,p.price==null?null:+p.price]));
     const t=T(),ch=[],pend={},exp=[];let dirty=false;
@@ -176,11 +190,11 @@ function cardHTML(){if(!ED())return "";if(!A.cfg)return `<div class="card acn-ca
   const C=A.calc||{},own=OWN(),cur=Object.fromEntries((STATE.prices||[]).map(p=>[p.com,p.price==null?null:+p.price])),t=T();
   const rows=MKL().map(([c,n])=>{const a=C[c],mine=A.cfg.mine[c],mv=mine&&(!mine.till||mine.till>=t),au=!!A.cfg.auto[c],has=AUTO_COMS.includes(c);
     const st=mv?`<span class="acn-m">✍️ moja do <input type="date" data-acntill="${e(c)}" value="${e(mine.till||"")}" aria-label="Moja cena ${e(n)} platí do"></span><button type="button" class="acn-x" data-acn="back:${e(c)}">↩ auto</button>`
-      :arxRow(c)?`<span class="acn-sw">🏷️ VSK · vždy automaticky</span>`:has?`<label class="acn-sw"><input type="checkbox" data-acnauto="${e(c)}"${au?" checked":""}> 🤖 automaticky</label>`:`<span class="acn-n">bez odberateľa – iba tvoja cena</span>`;
+      :arxRow(c)?`<span class="acn-sw">🏷️ výkup VSK · vždy automaticky</span>`:has?`<label class="acn-sw"><input type="checkbox" data-acnauto="${e(c)}"${au?" checked":""}> 🤖 automaticky</label>`:`<span class="acn-n">bez odberateľa – iba tvoja cena</span>`;
     const av=a?`<b>${f0(a.p)}</b>${a.ok?"":` <em class="acn-old" title="Trhová cena je stará – nezverejňuje sa">staré dáta</em>`}`:"<b>–</b>";
     const pd=A.pend&&A.pend[c];
     const dt=a?`<div class="acn-dap">${a.all.slice().sort((x,y)=>y.dap-x.dap).map(x=>`<span class="${x.pl===a.pl?"best":""}"><b>DAP ${e(x.pl.replace("Bunge · ","Bunge "))}</b> ${f0(x.dap)} €/t<small>${x.farm!=null?`farmári v regióne ${f0(x.farm)} + doprava ${f0(x.dop)}`:e(x.src)}${x.date?" · "+dk(x.date):""}</small></span>`).join("")}</div>
-      ${a.arx?`<div class="acn-arx">🏷️ <b>VSK FCA vých. SK ${f0(a.arx.price)} €/t</b> (${dk(a.arx.date)})${a.arx.basis!=null?` = ${e(a.arx.bzN.split(" ")[0])} v ten deň ${f2(a.arx.bzThen.v)} ${a.arx.basis>=0?"+":"−"} báza ${f2(Math.abs(a.arx.basis))}<br>→ dnes ${e(a.arx.bzN)} ${f2(a.arx.bzNow)} ${a.arx.basis>=0?"+":"−"} ${f2(Math.abs(a.arx.basis))} = trh FCA <b>${f2(a.arx.mkt)}</b>`:" · bez burzy, cena VSK"}${own?` − odpočet ${f2(margin())}`:""} = <b>${f2(a.fca)}</b> → <b>${f0(a.p)} €/t</b></div>`:""}
+      ${a.arx?`<div class="acn-arx">🏷️ <b>Výkup VSK (FCA vých. SK) ${f0(a.arx.price)} €/t</b> · ${dk(a.arx.date)}${a.arx.age>30?` · <b>${a.arx.age} dní bez zmeny</b>`:""}<br>${a.arx.basis==null?"burzu nemá – platí ich posledná cena":a.arx.mode==="logika"?`ich logika: priemerná báza z ${Math.min(5,a.arx.n)} posledných cien ${a.arx.basis>=0?"+":"−"}${f2(Math.abs(a.arx.basis))}`:`báza = ${f0(a.arx.price)} − ${e(a.arx.bzN.split(" ")[0])} v ten deň ${f2(a.arx.bzThen&&a.arx.bzThen.v)} = ${a.arx.basis>=0?"+":"−"}${f2(Math.abs(a.arx.basis))}`}${a.arx.basis!=null?`<br>→ dnes ${e(a.arx.bzN)} ${f2(a.arx.bzNow)} ${a.arx.basis>=0?"+":"−"} ${f2(Math.abs(a.arx.basis))} = <b>${f2(a.arx.mkt)}</b>`:""}${a.arx.M?` − odpočet ${f2(a.arx.M)}`:""} → <b>${f0(a.p)} €/t</b>${own?`<label class="acn-rm2">Odpočet pri výkupe VSK €/t <input data-acncfg="refMargin" inputmode="decimal" value="${e(String(refMargin()).replace(".",","))}"></label>`:""}</div>`:""}
       ${(()=>{const b=a.arx?a.rg:a;return b?`<div${a.arx?' class="acn-cmp"':""}>${a.arx?"Pre porovnanie región: ":""}→ FCA pre farmára = DAP ${e(b.pl)} ${f2(b.dap)} − doprava ${f2(b.dop)}${own?` − odpočet ${f2(margin())}`:""} = <b>${f2(b.fca)}</b> → <b>${f0(b.p)} €/t</b>${b.over?` · <em class="acn-old">nad burzou ${f0(b.bz)}</em>`:""}${b.mk?`<br><small>Zdroj: ${e(b.mk)}</small>`:""}</div>`:""})()}${BAS0[c]!=null&&a.bzDap!=null?`<div class="acn-bl"><b>📈 Logika spracovateľa podľa burzy:</b> ${e(a.bzName)} ${f0(a.bz)} ${basis(c)>=0?"+":"−"} ${f0(Math.abs(basis(c)))} ${e(BLBL[c])} = DAP ${f0(a.bzDap)} → FCA <b>${f0(Math.floor(a.bzFca))} €/t</b>${a.bzOk?"":" (burza je stará)"}${a.byBz?" · <b>používa sa</b>":` · oproti regiónu ${Math.floor(a.bzFca)-a.p>=0?"+":"−"}${f0(Math.abs(Math.floor(a.bzFca)-a.p))} €/t`}
         ${own&&!arxRow(c)?`<div class="acn-blc"><label>Cenu počítať<select data-acnmeth="${e(c)}"><option value="region"${meth(c)==="region"?" selected":""}>z regiónu (DAP farmárov)</option><option value="burza"${meth(c)==="burza"?" selected":""}>podľa burzy (logika spracovateľa)</option></select></label><label>${e(BLBL[c])} €/t<input data-acnbas="${e(c)}" inputmode="decimal" value="${e(String(basis(c)).replace(".",","))}"></label></div>`:""}</div>`:""}${pd?`<div class="acn-pd">⏳ čaká na tvoje potvrdenie (${f0(pd.old)} → ${f0(pd.tgt)}) <button type="button" data-acn="allow:${e(c)}">Zverejniť</button></div>`:""}`:(has?"bez trhových dát":"");
     return `<div class="acn-r${mv?" mine":au&&has?" on":""}"><div class="acn-rh"><b class="n">${e(n)}</b><span class="v"><small>zverejnené</small>${cur[c]==null?"<b class='no'>–</b>":"<b>"+f0(cur[c])+"</b>"}</span><span class="v a"><small>automatická</small>${av}</span></div>${dt?`<div class="acn-rd">${dt}</div>`:""}<div class="acn-rm">${st}</div></div>`}).join("");
@@ -204,7 +218,7 @@ function css(){if(document.getElementById("acnCss"))return;const s=document.crea
 .acn-rows{display:grid;gap:8px;margin:12px 0}.acn-r{border:1px solid rgba(255,255,255,.1);border-radius:16px;padding:10px 12px;background:rgba(255,255,255,.03)}
 .acn-r.on{border-color:rgba(182,255,59,.35)}.acn-r.mine{border-color:rgba(255,196,87,.55)}.acn-rh{display:grid;grid-template-columns:1fr auto auto;gap:12px;align-items:end}
 .acn-rh .n{font-size:.95rem}.acn-r.on .n{color:#B6FF3B}.acn-r.mine .n{color:#FFC457}.acn-rh .v{display:grid;justify-items:end;line-height:1.1}.acn-rh .v small{font-size:.66rem;opacity:.6}.acn-rh .v b{font-size:1.15rem}.acn-rh .v b.no{opacity:.4}.acn-rh .v.a b{opacity:.85}
-.acn-rd{font-size:.76rem;opacity:.85;margin-top:6px;line-height:1.4}.acn-dap{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:6px}.acn-dap span{display:grid;padding:6px 10px;border-radius:12px;border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.04)}.acn-dap span.best{border-color:rgba(182,255,59,.6);background:rgba(182,255,59,.08)}.acn-dap small{opacity:.7;font-size:.7rem}.acn-pd{margin-top:6px;color:#FFC457}.acn-arx{margin:2px 0 8px;padding:8px 10px;border-radius:12px;background:rgba(182,255,59,.08);border:1px solid rgba(182,255,59,.45);line-height:1.45}.acn-cmp{opacity:.6}.acn-bl{margin-top:8px;padding:8px 10px;border-radius:12px;background:rgba(130,190,255,.07);border:1px solid rgba(130,190,255,.25)}.acn-blc{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:8px;margin-top:6px}.acn-blc label{font-size:.74rem}.acn-pd button{min-height:30px;padding:0 12px;margin-left:6px}.acn-rm{margin-top:6px;display:flex;flex-wrap:wrap;gap:6px;align-items:center}html[data-theme=light] .acn-r.on .n{color:#4d7c00}html[data-theme=light] .acn-r.mine .n{color:#b26b00}.acn-old{color:#FFC457;font-style:normal;font-size:.72rem}.acn-sw{display:inline-flex;gap:6px;align-items:center;white-space:nowrap;font-size:.82rem}.acn-sw input{width:auto;min-height:0}
+.acn-rd{font-size:.76rem;opacity:.85;margin-top:6px;line-height:1.4}.acn-dap{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:6px}.acn-dap span{display:grid;padding:6px 10px;border-radius:12px;border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.04)}.acn-dap span.best{border-color:rgba(182,255,59,.6);background:rgba(182,255,59,.08)}.acn-dap small{opacity:.7;font-size:.7rem}.acn-pd{margin-top:6px;color:#FFC457}.acn-arx{margin:2px 0 8px;padding:8px 10px;border-radius:12px;background:rgba(182,255,59,.08);border:1px solid rgba(182,255,59,.45);line-height:1.45}.acn-cmp{opacity:.6}.acn-rm2{display:flex;gap:8px;align-items:center;margin-top:6px;font-size:.76rem;opacity:.85}.acn-rm2 input{width:90px;min-height:32px;padding:2px 8px}.acn-bl{margin-top:8px;padding:8px 10px;border-radius:12px;background:rgba(130,190,255,.07);border:1px solid rgba(130,190,255,.25)}.acn-blc{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:8px;margin-top:6px}.acn-blc label{font-size:.74rem}.acn-pd button{min-height:30px;padding:0 12px;margin-left:6px}.acn-rm{margin-top:6px;display:flex;flex-wrap:wrap;gap:6px;align-items:center}html[data-theme=light] .acn-r.on .n{color:#4d7c00}html[data-theme=light] .acn-r.mine .n{color:#b26b00}.acn-old{color:#FFC457;font-style:normal;font-size:.72rem}.acn-sw{display:inline-flex;gap:6px;align-items:center;white-space:nowrap;font-size:.82rem}.acn-sw input{width:auto;min-height:0}
 .acn-sw.big{font-size:.86rem;font-weight:600}.acn-m{display:inline-flex;gap:4px;align-items:center;white-space:nowrap;font-size:.8rem}.acn-m input{width:auto;min-height:32px;padding:2px 6px;font-size:.8rem}.acn-x{min-height:30px;padding:0 10px;font-size:.78rem;margin-top:4px}.acn-n{font-size:.76rem;opacity:.65}
 .acn-cfg{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin:6px 0 10px}.acn-cfg small{display:block;opacity:.65;font-size:.72rem}
 .acn-st{font-size:.78rem;opacity:.75;margin:6px 0}.acn-st .bad{color:#ff7b7b}.acn-h ul{list-style:none;padding:0;margin:8px 0;display:grid;gap:4px;font-size:.82rem}.acn-h li span{opacity:.6;font-size:.76rem}.acn-h li small{opacity:.7}
@@ -238,7 +252,7 @@ document.addEventListener("change",async ev=>{const t=ev.target;if(!t||!A.cfg)re
   if(t.matches("[data-acnbas]")&&OWN()){const v=typeof num==="function"?num(t.value):parseFloat(t.value);A.cfg.basis=A.cfg.basis||{};A.cfg.basis[t.dataset.acnbas]=Number.isFinite(v)?v:null;await saveCfg();await run(true);return}
   if(t.matches("[data-acntill]")){const c=t.dataset.acntill;if(A.cfg.mine[c]){A.cfg.mine[c].till=t.value||addD(T(),+A.cfg.mineDays||7);await saveCfg();await run(true)}return}
   if(t.matches("[data-acncfg]")&&OWN()){const k=t.dataset.acncfg,v=typeof num==="function"?num(t.value):parseFloat(t.value);
-    if(k==="marginOwn")A.cfg.marginOwn=t.value.trim()===""||!Number.isFinite(v)?null:v;else if(Number.isFinite(v)&&v>=0)A.cfg[k]=v;
+    if(k==="refMargin")A.cfg.refMargin=Number.isFinite(v)?v:0;else if(k==="marginOwn")A.cfg.marginOwn=t.value.trim()===""||!Number.isFinite(v)?null:v;else if(Number.isFinite(v)&&v>=0)A.cfg[k]=v;
     await saveCfg();if(typeof toast==="function")toast("Uložené.");await run(true)}},true);
 
 // ---- štart: majiteľ a ľudia s cenníkom + kalkulačkou; kontrola každých 20 min a pri návrate do aplikácie ----
