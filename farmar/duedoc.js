@@ -51,9 +51,64 @@ async function sendPdf(d,btn){const lab=btn&&btn.textContent;if(btn){btn.disable
     if(navigator.canShare&&navigator.canShare({files:[file]})){try{await navigator.share({files:[file],title:d[2]});return}catch(x){if(x&&x.name==="AbortError")return}}
     const a=document.createElement("a"),u=URL.createObjectURL(file);a.href=u;a.download=name;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(u),6e4);say("PDF uložené – pošlite ho cez WhatsApp ako dokument.",5000)}
   catch(x){say("PDF sa nepodarilo pripraviť.")}finally{if(btn){btn.disabled=false;btn.textContent=lab}}}
-window.dueBtns=i=>`<div class="btns duebtns"><button type="button" class="lime" data-duemsg="${i}">💬 Poslať správu</button><button type="button" data-duepdf="${i}">📄 Poslať PDF</button></div>`;
+// ---------- komu: pamätá si príjemcov a históriu odoslaní (v tomto zariadení) ----------
+const HK="ernte-due-sent",RK="ernte-due-people";
+const ld=k=>{try{return JSON.parse(localStorage.getItem(k)||"null")}catch(x){return null}},sv=(k,v)=>{try{localStorage.setItem(k,JSON.stringify(v))}catch(x){}};
+const hist=()=>ld(HK)||{},people=()=>ld(RK)||[];
+const idOf=d=>d[0]+"|"+String(d[2]).slice(0,40);
+const telOf=v=>{let t=String(v||"").replace(/[^\d+]/g,"");if(!t)return "";if(t.startsWith("+"))return t.slice(1);if(t.startsWith("00"))return t.slice(2);if(t.startsWith("0"))return "421"+t.slice(1);return t};
+const isMail=v=>/@/.test(String(v||""))&&!/@tel\.ernte\.sk$/.test(v);
+function team(){const L=(typeof STATE!=="undefined"&&STATE.staff)||[];return L.filter(p=>p.role!=="owner").map(p=>{const em=String(p.email||""),tel=p.phone||(em.endsWith("@tel.ernte.sk")?"+"+em.split("@")[0]:"");return {n:p.name,c:tel||(isMail(em)?em:""),t:"tím"}}).filter(p=>p.c)}
+function log(d,r,how,kind){const H=hist(),k=idOf(d);(H[k]=H[k]||[]).unshift({n:r.n,c:r.c,how,kind,at:new Date().toISOString()});H[k]=H[k].slice(0,30);sv(HK,H);
+  const P=people().filter(p=>!(p.n===r.n&&p.c===r.c));P.unshift({n:r.n,c:r.c});sv(RK,P.slice(0,30));if(typeof renderStaff==="function")renderStaff()}
+const dt=x=>new Date(x).toLocaleString("sk-SK",{day:"numeric",month:"numeric",hour:"2-digit",minute:"2-digit"});
+const HOW={wa:"WhatsApp",sms:"SMS",mail:"e-mail",share:"menu telefónu"};
+window.dueBtns=i=>{const d=(window.ERNTE_DUE||[])[i];const H=d?(hist()[idOf(d)]||[]):[];
+  return `<div class="btns duebtns"><button type="button" class="lime" data-duemsg="${i}">💬 Poslať správu</button><button type="button" data-duepdf="${i}">📄 Poslať PDF</button></div>${H.length?`<details class="duehist"><summary>✓ Odoslané ${H.length}× · naposledy ${e(H[0].n)} (${e(dt(H[0].at))})</summary>${H.map(h=>`<div>${h.kind==="pdf"?"📄":"💬"} <b>${e(h.n)}</b> · ${e(HOW[h.how]||h.how)} · ${e(dt(h.at))}</div>`).join("")}</details>`:""}`};
+let PK=null;
+function picker(i,kind){const d=(window.ERNTE_DUE||[])[i];if(!d)return;if(typeof loadTeam==="function"&&typeof STATE!=="undefined"&&!STATE.staff)loadTeam().then(()=>{if(PK)paint()});
+  PK={i,kind,d,sel:null,q:""};paint()}
+function cands(){const H=hist()[idOf(PK.d)]||[],seen=new Set(),out=[];const add=(r,tag)=>{const k=r.n+"|"+r.c;if(seen.has(k)||!r.c)return;seen.add(k);out.push({...r,tag})};
+  H.forEach(h=>add({n:h.n,c:h.c},"✓ už dostal"));people().forEach(p=>add(p,"naposledy"));team().forEach(p=>add(p,"tím"));return out}
+function paint(){let o=document.getElementById("duePk");if(!PK){if(o)o.remove();return}if(!o){o=document.createElement("div");o.id="duePk";o.className="duepk";document.body.appendChild(o);o.addEventListener("click",ev=>{if(ev.target===o){PK=null;paint()}})}
+  const C=cands(),q=PK.q.toLowerCase(),L=C.filter(r=>!q||(r.n+" "+r.c).toLowerCase().includes(q)),H=hist()[idOf(PK.d)]||[];
+  o.innerHTML=`<div class="duepb" role="dialog" aria-modal="true" aria-label="Komu poslať"><div class="duehd"><b>${PK.kind==="pdf"?"📄 Poslať PDF":"💬 Poslať správu"} – komu?</b><button type="button" class="duex" data-duex aria-label="Zavrieť">✕</button></div>
+   <div class="s">${PK.d[1]} ${e(PK.d[2])}</div>
+   ${H.length?`<div class="duesent">✓ Už odoslané: ${[...new Set(H.map(h=>h.n))].map(e).join(", ")}</div>`:""}
+   <input class="dueq" id="dueQ" type="search" placeholder="🔎 Hľadať meno alebo číslo…" value="${e(PK.q)}">
+   <div class="duel">${L.length?L.map((r,k)=>`<button type="button" class="duer" data-duepick="${C.indexOf(r)}"><span><b>${e(r.n)}</b><small>${e(r.c)}</small></span><em>${e(r.tag)}</em></button>`).join(""):`<div class="s">Zatiaľ nikto uložený – pridaj príjemcu nižšie. Aplikácia si ho zapamätá.</div>`}</div>
+   <form class="duenew" id="dueNew"><b>➕ Nový príjemca</b><input name="n" placeholder="Meno (napr. Janka – účtovníčka)" required><input name="c" placeholder="Mobil alebo e-mail" required inputmode="email" autocapitalize="off"><button type="submit" class="lime">Pokračovať</button></form>
+   <button type="button" class="dueany" data-dueany>Bez výberu – otvoriť menu telefónu</button></div>`;
+  const qi=o.querySelector("#dueQ");qi.addEventListener("input",()=>{PK.q=qi.value;const p=qi.selectionStart;paint();const n=document.getElementById("dueQ");n.focus();n.setSelectionRange(p,p)})}
+function how(r){const o=document.getElementById("duePk");const tel=telOf(r.c),mail=isMail(r.c);
+  o.querySelector(".duepb").innerHTML=`<div class="duehd"><b>Poslať: ${e(r.n)}</b><button type="button" class="duex" data-duex aria-label="Zavrieť">✕</button></div><div class="s">${e(r.c)}</div>
+   ${PK.kind==="pdf"?`<div class="s">PDF sa otvorí v menu telefónu – vyber WhatsApp alebo e-mail a ${e(r.n)}. Zapíše sa, že si ho poslal.</div><button type="button" class="lime duego" data-duehow="share">📄 Pripraviť a odoslať PDF</button>`
+   :`${tel&&!mail?`<button type="button" class="lime duego" data-duehow="wa">🟢 WhatsApp priamo ${e(r.n)}</button><button type="button" class="duego" data-duehow="sms">✉️ SMS</button>`:""}${mail?`<button type="button" class="lime duego" data-duehow="mail">📧 E-mail</button>`:""}<button type="button" class="duego" data-duehow="share">📤 Iné (menu telefónu)</button>`}
+   <button type="button" class="dueany" data-dueback>← späť na výber</button>`;PK.sel=r}
+async function go(h,btn){const r=PK.sel,d=PK.d,t=text(d),tel=telOf(r.c);
+  if(PK.kind==="pdf"){const k=PK;PK=null;paint();await sendPdf(d,btn);log(d,r,"share","pdf");return}
+  if(h==="wa"){window.open("https://wa.me/"+tel+"?text="+encodeURIComponent(t),"_blank")}
+  else if(h==="sms"){location.href="sms:+"+tel+"?&body="+encodeURIComponent(t)}
+  else if(h==="mail"){location.href="mailto:"+encodeURIComponent(r.c)+"?subject="+encodeURIComponent("Termín: "+d[2])+"&body="+encodeURIComponent(t.replace(/\*/g,""))}
+  else{try{await navigator.share({text:t})}catch(x){if(x&&x.name==="AbortError")return}}
+  log(d,r,h,"msg");PK=null;paint();say("✓ Zapísané: "+r.n)}
+{const s=document.createElement("style");s.textContent=`.duehist{margin-top:6px;font-size:.8rem;opacity:.85}.duehist summary{cursor:pointer;color:var(--ok,#7ee787);list-style:none}.duehist summary::-webkit-details-marker{display:none}.duehist div{padding:3px 0}
+.duepk{position:fixed;inset:0;z-index:10060;background:rgba(0,0,0,.66);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);display:flex;align-items:flex-end;justify-content:center}@media(min-width:700px){.duepk{align-items:center}}
+.duepb{width:min(560px,100%);max-height:90vh;overflow:auto;display:grid;gap:10px;padding:16px 16px calc(16px + env(safe-area-inset-bottom,0px));border-radius:24px 24px 0 0;background:linear-gradient(160deg,rgba(28,34,46,.98),rgba(12,16,24,.99));border:1px solid rgba(255,255,255,.16);color:#eef2f7}@media(min-width:700px){.duepb{border-radius:24px}}
+html[data-theme=light] .duepb{background:#fff;color:#0f172a}.duehd{display:flex;justify-content:space-between;align-items:center;gap:10px}.duex{min-height:40px;min-width:40px;padding:0;border-radius:50%}
+.duesent{font-size:.85rem;color:#7ee787}.dueq,.duenew input{width:100%;min-height:48px;font-size:16px;border-radius:14px;padding:0 14px}
+.duel{display:grid;gap:6px}.duer{display:flex;justify-content:space-between;align-items:center;gap:10px;text-align:left;min-height:56px;padding:8px 14px;border-radius:14px;width:100%}.duer b{display:block}.duer small{opacity:.7}.duer em{font-style:normal;font-size:.72rem;opacity:.75;white-space:nowrap}
+.duenew{display:grid;gap:8px;padding:12px;border-radius:16px;border:1px dashed rgba(255,255,255,.2)}.duego{min-height:52px;width:100%;font-weight:700}.dueany{min-height:44px;background:none;border:0;opacity:.8;text-decoration:underline}`;document.head.appendChild(s)}
 {const s=document.createElement("style");s.textContent=`.duebtns{margin-top:6px;gap:8px}.duebtns button{min-height:40px;padding:0 14px;font-size:.85rem}`;document.head.appendChild(s)}
-document.addEventListener("click",ev=>{const b=ev.target.closest&&ev.target.closest("[data-duemsg],[data-duepdf]");if(!b)return;ev.preventDefault();ev.stopPropagation();
-  const D=window.ERNTE_DUE||[],d=D[+(b.dataset.duemsg??b.dataset.duepdf)];if(!d)return;if(b.dataset.duemsg!=null)shareText(d);else sendPdf(d,b)},true);
+document.addEventListener("click",ev=>{const g=s=>ev.target.closest&&ev.target.closest(s);let b;
+  if(b=g("[data-duemsg],[data-duepdf]")){ev.preventDefault();ev.stopPropagation();picker(+(b.dataset.duemsg??b.dataset.duepdf),b.dataset.duemsg!=null?"msg":"pdf");return}
+  if(!PK)return;
+  if(g("[data-duex]")){PK=null;paint();return}
+  if(g("[data-dueback]")){paint();return}
+  if(b=g("[data-duepick]")){how(cands()[+b.dataset.duepick]);return}
+  if(b=g("[data-duehow]")){go(b.dataset.duehow,b);return}
+  if(g("[data-dueany]")){const d=PK.d,k=PK.kind;PK=null;paint();if(k==="pdf")sendPdf(d,null);else shareText(d);return}},true);
+document.addEventListener("submit",ev=>{if(ev.target.id!=="dueNew")return;ev.preventDefault();const f=new FormData(ev.target),r={n:String(f.get("n")||"").trim(),c:String(f.get("c")||"").trim()};if(!r.n||!r.c)return;
+  const P=people().filter(p=>!(p.n===r.n&&p.c===r.c));P.unshift(r);sv(RK,P.slice(0,30));how(r)},true);
 window.dueText=text;
 })();
