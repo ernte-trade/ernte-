@@ -106,6 +106,8 @@ const _sf=window.startFarmer;window.startFarmer=async function(){if(FARMER&&FARM
 
 // ===== TÍM A PRÍSTUPY (iba majiteľ) =====
 let TOPEN=null,TADD=null,TEDIT=null;
+// z Evidencie: otvorí Tím s predvyplneným menom a funkciou
+window.teamAddFrom=function(name,title){const t=norm(title);TADD={name,title:title||"",preset:t.includes("vedu")||t.includes("zastup")?"veduci":t.includes("vodic")||t.includes("dopr")?"doprava":t.includes("admin")||t.includes("faktur")?"fakt":"strojnik"};try{TAB="team"}catch(e){}if(typeof loadTeam==="function"&&!STATE.staff)loadTeam().then(()=>renderStaff());renderStaff();setTimeout(()=>{const i=document.querySelector("#fTeam2 input[name=login]");if(i){i.scrollIntoView({block:"center"});i.focus()}},120)};
 function permRows(row,rec){const R=new Set(PRESET[rec].k);let g="",h="";
   for(const [k,l,grp,hint] of PCAT){if(grp!==g){if(g)h+=`</div>`;h+=`<div class="pgrp"><b>${esc(grp)}</b>`;g=grp}
     h+=`<label class="pck"><input type="checkbox" name="p_${k}"${pOn(row,k)?" checked":""}><span>${esc(l)}${R.has(k)?` <em class="prec" title="odporúčam">★</em>`:""}${hint?`<small>${esc(hint)}</small>`:""}</span></label>`}
@@ -134,13 +136,14 @@ function addForm(){const A=TADD||{};return `<form class="card f" id="fTeam2"><di
 window.vTeam=function(){const L=STATE.staff;if(!L)return `<div class="card"><div class="s">Načítavam…</div></div>`;if(!PPL&&sb)loadPeople();
   let h="";if(STATE.invite&&STATE.invite.team)h+=inviteBox(STATE.invite,false);
   const miss=PEOPLE.filter(x=>!L.some(p=>norm(p.name).includes(x[0])));
+  h+=`<button type="button" class="lime tmaddtop" data-tadd="__new" style="width:100%;min-height:56px;font-size:1.05rem;margin:4px 0 6px">➕ Pridať zamestnanca</button>`;
   h+=`<h2>Tím a prístupy</h2><div class="card tmintro"><b>Ty rozhoduješ, kto čo vidí.</b><div class="s">Pri každom človeku ťukni <b>⚙️ Prístupy</b> a zaškrtni. ★ je moje odporúčanie. Ceny, obchody, flotilu a jazdy chráni aj databáza – kto nemá prístup, údaje vôbec nedostane.</div></div>`;
   const ord={dispatch:1,admin:2,invoice:3},emp=[...L].filter(p=>p.role!=="owner").sort((a,b)=>(ord[a.role]??9)-(ord[b.role]??9)||String(a.name).localeCompare(b.name,"sk")),own=L.filter(p=>p.role==="owner");
   h+=`<h2>Zamestnanci (${emp.length+miss.length})</h2><div class="ds-team">`+emp.map(staffCard).join("")+miss.map(x=>`<form class="ds-fc tmc tmnew" data-tnew="${x[0]}"><div class="ds-hd"><span class="ds-av" aria-hidden="true">${esc(dsIni(x[1].replace(/^(Bc|Mgr|Ing)\.\s*/,"")))}</span><span class="ds-ttl"><b>${esc(x[1])}</b><small>${esc(x[2])} · ${esc(x[3])}</small></span></div>
     <div class="tmst w">➕ ešte nemá prihlásenie · prístupy podľa funkcie <b>${esc(PRESET[x[4]].n)}</b></div>
     <label class="tmlg">Mobil alebo e-mail<input name="login" required autocapitalize="off" inputmode="tel" placeholder="0905 123 456"></label>
     <div class="btns"><button class="pri" type="submit">🔑 Vytvoriť prihlásenie a kód</button></div></form>`).join("")+`</div>`;
-  h+=`<details class="card tmmore"${TADD?" open":""}><summary>＋ Pridať iného človeka</summary>${addForm()}</details>`;
+  h+=`<details class="card tmmore" id="tmAdd"${TADD?" open":""}><summary>➕ Pridať zamestnanca</summary>${addForm()}</details>`;
   if(own.length)h+=`<details class="tmown"><summary>👑 Majitelia (${own.length})</summary><div class="ds-team">${own.map(staffCard).join("")}</div></details>`;
   return h};
 async function teamCode(login,name,role,extra){const pw=genPw()+"-"+String(10+((crypto.getRandomValues(new Uint32Array(1))[0])%90));
@@ -153,7 +156,7 @@ const presetObj=k=>Object.fromEntries(PCAT.map(p=>[p[0],PRESET[k].k.includes(p[0
 document.addEventListener("click",async e=>{if(typeof ROLE==="undefined"||ROLE!=="owner")return;const t=e.target;let x;
   if(x=t.closest("[data-tperm]")){TOPEN=TOPEN===x.dataset.tperm?null:x.dataset.tperm;TEDIT=null;renderStaff();return}
   if(x=t.closest("button[data-tedit]")){TEDIT=TEDIT===x.dataset.tedit?null:x.dataset.tedit;TOPEN=null;renderStaff();return}
-  if(x=t.closest("[data-tadd]")){const P=PEOPLE.find(p=>p[0]===x.dataset.tadd);TADD=P?{name:P[1],title:P[2],region:P[3],preset:P[4]}:null;renderStaff();setTimeout(()=>{const i=document.querySelector("#fTeam2 input[name=login]");if(i){i.scrollIntoView({block:"center"});i.focus()}},60);return}
+  if(x=t.closest("[data-tadd]")){const P=PEOPLE.find(p=>p[0]===x.dataset.tadd);TADD=P?{name:P[1],title:P[2],region:P[3],preset:P[4]}:x.dataset.tadd==="__new"?{}:null;renderStaff();setTimeout(()=>{const i=document.querySelector("#fTeam2 input[name=login]");if(i){i.scrollIntoView({block:"center"});i.focus()}},60);return}
   if(x=t.closest("[data-tpreset]")){const f=x.closest("form"),k=PRESET[x.dataset.tpreset];if(!f||!k)return;f.querySelectorAll("input[type=checkbox]").forEach(c=>{c.checked=k.k.includes(c.name.slice(2))});toast("Nastavené podľa: "+k.n+" – ulož.");return}
   if(x=t.closest("[data-tcode]")){const p=(STATE.staff||[]).find(y=>y.email===x.dataset.tcode);if(!p||!confirm("Vytvoriť nový jednorazový kód pre "+p.name+"?\nStarý kód aj PIN prestanú platiť."))return;await teamCode(p.email.replace("@tel.ernte.sk",""),p.name,p.role);return}
 },true);
