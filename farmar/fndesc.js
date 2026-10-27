@@ -9,7 +9,7 @@ const isF=()=>typeof FARMER!=="undefined"&&!!FARMER;
 const TABD={
  home:"Ranný prehľad firmy na jednom mieste: čo je nové, čo čaká na teba, termíny a upozornenia. Ťukni na dlaždicu a prejdeš rovno tam.",
  req:"Všetko, čo poslali farmári: ponuky na predaj, objednávky odvozu, otázky a súhlasy. Odpovieš, schváliš alebo z toho spravíš obchod.",
- price:"Výkupné ceny, ktoré vidia farmári v aplikácii, a ich platnosť. Pri zmene ceny farmári hneď vidia novú.",
+ price:"Výkupné ceny, ktoré vidia farmári v aplikácii, a ich platnosť. Vypĺňajú sa automaticky podľa Agro-Somotor a Bunge; tvoje vlastné ceny majú prednosť do dátumu. Pri zmene ceny farmári hneď vidia novú.",
  trans:"Odvozy komodít od farmárov: kto chce odviezť, kedy a koľko, pridelenie áut VALKO a stav jazdy.",
  fleet:"Autá VALKO: kde sú, nafta a nádrž na dvore, alarmy, vodiči, náklady a nastavenia. Sekcie vyberieš hore.",
  deals:"Kúpne zmluvy s farmármi: číslo zmluvy, cena, množstvo, čo je odvezené a čo ostáva, podpisy a archív zmlúv.",
