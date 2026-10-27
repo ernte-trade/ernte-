@@ -102,6 +102,10 @@ function pinModal(){return new Promise(res=>{const d=document.createElement("div
         /fetch|network|failed/i.test(m)?"Nie je internet alebo je slabý signál. Skúste to znova o chvíľu.":"Nepodarilo sa uložiť PIN ("+m+"). Skúste iný PIN alebo zavolajte ERNTE.");return}
     try{await sb.rpc("pin_done")}catch(x){}d.remove();toast("✓ Váš PIN je uložený. Odteraz sa prihlasujete ním.",5000);res()})})}
 async function loadMe(){try{const r=await sb.from("staff").select("*").eq("email",String(ME.email).toLowerCase()).maybeSingle();STATE.me=r.data||{role:ROLE,perms:{}}}catch(e){STATE.me={role:ROLE,perms:{}}}}
+// zmena prístupov od majiteľa sa prejaví bez odhlásenia: pri návrate do aplikácie a každé 2 minúty
+let MEAT=0;async function meRefresh(){if(typeof ROLE==="undefined"||!ROLE||ROLE==="owner"||!STATE.me||Date.now()-MEAT<60000)return;MEAT=Date.now();const old=JSON.stringify([STATE.me.perms,STATE.me.role]);await loadMe();
+  if(JSON.stringify([STATE.me.perms,STATE.me.role])!==old&&typeof renderStaff==="function"){if(typeof TAB!=="undefined"&&typeof tabOK==="function"&&!tabOK(TAB)){try{TAB="home"}catch(e){}}renderStaff();if(typeof toast==="function")toast("Prístupy boli upravené.",3000)}}
+document.addEventListener("visibilitychange",()=>{if(!document.hidden)meRefresh()});setInterval(()=>{if(!document.hidden)meRefresh()},120000);
 const _ss=window.startStaff;window.startStaff=async function(){await loadMe();if(STATE.me&&STATE.me.must_change)await pinModal();applyBig();if(ROLE!=="owner"&&!can("fleet_all")){try{FFLT="region"}catch(e){}}return _ss.apply(this,arguments)};
 const _sf=window.startFarmer;window.startFarmer=async function(){if(FARMER&&FARMER.must_change)await pinModal();applyBig();return _sf.apply(this,arguments)};
 
