@@ -12,6 +12,7 @@ const PCAT=[
  ["calc","Kalkulačka nákupnej ceny ERNTE","Obchod","odberatelia, doprava, burza"],
  ["market","Burza a trh (MATIF, CBOT)","Obchod",""],
  ["agro","Agro služby – objednávky a cenník","Obchod","bez nákladov a marže"],
+ ["danube","Danube Trade – požiadavky, služby a zmluvy Danube","Obchod","SK / HU"],
  ["trus_price","Kurací trus – ceny a podklady k faktúram","Obchod","bez zisku"],
  ["trans","Doprava – jazdy a objednávky odvozu","Vývoz",""],
  ["trus","Kurací trus – vývozy, autá, váženie","Vývoz","bez cien"],
@@ -61,7 +62,7 @@ window.canAny=(...k)=>k.some(x=>can(x));
 function fDefs(){const g=((STATE.settings||{}).farmer_perms)||{};return g}
 window.fcan=k=>{if(typeof FARMER==="undefined"||!FARMER)return true;const v=(FARMER.perms||{})[k];if(v===true||v===false)return v;const g=fDefs()[k];if(g===true||g===false)return g;return FDEF.includes(k)};
 // hlavné záložky
-const TABP={req:["req"],price:["price_view","price_edit","market"],trans:["trans","assign"],fleet:["fleet"],deals:["deals","deals_qty","remain","notes"],farm:["farm"],wx:["wx"],calc:["calc"],team:["team"],agro:["agro"],trus:["trus","trus_price"],evid:["ev","ev_doch","sklad","praca"]};
+const TABP={req:["req"],price:["price_view","price_edit","market"],trans:["trans","assign"],fleet:["fleet"],deals:["deals","deals_qty","remain","notes"],farm:["farm"],wx:["wx"],calc:["calc"],team:["team"],agro:["agro"],trus:["trus","trus_price"],evid:["ev","ev_doch","sklad","praca"],danube:["danube"]};
 window.tabOK=k=>ROLE==="owner"||(TABP[k]?TABP[k].some(can):true);
 // sekcie flotily
 const FSP={dash:["fleet"],fuel:["diesel","yard","cams"],alarm:["alarms"],money:["fleet_cost"],drv:["drivers"],veh:["drivers"],map:["fleet"],set:["fleet_set"]};

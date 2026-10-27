@@ -792,7 +792,7 @@ html[data-theme=light] .ftbl th{color:#0f172a}html[data-theme=light] .fdban{colo
 <script>try{if(localStorage.getItem('ernte-theme')==='light')document.documentElement.dataset.theme='light'}catch(e){}</script>
 <link rel="stylesheet" href="perms.css?v=20261026-1955">
 <link rel="stylesheet" href="trus.css?v=20261027-0140">
-<link rel="stylesheet" href="ev.css?v=20261027-0845">
+<link rel="stylesheet" href="ev.css?v=20261027-0900">
 </head>
 <body>
 <div class="wrap">
@@ -810,7 +810,7 @@ html[data-theme=light] .ftbl th{color:#0f172a}html[data-theme=light] .fdban{colo
 const MK=[["repka","Repka"],["lo","LO slnečnica"],["ho","HO slnečnica"],["soja","Sója"],["psenica_p","Pšenica potravinárska"],["psenica_k","Pšenica kŕmna"],["jacmen_k","Jačmeň kŕmny"],["jacmen_s","Jačmeň sladovnícky"],["kukurica","Kukurica"],["cirok","Cirok"]];
 const SPEC={kukurica:[14,2,1],soja:[12,2,1],psenica_k:[13,2],psenica_p:[14,2],jacmen_s:[14.5,2],jacmen_k:[14,2],repka:[8,2],lo:[9,2],ho:[9,2],cirok:[14,2]};
 const DST={navrh:["čaká na podpis","g"],podpisany:["podpísaný",""],odvoz:["odvoz beží","b"],odvezeny:["odvezený",""],fakturacia:["fakturácia","w"],zaplateny:["zaplatený",""],zruseny:["zrušený","r"]};
-const RST={nova:["čaká na ERNTE","w"],vybavena:["vybavené",""],zamietnuta:["zamietnuté","r"]};
+const RST={nova:["čaká na ERNTE","w"],v_spracovani:["v spracovaní","b"],vybavena:["vybavené",""],zamietnuta:["zamietnuté","r"]};
 const TST={naplanovana:["naplánovaná","b"],na_ceste:["auto na ceste","w"],nakladka:["na nakládke","w"],nalozene:["naložené",""],vylozene:["vyložené · zvážené",""],zrusena:["zrušená","r"]};
 const RKIND={sell:"Chcem predať",transport:"Objednávka odvozu",agree:"Súhlas so zmluvou",message:"Správa"};
 
@@ -1306,7 +1306,7 @@ function priceBanner(){const v=((STATE.settings||{}).pricelist||{}).valid;
   if(d<=7)return `<div class="pban w"><b>Cenník platí do ${esc(dSK(v))}, obnov ho</b><span>${d<1?"Platí už len dnes.":d===1?"Platí ešte zajtra.":"Zostáva "+d+" "+(d<5?"dni":"dní")+"."}</span></div>`;
   return ""}
 // ===== DIZAJN „sklo – diamant“: zdieľané pomocné funkcie (iba vzhľad) =====
-const TICO={nov:"🆕",evid:"📒",trus:"🐔",agro:"🚜",zuct:"🧾",home:"🏠",req:"📥",price:"💶",trans:"🚚",fleet:"🚛",deals:"🤝",farm:"👨‍🌾",wx:"🌦️",team:"👥",calc:"🧮"};
+const TICO={danube:"🌊",nov:"🆕",evid:"📒",trus:"🐔",agro:"🚜",zuct:"🧾",home:"🏠",req:"📥",price:"💶",trans:"🚚",fleet:"🚛",deals:"🤝",farm:"👨‍🌾",wx:"🌦️",team:"👥",calc:"🧮"};
 const dsF2=x=>Number.isFinite(+x)?(+x).toLocaleString("sk-SK",{minimumFractionDigits:2,maximumFractionDigits:2}):"–";
 const dsSg=x=>(x>=0?"+":"−")+Math.round(Math.abs(x)).toLocaleString("sk-SK");
 const dsSg2=x=>(x>=0?"+":"−")+dsF2(Math.abs(x));
@@ -1361,7 +1361,7 @@ document.addEventListener("click",e=>{const th=e.target.closest("[data-dstheme]"
   const op=e.target.closest("[data-tedop]");if(op){STATE.tOpen=STATE.tOpen===op.dataset.tedop?null:op.dataset.tedop;renderStaff()}});
 function renderStaff(){const nNew=STATE.reqs.filter(r=>r.status==="nova").length;
   let tabs=[["home","Prehľad"],["req",`Požiadavky${nNew?` <span class="cnt">${nNew}</span>`:""}`],["price","Cenník"],["trans",`Doprava${(STATE.reqs||[]).filter(r=>r.kind==="transport"&&r.status==="nova").length?` <span class="cnt">${STATE.reqs.filter(r=>r.kind==="transport"&&r.status==="nova").length}</span>`:""}`],["deals","Obchody"],["farm","Farmári"],["wx","Počasie"]];
-  if(typeof tabOK==="function"){tabs.splice(4,0,["fleet","Flotila"]);tabs.splice(6,0,["calc","Kalkulačka"]);tabs.splice(6,0,["zuct","Zúčtovanie"]);tabs.splice(7,0,["agro","Agro služby"]);tabs.splice(8,0,["trus",`Kurací trus${window.trusNew&&trusNew()?` <span class="cnt">${trusNew()}</span>`:""}`]);tabs.splice(9,0,["evid","Evidencia"]);tabs.push(["nov",`Novinky${window.novCnt&&novCnt()?` <span class="cnt">${novCnt()}</span>`:""}`]);if(ROLE==="owner")tabs.push(["team","Tím"]);tabs=tabs.filter(t=>tabOK(t[0]));if(!tabs.length)tabs=[["wx","Počasie"]]}
+  if(typeof tabOK==="function"){tabs.splice(4,0,["fleet","Flotila"]);tabs.splice(6,0,["calc","Kalkulačka"]);tabs.splice(6,0,["zuct","Zúčtovanie"]);tabs.splice(7,0,["agro","Agro služby"]);tabs.splice(8,0,["trus",`Kurací trus${window.trusNew&&trusNew()?` <span class="cnt">${trusNew()}</span>`:""}`]);tabs.splice(9,0,["evid","Evidencia"]);tabs.splice(4,0,["danube","Danube Trade"]);tabs.push(["nov",`Novinky${window.novCnt&&novCnt()?` <span class="cnt">${novCnt()}</span>`:""}`]);if(ROLE==="owner")tabs.push(["team","Tím"]);tabs=tabs.filter(t=>tabOK(t[0]));if(!tabs.length)tabs=[["wx","Počasie"]]}
   else{if(ROLE==="owner"||ROLE==="dispatch")tabs.splice(3,0,["fleet","Flotila"]);
   if(ROLE==="owner")tabs.push(["team","Tím"]);
   if(ROLE==="dispatch")tabs=tabs.filter(t=>["req","trans","fleet","wx"].includes(t[0]));
@@ -1370,14 +1370,14 @@ function renderStaff(){const nNew=STATE.reqs.filter(r=>r.status==="nova").length
   let h=`<nav class="tabs" aria-label="Hlavná navigácia">${tabs.map(t=>{const lb=String(t[1]).split(' <span class="cnt">');return `<button type="button" data-tab="${t[0]}" aria-pressed="${TAB===t[0]}"><span class="ti" aria-hidden="true">${TICO[t[0]]||"•"}</span><span class="tl">${lb[0]}</span>${lb[1]?'<span class="cnt">'+lb[1]:""}</button>`}).join("")}</nav>`;
   h+=`<div class="hrow"><button type="button" class="ds-theme" data-dstheme aria-label="Prepnúť svetlý / tmavý režim" title="Svetlý / tmavý režim">${document.documentElement.dataset.theme==="light"?"🌙":"☀️"}</button>${window.bigBtn?bigBtn():""}${helpBtn(TAB)}</div>`;
   if(tabs.some(t=>t[0]==="price")&&(TAB==="price"||TAB==="req"))h+=priceBanner();
-  if(TAB==="wx"&&!WXD)loadWx().then(renderStaff);if(TAB==="fleet"&&!STATE.fleet)loadFleet().then(renderStaff);if(TAB==="team"&&!STATE.staff)loadTeam().then(renderStaff);h+=({req:vReq,price:vPrice,trans:vTrans,deals:vDeals,farm:vFarm,wx:wxCard,fleet:vFleet,team:vTeam,calc:()=>window.vCalc?vCalc():"",home:()=>window.vHome?vHome():"",zuct:()=>window.vZuct?vZuct():"",agro:()=>window.vAgro?vAgro():"",trus:()=>window.vTrus?vTrus():"",evid:()=>window.vEvid?vEvid():"",nov:()=>window.vNovinky?vNovinky():""})[TAB]();if(TAB==="req")h+=pwCard();$("app").innerHTML=h;mountR();dsAfter()}
+  if(TAB==="wx"&&!WXD)loadWx().then(renderStaff);if(TAB==="fleet"&&!STATE.fleet)loadFleet().then(renderStaff);if(TAB==="team"&&!STATE.staff)loadTeam().then(renderStaff);h+=({req:vReq,price:vPrice,trans:vTrans,deals:vDeals,farm:vFarm,wx:wxCard,fleet:vFleet,team:vTeam,calc:()=>window.vCalc?vCalc():"",home:()=>window.vHome?vHome():"",zuct:()=>window.vZuct?vZuct():"",agro:()=>window.vAgro?vAgro():"",trus:()=>window.vTrus?vTrus():"",evid:()=>window.vEvid?vEvid():"",nov:()=>window.vNovinky?vNovinky():"",danube:()=>window.vDanube?vDanube():""})[TAB]();if(TAB==="req")h+=pwCard();$("app").innerHTML=h;mountR();dsAfter()}
 function vReq(){const R=STATE.reqs;if(!R.length)return `<div class="card"><div class="s">Zatiaľ žiadne požiadavky od farmárov.</div></div>`;
-  const ord=[...R.filter(r=>r.status==="nova"),...R.filter(r=>r.status!=="nova")],OWN=ROLE==="owner",RI={sell:"🌾",transport:"🚚",agree:"✍️",message:"💬"};
+  const ord=[...R.filter(r=>r.status==="nova"),...R.filter(r=>r.status==="v_spracovani"),...R.filter(r=>r.status!=="nova"&&r.status!=="v_spracovani")],OWN=ROLE==="owner",RI={sell:"🌾",transport:"🚚",agree:"✍️",message:"💬"};
   return ord.map(r=>{const fr=STATE.farmers.find(x=>x.id===r.farmer_id)||{},d=r.deal_id?STATE.deals.find(x=>x.id===r.deal_id):null;
     const com=r.com||(d&&d.com),tons=r.tons!=null?+r.tons:d?+d.tons:null,buy=r.price!=null?+r.price:d?+d.price:null,df=OWN&&d?(STATE.dfin||{})[d.id]:null,sell=df&&df.sell_price!=null?+df.sell_price:null;
     const ch=[];if(com)ch.push(dsChip("Plodina",esc(comName(com))));if(tons!=null&&isFinite(tons))ch.push(dsChip("Množstvo",fmt(tons)+" t"));if(buy!=null&&isFinite(buy)&&(!window.canAny||canAny("deals","price_view")))ch.push(dsChip("Nákup",fmt(buy)+" €/t"));
     if(OWN&&buy!=null&&(r.kind==="sell"||d)){ch.push(dsChip("Predaj",sell!=null?fmt(sell)+" €/t":"nezadané",sell!=null?"":"na",1));if(sell!=null){const m=sell-buy;ch.push(dsChip("Marža €/t",dsSg2(m),m>=0?"pos":"neg",1));if(tons!=null)ch.push(dsChip("Marža spolu",dsSg(m*tons)+" €",m>=0?"pos":"neg",1))}}
-    return `<div class="card"><div class="ds-hd"><span class="ds-ic" aria-hidden="true">${RI[r.kind]||"📩"}</span><span class="ds-ttl"><b>${esc(RKIND[r.kind]||r.kind)}</b><small>${esc(fr.name||"?")} · ${esc(dtSK(r.created_at))}</small></span>${pill(RST[r.status]||[r.status])}</div>
+    return `<div class="card"><div class="ds-hd"><span class="ds-ic" aria-hidden="true">${RI[r.kind]||"📩"}</span><span class="ds-ttl"><b>${esc(RKIND[r.kind]||r.kind)} ${window.firmBadge?firmBadge(r.firma||"ERNTE"):""}</b><small>${esc(fr.name||"?")} · ${esc(dtSK(r.created_at))}${r.accepted_by?" · prijal "+esc(r.accepted_by):""}</small></span>${pill(RST[r.status]||[r.status])}</div>
     ${ch.length?`<div class="ds-chips">${ch.join("")}</div>`:""}
     ${(()=>{const s=[d&&"zmluva "+d.no,r.trucks&&r.trucks+" kamión(y)",r.pickup_date&&"od "+dSK(r.pickup_date)+(r.pickup_time?" "+r.pickup_time:""),r.place].filter(Boolean).map(esc).join(" · ");return s?`<div class="s">${s}</div>`:""})()}
     ${r.note?`<div class="s">„${esc(r.note)}“</div>`:""}
@@ -2782,7 +2782,7 @@ document.addEventListener("input",e=>{if(e.target.id==="dfq"){const h=e.target.f
 document.addEventListener("click",e=>{const b=e.target.closest("[data-dfp]");if(!b)return;const fm=b.closest("form"),f=(STATE.farmers||[]).find(x=>x.id===b.dataset.dfp);if(!fm||!f)return;fm.elements.farmer.value=f.id;document.getElementById("dfq").value=String(f.name).trim();document.getElementById("dfl").innerHTML=`<div class="s">✓ Vybraný: <b>${esc(String(f.name).trim())}</b></div>`});
 </script>
 <script src="ai.js?v=20261027-0030"></script>
-<script src="perms.js?v=20261027-0810"></script>
+<script src="perms.js?v=20261027-0900"></script>
 <script src="bonus.js?v=20261026-2100"></script>
 <script src="hub.js?v=20261026-1830"></script>
 <script src="settle.js?v=20261026-1930"></script>
@@ -2795,7 +2795,8 @@ document.addEventListener("click",e=>{const b=e.target.closest("[data-dfp]");if(
 <script src="sus.js?v=20261027-0730"></script>
 <script src="praca.js?v=20261027-0810"></script>
 <script src="novinky.js?v=20261027-0845"></script>
-<script src="fndesc.js?v=20261027-0830"></script>
+<script src="danube.js?v=20261027-0900"></script>
+<script src="fndesc.js?v=20261027-0900"></script>
 <script src="sign.js?v=20261027-0035"></script>
 <script src="outbox.js?v=20261027-0120"></script>
 <script src="farmact.js?v=20261027-0150"></script>

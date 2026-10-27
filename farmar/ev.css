@@ -77,3 +77,14 @@ html.big .fdesc{font-size:1rem}
 .nvsum p{margin:6px 0 0;line-height:1.5}.nvsum .nvk{font-size:1.02rem}
 @media (min-width:760px){.nvday small{display:block;overflow:hidden;display:-webkit-box;-webkit-line-clamp:4;-webkit-box-orient:vertical}.nvday{min-height:150px!important}}
 html[data-theme=light] .nvday{background:linear-gradient(160deg,rgba(255,255,255,.9),rgba(240,246,255,.7))!important}
+/* Danube a nevybavené */
+.pill.dnb{background:rgba(59,130,246,.22);border-color:rgba(96,165,250,.6);color:#bfdbfe}.pill.ern{background:rgba(132,204,22,.18);border-color:rgba(182,255,59,.5);color:#d9f99d}
+html[data-theme=light] .pill.dnb{color:#1e40af}html[data-theme=light] .pill.ern{color:#3f6212}
+.pend{display:grid;gap:8px;margin:10px 0;border:1px solid rgba(251,191,36,.7)!important;background:linear-gradient(135deg,rgba(251,191,36,.20),rgba(239,68,68,.10))!important;box-shadow:0 0 30px rgba(251,191,36,.22)!important}
+.pend.pmine{animation:prg 2.2s ease-in-out infinite;border-color:rgba(248,113,113,.8)!important}.pend>.row{display:flex;align-items:center;gap:8px;flex-wrap:wrap}.pend>.row small{color:var(--muted);margin-left:auto}
+.pit{display:grid;gap:4px;padding:10px;border-radius:14px;border:1px solid var(--line2,rgba(255,255,255,.16));background:rgba(0,0,0,.12)}.pit .row{display:flex;align-items:center;gap:8px;flex-wrap:wrap}.pit .row small{color:var(--muted);margin-left:auto}
+.pn{font-weight:700;color:#fca5a5;font-size:.86rem}.pr{display:flex;flex-wrap:wrap;gap:4px 12px;font-size:.8rem;color:var(--muted)}
+.dnhero{display:grid;gap:4px;border-color:rgba(96,165,250,.45)!important;background:linear-gradient(140deg,rgba(59,130,246,.18),rgba(34,211,238,.08))!important}.dnhero span{font-weight:600}.dnhero small{color:var(--muted)}
+.dnlang{display:inline-flex;margin-left:auto;gap:4px}.dnlang button{min-height:36px!important;padding:0 10px!important;font-size:.82rem}
+.dnfl{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,220px),1fr));gap:2px}.dnr fieldset{border:1px solid var(--line2,rgba(255,255,255,.16));border-radius:14px;padding:8px 12px}.dnr legend{font-weight:700;padding:0 6px}
+.dnz,.dnc{grid-template-columns:repeat(auto-fit,minmax(min(46%,170px),1fr));align-items:end}
