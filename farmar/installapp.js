@@ -1,21 +1,44 @@
-// ===== Pridať ERNTE Trade & Logistic na plochu – po pridaní sa adresa (github) už nikde nezobrazuje =====
+// ===== Pridať ERNTE Trade & Logistic na plochu – po každom prihlásení, kým nie je aplikácia na ploche =====
+// Android/Chrome/Edge/Samsung: systémové okno „Inštalovať“ jedným ťuknutím. Kde to prehliadač nedovolí (iPhone, Firefox…),
+// tlačidlo otvorí presný návod pre ten prehliadač. „Neskôr“ skryje dlaždicu len do ďalšieho prihlásenia.
 (function(){
-const std=()=>matchMedia("(display-mode: standalone)").matches||navigator.standalone===true;
-const ios=/iphone|ipad|ipod/i.test(navigator.userAgent)||(navigator.platform==="MacIntel"&&navigator.maxTouchPoints>1);
-let ev=null;window.addEventListener("beforeinstallprompt",e=>{e.preventDefault();ev=e;sched()});
-window.addEventListener("appinstalled",()=>{ev=null;try{localStorage.setItem("ernte-inst","1")}catch(x){}const c=document.querySelector(".instc");if(c)c.remove()});
-const off=()=>{try{const t=+localStorage.getItem("ernte-inst-off")||0;return localStorage.getItem("ernte-inst")==="1"||Date.now()-t<3*864e5}catch(x){return false}};
+const std=()=>matchMedia("(display-mode: standalone)").matches||matchMedia("(display-mode: fullscreen)").matches||matchMedia("(display-mode: minimal-ui)").matches||navigator.standalone===true;
+const UA=navigator.userAgent;
+const ios=/iphone|ipad|ipod/i.test(UA)||(navigator.platform==="MacIntel"&&navigator.maxTouchPoints>1);
+const BR=ios?(/CriOS/.test(UA)?"ios-chrome":/FxiOS/.test(UA)?"ios-firefox":/EdgiOS/.test(UA)?"ios-edge":"ios-safari"):/SamsungBrowser/.test(UA)?"samsung":/EdgA|Edg\//.test(UA)?"edge":/Firefox/.test(UA)?"firefox":/OPR|Opera/.test(UA)?"opera":"chrome";
+let ev=null,shown=false;
+window.addEventListener("beforeinstallprompt",e=>{e.preventDefault();ev=e;refresh()});
+window.addEventListener("appinstalled",()=>{ev=null;try{localStorage.setItem("ernte-inst","1")}catch(x){}rm();if(typeof toast==="function")toast("✓ ERNTE Trade & Logistic je na ploche. Odteraz ju otvárajte z ikony.",6000)});
+const done=()=>{try{return localStorage.getItem("ernte-inst")==="1"}catch(x){return false}};
+const later=()=>{try{return sessionStorage.getItem("ernte-inst-later")==="1"}catch(x){return false}};
+const rm=()=>{document.querySelectorAll(".instc").forEach(c=>c.remove())};
+const STEPS={
+ "ios-safari":["Dole v Safari ťuknite na <b>Zdieľať</b> <span class=\"ishr\">⬆️</span> (štvorček so šípkou)","Posuňte nižšie a vyberte <b>Pridať na plochu</b> ➕","Vpravo hore ťuknite <b>Pridať</b>"],
+ "ios-chrome":["Vpravo hore ťuknite na <b>Zdieľať</b> <span class=\"ishr\">⬆️</span>","Vyberte <b>Pridať na plochu</b> ➕","Ťuknite <b>Pridať</b>"],
+ "ios-edge":["Dole ťuknite na <b>⋯</b> a potom <b>Zdieľať</b> <span class=\"ishr\">⬆️</span>","Vyberte <b>Pridať na plochu</b> ➕","Ťuknite <b>Pridať</b>"],
+ "ios-firefox":["Dole ťuknite na <b>☰</b> a potom <b>Zdieľať</b>","Vyberte <b>Pridať na plochu</b> ➕","Ťuknite <b>Pridať</b>"],
+ "samsung":["Dole vpravo ťuknite na <b>☰</b> (tri čiarky)","Vyberte <b>Pridať stránku do</b> → <b>Domovská obrazovka</b>","Ťuknite <b>Pridať</b>"],
+ "edge":["Dole v strede ťuknite na <b>☰</b> alebo <b>⋯</b>","Vyberte <b>Pridať do telefónu</b> / <b>Inštalovať aplikáciu</b>","Potvrďte <b>Inštalovať</b>"],
+ "firefox":["Vpravo hore ťuknite na <b>⋮</b>","Vyberte <b>Inštalovať</b> alebo <b>Pridať na plochu</b>","Potvrďte <b>Pridať</b>"],
+ "opera":["Vpravo hore ťuknite na <b>⋮</b>","Vyberte <b>Pridať na… → Domovskú obrazovku</b>","Potvrďte <b>Pridať</b>"],
+ "chrome":["Vpravo hore ťuknite na <b>⋮</b> (tri bodky)","Vyberte <b>Pridať na plochu</b> alebo <b>Inštalovať aplikáciu</b>","Potvrďte <b>Inštalovať</b>"]};
 function card(){return `<div class="card instc" role="region" aria-label="Pridať aplikáciu na plochu"><div class="instr"><img src="icon-192.png" alt=""><div><b>ERNTE Trade &amp; Logistic</b><small>Pridajte si aplikáciu na plochu – otvára sa jedným ťuknutím ako aplikácia, bez adresy a bez prehliadača.</small></div></div>
-  ${ev?`<div class="btns"><button type="button" class="lime" data-inst>📲 Pridať na plochu</button><button type="button" data-instx>Neskôr</button></div>`:
-   ios?`<ol class="insts"><li>Dole ťuknite na <b>Zdieľať</b> <span class="ishr">⬆️</span></li><li>Vyberte <b>Pridať na plochu</b> ➕</li><li>Ťuknite <b>Pridať</b> – na ploche bude ikona ERNTE</li></ol><div class="btns"><button type="button" data-instx>Rozumiem</button></div>`:
-   `<ol class="insts"><li>Vpravo hore ťuknite na <b>⋮</b></li><li>Vyberte <b>Pridať na plochu</b> alebo <b>Inštalovať aplikáciu</b></li><li>Potvrďte – na ploche bude ikona ERNTE</li></ol><div class="btns"><button type="button" data-instx>Rozumiem</button></div>`}</div>`}
-function inject(){if(std()||off())return;const app=document.getElementById("app");if(!app||app.querySelector(".instc"))return;
-  const isF=typeof FARMER!=="undefined"&&!!FARMER,isS=typeof ROLE!=="undefined"&&!!ROLE;if(!isF&&!isS)return;
-  const at=app.querySelector(".hero")||app.querySelector("nav.tabs");if(at)at.insertAdjacentHTML("afterend",card());else app.insertAdjacentHTML("afterbegin",card())}
+  <div class="btns"><button type="button" class="lime" data-inst>📲 Pridať na plochu</button><button type="button" data-instx>Neskôr</button></div><div class="insthelp" hidden></div></div>`}
+function help(c){const h=c.querySelector(".insthelp");if(!h)return;h.hidden=false;
+  h.innerHTML=`<b>${ios?"Na iPhone sa aplikácia pridáva takto":"Váš prehliadač to robí cez ponuku"}:</b><ol class="insts">${STEPS[BR].map(s=>`<li>${s}</li>`).join("")}</ol><div class="s">Na ploche potom bude ikona <b>ERNTE</b>. Aplikáciu otvárajte odteraz z nej.</div>`;
+  h.scrollIntoView({behavior:"smooth",block:"nearest"})}
+function loggedIn(){return (typeof FARMER!=="undefined"&&!!FARMER)||(typeof ROLE!=="undefined"&&!!ROLE)||(typeof ME!=="undefined"&&!!ME&&!!ME.email)}
+function inject(){if(std()||done()||later()||!loggedIn())return;const app=document.getElementById("app");if(!app||!app.children.length||app.querySelector(".instc"))return;
+  const at=app.querySelector(".hero")||app.querySelector("nav.tabs");if(at)at.insertAdjacentHTML("afterend",card());else app.insertAdjacentHTML("afterbegin",card());shown=true}
+function refresh(){sched()}
 let q=0;function sched(){if(q)return;q=requestAnimationFrame(()=>{q=0;try{inject()}catch(x){}})}
-document.addEventListener("click",async e=>{const t=e.target;
-  if(t.closest&&t.closest("[data-inst]")&&ev){ev.prompt();const r=await ev.userChoice.catch(()=>null);if(r&&r.outcome==="accepted"){try{localStorage.setItem("ernte-inst","1")}catch(x){}}ev=null;const c=document.querySelector(".instc");if(c)c.remove();return}
-  if(t.closest&&t.closest("[data-instx]")){try{localStorage.setItem("ernte-inst-off",String(Date.now()))}catch(x){}const c=document.querySelector(".instc");if(c)c.remove()}});
+document.addEventListener("click",async e=>{const t=e.target;if(!t.closest)return;
+  const b=t.closest("[data-inst]");
+  if(b){const c=b.closest(".instc");
+    if(ev){const p=ev;ev=null;try{p.prompt();const r=await p.userChoice;if(r&&r.outcome==="accepted"){try{localStorage.setItem("ernte-inst","1")}catch(x){}rm();return}}catch(x){}
+      if(c)help(c);return}
+    if(c)help(c);return}
+  if(t.closest("[data-instx]")){try{sessionStorage.setItem("ernte-inst-later","1")}catch(x){}rm()}});
 function start(){const app=document.getElementById("app");if(!app){setTimeout(start,300);return}new MutationObserver(sched).observe(app,{childList:true});sched()}
 if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",start);else start();
 })();
