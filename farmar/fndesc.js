@@ -20,6 +20,7 @@ const TABD={
  zuct:"Vyúčtovanie dodávok od farmárov podľa vážnych lístkov: čistenie, sušenie, fakturačná hmotnosť a suma ku každej zmluve.",
  agro:"Služby strojmi ERNTE pre farmárov: objednávky, cenník prác a pri majiteľovi aj náklady strojov a marža.",
  trus:"Vývozy kuracieho trusu z fariem Baromfi (HU) do BPS Kamenica – nahlásenie, pridelenie áut, váženie a podklady k faktúram.",
+ nov:"Čo je v aplikácii nové: po dňoch, kde to nájdeš a kto to vidí. Dopĺňa sa automaticky pri každej úprave cez Claude aj ERNTE AI.",
  evid:"Firemná evidencia namiesto Excelu: náklady a výnosy, sklad, denník prác, dochádzka, výplaty podľa zákona a výsledok."};
 // ---- sekcie v záložkách (dlaždice) ----
 const SECD={
