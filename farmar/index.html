@@ -116,6 +116,7 @@ input.code{font:600 1.7rem var(--f-num);letter-spacing:.35em;text-align:center}i
 
 .wxhs{display:flex;gap:8px;overflow-x:auto;padding:4px 2px 8px;scrollbar-width:none;margin:0 -4px}.wxhs::-webkit-scrollbar{display:none}
 .wxh{flex:none;width:62px;display:grid;justify-items:center;gap:3px;padding:10px 4px;border-radius:16px;background:rgba(255,255,255,.05);border:1px solid var(--line)}
+.wxh.n{background:linear-gradient(170deg,rgba(30,41,99,.55),rgba(8,12,30,.65));border-color:rgba(148,163,255,.22)}.wxh.n small{opacity:.85}
 .wxh:first-child{background:linear-gradient(160deg,rgba(182,255,59,.18),rgba(94,234,212,.08));border-color:rgba(182,255,59,.4)}
 .wxh small{font:600 .7rem var(--f-num);color:var(--muted)}.wxh span{font-size:1.3rem;line-height:1}.wxh b{font:600 1rem var(--f-num)}.wxh em{font:500 .62rem var(--f-num);font-style:normal;color:var(--cyan)}
 .wxds{display:grid;gap:2px}
@@ -956,13 +957,14 @@ function mountRadar(el){if(!el)return;clearInterval(RADAR.timer);
 // ================= POČASIE (Open-Meteo, 7 dní + hodiny) =================
 const WX_DEF={name:"Michalovce",lat:48.755,lon:21.915};
 let WXLOC=(()=>{try{return JSON.parse(localStorage.getItem("ernte-wxloc"))||WX_DEF}catch(e){return WX_DEF}})(),WXD=null,WXAT=0;
-const WMO=c=>c===0?["☀️","jasno"]:c<=2?["🌤️","polojasno"]:c===3?["☁️","zamračené"]:c<=48?["🌫️","hmla"]:c<=57?["🌦️","mrholenie"]:c<=67?["🌧️","dážď"]:c<=77?["🌨️","sneh"]:c<=82?["🌧️","prehánky"]:c<=86?["🌨️","snehové prehánky"]:["⛈️","búrka"];
+// day=false (noc): jasno = nočná obloha s hviezdami, polojasno = mesiac
+const WMO=(c,day=true)=>c===0?(day?["☀️","jasno"]:["🌌","jasná noc"]):c<=2?(day?["🌤️","polojasno"]:["🌙","polojasná noc"]):c===3?["☁️","zamračené"]:c<=48?["🌫️","hmla"]:c<=57?["🌦️","mrholenie"]:c<=67?["🌧️","dážď"]:c<=77?["🌨️","sneh"]:c<=82?["🌧️","prehánky"]:c<=86?["🌨️","snehové prehánky"]:["⛈️","búrka"];
 async function loadWx(force){if(!force&&WXD&&Date.now()-WXAT<15*60e3)return;
-  const u=`https://api.open-meteo.com/v1/forecast?latitude=${WXLOC.lat}&longitude=${WXLOC.lon}&hourly=temperature_2m,precipitation,precipitation_probability,weather_code,wind_speed_10m&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_sum,precipitation_probability_max,wind_speed_10m_max&timezone=Europe%2FBratislava&forecast_days=7`;
+  const u=`https://api.open-meteo.com/v1/forecast?latitude=${WXLOC.lat}&longitude=${WXLOC.lon}&hourly=temperature_2m,precipitation,precipitation_probability,weather_code,wind_speed_10m,is_day&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_sum,precipitation_probability_max,wind_speed_10m_max&timezone=Europe%2FBratislava&forecast_days=7`;
   try{const r=await fetch(u);WXD=await r.json();WXAT=Date.now()}catch(e){WXD={err:1}}}
 function wxCard(){if(!WXD)return `<div class="card"><div class="s">Načítavam počasie…</div></div>`;if(WXD.err||!WXD.daily)return `<div class="card"><div class="row"><span class="t">📍 ${esc(WXLOC.name)}</span><button type="button" class="out" data-wxpick>📍 Zmeniť miesto</button></div><div class="s">Počasie sa nepodarilo načítať.</div></div>`;
   const H=WXD.hourly,D=WXD.daily,now=Date.now();let i0=H.time.findIndex(t=>new Date(t).getTime()>now-3600e3);if(i0<0)i0=0;
-  const hrs=H.time.slice(i0,i0+24).map((t,k)=>{const i=i0+k,w=WMO(H.weather_code[i]);return `<div class="wxh"><small>${new Date(t).getHours()}:00</small><span>${w[0]}</span><b>${Math.round(H.temperature_2m[i])}°</b><em>${H.precipitation[i]>0?H.precipitation[i].toFixed(1)+" mm":(H.precipitation_probability[i]??0)+" %"}</em></div>`}).join("");
+  const hrs=H.time.slice(i0,i0+24).map((t,k)=>{const i=i0+k,hh=new Date(t).getHours(),dy=H.is_day?H.is_day[i]===1:(hh>=7&&hh<17),w=WMO(H.weather_code[i],dy);return `<div class="wxh${dy?"":" n"}" title="${w[1]}"><small>${new Date(t).getHours()}:00</small><span>${w[0]}</span><b>${Math.round(H.temperature_2m[i])}°</b><em>${H.precipitation[i]>0?H.precipitation[i].toFixed(1)+" mm":(H.precipitation_probability[i]??0)+" %"}</em></div>`}).join("");
   const tmin=Math.min(...D.temperature_2m_min),tmax=Math.max(...D.temperature_2m_max),rng=Math.max(1,tmax-tmin);
   const W=D.wind_speed_10m_max||[],WN=[],LV={};
   const dName=(t,i)=>i===0?"Dnes":i===1?"Zajtra":new Date(t+"T12:00").toLocaleDateString("sk-SK",{weekday:"short",day:"numeric",month:"numeric"});
