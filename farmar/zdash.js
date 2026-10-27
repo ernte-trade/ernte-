@@ -38,52 +38,76 @@ window.zdashHTML=function(){if(ROLE!=="owner")return "";
   h+=`<div class="zdpdf"><div class="zdbox"><b>🚚 PDF – fakturácia dopravy</b><label>Sadzba €/t (hrubá váha)<input id="zdRate" inputmode="decimal" value="${esc(D.rate)}"></label>
      <label class="zdck"><input type="checkbox" id="zdVk"${D.vk?" checked":""}> iba autá VALKO <small>(${T.length} z ${L.length} lístkov)</small></label>
      <label>Fakturovať komu<input id="zdTo" value="${esc(D.to)}"></label>
-     <button type="button" class="pri" data-zdpdf="dop">🚚 PDF doprava · ${fmt(tg,2)} t × ${fmt(r,2)} = ${fmt(tg*r,2)} €</button></div>
+     <button type="button" class="pri" data-zdsend="dop">📤 Poslať ${esc(D.who)} · ${fmt(tg,2)} t × ${fmt(r,2)} = ${fmt(tg*r,2)} €</button><button type="button" data-zdpdf="dop">🖨️ Tlač / uložiť</button></div>
     <div class="zdbox"><b>🧾 PDF – fakturácia pre odberateľa</b><div class="s">${D.buyer?esc(D.buyer):buyers.length>1?"⚠️ Vyber odberateľa hore – každý dostane vlastný podklad.":esc(buyers[0]||"")}</div>
-     <button type="button" class="pri" data-zdpdf="odb"${!D.buyer&&buyers.length>1?" disabled":""}>🧾 PDF odberateľ · ${fmt(n,2)} t · ${fmt(v,2)} €</button></div></div>
-   <div class="s">PDF sa otvorí na tlač – v tlači zvoľ <b>Uložiť ako PDF</b> alebo zdieľaj.</div></div>`;
+     <button type="button" class="pri" data-zdsend="odb"${!D.buyer&&buyers.length>1?" disabled":""}>📤 Poslať ${esc(D.who)} · ${fmt(n,2)} t · ${fmt(v,2)} €</button><button type="button" data-zdpdf="odb"${!D.buyer&&buyers.length>1?" disabled":""}>🖨️ Tlač / uložiť</button></div></div>
+   <label class="zdto">Podklady k faktúram posielať<input id="zdMailIn" type="email" value="${esc(D.mail)}"></label>
+   <div class="s">📤 pripraví PDF a pošle ho ${esc(D.who)} (${esc(D.mail)}) e-mailom alebo cez WhatsApp. ${(()=>{try{const l=JSON.parse(localStorage.getItem("ernte-zd-last")||"null");return l?"Naposledy poslané: "+esc(l.n)+" · "+new Date(l.at).toLocaleString("sk-SK",{day:"numeric",month:"numeric",hour:"2-digit",minute:"2-digit"}):""}catch(x){return ""}})()}</div></div>`;
   return h};
 // ---------- PDF ----------
-const CSS=`body{font:11.5px/1.4 -apple-system,Segoe UI,Roboto,sans-serif;color:#111;margin:22px}h1{font-size:18px;margin:0 0 2px}.hd{display:flex;justify-content:space-between;gap:16px;border-bottom:2px solid #5a8f1c;padding-bottom:10px;margin-bottom:12px}
- .hd small,.pt small{color:#555;display:block}.pt{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:10px 0}.pt div{border:1px solid #ddd;border-radius:8px;padding:8px}
- table{border-collapse:collapse;width:100%;font-size:10.5px}th,td{border:1px solid #ddd;padding:4px 5px;text-align:right}th.l,td.l{text-align:left}th{background:#f2f6ec}tr.sub td{background:#f7f9f3;font-weight:700}tfoot td{font-weight:700;background:#eef3e6}
- .tot{margin:12px 0 0 auto;width:340px}.tot td{font-size:12px}.tot tr:last-child td{font-size:14px;background:#eef3e6;font-weight:800}.ft{margin-top:14px;color:#444;font-size:10.5px}@media print{body{margin:10mm}}`;
+const CSS=`body{font:11.5px/1.4 -apple-system,Segoe UI,Roboto,sans-serif;color:#111;margin:22px}h1{font-size:18px;margin:0 0 2px}.zhd{display:flex;justify-content:space-between;gap:16px;border-bottom:2px solid #5a8f1c;padding-bottom:10px;margin-bottom:12px}
+ .zhd small,.zpt small{color:#555;display:block}.zpt{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:10px 0}.zpt div{border:1px solid #ddd;border-radius:8px;padding:8px}
+ table{border-collapse:collapse;width:100%;font-size:10.5px}th,td{border:1px solid #ddd;padding:4px 5px;text-align:right}th.zl,td.zl{text-align:left}th{background:#f2f6ec}tr.zsr td{background:#f7f9f3;font-weight:700}tfoot td{font-weight:700;background:#eef3e6}
+ .ztt{margin:12px 0 0 auto;width:340px}.ztt td{font-size:12px}.ztt tr:last-child td{font-size:14px;background:#eef3e6;font-weight:800}.zft{margin-top:14px;color:#444;font-size:10.5px}@media print{body{margin:10mm}}`;
 const perTxt=()=>`${dSK(D.d0)} – ${dSK(D.d1)}`;
-function pdfDop(){const r=rate(),L=rows().filter(x=>!D.vk||x.vk);if(!L.length){toast("Žiadne lístky na fakturáciu dopravy.");return}
+const fn=()=>`${D.d0}_${D.d1}${D.com?"-"+D.com:""}`;
+// ---------- posielanie (predvolene Janke Valkovej – fakturácia) ----------
+D.mail=ld("ernte-zd-mail","jana.valkova@ernte.sk");D.who=ld("ernte-zd-who","Janke Valkovej");
+function lib(){if(window.html2pdf)return Promise.resolve(window.html2pdf);return new Promise((ok,no)=>{const s=document.createElement("script");s.src="vendor/html2pdf-0.10.1.js";s.onload=()=>ok(window.html2pdf);s.onerror=()=>no(new Error("PDF knižnica sa nenačítala"));document.head.appendChild(s)})}
+async function toFile(P){const H=await lib();const css=(P.html.match(/<style>([\s\S]*?)<\/style>/)||[])[1]||"",body=(P.html.match(/<body>([\s\S]*)<\/body>/)||[])[1]||"";
+  const sx=window.scrollX,sy=window.scrollY;window.scrollTo(0,0);const box=document.createElement("div");box.style.cssText=`position:absolute;left:0;top:0;width:${P.land?"273mm":"186mm"};background:#fff;color:#111;z-index:-5`;
+  box.innerHTML=`<style>${css.replace(/body\{/g,".zpb{").replace(/@media print\{[^}]*\{[^}]*\}[^}]*\}/g,"")}</style><div class="zpb" style="margin:0">${body}</div>`;document.body.appendChild(box);
+  try{const b=await H().set({margin:[10,10,10,10],image:{type:"jpeg",quality:.95},html2canvas:{scale:2,backgroundColor:"#ffffff",scrollX:0,scrollY:0},jsPDF:{unit:"mm",format:"a4",orientation:P.land?"landscape":"portrait"},pagebreak:{mode:["css"]}}).from(box.querySelector(".zpb")).toPdf().output("blob");
+    return new File([b],P.name,{type:"application/pdf"})}finally{box.remove();window.scrollTo(sx,sy)}}
+function dlf(f){const u=URL.createObjectURL(f),a=document.createElement("a");a.href=u;a.download=f.name;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(u),5000)}
+function sendSheet(P,f){const o=document.createElement("div");o.className="hsheet";o.id="zdSend";const body=`Dobrý deň,\n\nv prílohe posielam podklad k faktúre: ${P.subj}.\n${P.sum}\n\nĎakujem\nMartin Vaľko\n\n👉 ERNTE Trade & Logistic`;
+  const mt=`mailto:${encodeURIComponent(D.mail)}?subject=${encodeURIComponent(P.subj)}&body=${encodeURIComponent(body+"\n\n(PDF priložte – je stiahnuté v telefóne: "+f.name+")")}`;
+  o.innerHTML=`<div class="hbox" style="max-width:440px;text-align:center"><div style="font-size:2.2rem">📄</div><b style="font:800 1.15rem var(--f-head,system-ui)">PDF pre ${esc(D.who)}</b><p class="hrole" style="margin:6px 0 4px">${esc(f.name)}</p><p class="hrole" style="margin:0 0 12px">${esc(P.sum)}</p>
+   ${navigator.canShare&&navigator.canShare({files:[f]})?`<button type="button" class="hai" id="zdGo">📤 Poslať PDF (e-mail, WhatsApp…)</button>`:""}
+   <a class="hai" id="zdMail" href="${esc(mt)}" style="display:block;margin-top:8px;text-decoration:none">✉️ E-mail ${esc(D.mail)}</a>
+   <button type="button" class="hai" id="zdDl" style="background:rgba(255,255,255,.1);color:#fff;margin-top:8px">⬇️ Uložiť PDF</button><button type="button" class="hx" id="zdX" style="margin:12px auto 0;display:block">×</button>
+   <p class="hrole" style="margin-top:10px;font-size:.8em">Pri „Poslať PDF“ vyber Gmail/Mail a adresát je ${esc(D.mail)} (text je predvyplnený). Pri „E-mail“ sa PDF najprv stiahne – priložte ho.</p></div>`;
+  document.body.appendChild(o);const close=()=>o.remove();const done=()=>{try{localStorage.setItem("ernte-zd-last",JSON.stringify({n:f.name,at:Date.now()}))}catch(x){}};
+  const g=o.querySelector("#zdGo");if(g)g.onclick=async()=>{try{await navigator.share({files:[f],title:P.subj,text:`Pre: ${D.mail}\n\n`+body});done();close()}catch(e){if(e&&e.name!=="AbortError"){dlf(f);close()}}};
+  o.querySelector("#zdMail").onclick=()=>{dlf(f);done();setTimeout(close,400)};o.querySelector("#zdDl").onclick=()=>{dlf(f);close()};o.querySelector("#zdX").onclick=close}
+async function send(k,b){const P=k==="dop"?pdfDop():pdfOdb();if(!P)return;busy(b,true);try{const f=await toFile(P);sendSheet(P,f)}catch(e){toast("PDF sa nepodarilo pripraviť – otváram tlač.",4000);openPdf(P.html)}finally{busy(b,false)}}
+function pdfDop(){const r=rate(),L=rows().filter(x=>!D.vk||x.vk);if(!L.length){toast("Žiadne lístky na fakturáciu dopravy.");return null}
   const by={};for(const x of L)(by[x.k]=by[x.k]||[]).push(x);let body="";
-  for(const [k,X] of Object.entries(by)){body+=X.map(x=>`<tr><td class="l">${esc(dSK(x.d))}</td><td class="l">${esc(x.t)}</td><td class="l">${esc(comName(x.k))}</td><td class="l">${esc(x.p||"")}</td><td>${fmt(x.g/1000,3)}</td><td>${fmt(r,2)}</td><td>${fmt(Math.round(x.g/1000*r*100)/100,2)}</td></tr>`).join("");
-    const t=S(X,x=>x.g)/1000;body+=`<tr class="sub"><td class="l" colspan="4">Spolu ${esc(comName(k))} · ${lk(X.length)}</td><td>${fmt(t,3)}</td><td></td><td>${fmt(Math.round(t*r*100)/100,2)}</td></tr>`}
+  for(const [k,X] of Object.entries(by)){body+=X.map(x=>`<tr><td class="zl">${esc(dSK(x.d))}</td><td class="zl">${esc(x.t)}</td><td class="zl">${esc(comName(x.k))}</td><td class="zl">${esc(x.p||"")}</td><td>${fmt(x.g/1000,3)}</td><td>${fmt(r,2)}</td><td>${fmt(Math.round(x.g/1000*r*100)/100,2)}</td></tr>`).join("");
+    const t=S(X,x=>x.g)/1000;body+=`<tr class="zsr"><td class="zl" colspan="4">Spolu ${esc(comName(k))} · ${lk(X.length)}</td><td>${fmt(t,3)}</td><td></td><td>${fmt(Math.round(t*r*100)/100,2)}</td></tr>`}
   const t=S(L,x=>x.g)/1000,z=Math.round(t*r*100)/100,dph=Math.round(z*0.23*100)/100;
-  openPdf(`<!doctype html><html lang="sk"><head><meta charset="utf-8"><title>Doprava ${esc(perTxt())}</title><style>${CSS}</style></head><body>
-   <div class="hd"><div><h1>Podklad k faktúre – preprava</h1><small>Odvoz komodít k odberateľovi · ${esc(D.com?comName(D.com):"všetky komodity")}${D.buyer?" · "+esc(D.buyer):""}</small></div><div style="text-align:right"><b>Obdobie ${esc(perTxt())}</b><small>Vystavené ${new Date().toLocaleDateString("sk-SK")}</small></div></div>
-   <div class="pt"><div><small>Dodávateľ (dopravca)</small><b>${VALKO.n}</b><br>${VALKO.a}<br>${VALKO.i}</div><div><small>Odberateľ služby</small><b>${esc(D.to)}</b></div></div>
-   <table><thead><tr><th class="l">Dátum</th><th class="l">Vážny lístok</th><th class="l">Komodita</th><th class="l">ŠPZ</th><th>Hrubá váha t</th><th>Sadzba €/t</th><th>Suma €</th></tr></thead><tbody>${body}</tbody>
-   <tfoot><tr><td class="l" colspan="4">SPOLU · ${lk(L.length)}</td><td>${fmt(t,3)}</td><td>${fmt(r,2)}</td><td>${fmt(z,2)}</td></tr></tfoot></table>
-   <table class="tot"><tr><td class="l">Základ dane</td><td>${fmt(z,2)} €</td></tr><tr><td class="l">DPH 23 %</td><td>${fmt(dph,2)} €</td></tr><tr><td class="l">Spolu na úhradu</td><td>${fmt(z+dph,2)} €</td></tr></table>
-   <div class="ft">Výpočet: hrubá váha z vážnych lístkov odberateľa × ${fmt(r,2)} €/t. ${D.vk?"Iba autá flotily VALKO.":"Všetky autá."} Podklad k faktúre – faktúru vystaví účtovníctvo VALKO s.r.o.</div></body></html>`)}
-function pdfOdb(){const L=rows();if(!L.length){toast("Žiadne lístky.");return}const B=D.buyer||[...new Set(L.map(x=>x.b).filter(Boolean))][0]||"Odberateľ";
+  return {name:`Doprava-${fn()}.pdf`,subj:`Fakturácia dopravy ${perTxt()}${D.com?" – "+comName(D.com):""}`,sum:`${lk(L.length)} · ${fmt(t,3)} t × ${fmt(r,2)} €/t = ${fmt(z,2)} € bez DPH (${fmt(z+dph,2)} € s DPH)`,land:false,html:`<!doctype html><html lang="sk"><head><meta charset="utf-8"><title>Doprava ${esc(perTxt())}</title><style>${CSS}</style></head><body>
+   <div class="zhd"><div><h1>Podklad k faktúre – preprava</h1><small>Odvoz komodít k odberateľovi · ${esc(D.com?comName(D.com):"všetky komodity")}${D.buyer?" · "+esc(D.buyer):""}</small></div><div style="text-align:right"><b>Obdobie ${esc(perTxt())}</b><small>Vystavené ${new Date().toLocaleDateString("sk-SK")}</small></div></div>
+   <div class="zpt"><div><small>Dodávateľ (dopravca)</small><b>${VALKO.n}</b><br>${VALKO.a}<br>${VALKO.i}</div><div><small>Odberateľ služby</small><b>${esc(D.to)}</b></div></div>
+   <table><thead><tr><th class="zl">Dátum</th><th class="zl">Vážny lístok</th><th class="zl">Komodita</th><th class="zl">ŠPZ</th><th>Hrubá váha t</th><th>Sadzba €/t</th><th>Suma €</th></tr></thead><tbody>${body}</tbody>
+   <tfoot><tr><td class="zl" colspan="4">SPOLU · ${lk(L.length)}</td><td>${fmt(t,3)}</td><td>${fmt(r,2)}</td><td>${fmt(z,2)}</td></tr></tfoot></table>
+   <table class="ztt"><tr><td class="zl">Základ dane</td><td>${fmt(z,2)} €</td></tr><tr><td class="zl">DPH 23 %</td><td>${fmt(dph,2)} €</td></tr><tr><td class="zl">Spolu na úhradu</td><td>${fmt(z+dph,2)} €</td></tr></table>
+   <div class="zft">Výpočet: hrubá váha z vážnych lístkov odberateľa × ${fmt(r,2)} €/t. ${D.vk?"Iba autá flotily VALKO.":"Všetky autá."} Podklad k faktúre – faktúru vystaví účtovníctvo VALKO s.r.o.</div></body></html>`}}
+function pdfOdb(){const L=rows();if(!L.length){toast("Žiadne lístky.");return null}const B=D.buyer||[...new Set(L.map(x=>x.b).filter(Boolean))][0]||"Odberateľ";
   const by={};for(const x of L)(by[x.k]=by[x.k]||[]).push(x);let body="";
-  for(const [k,X] of Object.entries(by)){body+=X.map(x=>`<tr><td class="l">${esc(dSK(x.d))}</td><td class="l">${esc(x.t)}</td><td class="l">${esc(x.p||"")}</td><td>${fmt(x.g,0)}</td><td>${x.i!=null?fmt(x.i,2):"–"}</td><td>${fmt(x.n,0)}</td><td>${x.m!=null?fmt(x.m,1):"–"}</td><td>${x.dk?fmt(x.dk,0):"–"}</td><td>${x.s!=null?fmt(x.s,2):"–"}</td><td>${fmt(val(x),2)}</td></tr>`).join("");
-    const nn=S(X,x=>x.n),vv=S(X,val);body+=`<tr class="sub"><td class="l" colspan="3">Spolu ${esc(comName(k))} · ${lk(X.length)}</td><td>${fmt(S(X,x=>x.g),0)}</td><td></td><td>${fmt(nn,0)}</td><td></td><td>${fmt(S(X,x=>x.dk),0)}</td><td>${nn?fmt(vv/nn*1000,2):""}</td><td>${fmt(vv,2)}</td></tr>`}
+  for(const [k,X] of Object.entries(by)){body+=X.map(x=>`<tr><td class="zl">${esc(dSK(x.d))}</td><td class="zl">${esc(x.t)}</td><td class="zl">${esc(x.p||"")}</td><td>${fmt(x.g,0)}</td><td>${x.i!=null?fmt(x.i,2):"–"}</td><td>${fmt(x.n,0)}</td><td>${x.m!=null?fmt(x.m,1):"–"}</td><td>${x.dk?fmt(x.dk,0):"–"}</td><td>${x.s!=null?fmt(x.s,2):"–"}</td><td>${fmt(val(x),2)}</td></tr>`).join("");
+    const nn=S(X,x=>x.n),vv=S(X,val);body+=`<tr class="zsr"><td class="zl" colspan="3">Spolu ${esc(comName(k))} · ${lk(X.length)}</td><td>${fmt(S(X,x=>x.g),0)}</td><td></td><td>${fmt(nn,0)}</td><td></td><td>${fmt(S(X,x=>x.dk),0)}</td><td>${nn?fmt(vv/nn*1000,2):""}</td><td>${fmt(vv,2)}</td></tr>`}
   const z=Math.round(S(L,val)*100)/100;
-  openPdf(`<!doctype html><html lang="sk"><head><meta charset="utf-8"><title>Odberateľ ${esc(B)} ${esc(perTxt())}</title><style>${CSS}</style></head><body>
-   <div class="hd"><div><h1>Podklad k faktúre – dodávka komodít</h1><small>${esc(D.com?comName(D.com):"všetky komodity")}</small></div><div style="text-align:right"><b>Obdobie ${esc(perTxt())}</b><small>Vystavené ${new Date().toLocaleDateString("sk-SK")}</small></div></div>
-   <div class="pt"><div><small>Dodávateľ</small><b>${ERNTE.n}</b><br>${ERNTE.a}<br>${ERNTE.i}</div><div><small>Odberateľ</small><b>${esc(B)}</b></div></div>
-   <table><thead><tr><th class="l">Dátum</th><th class="l">Vážny lístok</th><th class="l">ŠPZ</th><th>Hrubá kg</th><th>Nečist. %</th><th>Čistá kg</th><th>Vlhkosť %</th><th>Sušenie kg</th><th>Cena €/t</th><th>Hodnota €</th></tr></thead><tbody>${body}</tbody>
-   <tfoot><tr><td class="l" colspan="3">SPOLU · ${lk(L.length)}</td><td>${fmt(S(L,x=>x.g),0)}</td><td></td><td>${fmt(S(L,x=>x.n),0)}</td><td></td><td>${fmt(S(L,x=>x.dk),0)}</td><td></td><td>${fmt(z,2)}</td></tr></tfoot></table>
-   <table class="tot"><tr><td class="l">Základ dane</td><td>${fmt(z,2)} €</td></tr><tr><td class="l">DPH</td><td>prenesenie</td></tr><tr><td class="l">Spolu na úhradu</td><td>${fmt(z,2)} €</td></tr></table>
-   <div class="ft"><b>Prenesenie daňovej povinnosti</b> – § 69 ods. 12 písm. f) zákona č. 222/2004 Z. z. o DPH (tovary kapitol 10 a 12 Spoločného colného sadzobníka: obilniny, olejniny). DPH odvedie odberateľ.<br>
-    Váhy, kvalita a ceny podľa vážnych lístkov a zúčtovania odberateľa. Podklad k faktúre – faktúru vystaví účtovníctvo ERNTE spol. s r.o.</div></body></html>`)}
+  return {name:`Odberatel-${String(B).replace(/[^A-Za-z0-9]+/g,"-").replace(/-+$/,"")}-${fn()}.pdf`,subj:`Fakturácia ${B} ${perTxt()}${D.com?" – "+comName(D.com):""}`,sum:`${lk(L.length)} · ${fmt(S(L,x=>x.n)/1000,3)} t čistá · ${fmt(z,2)} € (prenesenie DPH)`,land:true,html:`<!doctype html><html lang="sk"><head><meta charset="utf-8"><title>Odberateľ ${esc(B)} ${esc(perTxt())}</title><style>${CSS}</style></head><body>
+   <div class="zhd"><div><h1>Podklad k faktúre – dodávka komodít</h1><small>${esc(D.com?comName(D.com):"všetky komodity")}</small></div><div style="text-align:right"><b>Obdobie ${esc(perTxt())}</b><small>Vystavené ${new Date().toLocaleDateString("sk-SK")}</small></div></div>
+   <div class="zpt"><div><small>Dodávateľ</small><b>${ERNTE.n}</b><br>${ERNTE.a}<br>${ERNTE.i}</div><div><small>Odberateľ</small><b>${esc(B)}</b></div></div>
+   <table><thead><tr><th class="zl">Dátum</th><th class="zl">Vážny lístok</th><th class="zl">ŠPZ</th><th>Hrubá kg</th><th>Nečist. %</th><th>Čistá kg</th><th>Vlhkosť %</th><th>Sušenie kg</th><th>Cena €/t</th><th>Hodnota €</th></tr></thead><tbody>${body}</tbody>
+   <tfoot><tr><td class="zl" colspan="3">SPOLU · ${lk(L.length)}</td><td>${fmt(S(L,x=>x.g),0)}</td><td></td><td>${fmt(S(L,x=>x.n),0)}</td><td></td><td>${fmt(S(L,x=>x.dk),0)}</td><td></td><td>${fmt(z,2)}</td></tr></tfoot></table>
+   <table class="ztt"><tr><td class="zl">Základ dane</td><td>${fmt(z,2)} €</td></tr><tr><td class="zl">DPH</td><td>prenesenie</td></tr><tr><td class="zl">Spolu na úhradu</td><td>${fmt(z,2)} €</td></tr></table>
+   <div class="zft"><b>Prenesenie daňovej povinnosti</b> – § 69 ods. 12 písm. f) zákona č. 222/2004 Z. z. o DPH (tovary kapitol 10 a 12 Spoločného colného sadzobníka: obilniny, olejniny). DPH odvedie odberateľ.<br>
+    Váhy, kvalita a ceny podľa vážnych lístkov a zúčtovania odberateľa. Podklad k faktúre – faktúru vystaví účtovníctvo ERNTE spol. s r.o.</div></body></html>`}}
 function openPdf(html){const w=window.open("","_blank");if(!w){toast("Povoľ vyskakovacie okná pre tlač.");return}w.document.write(html);w.document.close();setTimeout(()=>{try{w.focus();w.print()}catch(e){}},500)}
 document.addEventListener("click",e=>{const t=e.target;if(!t.closest||ROLE!=="owner")return;let x;
   if(x=t.closest("[data-zdp]")){D.p=x.dataset.zdp;sv("ernte-zd-p",D.p);const r=per(D.p);D.d0=r[0];D.d1=r[1];D.L=null;renderStaff();return}
   if(x=t.closest("[data-zdpdf]")){const i=document.getElementById("zdRate");if(i){D.rate=i.value;sv("ernte-zd-rate",D.rate)}const o=document.getElementById("zdTo");if(o){D.to=o.value;sv("ernte-zd-to",D.to)}
-    if(x.dataset.zdpdf==="dop")pdfDop();else pdfOdb()}});
+    const P=x.dataset.zdpdf==="dop"?pdfDop():pdfOdb();if(P)openPdf(P.html);return}
+  if(x=t.closest("[data-zdsend]")){const i=document.getElementById("zdRate");if(i){D.rate=i.value;sv("ernte-zd-rate",D.rate)}const o=document.getElementById("zdTo");if(o){D.to=o.value;sv("ernte-zd-to",D.to)}send(x.dataset.zdsend,x);return}});
 document.addEventListener("change",e=>{const t=e.target;if(!t||ROLE!=="owner")return;
   if(t.id==="zdD0"||t.id==="zdD1"){D[t.id==="zdD0"?"d0":"d1"]=t.value;D.p="";D.L=null;renderStaff();return}
   if(t.id==="zdCom"){D.com=t.value;renderStaff();return}if(t.id==="zdBuy"){D.buyer=t.value;renderStaff();return}
   if(t.id==="zdVk"){D.vk=t.checked;sv("ernte-zd-vk",D.vk?"1":"0");renderStaff();return}
   if(t.id==="zdRate"){D.rate=t.value;sv("ernte-zd-rate",D.rate);renderStaff();return}
-  if(t.id==="zdTo"){D.to=t.value;sv("ernte-zd-to",D.to)}});
+  if(t.id==="zdTo"){D.to=t.value;sv("ernte-zd-to",D.to)}
+  if(t.id==="zdMailIn"){const v=t.value.trim();if(/^\S+@\S+\.\S+$/.test(v)){D.mail=v;sv("ernte-zd-mail",v);D.who=/jana\.valkova/i.test(v)?"Janke Valkovej":v;sv("ernte-zd-who",D.who);renderStaff()}else toast("Zadaj platný e-mail.")}});
 window.zdashReload=()=>{D.L=null};
 })();
