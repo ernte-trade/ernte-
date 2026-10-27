@@ -115,7 +115,7 @@ async function run(force){if(!ED()||running)return;if(!force&&Date.now()-A.lastR
     A.lastRun=Date.now();A.lastCh=ch.length;
     if(ch.length||exp.length){notifyNew();if(typeof toast==="function"&&ch.length)toast(`🤖 Cenník aktualizovaný: ${ch.map(c=>nm(c.com)+" "+f0(c.new)).join(", ")} €/t`,6000)}
   }catch(x){A.err=String(x&&x.message||x)}finally{running=false;rerender()}}
-function rerender(){if(typeof renderStaff!=="function"||typeof TAB==="undefined")return;if(window.formBusy&&formBusy())return;if(TAB==="price"||TAB==="home")renderStaff();else inject()}
+function rerender(){if(typeof renderStaff!=="function"||typeof TAB==="undefined")return;if(window.formBusy&&formBusy())return;if(TAB==="price"&&(A.lastCh||!document.querySelector(".acn-card")))renderStaff();else inject()}
 
 // ---- moje ceny: čo sa prepíše v tabuľke cien (Uložiť a zverejniť), platí ako moja cena ----
 document.addEventListener("submit",async ev=>{const f=ev.target;if(!f||f.id!=="fPrice"||!ED()||!A.cfg||!A.cfg.on)return;

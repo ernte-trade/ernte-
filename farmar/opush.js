@@ -8,7 +8,7 @@ const std=()=>matchMedia("(display-mode: standalone)").matches||navigator.standa
 const sup=()=>"serviceWorker" in navigator&&"PushManager" in window&&"Notification" in window;
 const b64=s=>{const p="=".repeat((4-s.length%4)%4),r=atob((s+p).replace(/-/g,"+").replace(/_/g,"/"));return Uint8Array.from([...r].map(c=>c.charCodeAt(0)))};
 const rs=()=>{if(typeof TAB!=="undefined"&&TAB==="home"&&typeof renderStaff==="function")renderStaff()};
-async function loadList(){try{const r=await sb.rpc("my_push_list",{p_lim:15});PL=r.error?[]:r.data||[]}catch(x){PL=[]}rs()}
+async function loadList(){const o=JSON.stringify(PL);try{const r=await sb.rpc("my_push_list",{p_lim:15});PL=r.error?[]:r.data||[]}catch(x){PL=[]}if(JSON.stringify(PL)!==o)rs()}
 async function load(test,on){if(busy)return;busy=true;try{const r=await sb.rpc("my_push2",{p_test:!!test,p_on:on==null?null:on});C=r.error?{err:/my_push2/.test(r.error.message)?"Zapne sa po aktualizácii databázy (pár minút).":r.error.message}:r.data||{}}catch(x){C={err:String(x)}}
   try{const reg=await navigator.serviceWorker.getRegistration();const s=reg&&await reg.pushManager.getSubscription();st=s?"on":(typeof Notification!=="undefined"&&Notification.permission==="denied")?"denied":"off"}catch(x){st="off"}busy=false;rs()}
 async function enable(b){if(!sup()){toast(ios&&!std()?"Na iPhone najprv pridaj aplikáciu na plochu a otvor ju z ikony.":"Tento prehliadač upozornenia nepodporuje – skús Chrome.",7000);return}

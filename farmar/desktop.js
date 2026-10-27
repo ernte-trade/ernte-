@@ -117,6 +117,7 @@ function farmNav(){let n=document.getElementById("pcNav");const app=document.get
   const H=[...app.querySelectorAll("h2")].filter(h=>h.offsetParent!==null&&h.textContent.trim());
   if(!n){n=document.createElement("nav");n.id="pcNav";n.setAttribute("aria-label","Sekcie");document.body.appendChild(n)}
   const ic=t=>{const l=t.toLowerCase();for(const k in FI)if(l.includes(k))return FI[k];return "◆"};
+  const sig=H.map(h=>h.textContent).join("|");H.filter(h=>!h.classList.contains("ftl-h")).forEach((h,i)=>h.dataset.pci=i);if(n.dataset.sig===sig)return;n.dataset.sig=sig;
   n.innerHTML=`<button type="button" data-pcgo="top" class="on"><span class="ti">🏠</span><span class="tl">Prehľad</span></button>`+H.filter(h=>!h.classList.contains("ftl-h")).map((h,i)=>{h.dataset.pci=i;const t=h.textContent.replace(/\s+/g," ").trim().split(" · ")[0].replace(/^[^\p{L}]+/u,"");return `<button type="button" data-pcgo="${i}"><span class="ti">${ic(t)}</span><span class="tl">${t.replace(/[<>&]/g,"")}</span></button>`}).join("")}
 function spy(){const n=document.getElementById("pcNav");if(!n)return;const H=[...document.querySelectorAll("#app h2[data-pci]")];let cur="top";for(const h of H){if(h.getBoundingClientRect().top<160)cur=h.dataset.pci}
   n.querySelectorAll("button").forEach(b=>b.classList.toggle("on",b.dataset.pcgo===cur))}
