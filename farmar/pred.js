@@ -8,7 +8,7 @@
 (function(){
 const e=x=>typeof esc==="function"?esc(x):String(x??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const tst=(t,ms)=>(typeof toast==="function"?toast:alert)(t,ms);
-const OWN=()=>typeof ROLE!=="undefined"&&ROLE==="owner"&&!(typeof FARMER!=="undefined"&&FARMER);
+const OWN=()=>typeof ROLE!=="undefined"&&ROLE==="owner"&&!(typeof FARMER!=="undefined"&&FARMER)&&!(typeof STATE!=="undefined"&&STATE.me&&STATE.me.hlavny===false);
 const rr=()=>{if(typeof renderStaff==="function"&&OWN()&&typeof TAB!=="undefined"&&TAB==="pred")renderStaff()};
 const CN=c=>typeof comName==="function"?comName(c):c;
 const f0=x=>Number.isFinite(+x)&&x!==null&&x!==""?Math.round(+x).toLocaleString("sk-SK"):"–";

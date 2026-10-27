@@ -1398,7 +1398,7 @@ document.addEventListener("click",e=>{const th=e.target.closest("[data-dstheme]"
   const op=e.target.closest("[data-tedop]");if(op){STATE.tOpen=STATE.tOpen===op.dataset.tedop?null:op.dataset.tedop;renderStaff()}});
 function renderStaff(){const nNew=STATE.reqs.filter(r=>r.status==="nova").length;
   let tabs=[["home","Prehľad"],["req",`Požiadavky${nNew?` <span class="cnt">${nNew}</span>`:""}`],["price","Cenník"],["trans",`Doprava${(STATE.reqs||[]).filter(r=>r.kind==="transport"&&(r.status==="nova"||r.status==="v_spracovani")).length?` <span class="cnt">${STATE.reqs.filter(r=>r.kind==="transport"&&(r.status==="nova"||r.status==="v_spracovani")).length}</span>`:""}`],["deals","Obchody"],["farm","Farmári"],["wx","Počasie"]];
-  if(typeof tabOK==="function"){tabs.splice(4,0,["fleet","Flotila"]);tabs.splice(6,0,["calc","Kalkulačka"]);tabs.splice(6,0,["zuct","Zúčtovanie"]);tabs.splice(7,0,["agro","Agro služby"]);tabs.splice(8,0,["trus",`Kurací trus${window.trusNew&&trusNew()?` <span class="cnt">${trusNew()}</span>`:""}`]);tabs.splice(9,0,["evid","Evidencia"]);tabs.splice(4,0,["danube","Danube Trade"]);tabs.push(["nov",`Novinky${window.novCnt&&novCnt()?` <span class="cnt">${novCnt()}</span>`:""}`]);if(ROLE==="owner")tabs.push(["pred","Predikcia"]);if(ROLE==="owner")tabs.push(["team","Tím"]);tabs=tabs.filter(t=>tabOK(t[0]));if(!tabs.length)tabs=[["wx","Počasie"]]}
+  if(typeof tabOK==="function"){tabs.splice(4,0,["fleet","Flotila"]);tabs.splice(6,0,["calc","Kalkulačka"]);tabs.splice(6,0,["zuct","Zúčtovanie"]);tabs.splice(7,0,["agro","Agro služby"]);tabs.splice(8,0,["trus",`Kurací trus${window.trusNew&&trusNew()?` <span class="cnt">${trusNew()}</span>`:""}`]);tabs.splice(9,0,["evid","Evidencia"]);tabs.splice(4,0,["danube","Danube Trade"]);tabs.push(["nov",`Novinky${window.novCnt&&novCnt()?` <span class="cnt">${novCnt()}</span>`:""}`]);if(ROLE==="owner"&&STATE.me&&STATE.me.hlavny!==false)tabs.push(["pred","Predikcia"]);if(ROLE==="owner")tabs.push(["team","Tím"]);tabs=tabs.filter(t=>tabOK(t[0]));if(!tabs.length)tabs=[["wx","Počasie"]]}
   else{if(ROLE==="owner"||ROLE==="dispatch")tabs.splice(3,0,["fleet","Flotila"]);
   if(ROLE==="owner")tabs.push(["pred","Predikcia"]);
   if(ROLE==="owner")tabs.push(["team","Tím"]);
@@ -2858,7 +2858,7 @@ document.addEventListener("click",e=>{const b=e.target.closest("[data-dfp]");if(
 <script src="offers.js?v=20261027-2000"></script>
 <script src="feedback.js?v=20261027-1930"></script>
 <script src="astro.js?v=20261027-2030"></script>
-<script src="pred.js?v=20261027-2045"></script>
+<script src="pred.js?v=20261027-2310"></script>
 <script src="farmact.js?v=20261027-0150"></script>
 </body>
 </html>
