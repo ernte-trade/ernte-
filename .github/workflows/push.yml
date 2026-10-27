@@ -1,0 +1,29 @@
+# Upozornenia majiteľovi (Web Push) – spúšťa databáza ERNTE (push_dispatch) cez repository_dispatch.
+# Úloha obsahuje iba náhodné ID; obsah si skript vyzdvihne jednorazovo z databázy (push_job_take). Nič sa nevypisuje do logu.
+name: ernte-push
+on:
+  repository_dispatch:
+    types: [ernte-push]
+permissions:
+  contents: read
+concurrency:
+  group: ernte-push-${{ github.event.client_payload.id }}
+jobs:
+  send:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            .github/push
+            farmar/config.js
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - run: npm i --no-save --silent web-push@3.6.7
+        working-directory: .github/push
+      - run: node send.mjs
+        working-directory: .github/push
+        env:
+          JOB_ID: ${{ github.event.client_payload.id }}
