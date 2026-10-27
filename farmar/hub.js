@@ -10,6 +10,7 @@ const DUE=[
  ["2027-01-01","🛣️","Nový štátny mýtny systém SK – výmena palubných jednotiek","VALKO"],
  ["2027-06-30","🌱","EUDR pre mikro a malé podniky","Nariadenie (EÚ) 2025/2650"],
  ["2027-07-09","📲","eFTI – úrady musia prijímať elektronické prepravné doklady (eCMR)","Nariadenie (EÚ) 2020/1056"]];
+window.ERNTE_DUE=DUE;
 const MOB=[42,56]; // dni: upozornenie / porušenie (8 týždňov)
 async function load(){if(H.busy)return;H.busy=true;const q=[];
   if(ROLE==="owner")q.push(sb.rpc("risk_position").then(r=>{H.risk=r.error?{err:r.error.message}:r.data}));
@@ -75,7 +76,7 @@ function mobHTML(){const M=H.mob;let h=`<details class="card hsec" id="hs-mob"><
   return h+`<div class="hmob">${L.map(v=>{const d=v.days,c=d==null?"g":d>=MOB[1]?"r":d>=MOB[0]?"w":"ok";return `<div class="hmi ${c}"><b class="klp">${esc(v.plate)}</b><span>${d==null?"na dvore nebolo od 1. 7.":d===0?"dnes na dvore":"pred "+d+" d"}</span><i style="--p:${Math.min(100,(d??60)/56*100)}%"></i></div>`}).join("")||`<div class="s">Žiadne aktívne autá.</div>`}</div>
    <div class="s">Zelená do 6 týždňov · oranžová 6–8 týždňov · červená nad 8 týždňov = riziko pokuty pri kontrole (smart tachograf v2 zaznamenáva hranice). Počíta sa z príjazdov na dvor podľa Commandera.</div></details>`}
 // ---- TERMÍNY ----
-function dueHTML(){return `<details class="card hsec" id="hs-due"><summary><span>📅</span><b>Termíny a povinnosti</b><small>legislatíva, ktorá sa týka ERNTE a VALKO</small></summary><div class="hdue">${DUE.map(d=>{const dd=Math.round((new Date(d[0]+"T00:00:00")-todayD())/DAY);return `<div class="hdi ${dd<0?"g":dd<=30?"r":dd<=90?"w":""}"><b>${d[1]} ${esc(dSK(d[0]))}</b><span>${esc(d[2])}</span><small>${esc(d[3])} · ${dd<0?"platí":"o "+dd+" dní"}</small></div>`}).join("")}</div>
+function dueHTML(){return `<details class="card hsec" id="hs-due"><summary><span>📅</span><b>Termíny a povinnosti</b><small>legislatíva, ktorá sa týka ERNTE a VALKO</small></summary><div class="hdue">${DUE.map((d,i)=>{const dd=Math.round((new Date(d[0]+"T00:00:00")-todayD())/DAY);return `<div class="hdi ${dd<0?"g":dd<=30?"r":dd<=90?"w":""}"><b>${d[1]} ${esc(dSK(d[0]))}</b><span>${esc(d[2])}</span><small>${esc(d[3])} · ${dd<0?"platí":"o "+dd+" dní"}</small>${window.dueBtns?dueBtns(i):""}</div>`}).join("")}</div>
   <div class="s">ERNTE AI sleduje legislatívu priebežne – pri zmene termínu ti napíše.</div></details>`}
 document.addEventListener("click",e=>{let x=e.target.closest("[data-hgo]");if(x){const g=x.dataset.hgo;if(["req","deals","trans","price"].includes(g)){TAB=g;renderStaff();scrollTo(0,0);return}
     const id={mob:"hs-mob",due:"hs-due",tg:"hs-tg",co2:"hs-mob"}[g];if(g==="co2"&&typeof fsecGo==="function"){TAB="fleet";fsecGo("dash");renderStaff();return}
