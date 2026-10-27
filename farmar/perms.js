@@ -147,7 +147,7 @@ async function teamCode(login,name,role,extra){const pw=genPw()+"-"+String(10+((
   const r=await sb.rpc("set_staff_login",{login_in:login,name_in:name,role_in:role,pw});if(r.error){toast("Nepodarilo sa: "+r.error.message,7000);return null}
   if(extra){const q=await sb.rpc("set_staff_profile",{em:r.data,p:extra.p,t:extra.t||"",r:extra.r||"",ph:extra.ph||""});if(q.error)toast("Prístupy sa neuložili: "+q.error.message,6000)}
   const isT=String(r.data).endsWith("@tel.ernte.sk"),who=isT?login:r.data,tel=isT?String(r.data).split("@")[0]:"";
-  STATE.invite={team:1,name,tel,pw,txt:`Dobrý deň, tu je váš prístup do aplikácie ERNTE Trade & Logistic:\n${APP_URL}\n\nPrihlasovacie meno: ${who}\nJednorazový kód: ${pw}\n\nPo prvom prihlásení si nastavíte vlastný PIN (kód potom prestane platiť). PIN nikomu neposielajte.\nAplikáciu si dajte na plochu (Zdieľať → Pridať na plochu).`};
+  STATE.invite={team:1,name,tel,pw,txt:`Dobrý deň, tu je váš prístup do aplikácie ERNTE Trade & Logistic.\n\nPrihlasovacie meno: ${who}\nJednorazový kód: ${pw}\n\nPo prvom prihlásení si nastavíte vlastný PIN (kód potom prestane platiť). PIN nikomu neposielajte.\nAplikáciu si dajte na plochu (Zdieľať → Pridať na plochu).\n\n👉 ERNTE Trade & Logistic: ${APP_URL}`};
   await loadTeam();renderStaff();window.scrollTo(0,0);return r.data}
 const presetObj=k=>Object.fromEntries(PCAT.map(p=>[p[0],PRESET[k].k.includes(p[0])]));
 document.addEventListener("click",async e=>{if(typeof ROLE==="undefined"||ROLE!=="owner")return;const t=e.target;let x;
@@ -275,3 +275,7 @@ try{Object.assign(HELP,{
  if(HELP.deals)HELP.deals.s=(HELP.deals.s||[]).concat([["Vývoz bez cien","Doprava vidí obchody BEZ cien: dohodnuté, vyvezené a <b>zostávajúce tony</b>, nakládku, vykládku, jazdy a poznámky. Tu prideľuje autá a zapína farmárovi <b>📍 GPS</b> – farmár vidí auto len cestou na nakládku, nikdy vykládku ani odberateľa."]]);
 }catch(e){}
 })();
+
+// odkaz na aplikáciu v zobrazených správach: namiesto https://… logo a názov ERNTE Trade & Logistic
+window.appLinkHTML=function(t){const u=typeof APP_URL!=="undefined"?APP_URL:location.href.split("#")[0],chip=`<span class="applink"><img src="logo.png" alt="">ERNTE Trade &amp; Logistic</span>`;
+  return String(t).split(u).map(x=>esc(x).replace(/https?:\/\/\S+/g,chip)).join(chip)};

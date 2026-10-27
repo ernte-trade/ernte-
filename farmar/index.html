@@ -3,13 +3,23 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>ERNTE Farmár</title>
+<title>ERNTE Trade &amp; Logistic</title>
+<meta name="description" content="ERNTE Trade &amp; Logistic – výkupné ceny, obchody a zmluvy, odvoz VALKO a služby strojmi.">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="ERNTE Trade &amp; Logistic">
+<meta property="og:title" content="ERNTE Trade &amp; Logistic">
+<meta property="og:description" content="Aplikácia ERNTE – výkupné ceny, obchody, odvoz VALKO a služby strojmi. Ťuknite a prihláste sa.">
+<meta property="og:image" content="https://ernte-trade.github.io/ernte-/farmar/og-ernte.png">
+<meta property="og:image:width" content="1200"><meta property="og:image:height" content="630">
+<meta property="og:locale" content="sk_SK">
+<meta name="twitter:card" content="summary_large_image">
 <meta name="color-scheme" content="dark">
 <meta name="theme-color" content="#0b1020">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="ERNTE">
+<meta name="apple-mobile-web-app-title" content="ERNTE Trade &amp; Logistic">
+<meta name="application-name" content="ERNTE Trade &amp; Logistic">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="icon-180.png">
 <link rel="icon" type="image/png" href="icon-192.png">
@@ -792,7 +802,7 @@ html[data-theme=light] .ftbl th{color:#0f172a}html[data-theme=light] .fdban{colo
 <script>try{if(localStorage.getItem('ernte-theme')==='light')document.documentElement.dataset.theme='light'}catch(e){}</script>
 <link rel="stylesheet" href="perms.css?v=20261026-1955">
 <link rel="stylesheet" href="trus.css?v=20261027-0140">
-<link rel="stylesheet" href="ev.css?v=20261027-0900">
+<link rel="stylesheet" href="ev.css?v=20261027-0855">
 </head>
 <body>
 <div class="wrap">
@@ -2554,7 +2564,7 @@ const PWMASK="••••••••";
 // silné rýchle heslo (drží sa iba v pamäti tejto obrazovky, nikam sa neukladá ani nevypisuje)
 function qpwGen(){const w=["Klas","Zrno","Pole","Repka","Soja","Mlyn","Sklad","Brazda","Jacmen","Kombajn","Silo","Vaha","Pluh","Snop"],a=new Uint32Array(4);crypto.getRandomValues(a);return w[a[0]%w.length]+"-"+w[a[1]%w.length]+"-"+String(100000+a[2]%900000)+"!"}
 function inviteBox(I,sms){const t=I.pw?I.txt.split(I.pw).join(PWMASK):I.txt;
-  return `<div class="box"><b>Prihlásenie pre ${esc(I.name)} je pripravené</b><div class="s" style="white-space:pre-wrap;color:var(--ink)">${esc(t)}</div>
+  return `<div class="box"><b>Prihlásenie pre ${esc(I.name)} je pripravené</b><div class="s" style="white-space:pre-wrap;color:var(--ink)">${window.appLinkHTML?appLinkHTML(t):esc(t)}</div>
   ${I.pw?`<button type="button" class="pwg" data-pwg aria-label="Heslo – ťuknutím skopíruješ, podržaním zobrazíš na 5 sekúnd"><span class="pwi">🔑</span><span class="pwt"><span class="pwv">${PWMASK}</span><small>ťukni = kopírovať · podrž = ukázať</small></span></button>`:""}
   <div class="btns">${I.tel?`<button type="button" class="lime" data-invsend="wa">Poslať cez WhatsApp</button>${sms?`<button type="button" data-invsend="sms">Poslať SMS</button>`:""}`:""}<button type="button" data-copyinv>Kopírovať správu</button><button type="button" data-closeinv>Hotovo</button></div>
   <div class="s">Heslo si nikde neukladáme – pošlite ho teraz. Ak ho stratí, vytvorte nové.</div></div>`}
@@ -2577,7 +2587,7 @@ function inviteBox(I,sms){const t=I.pw?I.txt.split(I.pw).join(PWMASK):I.txt;
 })();
 async function teamLogin(login,name,role){const pw=genPw();const r=await sb.rpc("set_staff_login",{login_in:login,name_in:name,role_in:role,pw});if(r.error){toast("Nepodarilo sa: "+r.error.message,7000);return}
   const who=String(r.data).endsWith("@tel.ernte.sk")?login:r.data;const tel=String(r.data).endsWith("@tel.ernte.sk")?String(r.data).split("@")[0]:"";
-  STATE.invite={team:1,name,tel,pw,txt:`Dobrý deň, tu je prístup do aplikácie ERNTE (${ROLES[role]}):\n${APP_URL}\n\nPrihlásenie: ${who}\nHeslo: ${pw}\n\nPo prihlásení si ju dajte na plochu.`};await loadTeam();renderStaff();window.scrollTo(0,0)}
+  STATE.invite={team:1,name,tel,pw,txt:`Dobrý deň, tu je prístup do aplikácie ERNTE Trade & Logistic (${ROLES[role]}).\n\nPrihlásenie: ${who}\nHeslo: ${pw}\n\nPo prihlásení si ju dajte na plochu.\n\n👉 ERNTE Trade & Logistic: ${APP_URL}`};await loadTeam();renderStaff();window.scrollTo(0,0)}
 document.addEventListener("change",async e=>{const x=e.target.closest&&e.target.closest("[data-vfsel]");if(!x)return;const fl=x.value;const r=await sb.rpc("set_vehicle_fleet",{vid:x.dataset.vfsel,fl});if(r.error){toast("Chyba: "+r.error.message,6000);return}STATE.fleet=null;renderStaff();toast("Presunuté: "+FLN[fl])});
 document.addEventListener("click",async e=>{if(!ROLE)return;const t=e.target;let x;
   if(x=t.closest("[data-fsec]")){const cm=document.getElementById("camModal");if(cm)cm.hidden=true;fsecGo(x.dataset.fsec);renderStaff();if(camVis())camLoad(true);requestAnimationFrame(()=>{const a=document.getElementById("fsecTop");if(a){const y=a.getBoundingClientRect().top+scrollY-70;window.scrollTo({top:y,behavior:"smooth"})}});return}
@@ -2708,14 +2718,14 @@ document.addEventListener("click",async e=>{if(!ROLE)return;const t=e.target,g=s
     else usePhone=!f.email;
     const pw=genPw();busy(x,true);const r=await sb.rpc("set_farmer_password",{fid:f.id,pw,use_phone:usePhone});busy(x,false);
     if(r.error){toast("Nepodarilo sa: "+r.error.message,7000);return}
-    const who=usePhone?f.phone:f.email;const txt=`Dobrý deň, ERNTE má pre vás aplikáciu s výkupnými cenami, vašimi obchodmi a počasím:\n${APP_URL}\n\nPrihlasovacie meno: ${who}\nJednorazový kód: ${pw}\n\nPo prvom prihlásení si nastavíte vlastný PIN (kód potom prestane platiť). PIN nikomu neposielajte.\nAplikáciu si dajte na plochu (Zdieľať → Pridať na plochu).`,pwv=pw;
+    const who=usePhone?f.phone:f.email;const txt=`Dobrý deň, ERNTE Trade & Logistic má pre vás aplikáciu s výkupnými cenami, vašimi obchodmi a počasím.\n\nPrihlasovacie meno: ${who}\nJednorazový kód: ${pw}\n\nPo prvom prihlásení si nastavíte vlastný PIN (kód potom prestane platiť). PIN nikomu neposielajte.\nAplikáciu si dajte na plochu (Zdieľať → Pridať na plochu).\n\n👉 ERNTE Trade & Logistic: ${APP_URL}`,pwv=pw;
     const tel=String(f.phone||"").replace(/\D/g,"").replace(/^00/,"").replace(/^0/,"421");
     STATE.invite={name:f.name,txt,tel,pw:pwv};await loadStaff();renderStaff();window.scrollTo(0,0);return}
   if(x=g("[data-copyinv]")){try{await navigator.clipboard.writeText(STATE.invite.txt);toast("Správa skopírovaná.")}catch(er){toast("Kopírovanie sa nepodarilo – pošli cez WhatsApp/SMS.",4000)}return}
   if(x=g("[data-closeinv]")){STATE.invite=null;renderStaff();return}
   if(x=g("[data-acc]")){const on=x.dataset.on==="1",f=STATE.farmers.find(y=>y.id===x.dataset.acc);busy(x,true);const ok=await upd("farmers",f.id,{active:on});
-    if(ok&&on)copy(`Dobrý deň, ERNTE má pre vás aplikáciu s výkupnými cenami a vašimi obchodmi:\n${APP_URL}\nPrihláste sa e-mailom ${f.email} – príde vám kód. Potom si ju dajte na plochu (Zdieľať → Pridať na plochu).`);return}
-  if(x=g("[data-invite]")){const f=STATE.farmers.find(y=>y.id===x.dataset.invite);copy(`Dobrý deň, ERNTE má pre vás aplikáciu s výkupnými cenami a vašimi obchodmi:\n${APP_URL}\nPrihláste sa e-mailom ${f.email} – príde vám kód. Potom si ju dajte na plochu (Zdieľať → Pridať na plochu).`);return}
+    if(ok&&on)copy(`Dobrý deň, ERNTE Trade & Logistic má pre vás aplikáciu s výkupnými cenami a vašimi obchodmi.\nPrihláste sa e-mailom ${f.email} – príde vám kód. Potom si ju dajte na plochu (Zdieľať → Pridať na plochu).\n\n👉 ERNTE Trade & Logistic: ${APP_URL}`);return}
+  if(x=g("[data-invite]")){const f=STATE.farmers.find(y=>y.id===x.dataset.invite);copy(`Dobrý deň, ERNTE Trade & Logistic má pre vás aplikáciu s výkupnými cenami a vašimi obchodmi.\nPrihláste sa e-mailom ${f.email} – príde vám kód. Potom si ju dajte na plochu (Zdieľať → Pridať na plochu).\n\n👉 ERNTE Trade & Logistic: ${APP_URL}`);return}
 });
 document.addEventListener("input",e=>{if(e.target.id==="fq"){FQ=e.target.value;const p=e.target.selectionStart;renderStaff();const i=$("fq");i.focus();i.setSelectionRange(p,p)}});
 document.addEventListener("change",e=>{if(e.target.id==="tDay"){TDAY=e.target.value;renderStaff();return}if(e.target.id==="dCom"){const p=STATE.prices.find(x=>x.com===e.target.value);if(p&&p.price!=null)$("dPrice").value=String(p.price).replace(".",",")}});
@@ -2782,14 +2792,14 @@ document.addEventListener("input",e=>{if(e.target.id==="dfq"){const h=e.target.f
 document.addEventListener("click",e=>{const b=e.target.closest("[data-dfp]");if(!b)return;const fm=b.closest("form"),f=(STATE.farmers||[]).find(x=>x.id===b.dataset.dfp);if(!fm||!f)return;fm.elements.farmer.value=f.id;document.getElementById("dfq").value=String(f.name).trim();document.getElementById("dfl").innerHTML=`<div class="s">✓ Vybraný: <b>${esc(String(f.name).trim())}</b></div>`});
 </script>
 <script src="ai.js?v=20261027-0030"></script>
-<script src="perms.js?v=20261027-0900"></script>
+<script src="perms.js?v=20261027-0855"></script>
 <script src="bonus.js?v=20261026-2100"></script>
 <script src="hub.js?v=20261026-1830"></script>
 <script src="settle.js?v=20261026-1930"></script>
 <script src="contract.js?v=20261027-0050"></script>
 <script src="agro.js?v=20261026-1600"></script>
 <script src="activity.js?v=20261026-1955"></script>
-<script src="trus.js?v=20261027-0140"></script>
+<script src="trus.js?v=20261027-0855"></script>
 <script src="ev.js?v=20261027-0810"></script>
 <script src="sklad.js?v=20261027-0800"></script>
 <script src="sus.js?v=20261027-0730"></script>
@@ -2797,7 +2807,7 @@ document.addEventListener("click",e=>{const b=e.target.closest("[data-dfp]");if(
 <script src="novinky.js?v=20261027-0845"></script>
 <script src="danube.js?v=20261027-0900"></script>
 <script src="fndesc.js?v=20261027-0900"></script>
-<script src="sign.js?v=20261027-0035"></script>
+<script src="sign.js?v=20261027-0855"></script>
 <script src="outbox.js?v=20261027-0120"></script>
 <script src="farmact.js?v=20261027-0150"></script>
 </body>

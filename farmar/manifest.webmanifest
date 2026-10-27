@@ -1,7 +1,7 @@
 {
-  "name": "ERNTE Farmár",
+  "name": "ERNTE Trade & Logistic",
   "short_name": "ERNTE",
-  "description": "Výkupné ceny, obchody a doprava pre dodávateľov ERNTE",
+  "description": "ERNTE Trade & Logistic – výkupné ceny, obchody, odvoz VALKO a služby strojmi",
   "lang": "sk",
   "start_url": "./",
   "scope": "./",
