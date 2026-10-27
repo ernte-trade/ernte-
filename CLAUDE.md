@@ -17,6 +17,10 @@ Platí pre Claude aj ERNTE AI pri každej novej sekcii, záložke, funkcii alebo
 6. **Odkaz na aplikáciu** – v správach pre používateľov nikdy holý odkaz na začiatku; vždy „👉 ERNTE Trade & Logistic: …“ na konci,
    v aplikácii zobrazovať cez `appLinkHTML()` (logo + názov namiesto https).
 
+7. **Štýl dokumentov (PDF)** – všetko o doprave (preprava, jazdy, CMR, vodiči, flotila, doprava trusu) v štýle **VALKO s.r.o.**,
+   obchod, výkup, zúčtovanie, zmluvy a kurací trus v štýle **ERNTE spol. s r.o.** Hlavička cez `brandHead("valko"|"ernte", nadpis, podnadpis)`
+   a farby cez `brandCss(...)` (`farmar/brand.js`).
+
 ## Bezpečnosť a dáta
 - Žiadne heslá, kľúče, pečiatky ani obchodné dáta v čitateľnej podobe v repozitári – iba zašifrované migrácie.
 - Marža, zisk, mzdy a výsledok vidí iba majiteľ. Farmár nikdy nevidí odberateľa, burzu, predajné ceny ani iných farmárov.
