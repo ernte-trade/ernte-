@@ -33,6 +33,13 @@ const PXS={repka:"repka",psenica_p:"psenica",kukurica:"kukurica",soja:"soja_usc_
 const AUTO_COMS=[...new Set(Object.values(C2M))];
 
 const A={mk:null,px:null,mg:null,cfg:null,log:null,calc:{},pend:{},allow:{},lastRun:0,loadedAt:0,err:"",expired:[]};
+// logika spracovateľov podľa burzy: DAP na sklade = burza + báza (prémia/zrážka) €/t
+// sója: CBOT + prémia non-GMO (Čop 8/2026: non-GM 470 USD/t vs. CBOT nov 1192,5 c/bu ≈ 438 USD/t → +≈28 €/t)
+// repka, pšenica, kukurica: MATIF − báza (nemecká/maďarská prax 10–20 €/t pod MATIF); slnečnica a jačmeň burzu nemajú
+const BAS0={soja:28,repka:-15,psenica_p:-15,kukurica:-15};
+const BLBL={soja:"prémia non-GMO nad CBOT",repka:"báza pod MATIF",psenica_p:"báza pod MATIF",kukurica:"báza pod MATIF"};
+const basis=c=>{const b=A.cfg&&A.cfg.basis&&A.cfg.basis[c];return Number.isFinite(+b)&&b!==""&&b!=null?+b:BAS0[c]};
+const meth=c=>(A.cfg&&A.cfg.method&&A.cfg.method[c])||"region";
 const DEF={on:true,auto:null,mine:{},mineDays:7,remindDays:7,step:1,maxJump:10,lastMineAt:null,since:null};
 
 async function kget(path,id){try{const r=await sb.from("kalk_store").select("data,updated_at").eq("path",path).eq("id",id).maybeSingle();return r.error?undefined:(r.data?r.data.data:null)}catch(x){return undefined}}
@@ -76,9 +83,14 @@ function dap(pl,c,dop){if(!A.mk)return null;const mc=C2M[c],lim=Date.now()-60*86
 function margin(){const c=A.cfg&&A.cfg.marginOwn;if(Number.isFinite(+c)&&c!==""&&c!=null)return +c;const r=A.mg&&+A.mg.rec;return Number.isFinite(r)?r:20}
 function calc(){const out={},M=margin();
   for(const pl of PLANTS){const {dop}=route(pl.id);
-    for(const c of pl.cs){const E=dap(pl,c,dop);if(!E||!Number.isFinite(E.dap))continue;const com=C2M[c];const fca=R2(E.dap-dop-M);
-      const age=E.date?(Date.now()-Date.parse(E.date))/864e5:99,ok=age<=(E.reg?60:12),bzp=E.bz&&Number.isFinite(+E.bz.price)?+E.bz.price:null;
-      const it={fca,p:Math.floor(fca),dap:E.dap,farm:E.farm,dop,pl:pl.name,buyer:pl.buyer,src:E.src,mk:E.mk||"",date:E.date,ok,bz:bzp,over:bzp!=null&&E.dap>bzp};
+    for(const c of pl.cs){const com=C2M[c];let E=dap(pl,c,dop);const bzr=burza(pl,com),bzp=bzr&&Number.isFinite(+bzr.price)?+bzr.price:null;
+      const bzDap=bzp!=null&&BAS0[com]!=null?R2(bzp+basis(com)):null;
+      const bzAge=bzr&&bzr.date?(Date.now()-Date.parse(bzr.date))/864e5:99;
+      if(meth(com)==="burza"&&bzDap!=null)E={dap:bzDap,farm:null,src:`${bzName(bzr)}${bzr.term?" "+bzr.term:""} ${f0(bzp)} ${basis(com)>=0?"+":"−"} ${f0(Math.abs(basis(com)))} (${BLBL[com]})`,date:bzr.date,reg:false,byBz:true};
+      if(!E||!Number.isFinite(E.dap))continue;const fca=R2(E.dap-dop-M);
+      const age=E.date?(Date.now()-Date.parse(E.date))/864e5:99,ok=age<=(E.reg?60:12);
+      const it={fca,p:Math.floor(fca),dap:E.dap,farm:E.farm,dop,pl:pl.name,buyer:pl.buyer,src:E.src,mk:E.mk||"",date:E.date,ok,bz:bzp,over:!E.byBz&&bzp!=null&&E.dap>bzp,
+        bzDap,bzFca:bzDap!=null?R2(bzDap-dop-M):null,bzName:bzr?bzName(bzr)+(bzr.term?" "+bzr.term:""):"",bzOk:bzAge<=12,byBz:!!E.byBz};
       const all=(out[com]&&out[com].all)||[];all.push(it);
       if(!out[com]||(ok&&!out[com].ok)||(ok===out[com].ok&&fca>out[com].fca))out[com]=Object.assign({},it,{all});else out[com].all=all}}
   return out}
@@ -157,7 +169,8 @@ function cardHTML(){if(!ED())return "";if(!A.cfg)return `<div class="card acn-ca
     const av=a?`<b>${f0(a.p)}</b>${a.ok?"":` <em class="acn-old" title="Trhová cena je stará – nezverejňuje sa">staré dáta</em>`}`:"<b>–</b>";
     const pd=A.pend&&A.pend[c];
     const dt=a?`<div class="acn-dap">${a.all.slice().sort((x,y)=>y.dap-x.dap).map(x=>`<span class="${x.pl===a.pl?"best":""}"><b>DAP ${e(x.pl.replace("Bunge · ","Bunge "))}</b> ${f0(x.dap)} €/t<small>${x.farm!=null?`farmári v regióne ${f0(x.farm)} + doprava ${f0(x.dop)}`:e(x.src)}${x.date?" · "+dk(x.date):""}</small></span>`).join("")}</div>
-      <div>→ FCA pre farmára = DAP ${e(a.pl)} ${f2(a.dap)} − doprava ${f2(a.dop)}${own?` − odpočet ${f2(margin())}`:""} = <b>${f2(a.fca)}</b> → <b>${f0(a.p)} €/t</b>${a.over?` · <em class="acn-old">nad burzou ${f0(a.bz)}</em>`:""}${a.mk?`<br><small>Zdroj: ${e(a.mk)}</small>`:""}</div>${pd?`<div class="acn-pd">⏳ čaká na tvoje potvrdenie (${f0(pd.old)} → ${f0(pd.tgt)}) <button type="button" data-acn="allow:${e(c)}">Zverejniť</button></div>`:""}`:(has?"bez trhových dát":"");
+      <div>→ FCA pre farmára = DAP ${e(a.pl)} ${f2(a.dap)} − doprava ${f2(a.dop)}${own?` − odpočet ${f2(margin())}`:""} = <b>${f2(a.fca)}</b> → <b>${f0(a.p)} €/t</b>${a.over?` · <em class="acn-old">nad burzou ${f0(a.bz)}</em>`:""}${a.mk?`<br><small>Zdroj: ${e(a.mk)}</small>`:""}</div>${BAS0[c]!=null&&a.bzDap!=null?`<div class="acn-bl"><b>📈 Logika spracovateľa podľa burzy:</b> ${e(a.bzName)} ${f0(a.bz)} ${basis(c)>=0?"+":"−"} ${f0(Math.abs(basis(c)))} ${e(BLBL[c])} = DAP ${f0(a.bzDap)} → FCA <b>${f0(Math.floor(a.bzFca))} €/t</b>${a.bzOk?"":" (burza je stará)"}${a.byBz?" · <b>používa sa</b>":` · oproti regiónu ${Math.floor(a.bzFca)-a.p>=0?"+":"−"}${f0(Math.abs(Math.floor(a.bzFca)-a.p))} €/t`}
+        ${own?`<div class="acn-blc"><label>Cenu počítať<select data-acnmeth="${e(c)}"><option value="region"${meth(c)==="region"?" selected":""}>z regiónu (DAP farmárov)</option><option value="burza"${meth(c)==="burza"?" selected":""}>podľa burzy (logika spracovateľa)</option></select></label><label>${e(BLBL[c])} €/t<input data-acnbas="${e(c)}" inputmode="decimal" value="${e(String(basis(c)).replace(".",","))}"></label></div>`:""}</div>`:""}${pd?`<div class="acn-pd">⏳ čaká na tvoje potvrdenie (${f0(pd.old)} → ${f0(pd.tgt)}) <button type="button" data-acn="allow:${e(c)}">Zverejniť</button></div>`:""}`:(has?"bez trhových dát":"");
     return `<div class="acn-r${mv?" mine":au&&has?" on":""}"><div class="acn-rh"><b class="n">${e(n)}</b><span class="v"><small>zverejnené</small>${cur[c]==null?"<b class='no'>–</b>":"<b>"+f0(cur[c])+"</b>"}</span><span class="v a"><small>automatická</small>${av}</span></div>${dt?`<div class="acn-rd">${dt}</div>`:""}<div class="acn-rm">${st}</div></div>`}).join("");
   const L=(A.log||[]).slice(-40).reverse();
   return `<div class="card acn-card"><div class="tdh"><b>🤖 Automatický cenník · Somotor a Bunge</b><label class="acn-sw big"><input type="checkbox" data-acnon${A.cfg.on?" checked":""}${own?"":" disabled"}> ${A.cfg.on?"zapnutý":"vypnutý"}</label></div>
@@ -179,7 +192,7 @@ function css(){if(document.getElementById("acnCss"))return;const s=document.crea
 .acn-rows{display:grid;gap:8px;margin:12px 0}.acn-r{border:1px solid rgba(255,255,255,.1);border-radius:16px;padding:10px 12px;background:rgba(255,255,255,.03)}
 .acn-r.on{border-color:rgba(182,255,59,.35)}.acn-r.mine{border-color:rgba(255,196,87,.55)}.acn-rh{display:grid;grid-template-columns:1fr auto auto;gap:12px;align-items:end}
 .acn-rh .n{font-size:.95rem}.acn-r.on .n{color:#B6FF3B}.acn-r.mine .n{color:#FFC457}.acn-rh .v{display:grid;justify-items:end;line-height:1.1}.acn-rh .v small{font-size:.66rem;opacity:.6}.acn-rh .v b{font-size:1.15rem}.acn-rh .v b.no{opacity:.4}.acn-rh .v.a b{opacity:.85}
-.acn-rd{font-size:.76rem;opacity:.85;margin-top:6px;line-height:1.4}.acn-dap{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:6px}.acn-dap span{display:grid;padding:6px 10px;border-radius:12px;border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.04)}.acn-dap span.best{border-color:rgba(182,255,59,.6);background:rgba(182,255,59,.08)}.acn-dap small{opacity:.7;font-size:.7rem}.acn-pd{margin-top:6px;color:#FFC457}.acn-pd button{min-height:30px;padding:0 12px;margin-left:6px}.acn-rm{margin-top:6px;display:flex;flex-wrap:wrap;gap:6px;align-items:center}html[data-theme=light] .acn-r.on .n{color:#4d7c00}html[data-theme=light] .acn-r.mine .n{color:#b26b00}.acn-old{color:#FFC457;font-style:normal;font-size:.72rem}.acn-sw{display:inline-flex;gap:6px;align-items:center;white-space:nowrap;font-size:.82rem}.acn-sw input{width:auto;min-height:0}
+.acn-rd{font-size:.76rem;opacity:.85;margin-top:6px;line-height:1.4}.acn-dap{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:6px}.acn-dap span{display:grid;padding:6px 10px;border-radius:12px;border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.04)}.acn-dap span.best{border-color:rgba(182,255,59,.6);background:rgba(182,255,59,.08)}.acn-dap small{opacity:.7;font-size:.7rem}.acn-pd{margin-top:6px;color:#FFC457}.acn-bl{margin-top:8px;padding:8px 10px;border-radius:12px;background:rgba(130,190,255,.07);border:1px solid rgba(130,190,255,.25)}.acn-blc{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:8px;margin-top:6px}.acn-blc label{font-size:.74rem}.acn-pd button{min-height:30px;padding:0 12px;margin-left:6px}.acn-rm{margin-top:6px;display:flex;flex-wrap:wrap;gap:6px;align-items:center}html[data-theme=light] .acn-r.on .n{color:#4d7c00}html[data-theme=light] .acn-r.mine .n{color:#b26b00}.acn-old{color:#FFC457;font-style:normal;font-size:.72rem}.acn-sw{display:inline-flex;gap:6px;align-items:center;white-space:nowrap;font-size:.82rem}.acn-sw input{width:auto;min-height:0}
 .acn-sw.big{font-size:.86rem;font-weight:600}.acn-m{display:inline-flex;gap:4px;align-items:center;white-space:nowrap;font-size:.8rem}.acn-m input{width:auto;min-height:32px;padding:2px 6px;font-size:.8rem}.acn-x{min-height:30px;padding:0 10px;font-size:.78rem;margin-top:4px}.acn-n{font-size:.76rem;opacity:.65}
 .acn-cfg{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin:6px 0 10px}.acn-cfg small{display:block;opacity:.65;font-size:.72rem}
 .acn-st{font-size:.78rem;opacity:.75;margin:6px 0}.acn-st .bad{color:#ff7b7b}.acn-h ul{list-style:none;padding:0;margin:8px 0;display:grid;gap:4px;font-size:.82rem}.acn-h li span{opacity:.6;font-size:.76rem}.acn-h li small{opacity:.7}
@@ -209,6 +222,8 @@ document.addEventListener("click",async ev=>{const b=ev.target.closest&&ev.targe
 document.addEventListener("change",async ev=>{const t=ev.target;if(!t||!A.cfg)return;
   if(t.matches("[data-acnon]")){if(!OWN())return;A.cfg.on=t.checked;await saveCfg();if(t.checked)await run(true);else rerender();return}
   if(t.matches("[data-acnauto]")){const c=t.dataset.acnauto;A.cfg.auto[c]=t.checked;await saveCfg();if(t.checked)await run(true);else rerender();return}
+  if(t.matches("[data-acnmeth]")&&OWN()){A.cfg.method=A.cfg.method||{};A.cfg.method[t.dataset.acnmeth]=t.value;await saveCfg();await run(true);return}
+  if(t.matches("[data-acnbas]")&&OWN()){const v=typeof num==="function"?num(t.value):parseFloat(t.value);A.cfg.basis=A.cfg.basis||{};A.cfg.basis[t.dataset.acnbas]=Number.isFinite(v)?v:null;await saveCfg();await run(true);return}
   if(t.matches("[data-acntill]")){const c=t.dataset.acntill;if(A.cfg.mine[c]){A.cfg.mine[c].till=t.value||addD(T(),+A.cfg.mineDays||7);await saveCfg();await run(true)}return}
   if(t.matches("[data-acncfg]")&&OWN()){const k=t.dataset.acncfg,v=typeof num==="function"?num(t.value):parseFloat(t.value);
     if(k==="marginOwn")A.cfg.marginOwn=t.value.trim()===""||!Number.isFinite(v)?null:v;else if(Number.isFinite(v)&&v>=0)A.cfg[k]=v;
