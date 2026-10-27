@@ -17,6 +17,7 @@ const TABD={
  wx:"Predpoveď počasia pre farmy a trasy – na plánovanie žatvy, odvozov a postrekov.",
  team:"Ľudia vo firme, ich prihlásenia a čo môžu v aplikácii vidieť a robiť (⚙️ Prístupy). Nastavuje iba majiteľ.",
  calc:"Kalkulačky: sušenie a čistenie (koľko farmár dostane zaplatené) a nákupná cena ERNTE z ceny odberateľa, dopravy a burzy.",
+ qd:"Uzatvor obchod s farmárom: komodita, tony, cena, termín vývozu. Údaje vyplní aj z fotky pečiatky, z papiera alebo z hlasu a zmluvu pošle farmárovi na podpis.",
  zuct:"Vyúčtovanie dodávok od farmárov podľa vážnych lístkov: čistenie, sušenie, fakturačná hmotnosť a suma ku každej zmluve.",
  agro:"Služby strojmi ERNTE pre farmárov: objednávky, cenník prác a pri majiteľovi aj náklady strojov a marža.",
  trus:"Vývozy kuracieho trusu z fariem Baromfi (HU) do BPS Kamenica – nahlásenie, pridelenie áut, váženie a podklady k faktúram.",
