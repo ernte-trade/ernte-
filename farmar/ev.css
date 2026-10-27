@@ -46,3 +46,10 @@ html[data-theme=light] .susbtn{background:linear-gradient(150deg,rgba(132,204,22
 .sushr{grid-template-columns:repeat(2,minmax(0,1fr))!important}.sushr b{font-size:1.05rem;overflow-wrap:anywhere}
 .sus .trtab{overflow-x:auto}.sus .sust{width:100%;min-width:0!important}.sus .sust th,.sus .sust td{padding:7px 6px}
 .sus .sust{table-layout:fixed;font-size:.86rem}.sus .sust th:first-child,.sus .sust td:first-child{width:26%}
+/* denník prác */
+.prf{grid-template-columns:repeat(auto-fit,minmax(min(46%,150px),1fr));align-items:end}.prf .prha input{font-size:1.25rem;font-weight:800}
+.prtile{display:flex!important;align-items:center;gap:14px;width:100%;text-align:left;padding:16px!important;margin-bottom:12px;cursor:pointer;border:1px solid rgba(251,191,36,.7)!important;
+  background:linear-gradient(135deg,rgba(251,191,36,.28),rgba(182,255,59,.16))!important;box-shadow:0 0 28px rgba(251,191,36,.25)!important;animation:prg 2.4s ease-in-out infinite}
+.prtile span{font-size:2rem}.prtile div{display:grid;gap:3px;flex:1}.prtile small{color:var(--muted);font-weight:500}.prtile i{font-style:normal;font-size:1.6rem}
+@keyframes prg{50%{box-shadow:0 0 44px rgba(251,191,36,.45)}}@media (prefers-reduced-motion:reduce){.prtile{animation:none}}
+.prtab table{min-width:0}.prtab td small{color:var(--muted)}

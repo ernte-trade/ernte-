@@ -19,7 +19,7 @@ const curM=()=>today().slice(0,7);
 const errTxt=r=>{const m=(r&&r.error&&r.error.message)||"";return /ev_|does not exist|could not find/i.test(m)&&/does not exist|could not find/i.test(m)?"Evidencia sa zapne po aktualizácii databázy (pár minút).":m};
 const meMail=()=>String((typeof ME!=="undefined"&&ME&&ME.email)||(typeof STATE!=="undefined"&&STATE.me&&STATE.me.email)||"").toLowerCase();
 let E={sec:"",y:+today().slice(0,4),m:curM(),fm:"",ft:"",fk:"",ff:"",fq:"",lim:150,ent:null,kat:null,ppl:null,pay:null,par:null,doch:null,dochM:null,ops:null,open:null,edit:null,pv:"",err:""};
-window.evData=()=>E;window.evLoadEnt=()=>loadEnt();
+window.evData=()=>E;window.evSetSec=k=>{E.sec=k};window.evLoadEnt=()=>loadEnt();
 const rr=()=>{if(typeof TAB!=="undefined"&&TAB==="evid"&&typeof renderStaff==="function")renderStaff()};
 
 // ---------- načítanie ----------
@@ -42,11 +42,12 @@ window.vEvid=function(){
   if(CAN("ev")||CAN("sklad"))SEC.splice(CAN("ev")?1:0,0,["sklad","📦","Sklad",CAN("ev")?"diely, materiál, náradie · odfoť bloček alebo súčiastku":"vziať diel do stroja · pridať na sklad"]);
   if(CAN("ev"))SEC.push(["vyk","🌾","Výkony","žatva po kombajnoch, vápnenie po podnikoch"]);
   if(OWN())SEC.push(["kon","✅","Kontrola a opravy","čo bolo v Exceli zle a ako je to teraz · sadzby 2025/2026"]);
+  if(CAN("praca")||CAN("ev"))SEC.splice(CAN("ev")?1:0,0,["praca","🚜","Denník prác",CAN("ev")?"kto čo robil, koľko ha, akým strojom a pre koho":"zapíš, čo si dnes robil a koľko hektárov"]);
   if(SEC.length===1&&!E.sec)E.sec=SEC[0][0];
-  let h=`<div class="zt evz"><h2>${SEC.length===1&&SEC[0][0]==="sklad"?"📦 Sklad ERNTE":"📒 Evidencia ERNTE"} ${E.sec&&SEC.length>1?`<button type="button" class="ztb" data-evsec="">← späť</button>`:""}</h2>`;
+  let h=`<div class="zt evz"><h2>${SEC.length===1&&SEC[0][0]==="sklad"?"📦 Sklad ERNTE":CAN("ev")?"📒 Evidencia ERNTE":"🚜 ERNTE – práca a sklad"} ${E.sec&&SEC.length>1?`<button type="button" class="ztb" data-evsec="">← späť</button>`:""}</h2>`;
   if(!E.sec)return h+`<div class="zgrid">${SEC.map(s=>`<button type="button" class="zbtn" data-evsec="${s[0]}"><span>${s[1]}</span><b>${s[2]}</b><small>${e(s[3])}</small></button>`).join("")}</div>
     <div class="s">🔒 Mzdy, cenu práce, výnosy a výsledok vidí iba majiteľ. Vedúci zapisuje náklady a dochádzku; svoje zápisy môže 14 dní opraviť.</div></div>`;
-  let b="";try{b=({sklad:()=>{if(!E.ent)loadEnt();return (window.vSklad?vSklad():"")+`<datalist id="skStr">${[...new Set((E.ent||[]).map(r=>r.stroj).filter(Boolean))].slice(0,120).map(x=>`<option value="${e(x)}">`).join("")}</datalist>`},zap:zapHTML,doch:dochHTML,mzdy:mzdyHTML,prehl:prehlHTML,vyk:vykHTML,kon:konHTML})[E.sec]()}catch(x){b=`<div class="card"><div class="s">Chyba zobrazenia: ${e(x.message)}</div></div>`}
+  let b="";try{b=({praca:()=>window.vPraca?vPraca():"",sklad:()=>{if(!E.ent)loadEnt();return (window.vSklad?vSklad():"")+`<datalist id="skStr">${[...new Set((E.ent||[]).map(r=>r.stroj).filter(Boolean))].slice(0,120).map(x=>`<option value="${e(x)}">`).join("")}</datalist>`},zap:zapHTML,doch:dochHTML,mzdy:mzdyHTML,prehl:prehlHTML,vyk:vykHTML,kon:konHTML})[E.sec]()}catch(x){b=`<div class="card"><div class="s">Chyba zobrazenia: ${e(x.message)}</div></div>`}
   return h+b+`</div>`};
 
 // ================= NÁKLADY A VÝNOSY =================
