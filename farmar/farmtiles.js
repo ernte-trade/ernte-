@@ -14,7 +14,7 @@ function tiles(){if(typeof FARMER==="undefined"||!FARMER||typeof STATE==="undefi
   const L=[];const add=(k,ic,t,sub,go,cls)=>L.push({k,ic,t,sub,go,cls});
   if(F("f_prices")&&F("f_sell"))add("sell","🌾","Predať komoditu",nP?nP+" komodít v cenníku":"cenník","h:Výkupné ceny");
   else if(F("f_prices"))add("prices","💶","Výkupné ceny",nP?nP+" komodít":"","h:Výkupné ceny");
-  if(F("f_offer"))add("offer","💰","Navrhnúť cenu","vaša cena + fotky skladu","offer");
+  if(F("f_offer"))add("offer","💰","Navrhnúť cenu","vaša cena a fotky tovaru","offer");
   if(F("f_transport")){add("ordc","🚛","Odvoz zmluvného tovaru",ord.length?`${f2(left)} t na odvoz · prednosť`:"zatiaľ nie je čo odviezť","ordc",ord.length?"hot":"");
     add("ordf","🚚","Odvoz tovaru bez zmluvy","požiadať ERNTE","ordf")}
   if(sign)add("sign","✍️","Podpísať zmluvu",sign===1?"1 zmluva čaká":sign+" zmluvy čakajú","sign","warn");

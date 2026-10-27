@@ -31,7 +31,7 @@ function tiff(v,t){const le=v.getUint16(t)===0x4949,u16=p=>v.getUint16(p,le),u32
 const exDate=s=>{const m=String(s||"").match(/^(\d{4}):(\d{2}):(\d{2}) (\d{2}):(\d{2})/);return m?`${m[1]}-${m[2]}-${m[3]}T${m[4]}:${m[5]}:00`:null};
 function here(){return new Promise(ok=>{if(!navigator.geolocation)return ok(null);navigator.geolocation.getCurrentPosition(p=>ok({lat:+p.coords.latitude.toFixed(6),lon:+p.coords.longitude.toFixed(6),acc:Math.round(p.coords.accuracy||0)}),()=>ok(null),{enableHighAccuracy:true,timeout:15000,maximumAge:60000})})}
 function thumb(file,max=1280,q=.72){return new Promise((ok,er)=>{const u=URL.createObjectURL(file),im=new Image();im.onload=()=>{const s=Math.min(1,max/Math.max(im.width,im.height)),c=document.createElement("canvas");c.width=Math.round(im.width*s);c.height=Math.round(im.height*s);c.getContext("2d").drawImage(im,0,0,c.width,c.height);URL.revokeObjectURL(u);ok(c.toDataURL("image/jpeg",q))};im.onerror=()=>{URL.revokeObjectURL(u);er(new Error("Obrázok sa nedá otvoriť"))};im.src=u})}
-async function addPhotos(files){O.busy=true;rr();const pos=await here();
+async function addPhotos(files){O.busy=true;rr();const pos=null;
   for(const f of [...files].slice(0,6-O.ph.length)){try{const buf=await f.arrayBuffer(),x=exif(buf)||{},t=await thumb(f);
       O.ph.push({img:t,lat:x.lat??null,lon:x.lon??null,src:x.lat!=null?"foto (EXIF)":null,taken:exDate(x.dt),dev:pos,name:f.name.slice(0,60),size:f.size})}
     catch(err){say("Fotku "+f.name+" sa nepodarilo načítať.")}}
@@ -42,7 +42,7 @@ const ptTxt=p=>p.lat!=null?`${p.lat}, ${p.lon} (z fotky)`:p.dev?`${p.dev.lat}, $
 // ---------- farmár: formulár ----------
 function form(){const P=(STATE.prices||[]),MKL=typeof MK!=="undefined"?MK:[];
   if(!O.open)return `<div class="card ofc"><div class="s">Máte vlastnú predstavu o cene? Navrhnite cenu za komoditu a celé množstvo a pridajte fotky zo skladu. ERNTE sa vám ozve.</div><div class="btns"><button type="button" class="lime" data-ofopen>💰 Navrhnúť cenu</button></div>${mine()}</div>`;
-  return `<form class="card f ofc" id="fOffer"><div class="w"><b>💰 Návrh ceny pre ERNTE</b><div class="s">Cena bez DPH, FCA vaša farma. Fotky zo skladu pomôžu posúdiť kvalitu a ich poloha slúži na certifikáciu ISCC (pôvod tovaru).</div></div>
+  return `<form class="card f ofc" id="fOffer"><div class="w"><b>💰 Návrh ceny pre ERNTE</b><div class="s">Cena bez DPH, FCA vaša farma. Pridajte fotky tovaru v sklade – pomôžu nám posúdiť kvalitu.</div></div>
    <label>Komodita<select name="com" required>${MKL.map(m=>{const p=P.find(x=>x.com===m[0]);return `<option value="${e(m[0])}">${e(m[1])}${p&&p.price!=null?` (teraz ${f2(p.price)} €/t)`:""}</option>`}).join("")}</select></label>
    <label>Vaša cena €/t<input name="price" inputmode="decimal" required placeholder="napr. 495"></label>
    <label>Celkové množstvo (t)<input name="tons" inputmode="decimal" required placeholder="napr. 300"></label>
@@ -50,9 +50,9 @@ function form(){const P=(STATE.prices||[]),MKL=typeof MK!=="undefined"?MK:[];
    <label class="w">Kde je tovar uskladnený (sklad, obec)<input name="place" placeholder="napr. sklad Zbudza, hala 2"></label>
    <label class="w">Kvalita / poznámka<input name="note" placeholder="vlhkosť, nečistoty, odroda…"></label>
    <div class="w ofph"><b>📷 Fotky zo skladu (max. 6)</b>
-     <div class="ofgrid">${O.ph.map((p,i)=>`<div class="ofp"><img src="${e(p.img)}" alt="Fotka ${i+1}"><small>${p.lat!=null?"📍 GPS z fotky":p.dev?"📍 poloha telefónu":"⚠️ bez GPS"}</small><button type="button" class="ofx" data-ofrm="${i}" aria-label="Odstrániť fotku">✕</button></div>`).join("")}
+     <div class="ofgrid">${O.ph.map((p,i)=>`<div class="ofp"><img src="${e(p.img)}" alt="Fotka ${i+1}"><button type="button" class="ofx" data-ofrm="${i}" aria-label="Odstrániť fotku">✕</button></div>`).join("")}
      ${O.ph.length<6?`<label class="ofadd">${O.busy?"⏳ Spracúvam…":"➕ Odfotiť / pridať"}<input type="file" accept="image/*" capture="environment" multiple data-ofadd hidden></label>`:""}</div>
-     <div class="s">Fotiť priamo v sklade so zapnutou polohou. Ak fotka GPS nemá, použije sa poloha telefónu v čase pridania.</div></div>
+     <div class="s">Odfoťte tovar priamo v sklade, aby bolo vidieť jeho stav.</div></div>
    <div class="w btns"><button class="pri" type="submit"${O.busy?" disabled":""}>📤 Odoslať návrh ERNTE</button><button type="button" data-ofclose>Zrušiť</button></div></form>`}
 function mine(){const L=O.mine;if(!Array.isArray(L)||!L.length)return "";
   return `<div class="ofmine"><b>Moje návrhy</b>${L.slice(0,5).map(o=>`<div class="row"><span>${e(typeof comName==="function"?comName(o.com):o.com)} · ${f2(o.tons)} t · <b>${f2(o.price)} €/t</b></span>${typeof pill==="function"?pill(({nova:["čaká na ERNTE","w"],prijata:["prijaté",""],protinavrh:["protinávrh","b"],zamietnuta:["zamietnuté","r"]})[o.status]||[o.status]):e(o.status)}</div>${o.reply?`<div class="s">ERNTE: ${e(o.reply)}</div>`:""}`).join("")}</div>`}
@@ -60,7 +60,7 @@ async function loadMine(){if(O.mine!==null)return;O.mine=[];const r=await sb.fro
   if(r.error){O.tbl=false;O.mine=[];return}O.tbl=true;O.mine=r.data||[];if(isFarmer())renderFarmer()}
 async function submit(f){const fd=new FormData(f),price=N(fd.get("price")),tons=N(fd.get("tons"));if(!(price>0)||!(tons>0)){say("Napíšte cenu aj množstvo.");return}
   const b=f.querySelector("button[type=submit]");if(typeof busy==="function")busy(b,true);
-  const dev=O.ph.find(p=>p.dev)?.dev||await here();
+  const dev=null;
   const pts=O.ph.map(p=>({lat:p.lat??(p.dev&&p.dev.lat),lon:p.lon??(p.dev&&p.dev.lon),src:p.lat!=null?"exif":p.dev?"device":null,acc:p.lat!=null?null:p.dev&&p.dev.acc,taken:p.taken})).filter(p=>p.lat!=null);
   const row={farmer_id:FARMER.id,com:fd.get("com"),price,tons,pickup_date:fd.get("date")||null,place:String(fd.get("place")||"").slice(0,200)||null,note:String(fd.get("note")||"").slice(0,500)||null,
     photos:O.ph.map(p=>({img:p.img,lat:p.lat,lon:p.lon,taken:p.taken,dev:p.dev,name:p.name})),geo:pts,dev_lat:dev?dev.lat:null,dev_lon:dev?dev.lon:null,dev_acc:dev?dev.acc:null};
@@ -68,8 +68,8 @@ async function submit(f){const fd=new FormData(f),price=N(fd.get("price")),tons=
   if(r.error&&/farmer_offers|relation|schema cache|does not exist|could not find/i.test(r.error.message)){
     // náhradný spôsob: požiadavka „Chcem predať“ s navrhnutou cenou a GPS bodmi v poznámke
     const g=pts.map((p,i)=>`F${i+1} ${p.lat},${p.lon}${p.src==="device"?"~":""}`).join("; ")||(dev?`tel ${dev.lat},${dev.lon}`:"bez GPS");
-    r=await sb.from("requests").insert({farmer_id:FARMER.id,kind:"sell",com:row.com,price,tons,pickup_date:row.pickup_date,place:row.place,note:(`💬 NÁVRH CENY FARMÁRA ${f2(price)} €/t · ${row.note||""} · 📍 ISCC: ${g}`).slice(0,500)});
-    if(!r.error&&O.ph.length)say("Návrh odoslaný. Fotky sa uložia, keď ERNTE dokončí úpravu databázy – GPS body sme už zapísali.",7000);
+    r=await sb.from("requests").insert({farmer_id:FARMER.id,kind:"sell",com:row.com,price,tons,pickup_date:row.pickup_date,place:row.place,note:(`💬 NÁVRH CENY FARMÁRA ${f2(price)} €/t · ${row.note||""}`).slice(0,440)+(pts.length?` ·#${g}`:"")});
+    
   }
   if(typeof busy==="function")busy(b,false);
   if(r.error){say("Nepodarilo sa odoslať: "+r.error.message,7000);return}
