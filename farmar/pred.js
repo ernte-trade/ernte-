@@ -193,9 +193,9 @@ function natalCard(){const n=natal(),N=S.natal||{},o=S.open.__nat||!n,s=window.A
     ${tr.list.length?`<div class="s">Tvoje tranzity dnes: ${tr.list.map(x=>`${x.v>0?"✅":"⛔"} ${e(x.t)}`).join(" · ")}</div>`:`<div class="s">Dnes žiadne silné osobné tranzity.</div>`}
     ${tr.moonHouse===2||tr.moonHouse===8?`<div class="s">💰 Mesiac prechádza tvojím ${tr.moonHouse}. domom (peniaze).</div>`:""}`;
   if(o)h+=`<form class="f" id="fPrdN"><label class="w">Váha vesmíru v odporúčaní: <b id="prdWv">${Math.round(+S.cfg.w||0)} %</b><input type="range" name="w" min="0" max="100" step="5" value="${Math.round(+S.cfg.w||0)}" data-prdw></label>
-    <label>Meno<input name="name" value="${e(N.name||"")}"></label><label>Dátum narodenia<input name="date" type="date" value="${e(N.date||"")}" required></label>
-    <label>Čas narodenia<input name="time" type="time" value="${e(N.time||"")}" required></label><label>Miesto<input name="place" value="${e(N.place||"")}" placeholder="napr. Sobrance"></label>
-    <label>Zem. šírka<input name="lat" inputmode="decimal" value="${e(N.lat??"")}" placeholder="48.745"></label><label>Zem. dĺžka<input name="lon" inputmode="decimal" value="${e(N.lon??"")}" placeholder="22.181"></label>
+    <label>Meno<input name="name" value="${e(N.name||"")}"></label><label>Dátum narodenia<input name="date" inputmode="numeric" autocomplete="bday" placeholder="DD.MM.RRRR" maxlength="10" data-prddate value="${e(N.date?N.date.split("-").reverse().join("."):"")}" required></label>
+    <label>Čas narodenia<input name="time" inputmode="numeric" placeholder="HH:MM (ak nevieš, nechaj prázdne)" maxlength="5" data-prdtime value="${e(N.time||"")}"></label><label>Miesto<input name="place" value="${e(N.place||"")}" placeholder="napr. Sobrance"></label>
+    <label>Zem. šírka <small>(nepovinné)</small><input name="lat" inputmode="decimal" value="${e(N.lat??"")}" placeholder="doplní sa podľa miesta"></label><label>Zem. dĺžka <small>(nepovinné)</small><input name="lon" inputmode="decimal" value="${e(N.lon??"")}" placeholder="doplní sa podľa miesta"></label>
     <div class="w s">Údaje sú uložené len v tvojom súkromnom úložisku (vidí ich iba majiteľ). Čas sa prepočíta podľa letného/zimného času v deň narodenia.</div>
     <div class="w btns"><button class="pri" type="submit">Uložiť</button></div></form>`;
   return h+"</div>"}
@@ -316,12 +316,20 @@ document.addEventListener("submit",async ev=>{const f=ev.target;if(!OWN()||!["fP
     const q={id:Date.now().toString(36)+Math.random().toString(36).slice(2,6),buyer:String(d.get("buyer")).trim().slice(0,80),com:d.get("com"),price,place:d.get("place")||null,km:N(d.get("km")),till:d.get("till")||null,at:today()};
     const C=Object.assign({},S.cfg,{quotes:[...(S.cfg.quotes||[]),q].slice(-300)});if(typeof busy==="function")busy(b,true);
     try{await stSet("pred_cfg",C);S.cfg=C;tst("Ponuka pridaná.");rr()}catch(er){tst("Chyba: "+er.message,6000)}if(typeof busy==="function")busy(b,false);return}
-  if(f.id==="fPrdN"){const N={name:String(d.get("name")||"").trim().slice(0,60),date:d.get("date"),time:d.get("time"),place:String(d.get("place")||"").trim().slice(0,80),lat:N_(d.get("lat")),lon:N_(d.get("lon"))};
-    if(N.lat==null||N.lon==null){tst("Zadaj zemepisnú šírku a dĺžku miesta narodenia.");return}const C=Object.assign({},S.cfg,{w:Math.max(0,Math.min(100,+d.get("w")||0))});
+  if(f.id==="fPrdN"){const ds=String(d.get("date")||"").trim(),m=ds.match(/^(\d{1,2})[.\/\- ]\s*(\d{1,2})[.\/\- ]\s*(\d{4})$/)||ds.match(/^(\d{2})(\d{2})(\d{4})$/);
+    if(!m){tst("Dátum napíš ako DD.MM.RRRR, napr. 05.03.1980.",5000);return}const dd=+m[1],mm=+m[2],yy=+m[3],dt=new Date(Date.UTC(yy,mm-1,dd));
+    if(dt.getUTCDate()!==dd||dt.getUTCMonth()!==mm-1||yy<1900||dt>new Date()){tst("Taký dátum neexistuje – skontroluj deň, mesiac a rok.",5000);return}
+    let tm=String(d.get("time")||"").trim().replace(/[.,h ]/g,":");const tmm=tm.match(/^(\d{1,2}):?(\d{2})$/);tm=tmm&&+tmm[1]<24&&+tmm[2]<60?String(tmm[1]).padStart(2,"0")+":"+tmm[2]:"12:00";
+    const N={name:String(d.get("name")||"").trim().slice(0,60),date:`${yy}-${String(mm).padStart(2,"0")}-${String(dd).padStart(2,"0")}`,time:tm,timeUnknown:!tmm,place:String(d.get("place")||"").trim().slice(0,80),lat:N_(d.get("lat")),lon:N_(d.get("lon"))};
+    if((N.lat==null||N.lon==null)&&N.place){try{const r=await fetch("https://nominatim.openstreetmap.org/search?format=json&limit=1&accept-language=sk&q="+encodeURIComponent(N.place));const j=await r.json();if(j&&j[0]){N.lat=Math.round(+j[0].lat*1000)/1000;N.lon=Math.round(+j[0].lon*1000)/1000}}catch(x){}}
+    if(N.lat==null||N.lon==null){tst("Napíš miesto narodenia (obec/mesto) – súradnice sa doplnia samé.",5000);return}
+    if(N.timeUnknown)tst("Čas neznámy – počítam s 12:00 (ascendent nebude presný).",4000);const C=Object.assign({},S.cfg,{w:Math.max(0,Math.min(100,+d.get("w")||0))});
     try{await stSet("pred_natal",N);await stSet("pred_cfg",C);S.natal=N;S.cfg=C;S.open.__nat=false;tst("Uložené.");rr()}catch(er){tst("Chyba: "+er.message,6000)}return}
   if(f.id==="fPrdC"){const C=Object.assign({},S.cfg);for(const k of ["rate","payload","store","handle","tmin","defKm","basis"]){const v=N(d.get(k));if(v!=null&&v>=0)C[k]=v}C.ret=!!d.get("ret");if(!(C.payload>0))C.payload=25;
     try{await stSet("pred_cfg",C);S.cfg=C;S.open.__cfg=false;tst("Uložené.");rr()}catch(er){tst("Chyba: "+er.message,6000)}}},true);
-document.addEventListener("input",ev=>{const r=ev.target.closest&&ev.target.closest("[data-prdw]");if(r){const o=document.getElementById("prdWv");if(o)o.textContent=r.value+" %"}});
+document.addEventListener("input",ev=>{const t=ev.target;if(t&&t.matches&&t.matches("[data-prddate]")&&!(ev.inputType||"").startsWith("delete")){let v=t.value.replace(/[^\d]/g,"").slice(0,8);t.value=v.length>4?v.slice(0,2)+"."+v.slice(2,4)+"."+v.slice(4):v.length>2?v.slice(0,2)+"."+v.slice(2):v;return}
+  if(t&&t.matches&&t.matches("[data-prdtime]")&&!(ev.inputType||"").startsWith("delete")){let v=t.value.replace(/[^\d]/g,"").slice(0,4);t.value=v.length>2?v.slice(0,2)+":"+v.slice(2):v;return}
+  const r=ev.target.closest&&ev.target.closest("[data-prdw]");if(r){const o=document.getElementById("prdWv");if(o)o.textContent=r.value+" %"}});
 // zamknutie po nečinnosti a pri odchode zo záložky
 setInterval(()=>{if(OWN()&&typeof TAB!=="undefined"&&TAB==="pred"&&S.cfg&&!unlocked()&&!document.querySelector("#fPrdPin"))rr()},30000);
 document.addEventListener("click",ev=>{const b=ev.target.closest("[data-tab]");if(b&&b.dataset.tab!=="pred")lock()},true);
