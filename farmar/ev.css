@@ -108,3 +108,12 @@ html[data-theme=light] .pill.dnb{color:#1e40af}html[data-theme=light] .pill.ern{
 .odr{flex-wrap:wrap}.odsg{flex-basis:100%;margin-left:32px;font-size:.85em;padding:6px 10px;border-radius:10px;background:rgba(255,255,255,.05)}
 .odsg small{display:block;opacity:.75}.odsg.hi{background:rgba(190,242,100,.12)}.odsg.mid{background:rgba(251,191,36,.12)}.odsg.lo{opacity:.8}
 .odai .btns{margin-top:8px}
+/* Zúčtovanie dashboard */
+.zd{display:grid;gap:10px}.zdp{flex-wrap:wrap}.zdf{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.zdk{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:8px}.zdk div{padding:10px;border-radius:14px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.08)}
+.zdk small{display:block;opacity:.75;font-size:.78em}.zdk b{font-size:1.15em}.zdk .w{border-color:rgba(251,191,36,.5)}
+.zdd{display:flex;align-items:flex-end;gap:4px;height:90px;padding:6px 0;overflow-x:auto}.zddi{flex:1 0 22px;height:100%;display:flex;flex-direction:column;justify-content:flex-end;align-items:center}
+.zddi i{display:block;width:70%;border-radius:6px 6px 2px 2px;background:linear-gradient(#bef264,#65a30d)}.zddi small{font-size:.65em;opacity:.7;margin-top:2px}
+.zdpdf{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:10px}.zdbox{display:grid;gap:8px;padding:12px;border-radius:14px;border:1px solid rgba(255,255,255,.12)}
+.zdck{display:flex;gap:8px;align-items:center}.zdck input{width:20px;height:20px}
+:root[data-theme="light"] .zdk div{background:rgba(0,0,0,.03);border-color:rgba(0,0,0,.08)}

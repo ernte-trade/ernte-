@@ -61,6 +61,7 @@ const H2=[
  ["Najbližších 7 dní","Termíny a počasie na najbližší týždeň."],
  ["Prehľad ERNTE","Hlavné čísla ERNTE a VALKO – čo je nové a čo čaká."],
  ["Zúčtovanie","Vyúčtovanie dodávok podľa vážnych lístkov ku každej zmluve."],
+ ["📊 Dashboard zúčtovania","Lístky, tony a hodnota za vybrané obdobie a komoditu. Odtiaľ vytlačíš PDF na fakturáciu dopravy a PDF pre odberateľa."],
  ["1️⃣ Nahrať Excel od odberateľa","Excel od odberateľa (Agro-Somotor…) má všetky lístky na ERNTE. Nahraj ho – lístky sa uložia ako nerozdelené."],
  ["2️⃣ Rozdeliť lístky farmárom","Označ lístky (filter komodita, ŠPZ), vyber farmára a ťukni Prideliť. Lístky sa zarátajú do jeho zmlúv a zúčtovania."],
  ["Vývoz od farmárov","Komodita pripravená na odvoz u farmárov – koľko ešte ostáva odviezť."],

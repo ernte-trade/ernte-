@@ -71,12 +71,12 @@ function listHTML(){let h=`<div class="card f"><h2 class="w odh">2️⃣ Rozdeli
 window.odbHTML=function(){if(ROLE!=="owner")return "";return impHTML()+listHTML()+`<div class="s">🔒 Vidíš iba ty. Farmár po pridelení vidí len svoje lístky a svoje zúčtovanie – nikdy odberateľa ani predajnú cenu.</div>`};
 const farmId=n=>{const v=nz(n);const f=(STATE.farmers||[]).find(x=>nz(x.name)===v);return f?f.id:null};
 async function assign(b,fid){const T=[...O.sel];if(!T.length)return;busy(b,true);const r=await sb.rpc("deliveries_assign",{p_tickets:T,p_farmer:fid});busy(b,false);
-  if(r.error){toast("Chyba: "+r.error.message,7000);return}const d=r.data||{};O.sel.clear();O.L=null;
+  if(r.error){toast("Chyba: "+r.error.message,7000);return}const d=r.data||{};O.sel.clear();O.L=null;window.zdashReload&&zdashReload();
   toast(fid?`✓ ${d.n} lístkov pridelených: ${d.farmer}.${d.bez_zmluvy?` ⚠️ ${d.bez_zmluvy} bez zmluvy – farmár nemá zmluvu na túto komoditu (pridaj ju v Obchodoch).`:" Zarátané do jeho zmlúv a zúčtovania."}`:`↩️ Pridelenie zrušené (${d.n} lístkov).`,8000);renderStaff()}
 document.addEventListener("change",async e=>{const t=e.target;if(!t||ROLE!=="owner")return;
   if(t.id==="odFile"){const f=t.files&&t.files[0];if(!f)return;try{const r=await readFile(f);O.imp={name:f.name,rows:r.rows,bad:r.bad};if(!r.rows.length)O.imp.err="V súbore som nenašiel žiadne vážne lístky (stĺpce Dátum, Vážny lístok, Tovar, ŠPZ…)."}catch(x){O.imp={err:"Súbor sa nepodarilo prečítať: "+(x&&x.message||x)}}renderStaff();return}
   if(t.id==="odBuyer"){O.buyer=t.value.trim();try{localStorage.setItem("ernte-odb-buyer",O.buyer)}catch(x){}return}
-  if(t.id==="odD0"||t.id==="odD1"){O[t.id==="odD0"?"d0":"d1"]=t.value;O.L=null;renderStaff();return}
+  if(t.id==="odD0"||t.id==="odD1"){O[t.id==="odD0"?"d0":"d1"]=t.value;O.L=null;window.zdashReload&&zdashReload();renderStaff();return}
   if(t.id==="odCom"){O.com=t.value;O.plate="";renderStaff();return}
   if(t.id==="odPlate"){O.plate=t.value;renderStaff();return}
   if(t.id==="odFq"){O.fq=t.value;return}
@@ -86,14 +86,14 @@ document.addEventListener("click",async e=>{const t=e.target;if(!t.closest||ROLE
   if(x=t.closest("[data-odsave]")){const I=O.imp;if(!I||!I.rows)return;busy(x,true);let tot={nove:0,aktualizovane:0,nerozdelene:0},r;
     for(let i=0;i<I.rows.length;i+=200){r=await sb.rpc("buyer_import",{rows:I.rows.slice(i,i+200),p_buyer:O.buyer||null});if(r.error)break;for(const k in tot)tot[k]+=+r.data[k]||0}
     busy(x,false);if(r.error){toast("Chyba: "+r.error.message,8000);return}
-    const ds=I.rows.map(x=>x.d).sort();O.d0=ds[0];O.d1=ds[ds.length-1];O.imp=null;O.L=null;O.only="nerozd";
+    const ds=I.rows.map(x=>x.d).sort();O.d0=ds[0];O.d1=ds[ds.length-1];O.imp=null;O.L=null;window.zdashReload&&zdashReload();O.only="nerozd";
     const au=(r.data&&r.data.auto)||{};O.M=null;toast(`✓ ${tot.nove} nových, ${tot.aktualizovane} aktualizovaných lístkov. 🤖 Pridelené samo: ${au.pridelene||0}, návrhy: ${au.navrhy||0}, nerozdelené: ${au.zostava!=null?au.zostava:tot.nerozdelene}.`,9000);renderStaff();return}
-  if(x=t.closest("[data-odauto]")){busy(x,true);const r=await sb.rpc("deliveries_auto",{p_apply:true});busy(x,false);if(r.error){toast("Chyba: "+r.error.message,7000);return}const d=r.data||{};O.L=null;O.M=null;
+  if(x=t.closest("[data-odauto]")){busy(x,true);const r=await sb.rpc("deliveries_auto",{p_apply:true});busy(x,false);if(r.error){toast("Chyba: "+r.error.message,7000);return}const d=r.data||{};O.L=null;window.zdashReload&&zdashReload();O.M=null;
     toast(`🤖 Pridelené samo: ${d.pridelene} · návrhy: ${d.navrhy} · GPS nájdené: ${d.gps} · nerozdelené: ${d.zostava}`,8000);renderStaff();return}
   if(x=t.closest("[data-odconf]")){const T=view().filter(v=>!v.f&&v.af).map(v=>v.t);if(!T.length)return;busy(x,true);const r=await sb.rpc("deliveries_confirm",{p_tickets:T});busy(x,false);if(r.error){toast("Chyba: "+r.error.message,7000);return}
-    O.L=null;O.M=null;toast(`✓ ${r.data.n} návrhov potvrdených a pridelených. Model sa z nich naučil.`,6000);renderStaff();return}
+    O.L=null;window.zdashReload&&zdashReload();O.M=null;toast(`✓ ${r.data.n} návrhov potvrdených a pridelených. Model sa z nich naučil.`,6000);renderStaff();return}
   if(x=t.closest("[data-odok]")){const T=view().filter(v=>v.f&&v.by==="auto").map(v=>v.t);busy(x,true);const r=await sb.rpc("deliveries_ok",{p_tickets:T});busy(x,false);if(r.error){toast("Chyba: "+r.error.message,7000);return}
-    O.L=null;O.M=null;toast(`👍 ${r.data} automatických pridelení potvrdených.`,5000);renderStaff();return}
+    O.L=null;window.zdashReload&&zdashReload();O.M=null;toast(`👍 ${r.data} automatických pridelení potvrdených.`,5000);renderStaff();return}
   if(t.closest("[data-odx]")){O.imp=null;renderStaff();return}
   if(x=t.closest("[data-odonly]")){O.only=x.dataset.odonly;renderStaff();return}
   if(t.closest("[data-odall]")){view().forEach(v=>O.sel.add(v.t));renderStaff();return}
