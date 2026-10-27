@@ -2578,7 +2578,7 @@ function qpwGen(){const w=["Klas","Zrno","Pole","Repka","Soja","Mlyn","Sklad","B
 function inviteBox(I,sms){const t=I.pw?I.txt.split(I.pw).join(PWMASK):I.txt;
   return `<div class="box"><b>Prihlásenie pre ${esc(I.name)} je pripravené</b><div class="s" style="white-space:pre-wrap;color:var(--ink)">${window.appLinkHTML?appLinkHTML(t):esc(t)}</div>
   ${I.pw?`<button type="button" class="pwg" data-pwg aria-label="Heslo – ťuknutím skopíruješ, podržaním zobrazíš na 5 sekúnd"><span class="pwi">🔑</span><span class="pwt"><span class="pwv">${PWMASK}</span><small>ťukni = kopírovať · podrž = ukázať</small></span></button>`:""}
-  <div class="btns">${I.tel?`<button type="button" class="lime" data-invsend="wa">Poslať cez WhatsApp</button>${sms?`<button type="button" data-invsend="sms">Poslať SMS</button>`:""}`:""}<button type="button" data-copyinv>Kopírovať správu</button><button type="button" data-closeinv>Hotovo</button></div>
+  <div class="btns">${window.inviteCardButtons?inviteCardButtons():""}${I.tel?`<button type="button" class="lime" data-invsend="wa">Poslať cez WhatsApp</button>${sms?`<button type="button" data-invsend="sms">Poslať SMS</button>`:""}`:""}<button type="button" data-copyinv>Kopírovať správu</button><button type="button" data-closeinv>Hotovo</button></div>
   <div class="s">Heslo si nikde neukladáme – pošlite ho teraz. Ak ho stratí, vytvorte nové.</div></div>`}
 (()=>{let tm=null,long=false,hideT=null;const V=b=>b&&b.querySelector(".pwv");
   const mask=b=>{const v=V(b);if(v)v.textContent=PW(b)?PWMASK:"Rýchle heslo";b.classList.remove("on","ok")};
@@ -2822,6 +2822,7 @@ document.addEventListener("click",e=>{const b=e.target.closest("[data-dfp]");if(
 <script src="fndesc.js?v=20261027-0900"></script>
 <script src="sign.js?v=20261027-0855"></script>
 <script src="outbox.js?v=20261027-0120"></script>
+<script src="invitecard.js?v=20261027-0940"></script>
 <script src="farmact.js?v=20261027-0150"></script>
 </body>
 </html>
