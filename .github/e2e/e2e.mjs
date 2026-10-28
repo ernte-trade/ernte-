@@ -57,6 +57,7 @@ for (const d of DEV) {
     const run = { dev: d.id, devName: d.name, kind: c.kind, name: c.name, errors: [], http: [], tabs: [] }; R.runs.push(run);
     const ctx = await browsers[key].newContext({ ...d.opt, locale: "sk-SK", timezoneId: "Europe/Bratislava" });
     const pg = await ctx.newPage();
+    await pg.addInitScript(() => { try { sessionStorage.setItem("ernte-welcome-shown", "1"); } catch (x) {} });
     pg.on("pageerror", e => run.errors.push("JS: " + String(e.message || e).slice(0, 300)));
     pg.on("console", m => { if (m.type() === "error" && !/favicon|__cf_bm|ERR_ABORTED|net::ERR_FAILED|Failed to load resource: the server responded with a status of 404 \(\)/.test(m.text())) run.errors.push("console: " + m.text().slice(0, 300)); });
     pg.on("response", res => { const u = res.url(); if (res.status() >= 400 && /supabase\.co/.test(u)) run.http.push(res.status() + " " + u.replace(/\?.*/, "").replace(/^https:\/\/[^/]+/, "").slice(0, 140)); });
