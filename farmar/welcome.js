@@ -109,7 +109,9 @@ function spotOK(k){if(k==="ja")return true;if(typeof FARMER!=="undefined"&&FARME
   const T=raw.split(/[^a-z0-9]+/);return SPWHO.some(ws=>ws.every(w=>T.includes(w)))}
 function spot(){const r=spRef(),cur=SPRAD.find(x=>x[2]===r);return `<div class="whc whsp"><div class="wsph"><div class="wspt"><small>🎵 Rádio · Spotify</small><b>${cur?`<i>${cur[0]}</i> <span>${E(cur[1])}</span>`:"<span>Môj playlist</span>"}</b></div><span><a class="wspo" href="https://open.spotify.com/${r}" target="_blank" rel="noopener">Spotify ↗</a><button type="button" class="wspc" data-spchg>Zmeniť</button></span></div>
   <div class="wspr" role="group" aria-label="Rádiá">${SPRAD.map(x=>`<button type="button" class="wsprb" data-sprad="${x[2]}" aria-pressed="${x[2]===r}">${x[0]} ${E(x[1])}</button>`).join("")}</div>
-  <div class="wspw"><iframe class="wspf" title="Spotify" src="https://open.spotify.com/embed/${r}?utm_source=generator" height="80" frameborder="0" loading="lazy" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"></iframe></div></div>`}
+  <div class="wspw wslot"></div><div class="wspn">▶ Hrá ďalej aj počas práce v aplikácii – dole sa zbalí do 🎵.</div></div>`}
+/* prehrávač žije mimo úvodu (spdock.js) – tu ho iba prilepíme do panelu, aby hudba pri zatvorení úvodu nestíchla */
+function spHook(el){const s=el&&el.querySelector(".whsp .wslot");if(!s||!window.spDock)return;const r=spRef(),cur=SPRAD.find(x=>x[2]===r);try{spDock.play(r,cur?cur[0]+" "+cur[1]:"Môj playlist");spDock.attach(s)}catch(x){}}
 const WXI=c=>c===0?"☀️":c<=2?"🌤️":c===3?"☁️":c<=48?"🌫️":c<=67?"🌧️":c<=77?"🌨️":c<=82?"🌦️":c<=86?"🌨️":"⛈️";
 const WXN=c=>c===0?"jasno":c<=2?"polojasno":c===3?"zamračené":c<=48?"hmla":c<=57?"mrholenie":c<=67?"dážď":c<=77?"sneh":c<=82?"prehánky":c<=86?"snehové prehánky":"búrka";
 function spark(svg,vals){if(!svg||!vals.length)return;const mn=Math.min(...vals),mx=Math.max(...vals),r=mx-mn||1;const pt=vals.map((v,i)=>[i*120/(vals.length-1||1),30-(v-mn)/r*24]);
@@ -206,12 +208,13 @@ async function show(force){const k=kind();if(!k||document.querySelector(".wlc"))
   const ready=()=>{const S=typeof STATE!=="undefined"?STATE:{};return (S.prices&&S.prices.length)||(S.deals&&S.deals.length)};
   if(hd&&!ready()){let n=0;const iv=setInterval(()=>{n++;if(!el.isConnected||n>40){clearInterval(iv);return}if(ready()){clearInterval(iv);hd.classList.remove("wgo");try{kpis(k,hd)}catch(x){}fill()}},500)}
   await fill();
+  spHook(el);
   el.addEventListener("click",ev=>{    if(ev.target.closest("[data-wljoke]"))return;
     if(ev.target.closest(".wcomb,.wtrac,.wtk1,.wtk2,.when")){const g=ev.target.closest(".wcomb,.wtrac,.wtk1,.wtk2,.when");g.classList.add("wboost");setTimeout(()=>g.classList.remove("wboost"),1500);honk(g.classList.contains("when"));confetti(el,ev.clientX,ev.clientY);if(navigator.vibrate)try{navigator.vibrate(30)}catch(x){}return}
     if(ev.target.closest(".wcred"))return;
     if(ev.target.closest("[data-spchg]")){const u=prompt("Vlož odkaz na playlist, album alebo skladbu zo Spotify (v Spotify: ⋯ → Zdieľať → Kopírovať odkaz):","");if(u==null)return;const r=spParse(u);
-      if(!r){if(typeof toast==="function")toast("Toto nie je odkaz zo Spotify – skús znova.",5000);return}try{localStorage.setItem(SPK,r)}catch(x){}const w=el.querySelector(".whsp");if(w)w.outerHTML=spot();return}
-    {const rb=ev.target.closest("[data-sprad]");if(rb){try{localStorage.setItem(SPK,rb.dataset.sprad)}catch(x){}const w=el.querySelector(".whsp");if(w)w.outerHTML=spot();return}}
+      if(!r){if(typeof toast==="function")toast("Toto nie je odkaz zo Spotify – skús znova.",5000);return}try{localStorage.setItem(SPK,r)}catch(x){}const w=el.querySelector(".whsp");if(w)w.outerHTML=spot();spHook(el);return}
+    {const rb=ev.target.closest("[data-sprad]");if(rb){try{localStorage.setItem(SPK,rb.dataset.sprad)}catch(x){}const w=el.querySelector(".whsp");if(w)w.outerHTML=spot();spHook(el);return}}
     if(ev.target.closest(".whsp"))return;
     if(ev.target.closest(".whc")){const c=ev.target.closest(".whc");c.classList.remove("wtap");void c.offsetWidth;c.classList.add("wtap");honk(false);confetti(el,ev.clientX,ev.clientY);if(navigator.vibrate)try{navigator.vibrate(20)}catch(x){}return}
     if(ev.target.closest("[data-wlgo]"))return;
@@ -345,6 +348,7 @@ html.wlon,html.wlon body{overflow:hidden}
 .wsph span{display:flex;gap:6px;align-items:center;flex:none}.wspo{font-size:.72rem;font-weight:700;color:#d9f99d;text-decoration:none}
 .wspc{min-height:30px!important;padding:0 10px!important;border-radius:999px!important;font-size:.72rem!important}
 .wspf{display:block;width:100%;height:80px;border:0;border-radius:14px;background:transparent}
+.wslot{height:83px;background:rgba(255,255,255,.04)}.wspn{font-size:.66rem;color:rgba(241,245,255,.7);margin-top:6px}
 .wspw{position:relative;border-radius:16px;padding:1.5px;background:linear-gradient(135deg,rgba(182,255,59,.75),rgba(94,234,212,.55) 45%,rgba(255,255,255,.18));box-shadow:0 12px 30px rgba(0,0,0,.35),0 0 26px rgba(94,234,212,.18)}
 .wspt{min-width:0}.wspt b{display:block;font:800 1.02rem/1.15 var(--f-ui,system-ui);letter-spacing:-.01em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.wspt b i{font-style:normal}.wspt b span{background:linear-gradient(90deg,#fff,#d9f99d 55%,#5eead4);-webkit-background-clip:text;background-clip:text;color:transparent}
 .wspr{display:flex;gap:5px;overflow-x:auto;scrollbar-width:none;margin:0 0 6px;padding-bottom:2px}.wspr::-webkit-scrollbar{display:none}
