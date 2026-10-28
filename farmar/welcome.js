@@ -6,7 +6,7 @@
 (function(){
 const E=s=>String(s==null?"":s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const today=()=>new Date().toLocaleDateString("sv-SE");
-const SKEY="ernte-welcome-shown",DKEY="ernte-welcome-off";
+const WV="3";const SKEY="ernte-welcome-shown"+WV,DKEY="ernte-welcome-off"+WV;
 const sGet=k=>{try{return sessionStorage.getItem(k)}catch(x){return null}},sSet=(k,v)=>{try{sessionStorage.setItem(k,v)}catch(x){}};
 const lGet=k=>{try{return localStorage.getItem(k)}catch(x){return null}},lSet=(k,v)=>{try{localStorage.setItem(k,v)}catch(x){}};
 const can_=k=>typeof can==="function"&&can(k);
