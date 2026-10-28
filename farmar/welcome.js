@@ -138,7 +138,7 @@ async function pxRefresh(el,k){try{const r=await sb.from("prices").select("com,p
     const stampOld=pxStamp();if(typeof STATE!=="undefined"){const M=Object.fromEntries((STATE.prices||[]).map(p=>[p.com,p]));r.data.forEach(x=>{if(M[x.com])Object.assign(M[x.com],x);else (STATE.prices=STATE.prices||[]).push({...x})})}
     if(ch.size||pxStamp()!==stampOld){if(k==="farmar")farmPx(el,ch);else pxPanel(el,ch)}}catch(x){}}
 function pxLive(el,k){if(!el.querySelector(".whpl")&&k!=="farmar")return 0;
-  try{if(k!=="farmar"&&window.autoCennik)autoCennik.run(false)}catch(x){}
+  try{if(k!=="farmar"&&window.autoCennik&&!window.ERNTE_VIEWAS&&!window.ERNTE_TEST)autoCennik.run(false)}catch(x){}
   setTimeout(()=>pxRefresh(el,k),4000);return setInterval(()=>{if(!document.hidden)pxRefresh(el,k)},30000)}
 
 /* ---------- údaje do pozdravu ---------- */
@@ -154,7 +154,7 @@ async function facts(k){const L=[];try{const S=typeof STATE!=="undefined"?STATE:
  }catch(x){}return L}
 
 /* ---------- zobrazenie ---------- */
-async function show(force){const k=kind();if(!k||document.querySelector(".wlc"))return;if(window.ERNTE_TEST||window.ERNTE_VIEWAS||sGet("ernte-welcome-skip"))return;
+async function show(force){const k=kind();if(!k||document.querySelector(".wlc"))return;if(sGet("ernte-welcome-skip"))return;
   const ph=phase();const nm=k==="farmar"?(FARMER.name||""):k==="trus"?"":firstName((typeof ME!=="undefined"&&ME&&ME.staffName)||"");
   const who=k==="ja"?"Martin":nm;const g=`${GREET[ph]}${who?", "+E(who):""}!`;
   const FL=FUN[k]||FUN.tim;let ji=Math.floor(Date.now()/864e5)%FL.length;
