@@ -10,6 +10,7 @@ const PCAT=[
  ["farm","Farmári – kontakty a adresy","Obchod",""],
  ["farm_login","Vytvárať prihlásenia farmárom","Obchod",""],
  ["farm_terms","⚙️ Podmienky a bonusy farmárov","Obchod","individuálny bonus, splatnosť, doprava"],
+ ["firmy","🔎 Firmy podľa IČO – automatické vyplnenie z registra, FinStat","Obchod","po zadaní IČO / odfotení pečiatky"],
  ["calc","Kalkulačka nákupnej ceny ERNTE","Obchod","odberatelia, doprava, burza"],
  ["market","Burza a trh (MATIF, CBOT)","Obchod",""],
  ["agro","Agro služby – objednávky a cenník","Obchod","bez nákladov a marže"],
@@ -37,9 +38,9 @@ const PCAT=[
  ["wx","Počasie","Ostatné",""],
  ["big","Veľké písmo a tlačidlá","Ostatné","lepšia čitateľnosť"]];
 const PLOCK=[["margin","Marža, zisk a predajné ceny odberateľom"],["payroll","Mzdy vodičov"],["costs","Pevné náklady firmy"],["ai","ERNTE AI Podpora"],["team","Tím a prístupy"]];
-const PDEF={admin:["req","price_view","deals","farm","farm_login","calc","market","trans","remain","notes","wx","big","nov"],
- dispatch:["req","trans","trus","deals_qty","farm","assign","farmer_gps","remain","notes","fleet","drivers","alarms","cams","yard","diesel","fleet_set","wx","big","ev","ev_doch","sklad","praca","nov"],
- invoice:["req","price_view","deals","farm","trans","remain","wx","nov"]};
+const PDEF={admin:["req","price_view","deals","farm","firmy","farm_login","calc","market","trans","remain","notes","wx","big","nov"],
+ dispatch:["req","trans","trus","deals_qty","farm","firmy","assign","farmer_gps","remain","notes","fleet","drivers","alarms","cams","yard","diesel","fleet_set","wx","big","ev","ev_doch","sklad","praca","nov"],
+ invoice:["req","price_view","deals","farm","firmy","trans","remain","wx","nov"]};
 const PRESET={
  doprava:{n:"Vedúci dopravy",role:"dispatch",k:["trans","trus","deals_qty","assign","farmer_gps","remain","notes","fleet","drivers","alarms","diesel","yard","cams","fleet_set","big"]},
  veduci:{n:"Vedúci (farma, dielňa)",role:"dispatch",k:["ev","ev_doch","sklad","praca","wx","big"]},

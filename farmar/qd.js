@@ -83,7 +83,7 @@ function apply(r){if(!r)return;Q.ai=r;const F=r.farmar||{},O=r.obchod||{};
 async function scan(mode,img,text,thumb){Q.busy=mode==="peciatka"?"Čítam pečiatku…":mode==="papier"?"Čítam papier…":"Spracúvam, čo si povedal…";rr();
   try{const r=await sb.rpc("qd_scan",{p_img:img||null,p_mode:mode,p_text:text||null,p_thumb:thumb||null});if(r.error)throw r.error;const sid=r.data;
     for(let i=0;i<60;i++){await new Promise(ok=>setTimeout(ok,2500));const g=await sb.rpc("ev_scan_get",{sid});if(g.error)throw g.error;const s=g.data||{};
-      if(s.status==="ok"){apply(s.result);Q.busy="";tst("✓ Vyplnené – skontroluj a ťukni Uzatvoriť.",5000);rr();return}
+      if(s.status==="ok"){apply(s.result);Q.busy="";tst("✓ Vyplnené – skontroluj a ťukni Uzatvoriť.",5000);rr();if(window.firmyAfterStamp)firmyAfterStamp(Q.F,d=>{if(!Q.fid)Q.fq=Q.F.nazov;tst("🔎 Overené v registri podľa IČO: "+d.name+(d.addr?", "+d.addr:""),6000);rr()});return}
       if(s.status==="err")throw new Error(s.err||"Nepodarilo sa prečítať.")}
     throw new Error("Trvá to príliš dlho – skús znova.")}
   catch(x){Q.busy="";tst("⚠️ "+(x.message||x),7000);rr()}}

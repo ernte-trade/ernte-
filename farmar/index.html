@@ -2876,17 +2876,18 @@ document.addEventListener("input",e=>{if(e.target.id==="dfq"){const h=e.target.f
 document.addEventListener("click",e=>{const b=e.target.closest("[data-dfp]");if(!b)return;const fm=b.closest("form"),f=(STATE.farmers||[]).find(x=>x.id===b.dataset.dfp);if(!fm||!f)return;fm.elements.farmer.value=f.id;document.getElementById("dfq").value=String(f.name).trim();document.getElementById("dfl").innerHTML=`<div class="s">✓ Vybraný: <b>${esc(String(f.name).trim())}</b></div>`});
 </script>
 <script src="ai.js?v=20261027-0030"></script>
-<script src="perms.js?v=20261028-0900"></script>
+<script src="perms.js?v=20261028-1600"></script>
 <script src="bonus.js?v=20261028-0110"></script>
 <script src="fterms.js?v=20261028-1130"></script>
 <script src="hub.js?v=20261027-1340-1b"></script>
 <script src="brand.js?v=20261027-1620"></script>
 <script src="settle.js?v=20261027-1620"></script>
-<script src="qd.js?v=20261028-0710"></script>
+<script src="qd.js?v=20261028-1600"></script>
+<script src="firmy.js?v=20261028-1600"></script>
 <script src="testview.js?v=20261028-1130"></script>
 <script src="cal.js?v=20261028-1500"></script>
 <script src="dismiss.js?v=20261028-1200"></script>
-<script src="welcome.js?v=20261028-1540"></script>
+<script src="welcome.js?v=20261028-1600"></script>
 <script src="odb.js?v=20261027-1600"></script>
 <script src="zdash.js?v=20261027-1620"></script>
 <script src="contract.js?v=20261027-0050"></script>
