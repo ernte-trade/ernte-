@@ -26,7 +26,7 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22
-      - run: npm i --no-save --silent web-push@3.6.7
+      - run: npm i --no-save --silent web-push@3.6.7 || (sleep 5 && npm i --no-save --silent web-push@3.6.7)
         working-directory: .github/push
       - run: node send.mjs
         working-directory: .github/push

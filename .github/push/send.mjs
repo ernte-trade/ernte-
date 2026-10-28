@@ -10,7 +10,7 @@ const rpc = async (fn, body) => {
   const t = await r.text(); if (!r.ok) throw new Error(fn + " " + r.status); return t ? JSON.parse(t) : null;
 };
 let job;
-try { job = await rpc("push_job_take", { p_id: id }); } catch (e) { console.log("databáza nedostupná: " + e.message); process.exit(1); }
+for (let i = 0; i < 4; i++) { try { job = await rpc("push_job_take", { p_id: id }); break; } catch (e) { console.log("databáza nedostupná (pokus " + (i + 1) + "): " + e.message); if (i === 3) { console.log("upozornenie neodoslané – databáza neodpovedá"); process.exit(0); } await new Promise(r => setTimeout(r, 4000 * (i + 1))); } }
 if (!job) { console.log("úloha už vybavená alebo neplatná"); process.exit(0); }
 const v = job.vapid, P = job.payload;
 webpush.setVapidDetails(v.subject || "mailto:ernte@ernte.sk", v.pub, v.priv);
