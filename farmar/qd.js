@@ -25,7 +25,7 @@ window.vQd=function(){if(!OK())return `<div class="card"><div class="s">Uzatvár
    <div class="qdbig">
     <label class="qdb"><input type="file" accept="image/*" capture="environment" data-qdfoto="peciatka" hidden><span>📸</span><b>Odfotiť pečiatku</b><small>údaje farmára</small></label>
     <label class="qdb"><input type="file" accept="image/*" capture="environment" data-qdfoto="papier" hidden><span>📝</span><b>Odfotiť papier</b><small>ručne písaný obchod</small></label>
-    <button type="button" class="qdb${REC?" rec":""}" data-qdmic="1"><span>${REC?"⏺️":"🎤"}</span><b>${REC?"Počúvam… ťukni = hotovo":"Povedať"}</b><small>${REC?"hovor: farmár, komodita, tony, cena, termín":"farmár, komodita, tony, termín"}</small></button>
+    <button type="button" class="qdb${REC?" rec":""}" data-qdmic="1"><span>${REC?"⏺️":"🎤"}</span><b>${REC?"Počúvam… ťukni = hotovo":"Povedať"}</b><small>${REC?"hovor: farmár, komodita, tony, cena, termín":EDGA?"cez mikrofón na klávesnici":"farmár, komodita, tony, termín"}</small></button>
    </div>
    ${REC||Q.heard?`<div class="card qdheard"><b>🎤 ${REC?"Počúvam":"Počul som"}:</b> <span id="qdHeard">${e(Q.heard||"…")}</span></div>`:""}
    ${!sr&&!REC?`<div class="s">🎤 Ak mikrofón nejde, ťukni do políčka Poznámka a na klávesnici stlač mikrofón – nadiktuj a ťukni <b>Vyplniť z textu</b>.</div>`:""}
@@ -89,14 +89,30 @@ async function scan(mode,img,text,thumb){Q.busy=mode==="peciatka"?"Čítam peči
   catch(x){Q.busy="";tst("⚠️ "+(x.message||x),7000);rr()}}
 function shrink(file,max,q){return new Promise((ok,no)=>{const u=URL.createObjectURL(file),im=new Image();im.onload=()=>{const s=Math.min(1,max/Math.max(im.width,im.height)),c=document.createElement("canvas");c.width=Math.round(im.width*s);c.height=Math.round(im.height*s);c.getContext("2d").drawImage(im,0,0,c.width,c.height);URL.revokeObjectURL(u);ok(c.toDataURL("image/jpeg",q).split(",")[1])};im.onerror=()=>no(new Error("Fotku sa nepodarilo načítať."));im.src=u})}
 // ---------- mikrofón (rozpoznávanie reči v prehliadači, slovenčina) ----------
+// Spoľahlivé zastavenie: ťuknutie vždy ukončí (aj keď prehliadač neohlási koniec), strážca 9 s bez zvuku,
+// Edge na Androide rozpoznávanie reči nemá funkčné – rovno ponúkne diktovanie cez klávesnicu.
+const EDGA=/EdgA\//.test(navigator.userAgent);
+let MIC=null;
+function kbdDictate(msg){tst(msg||"🎤 Ťukni do Poznámky, na klávesnici stlač mikrofón a nadiktuj: farmár, komodita, tony, cena, termín. Potom ťukni „Vyplniť z textu“.",9000);
+  setTimeout(()=>{const n=document.getElementById("qdNote");if(n){n.scrollIntoView({behavior:"smooth",block:"center"});try{n.focus()}catch(x){}}},300)}
+function micDone(useIt){const m=MIC;if(!m)return;MIC=null;clearTimeout(m.wd);clearTimeout(m.kill);
+  try{m.r.onresult=m.r.onerror=m.r.onend=null}catch(x){}try{m.r.abort()}catch(x){}
+  REC=null;Q.heard=(m.fin+" "+m.inter).trim();rr();
+  if(useIt&&Q.heard.length>2)scan("hlas",null,Q.heard);else if(useIt&&!m.any)kbdDictate("🎤 Mikrofón v tomto prehliadači nič nezachytil. Nadiktuj cez mikrofón na klávesnici do Poznámky a ťukni „Vyplniť z textu“.")}
 function mic(){const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
-  if(REC){try{REC.stop()}catch(x){}return}
-  if(!SR){tst("Tento prehliadač nepozná mikrofón – ťukni do Poznámky a nadiktuj cez mikrofón na klávesnici.",8000);const n=document.getElementById("qdNote");if(n)n.focus();return}
-  grab();const r=new SR();r.lang="sk-SK";r.continuous=true;r.interimResults=true;let fin="";Q.heard="";
-  r.onresult=ev=>{let inter="";for(let i=ev.resultIndex;i<ev.results.length;i++){const t=ev.results[i][0].transcript;if(ev.results[i].isFinal)fin+=t+" ";else inter+=t}Q.heard=(fin+inter).trim();const el=document.getElementById("qdHeard");if(el)el.textContent=Q.heard||"…"};
-  r.onerror=ev=>{if(ev.error==="not-allowed")tst("Povoľ mikrofón pre ERNTE v nastaveniach prehliadača.",7000);else if(ev.error!=="no-speech"&&ev.error!=="aborted")tst("Mikrofón: "+ev.error,5000)};
-  r.onend=()=>{REC=null;Q.heard=(fin||Q.heard).trim();rr();if(Q.heard.length>2)scan("hlas",null,Q.heard)};
-  try{r.start();REC=r;rr()}catch(x){tst("Mikrofón sa nespustil: "+(x.message||x),6000)}}
+  if(MIC||REC){// zastaviť – okamžite, nečaká sa na prehliadač
+    if(MIC){MIC.stopping=true;try{MIC.r.stop()}catch(x){}const m=MIC;m.kill=setTimeout(()=>{if(MIC===m)micDone(true)},700)}else{REC=null;rr()}return}
+  if(!SR||EDGA){grab();kbdDictate(EDGA?"🎤 Edge na Androide nevie rozpoznávať reč. Ťukni do Poznámky, na klávesnici stlač mikrofón a nadiktuj – potom „Vyplniť z textu“. (V Chrome funguje aj tlačidlo Povedať.)":null);return}
+  grab();Q.heard="";const r=new SR();r.lang="sk-SK";r.continuous=true;r.interimResults=true;
+  const m={r,fin:"",inter:"",any:false,stopping:false,wd:0,kill:0};MIC=m;
+  const arm=()=>{clearTimeout(m.wd);m.wd=setTimeout(()=>{if(MIC===m)micDone(true)},m.any?6000:9000)}; // ticho → koniec
+  r.onresult=ev=>{m.any=true;let inter="";for(let i=ev.resultIndex;i<ev.results.length;i++){const t=ev.results[i][0].transcript;if(ev.results[i].isFinal)m.fin+=t+" ";else inter+=t}m.inter=inter;
+    Q.heard=(m.fin+inter).trim();const el=document.getElementById("qdHeard");if(el)el.textContent=Q.heard||"…";arm()};
+  r.onerror=ev=>{if(ev.error==="not-allowed"||ev.error==="service-not-allowed"){micDone(false);kbdDictate("🎤 Mikrofón je zakázaný alebo ho prehliadač nepodporuje. Povoľ ho v nastaveniach, alebo nadiktuj cez klávesnicu do Poznámky.");}
+    else if(ev.error!=="no-speech"&&ev.error!=="aborted")tst("Mikrofón: "+ev.error,5000)};
+  // Android niekedy ukončí počúvanie sám po pauze – kým ťa nezastavíš, pokračuje
+  r.onend=()=>{if(MIC!==m)return;if(m.stopping){micDone(true);return}try{r.start()}catch(x){micDone(true)}};
+  try{r.start();REC=r;arm();rr()}catch(x){MIC=null;REC=null;kbdDictate("🎤 Mikrofón sa nespustil ("+(x.message||x)+"). Nadiktuj cez klávesnicu do Poznámky.")}}
 
 // ---------- udalosti ----------
 document.addEventListener("click",async ev=>{const t=ev.target;if(!t.closest||!OK())return;let x;
@@ -132,7 +148,7 @@ document.addEventListener("submit",async ev=>{if(!ev.target||ev.target.id!=="fQd
 const _ss=window.startStaff;if(typeof _ss==="function")window.startStaff=async function(){let had=false;try{had=!!sessionStorage.getItem("ernte-tab")}catch(x){}if(!had&&typeof ROLE!=="undefined"&&ROLE==="admin")TAB="qd";return _ss.apply(this,arguments)};
 {const s=document.createElement("style");s.textContent=`.qd{display:grid;gap:12px}.qdh h2{margin:0;font-size:1.6rem}.qdbig{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
 .qdb{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;min-height:120px;border-radius:22px;padding:12px;text-align:center;cursor:pointer;background:linear-gradient(160deg,rgba(52,211,153,.22),rgba(34,211,238,.14));border:1px solid rgba(255,255,255,.18);color:inherit;font:inherit}
-.qdb span{font-size:2.4rem}.qdb b{font-size:1.05rem}.qdb small{opacity:.75;font-size:.8rem}.qdb.rec{background:linear-gradient(160deg,rgba(248,113,113,.4),rgba(251,146,60,.25));animation:qdp 1.2s infinite}
+.qdb span{font-size:2.4rem}.qdb b{font-size:1.05rem}.qdb small{opacity:.75;font-size:.8rem}.qdb.rec{background:linear-gradient(160deg,rgba(248,113,113,.4),rgba(251,146,60,.25));box-shadow:0 0 0 2px rgba(248,113,113,.6)}
 @keyframes qdp{50%{box-shadow:0 0 0 8px rgba(248,113,113,.25)}}.qdheard{font-size:1.05rem}.qdwait{display:flex;gap:10px;align-items:center;font-size:1.05rem}
 .qdspin{width:22px;height:22px;border:3px solid rgba(255,255,255,.25);border-top-color:#bef264;border-radius:50%;animation:qds 1s linear infinite}@keyframes qds{to{transform:rotate(360deg)}}
 .qdwarn{border-color:rgba(251,191,36,.5)!important;background:rgba(251,191,36,.1)!important;padding:10px 12px;border-radius:14px}
