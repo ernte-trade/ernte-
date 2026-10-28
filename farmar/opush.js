@@ -20,6 +20,15 @@ async function enable(b){if(!sup()){toast(ios&&!std()?"Na iPhone najprv pridaj a
     const j=s.toJSON();const r=await sb.rpc("push_sub_save",{p_endpoint:j.endpoint,p_p256dh:j.keys.p256dh,p_auth:j.keys.auth,p_ua:navigator.userAgent.slice(0,200)});
     if(r.error)throw r.error;st="on";toast("✓ Upozornenia zapnuté v tomto zariadení. Pošli si skúšobné.",6000);await load(false)}
   catch(x){toast("Nepodarilo sa zapnúť: "+(x&&x.message||x),8000)}finally{if(b&&window.busy)window.busy(b,false)}}
+/* automatické zapnutie u Martina: keď je povolenie už udelené → prihlási sa sám bez ťuknutia;
+   keď ešte nie → systémové okno sa ukáže pri ťuknutí na „Poďme na to“ na úvode (prehliadač vyžaduje jedno ťuknutie). */
+const MAIN=()=>OWN()&&typeof window.MAIN_OK==="function"&&MAIN_OK()&&!window.ERNTE_VIEWAS&&!window.ERNTE_TEST;
+async function subscribed(){try{const reg=await navigator.serviceWorker.getRegistration();return !!(reg&&await reg.pushManager.getSubscription())}catch(x){return false}}
+window.opushAuto=async function(fromTap){if(!MAIN()||!sup())return;if(ios&&!std())return;if(Notification.permission==="denied")return;
+  if(Notification.permission!=="granted"){if(!fromTap)return;let p;try{p=await Notification.requestPermission()}catch(x){return}if(p!=="granted")return}
+  if(await subscribed()){if(!ok())try{localStorage.setItem(K,"1")}catch(x){}return}
+  if(!C||!C.pub)await load(false);if(!C||!C.pub)return;await enable(null);try{localStorage.setItem(K,"1")}catch(x){}};
+setTimeout(()=>{try{window.opushAuto(false)}catch(x){}},6000);
 async function disable(){try{const reg=await navigator.serviceWorker.getRegistration();const s=reg&&await reg.pushManager.getSubscription();if(s){await sb.rpc("push_sub_del",{p_endpoint:s.endpoint});await s.unsubscribe()}}catch(x){}st="off";toast("Upozornenia v tomto zariadení vypnuté.");await load(false)}
 const dt=x=>x?new Date(x).toLocaleString("sk-SK",{day:"numeric",month:"numeric",hour:"2-digit",minute:"2-digit"}):"";
 function listHTML(){const e=typeof esc==="function"?esc:(x=>x);if(PL===null){loadList();return ""}const PL0=PL;const PLx=window.nbellDone?PL0.filter(x=>!nbellDone(x)):PL0;if(!PLx.length)return "";let seen=0;try{seen=+localStorage.getItem(SK)||0}catch(x){}

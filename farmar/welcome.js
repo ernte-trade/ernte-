@@ -190,7 +190,7 @@ async function show(force){const k=kind();if(!k||document.querySelector(".wlc"))
     w.querySelector("span").textContent=jt;w.classList.remove("pop");void w.offsetWidth;w.classList.add("pop");
     try{w.scrollIntoView({block:"nearest",behavior:"smooth"})}catch(x){}if(navigator.vibrate)try{navigator.vibrate(15)}catch(x){}};
   const jb=el.querySelector("[data-wljoke]");if(jb){jb.addEventListener("click",nextJoke);jb.addEventListener("touchend",nextJoke,{passive:false})}
-  const go=ev=>{if(ev){ev.preventDefault();ev.stopPropagation()}if(el._gone)return;el._gone=1;close(el);goHome()};
+  const go=ev=>{if(ev){ev.preventDefault();ev.stopPropagation()}if(el._gone)return;el._gone=1;try{window.opushAuto&&opushAuto(true)}catch(x){}close(el);goHome()};
   const gb=el.querySelector("[data-wlgo]");if(gb){gb.addEventListener("click",go);gb.addEventListener("touchend",go,{passive:false});gb.addEventListener("pointerup",e=>{if(e.pointerType!=="mouse")go(e)})}document.documentElement.classList.add("wlon");requestAnimationFrame(()=>el.classList.add("in"));
   const hd=el.querySelector(".whud");let ck=0;if(hd){ck=clock(hd);el._ck=ck;wx(hd);try{kpis(k,hd)}catch(x){}el._px=pxLive(hd,k)}
   const fill=async()=>{const f=await facts(k);const ul=el.querySelector(".wlf");if(ul)ul.innerHTML=f.map(x=>`<li>${x}</li>`).join("")};
@@ -224,7 +224,7 @@ function confetti(el,x,y){const em=["🌾","🌾","🌻","✨","🟡"];for(let i
 function close(el){if(el._ck)clearInterval(el._ck);if(el._px)clearInterval(el._px);pxSave();el.classList.remove("in");el.classList.add("out");document.documentElement.classList.remove("wlon");setTimeout(()=>el.remove(),380)}
 window.ernteWelcome=()=>show(true);
 /* poistka: „Poďme na to“ vždy zavrie úvod, aj keby sa niečo pri zobrazení pokazilo */
-const fsGo=ev=>{const b=ev.target&&ev.target.closest&&ev.target.closest("[data-wlgo]");if(!b)return;const w=b.closest(".wlc");if(!w||w._gone)return;ev.preventDefault();ev.stopPropagation();w._gone=1;close(w);goHome()};
+const fsGo=ev=>{const b=ev.target&&ev.target.closest&&ev.target.closest("[data-wlgo]");if(!b)return;const w=b.closest(".wlc");if(!w||w._gone)return;ev.preventDefault();ev.stopPropagation();w._gone=1;try{window.opushAuto&&opushAuto(true)}catch(x){}close(w);goHome()};
 document.addEventListener("click",fsGo,true);document.addEventListener("touchend",fsGo,{capture:true,passive:false});
 document.addEventListener("click",e=>{const i=e.target.closest&&e.target.closest("header.top img");if(i&&kind()){e.preventDefault();show(true)}});
 function css(){const s=document.createElement("style");s.textContent=`
