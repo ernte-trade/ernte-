@@ -28,7 +28,7 @@ document.addEventListener("click",async ev=>{const b=ev.target.closest&&ev.targe
   catch(x){if(w)w.close();if(typeof toast==="function")toast("⚠️ "+(x.message||x),7000)}
   finally{if(typeof busy==="function")busy(b,false)}});
 window.viewBanner=function(){const v=window.ERNTE_VIEWAS||{};const b=document.createElement("div");b.className="tvbar vabar";
-  b.innerHTML=`<span>👁 NÁHĽAD · ${e(v.name||v.email||"používateľ")} <small>iba na pozeranie</small></span><button type="button" id="vaClose">✕ Zavrieť náhľad</button>`;document.body.appendChild(b);document.documentElement.classList.add("tvon");
+  b.innerHTML=`<span>👁 ${e(v.name||v.email||"používateľ")} <small>· iba pozeranie</small></span><button type="button" id="vaClose">✕ Zavrieť</button>`;document.body.appendChild(b);document.documentElement.classList.add("tvon");
   b.querySelector("#vaClose").onclick=async()=>{try{await sb.auth.signOut({scope:"local"})}catch(y){}try{sessionStorage.clear()}catch(y){}try{window.close()}catch(y){}setTimeout(()=>location.replace(location.pathname),300)}};
 window.testBanner=function(k){const x=K.find(y=>y[0]===k);const b=document.createElement("div");b.className="tvbar";
   b.innerHTML=`<span>🧪 TEST · ${e(x?x[2]:k)}</span><button type="button" id="tvClose">✕ Zavrieť test</button>`;document.body.appendChild(b);document.documentElement.classList.add("tvon");
@@ -50,5 +50,5 @@ document.addEventListener("click",async ev=>{const b=ev.target.closest&&ev.targe
 .vab{display:grid;grid-template-columns:40px 1fr auto;align-items:center;gap:10px;text-align:left;padding:8px 12px;min-height:56px;border-radius:16px;width:100%}
 .vaav{width:40px;height:40px;border-radius:50%;display:grid;place-items:center;font-weight:700;font-size:.85rem;background:linear-gradient(135deg,rgba(34,211,238,.35),rgba(139,92,246,.35))}
 .vat{min-width:0}.vat b{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.vat small{display:block;color:var(--muted);font-size:.74rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-weight:500}.vab i{font-style:normal;opacity:.7}
-.tvbar button{background:#fff;color:#991b1b;border:0;border-radius:10px;padding:6px 12px;font-weight:800;min-height:34px}html.tvon body{padding-top:48px}`;document.head.appendChild(s)}
+.tvbar>span{min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.tvbar button{flex:none;white-space:nowrap;background:#fff;color:#991b1b;border:0;border-radius:10px;padding:6px 12px;font-weight:800;min-height:34px}html.tvon body{padding-top:48px}`;document.head.appendChild(s)}
 })();
