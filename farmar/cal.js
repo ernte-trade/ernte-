@@ -131,23 +131,25 @@ function kbdMode(msg){const f=document.getElementById("fCal");if(!f)return;let t
     let tm=0;const go=q=>{const v=tx.value.trim();if(v.length>2)applyVoice(v,q)};
     tx.addEventListener("input",()=>{clearTimeout(tm);tm=setTimeout(()=>go(true),1200)});tx.addEventListener("blur",()=>{clearTimeout(tm);go(false)})}
   tx.hidden=false;tx.focus();const h=document.getElementById("clHeard");if(h)h.textContent=msg||"📱 Na klávesnici ťukni na 🎤 (mikrofón dole) a povedz napr. „V pondelok o ôsmej stretnutie v APD Malčice, poriešiť reklamáciu sóje“. Polia sa vyplnia samé, potom ťukni Uložiť."}
-function say(btn){const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+async function say(btn){const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
   if(SR_){try{SR_.stop()}catch(x){}return}
   if(!SR||IOS){kbdMode();return}
+  if(say.wait)return;if(window.micReady){say.wait=1;btn.textContent="🎤 Povoľ mikrofón…";const ok=await micReady();say.wait=0;btn.textContent="🎤 Povedať";if(!ok){kbdMode("🎤 Mikrofón nie je povolený – kým ho povolíš, nadiktuj cez 🎤 na klávesnici.");return}}
   const r=new SR();r.lang="sk-SK";r.interimResults=true;r.continuous=false;let fin="",it="",got=false;SR_=r;btn.classList.add("on");btn.textContent="⏹ Počúvam… ťukni = koniec";
   const guard=setTimeout(()=>{if(!got&&SR_===r){try{r.abort()}catch(x){}}},7000);
   r.onresult=ev=>{got=true;it="";for(let i=ev.resultIndex;i<ev.results.length;i++){if(ev.results[i].isFinal)fin+=ev.results[i][0].transcript+" ";else it+=ev.results[i][0].transcript}const h=document.getElementById("clHeard");if(h)h.textContent="🎤 "+(fin+it)};
-  r.onerror=ev=>{if(ev.error==="not-allowed"||ev.error==="service-not-allowed")toast_("🎤 Mikrofón je zakázaný – použi mikrofón na klávesnici.",6000)};
+  r.onerror=ev=>{const m=window.srErr?srErr(ev.error):(ev.error==="not-allowed"||ev.error==="service-not-allowed"?"🎤 Mikrofón je zakázaný – použi mikrofón na klávesnici.":null);if(m)toast_(m,12000)};
   r.onend=()=>{clearTimeout(guard);SR_=null;btn.classList.remove("on");btn.textContent="🎤 Povedať";const t=(fin+" "+it).trim();
     if(t)applyVoice(t);else kbdMode("🎤 Nič som nezachytil. Na klávesnici ťukni na 🎤 a povedz pripomienku – polia sa vyplnia samé.")};
   try{r.start()}catch(x){clearTimeout(guard);SR_=null;btn.classList.remove("on");btn.textContent="🎤 Povedať";kbdMode()}}
-document.addEventListener("change",async e=>{if(e.target.id!=="clAudIn")return;const fl=e.target.files&&e.target.files[0];if(!fl)return;
+document.addEventListener("change",e=>{if(e.target.id!=="clAudIn")return;const fl=e.target.files&&e.target.files[0];if(fl)attachAud(fl)});
+async function attachAud(fl){
   if(fl.size>8*1024*1024){toast_("Hlasovka je príliš dlhá (max. 8 MB, cca 5–8 minút).",7000);return}
   const url=await new Promise(res=>{const r=new FileReader();r.onload=()=>res(r.result);r.readAsDataURL(fl)});
   const f=document.getElementById("fCal");const keep=f?{title:f.title.value,d:f.d.value,t:f.t.value,place:f.place.value,note:f.note.value}:null;
   VO.aud={url,mime:fl.type||"audio/mp4",name:fl.name};renderStaff();
   const g=document.getElementById("fCal");if(g&&keep){g.title.value=keep.title||"🎙️ Hlasová pripomienka";g.d.value=keep.d;g.t.value=keep.t;g.place.value=keep.place;g.note.value=keep.note}
-  toast_("🎙️ Hlasovka pripojená. Vyber dátum a čas a ulož – pripomienka príde do mobilu.",6000)});
+  toast_("🎙️ Hlasovka pripojená. Vyber dátum a čas a ulož – pripomienka príde do mobilu.",6000)}
 async function play(id,btn){btn.disabled=true;try{const r=await sb.from("owner_cal_audio").select("data").eq("cal_id",+id).maybeSingle();if(!r.data){toast_("Hlasovka sa nenašla.");return}
   const a=document.createElement("audio");a.controls=true;a.autoplay=true;a.src=r.data.data;a.className="clplay";btn.replaceWith(a)}catch(x){toast_("Nepodarilo sa prehrať.")}finally{btn.disabled=false}}
 
@@ -195,7 +197,7 @@ document.addEventListener("click",async e=>{const t=e.target;if(!t.closest)retur
   if(x=t.closest("[data-mtcancel]")){if(!confirm("Zrušiť tento termín?"))return;const r=await sb.rpc("meet_cancel",{p_id:+x.dataset.mtcancel});if(r.error)toast_("⚠️ "+r.error.message);else toast_("Termín zrušený.");uLoad();return}
   if(!MAIN())return;
   if(x=t.closest("[data-clsay]")){say(x);return}
-  if(t.closest("[data-clrec]")){const i=document.getElementById("clAudIn");if(i){i.value="";i.click()}return}
+  if(t.closest("[data-clrec]")){if(window.micCanRecord&&micCanRecord()){micRecord(480).then(f=>{if(f)attachAud(f)});return}const i=document.getElementById("clAudIn");if(i){i.value="";i.click()}return}
   if(t.closest("[data-claudx]")){VO.aud=null;renderStaff();return}
   if(x=t.closest("[data-clplay]")){play(x.dataset.clplay,x);return}
   if(t.closest("[data-clnew]")){VO={heard:"",aud:null};C.form="new";renderStaff();scrollTo(0,0);return}

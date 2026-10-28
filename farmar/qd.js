@@ -99,17 +99,18 @@ function micDone(useIt){const m=MIC;if(!m)return;MIC=null;clearTimeout(m.wd);cle
   try{m.r.onresult=m.r.onerror=m.r.onend=null}catch(x){}try{m.r.abort()}catch(x){}
   REC=null;Q.heard=(m.fin+" "+m.inter).trim();rr();
   if(useIt&&Q.heard.length>2)scan("hlas",null,Q.heard);else if(useIt&&!m.any)kbdDictate("🎤 Mikrofón v tomto prehliadači nič nezachytil. Nadiktuj cez mikrofón na klávesnici do Poznámky a ťukni „Vyplniť z textu“.")}
-function mic(){const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+async function mic(){const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
   if(MIC||REC){// zastaviť – okamžite, nečaká sa na prehliadač
     if(MIC){MIC.stopping=true;try{MIC.r.stop()}catch(x){}const m=MIC;m.kill=setTimeout(()=>{if(MIC===m)micDone(true)},700)}else{REC=null;rr()}return}
   if(!SR||EDGA){grab();kbdDictate(EDGA?"🎤 Edge na Androide nevie rozpoznávať reč. Ťukni do Poznámky, na klávesnici stlač mikrofón a nadiktuj – potom „Vyplniť z textu“. (V Chrome funguje aj tlačidlo Povedať.)":null);return}
+  if(mic.wait)return;if(window.micReady){mic.wait=1;const ok=await micReady();mic.wait=0;if(!ok){grab();kbdDictate("🎤 Mikrofón nie je povolený – kým ho povolíš, nadiktuj cez 🎤 na klávesnici do Poznámky a ťukni „Vyplniť z textu“.");return}}
   grab();Q.heard="";const r=new SR();r.lang="sk-SK";r.continuous=true;r.interimResults=true;
   const m={r,fin:"",inter:"",any:false,stopping:false,wd:0,kill:0};MIC=m;
   const arm=()=>{clearTimeout(m.wd);m.wd=setTimeout(()=>{if(MIC===m)micDone(true)},m.any?6000:9000)}; // ticho → koniec
   r.onresult=ev=>{m.any=true;let inter="";for(let i=ev.resultIndex;i<ev.results.length;i++){const t=ev.results[i][0].transcript;if(ev.results[i].isFinal)m.fin+=t+" ";else inter+=t}m.inter=inter;
     Q.heard=(m.fin+inter).trim();const el=document.getElementById("qdHeard");if(el)el.textContent=Q.heard||"…";arm()};
-  r.onerror=ev=>{if(ev.error==="not-allowed"||ev.error==="service-not-allowed"){micDone(false);kbdDictate("🎤 Mikrofón je zakázaný alebo ho prehliadač nepodporuje. Povoľ ho v nastaveniach, alebo nadiktuj cez klávesnicu do Poznámky.");}
-    else if(ev.error!=="no-speech"&&ev.error!=="aborted")tst("Mikrofón: "+ev.error,5000)};
+  r.onerror=ev=>{if(ev.error==="not-allowed"||ev.error==="service-not-allowed"){micDone(false);kbdDictate((window.srErr&&srErr(ev.error)||"🎤 Mikrofón je zakázaný alebo ho prehliadač nepodporuje.")+" Medzitým nadiktuj cez 🎤 na klávesnici do Poznámky.");}
+    else{const mm=window.srErr&&srErr(ev.error);if(mm)tst(mm,12000);else if(ev.error!=="no-speech"&&ev.error!=="aborted")tst("Mikrofón: "+ev.error,5000)}};
   // Android niekedy ukončí počúvanie sám po pauze – kým ťa nezastavíš, pokračuje
   r.onend=()=>{if(MIC!==m)return;if(m.stopping){micDone(true);return}try{r.start()}catch(x){micDone(true)}};
   try{r.start();REC=r;arm();rr()}catch(x){MIC=null;REC=null;kbdDictate("🎤 Mikrofón sa nespustil ("+(x.message||x)+"). Nadiktuj cez klávesnicu do Poznámky.")}}
