@@ -93,6 +93,11 @@ for (const d of DEV) {
       run.start = await pg.evaluate(measure, { touch: !!d.touch, ios: !!d.ios });
       const tabs = await pg.$$eval("nav.tabs [data-tab]", L => L.map(b => [b.dataset.tab, b.textContent.trim().replace(/\s+/g, " ")]));
       run.tabList = tabs;
+      // 📅 Stretnutie: otvorí okno a spočíta ponúknuté voľné termíny (nič neodošle)
+      if (await pg.$("[data-mtopen]")) { await pg.click("[data-mtopen]").catch(() => {}); await pg.waitForTimeout(4000);
+        run.meet = await pg.evaluate(() => ({ slots: document.querySelectorAll(".clu .clsb").length, pref: document.querySelectorAll(".clu .clsb.pref").length, msg: (document.querySelector(".clu .ftsec:last-of-type .s") || {}).textContent || "" }));
+        await pg.screenshot({ path: `out/${pre}-00-meet.jpg`, quality: 50, type: "jpeg" }).catch(() => {});
+        await pg.evaluate(() => { const b = document.querySelector("[data-mtclose]"); if (b) b.click(); }); await pg.waitForTimeout(400); }
       run.navFits = await pg.evaluate(() => { const n = document.querySelector("nav.tabs"); if (!n) return null; const s = getComputedStyle(n); return { scroll: n.scrollWidth > n.clientWidth + 2, ox: s.overflowX, h: Math.round(n.getBoundingClientRect().height) }; });
       let i = 1;
       for (const [t, label] of tabs) {

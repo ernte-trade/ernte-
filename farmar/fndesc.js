@@ -14,6 +14,7 @@ const TABD={
  fleet:"Autá VALKO: kde sú, nafta a nádrž na dvore, alarmy, vodiči, náklady a nastavenia. Sekcie vyberieš hore.",
  deals:"Kúpne zmluvy s farmármi: číslo zmluvy, cena, množstvo, čo je odvezené a čo ostáva, podpisy a archív zmlúv.",
  farm:"Zoznam farmárov s kontaktmi, prihlásením do aplikácie, prístupmi a aktivitou (kto čo v aplikácii robil). Tlačidlo ⚙️ Podmienky pri farmárovi: individuálny bonus €/t, splatnosť, doprava, záloha.",
+ cal:"Iba pre teba: pripomienky s upozornením do mobilu a žiadosti o stretnutie od tímu a farmárov – ponúkajú sa im iba tvoje voľné termíny (najprv 8:00–13:00).",
  test:"Iba pre teba: test pohľady (farmár, obchodník, dopravca) a 👁 prepínač – uvidíš aplikáciu presne tak, ako ju má konkrétny zamestnanec alebo farmár. Iba na pozeranie.",
  wx:"Predpoveď počasia pre farmy a trasy – na plánovanie žatvy, odvozov a postrekov.",
  team:"Ľudia vo firme, ich prihlásenia a čo môžu v aplikácii vidieť a robiť (⚙️ Prístupy). Nastavuje iba majiteľ.",
