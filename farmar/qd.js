@@ -13,7 +13,7 @@ const COMS=[["psenica_p","🌾","Pšenica"],["psenica_k","🌾","Pšenica kŕmna
 const blank=()=>({fid:"",fq:"",F:{nazov:"",ico:"",dic:"",icdph:"",adresa:"",telefon:"",email:"",iban:""},com:"",tons:"",price:"",od:plus(0),do:plus(14),miesto:"",note:"",ai:null,busy:"",done:null,heard:""});
 let Q=blank(),REC=null;
 const rr=()=>{if(typeof TAB!=="undefined"&&TAB==="qd"&&typeof renderStaff==="function")renderStaff()};
-function fPrice(c){const P=((typeof STATE!=="undefined"&&STATE.prices)||[]).find(p=>p.com===c&&p.price!=null);if(!P)return "";const d=typeof window.farmDisc==="function"?+window.farmDisc(c)||0:0;return String(Math.round(+P.price*(1-d/100)*100)/100).replace(".",",")}
+function fPrice(c){if(typeof ROLE!=="undefined"&&ROLE!=="owner"&&typeof can==="function"&&!can("price_view")&&!can("price_edit"))return "";/* kto nevidí cenník, nedostane ho ani predvyplnený */const P=((typeof STATE!=="undefined"&&STATE.prices)||[]).find(p=>p.com===c&&p.price!=null);if(!P)return "";const d=typeof window.farmDisc==="function"?+window.farmDisc(c)||0:0;return String(Math.round(+P.price*(1-d/100)*100)/100).replace(".",",")}
 const farmers=()=>((typeof STATE!=="undefined"&&STATE.farmers)||[]).filter(f=>f.active!==false);
 const selF=()=>Q.fid?farmers().find(f=>f.id===Q.fid):null;
 
