@@ -20,9 +20,10 @@ async function enable(b){if(!sup()){toast(ios&&!std()?"Na iPhone najprv pridaj a
     const j=s.toJSON();const r=await sb.rpc("push_sub_save",{p_endpoint:j.endpoint,p_p256dh:j.keys.p256dh,p_auth:j.keys.auth,p_ua:navigator.userAgent.slice(0,200)});
     if(r.error)throw r.error;st="on";toast("✓ Upozornenia zapnuté v tomto zariadení. Pošli si skúšobné.",6000);await load(false)}
   catch(x){toast("Nepodarilo sa zapnúť: "+(x&&x.message||x),8000)}finally{if(b&&window.busy)window.busy(b,false)}}
-/* automatické zapnutie u Martina: keď je povolenie už udelené → prihlási sa sám bez ťuknutia;
+/* automatické zapnutie u Martina a Jany: keď je povolenie už udelené → prihlási sa sám bez ťuknutia;
    keď ešte nie → systémové okno sa ukáže pri ťuknutí na „Poďme na to“ na úvode (prehliadač vyžaduje jedno ťuknutie). */
-const MAIN=()=>OWN()&&typeof window.MAIN_OK==="function"&&MAIN_OK()&&!window.ERNTE_VIEWAS&&!window.ERNTE_TEST;
+const JANA=()=>{const r=((typeof ME!=="undefined"&&ME&&(ME.staffName||""))+" "+(typeof ME!=="undefined"&&ME&&ME.email||"")).toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"").split(/[^a-z0-9]+/);return r.includes("jana")};
+const MAIN=()=>OWN()&&((typeof window.MAIN_OK==="function"&&MAIN_OK())||JANA())&&!window.ERNTE_VIEWAS&&!window.ERNTE_TEST;
 async function subscribed(){try{const reg=await navigator.serviceWorker.getRegistration();return !!(reg&&await reg.pushManager.getSubscription())}catch(x){return false}}
 window.opushAuto=async function(fromTap){if(!MAIN()||!sup())return;if(ios&&!std())return;if(Notification.permission==="denied")return;
   if(Notification.permission!=="granted"){if(!fromTap)return;let p;try{p=await Notification.requestPermission()}catch(x){return}if(p!=="granted")return}
