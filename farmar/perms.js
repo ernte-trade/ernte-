@@ -9,6 +9,7 @@ const PCAT=[
  ["deals_qty","Obchody BEZ CIEN","Obchod","množstvá, nakládka, vykládka"],
  ["farm","Farmári – kontakty a adresy","Obchod",""],
  ["farm_login","Vytvárať prihlásenia farmárom","Obchod",""],
+ ["farm_terms","⚙️ Podmienky a bonusy farmárov","Obchod","individuálny bonus, splatnosť, doprava"],
  ["calc","Kalkulačka nákupnej ceny ERNTE","Obchod","odberatelia, doprava, burza"],
  ["market","Burza a trh (MATIF, CBOT)","Obchod",""],
  ["agro","Agro služby – objednávky a cenník","Obchod","bez nákladov a marže"],
@@ -105,8 +106,8 @@ async function loadMe(){try{const r=await sb.from("staff").select("*").eq("email
 let MEAT=0;async function meRefresh(){if(typeof ROLE==="undefined"||!ROLE||ROLE==="owner"||!STATE.me||Date.now()-MEAT<60000)return;MEAT=Date.now();const old=JSON.stringify([STATE.me.perms,STATE.me.role]);await loadMe();
   if(JSON.stringify([STATE.me.perms,STATE.me.role])!==old&&typeof renderStaff==="function"){if(typeof TAB!=="undefined"&&typeof tabOK==="function"&&!tabOK(TAB)){try{TAB="home"}catch(e){}}renderStaff();if(typeof toast==="function")toast("Prístupy boli upravené.",3000)}}
 document.addEventListener("visibilitychange",()=>{if(!document.hidden)meRefresh()});setInterval(()=>{if(!document.hidden)meRefresh()},120000);
-const _ss=window.startStaff;window.startStaff=async function(){await loadMe();if(STATE.me&&STATE.me.must_change)await pinModal();applyBig();if(ROLE!=="owner"&&!can("fleet_all")){try{FFLT="region"}catch(e){}}return _ss.apply(this,arguments)};
-const _sf=window.startFarmer;window.startFarmer=async function(){if(FARMER&&FARMER.must_change)await pinModal();applyBig();return _sf.apply(this,arguments)};
+const _ss=window.startStaff;window.startStaff=async function(){await loadMe();if(STATE.me&&STATE.me.must_change&&!window.ERNTE_VIEWAS)await pinModal();applyBig();if(ROLE!=="owner"&&!can("fleet_all")){try{FFLT="region"}catch(e){}}return _ss.apply(this,arguments)};
+const _sf=window.startFarmer;window.startFarmer=async function(){if(FARMER&&FARMER.must_change&&!window.ERNTE_VIEWAS)await pinModal();applyBig();return _sf.apply(this,arguments)};
 
 // ===== TÍM A PRÍSTUPY (iba majiteľ) =====
 let TOPEN=null,TADD=null,TEDIT=null;

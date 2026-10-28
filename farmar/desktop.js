@@ -7,7 +7,7 @@
 const KEY="ernte-view",H=document.documentElement;
 const MQ=matchMedia("(min-width:1024px)"),FINE=matchMedia("(hover:hover) and (pointer:fine)");
 const pref=()=>{try{return localStorage.getItem(KEY)||""}catch(x){return ""}};
-const auto=()=>MQ.matches&&(FINE.matches||innerWidth>=1280);
+const auto=()=>MQ.matches&&(FINE.matches||innerWidth>=1024);
 const isPC=()=>{const p=pref();if(p==="pc")return innerWidth>=900;if(p==="mobile")return false;return auto()};
 const inApp=()=>(typeof ROLE!=="undefined"&&!!ROLE)||(typeof FARMER!=="undefined"&&!!FARMER);
 const isFarmer=()=>typeof FARMER!=="undefined"&&!!FARMER;

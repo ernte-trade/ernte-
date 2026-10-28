@@ -804,6 +804,7 @@ html[data-theme=light] .ftbl th{color:#0f172a}html[data-theme=light] .fdban{colo
 <link rel="stylesheet" href="perms.css?v=20261026-1955">
 <link rel="stylesheet" href="trus.css?v=20261027-0140">
 <link rel="stylesheet" href="ev.css?v=20261027-1600">
+<link rel="stylesheet" href="ui.css?v=1">
 </head>
 <body>
 <div class="wrap">
@@ -852,11 +853,25 @@ async function boot(){
   if(!CFG.SUPABASE_URL||!CFG.SUPABASE_KEY||!window.supabase){$("app").innerHTML=`<div class="card"><div class="t">Aplikácia ešte nie je pripojená na databázu.</div><div class="s">Doplňte config.js.</div></div>`;return}
   // 🧪 test okno (?test=…): vlastné prihlásenie len v tomto okne, prihlásenie majiteľa v ostatných oknách ostane
   const TESTK=(new URLSearchParams(location.search).get("test")||"").replace(/[^a-z]/g,"");window.ERNTE_TEST=TESTK||null;
-  sb=window.supabase.createClient(CFG.SUPABASE_URL,CFG.SUPABASE_KEY,{auth:TESTK?{persistSession:true,autoRefreshToken:true,detectSessionInUrl:false,storageKey:"ernte-test-"+TESTK,storage:window.sessionStorage}:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}});
+  const VIEWAS=new URLSearchParams(location.search).get("viewas")==="1";
+  if(VIEWAS){window.ERNTE_VIEWAS={name:"",email:""};
+    /* 👁 náhľad majiteľa: iba na pozeranie – zápisy a odosielanie sa zablokujú ešte pred odchodom z telefónu */
+    const RO=/(^|_)(save|set|del|delete|remove|create|send|sign|take|done|add|upd|update|assign|confirm|approve|reject|insert|import|mark|accept|cancel|reply|submit|reset|change|write|notify|qd|ok|learn|auto|dispatch|sub|ack|agree|seen|claim|log|track|ping|order|book|pay|start|stop|close|move|split|merge|upload|scan|gen|make|mk|new|fix|run)(_|$)/i;
+    const of=window.fetch.bind(window);
+    window.fetch=function(u,o){try{const url=typeof u==="string"?u:(u&&u.url)||String(u);const m=String((o&&o.method)||(u&&u.method)||"GET").toUpperCase();
+      if(/supabase\.co\//.test(url)&&m!=="GET"&&m!=="HEAD"&&!/\/auth\/v1\//.test(url)){const r=url.match(/\/rest\/v1\/rpc\/([a-z0-9_]+)/i);
+        if(!r||RO.test(r[1])){if(typeof toast==="function")toast("👁 Náhľad – iba na pozeranie. Nič sa neuložilo ani neodoslalo.",4000);
+          return Promise.resolve(new Response(JSON.stringify({message:"Náhľad – iba na pozeranie",code:"VIEWAS"}),{status:403,headers:{"Content-Type":"application/json"}}))}}}catch(x){}
+      return of(u,o)}}
+  sb=window.supabase.createClient(CFG.SUPABASE_URL,CFG.SUPABASE_KEY,{auth:(TESTK||VIEWAS)?{persistSession:true,autoRefreshToken:true,detectSessionInUrl:false,storageKey:VIEWAS?"ernte-viewas":"ernte-test-"+TESTK,storage:window.sessionStorage}:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}});
+  if(VIEWAS){let c=null;try{c=JSON.parse(sessionStorage.getItem("ernte-viewas-cred")||"null");sessionStorage.removeItem("ernte-viewas-cred")}catch(x){}
+    try{const v=JSON.parse(sessionStorage.getItem("ernte-viewas-who")||"null");if(c)sessionStorage.setItem("ernte-viewas-who",JSON.stringify({name:c.name,email:c.email}));Object.assign(window.ERNTE_VIEWAS,c?{name:c.name,email:c.email}:v||{})}catch(x){}
+    window.viewBanner&&viewBanner();
+    if(c&&c.rt){try{const r=await sb.auth.refreshSession({refresh_token:c.rt});if(r.error)toast("Náhľad sa nepodarilo otvoriť: "+r.error.message,8000)}catch(x){toast("Náhľad sa nepodarilo otvoriť.",6000)}}}
   if(TESTK){let c=null;try{c=JSON.parse(sessionStorage.getItem("ernte-test-cred")||"null");sessionStorage.removeItem("ernte-test-cred")}catch(x){}
     window.testBanner&&testBanner(TESTK);
     if(c&&c.kind===TESTK){try{const r=await sb.auth.signInWithPassword({email:c.login,password:c.pw});if(r.error)toast("Test sa nepodarilo otvoriť: "+r.error.message,7000)}catch(x){toast("Test sa nepodarilo otvoriť.",6000)}}}
-  sb.auth.onAuthStateChange((ev)=>{if(ev==="SIGNED_OUT"){ME=null;ROLE=null;FARMER=null;if(window.ERNTE_TEST){try{window.close()}catch(x){}}try{sessionStorage.clear()}catch(x){}location.replace(APP_URL)}});
+  sb.auth.onAuthStateChange((ev)=>{if(ev==="SIGNED_OUT"){ME=null;ROLE=null;FARMER=null;if(window.ERNTE_TEST||window.ERNTE_VIEWAS){try{window.close()}catch(x){}}try{sessionStorage.clear()}catch(x){}location.replace(APP_URL)}});
   const {data}=await sb.auth.getSession();
   if(data&&data.session)await enter(data.session.user);else showLogin();
 }
@@ -987,6 +1002,10 @@ function wxCard(){if(!WXD)return `<div class="card"><div class="s">Načítavam p
 document.addEventListener("click",e=>{if(!e.target.closest("[data-wxloc]"))return;if(!navigator.geolocation){toast("Poloha nie je dostupná.");return}
   toast("Zisťujem polohu…");navigator.geolocation.getCurrentPosition(async p=>{WXLOC={name:"Moja poloha",lat:+p.coords.latitude.toFixed(3),lon:+p.coords.longitude.toFixed(3)};try{localStorage.setItem("ernte-wxloc",JSON.stringify(WXLOC))}catch(x){}await loadWx(true);rerender()},()=>toast("Polohu sa nepodarilo zistiť – povoľte ju v nastaveniach."),{timeout:10000})});
 function mountR(){const b=document.getElementById("radarBox");if(b)mountRadar(b);initMaps()}
+/* Predikcia, Test a prepínač používateľov: iba Martin Vaľko a ERNTE spol. (nikto iný, ani CEO) */
+const MAIN_EM=["ernte@ernte.sk","report.valko@gmail.com"];
+function MAIN_OK(){return typeof ROLE!=="undefined"&&ROLE==="owner"&&!FARMER&&!window.ERNTE_TEST&&!window.ERNTE_VIEWAS&&typeof ME!=="undefined"&&!!ME&&MAIN_EM.includes(String(ME.email||"").toLowerCase())&&!(STATE.me&&STATE.me.hlavny===false)}
+window.MAIN_OK=MAIN_OK;
 function rerender(){if(FARMER)renderFarmer();else if(ROLE)renderStaff()}
 
 // ================= FARMÁR =================
@@ -1136,7 +1155,11 @@ deals:{t:"Obchody",i:"🤝",r:"Tvoje nákupy od farmárov – kto, čo, koľko, 
 farm:{t:"Farmári",i:"👨‍🌾",r:"Zoznam dodávateľov a ich prístup do aplikácie.",s:[
  ["Údaje","Meno, IČO, DIČ, IBAN, kontakt. Neaktívny farmár sa nevie prihlásiť."],
  ["Prístup","Ťukni <b>Vytvoriť heslo</b> – farmár sa prihlási e-mailom alebo telefónnym číslom a heslom. Heslo sa zobrazí <b>iba raz</b>, pošli mu ho (SMS/WhatsApp). Nikde sa neukladá."],
- ["Čo farmár vidí","Cenník, svoje obchody, odvozy (auto do naloženia), počasie a radar. Nikdy nevidí odberateľov, burzu, miesto vykládky ani iných farmárov."]]},
+ ["Čo farmár vidí","Cenník, svoje obchody, odvozy (auto do naloženia), počasie a radar. Nikdy nevidí odberateľov, burzu, miesto vykládky ani iných farmárov."],
+ ["⚙️ Podmienky","Pri každom farmárovi ťukni <b>⚙️ Podmienky</b>: bonus €/t na všetko alebo na komoditu (s platnosťou od–do), splatnosť, doprava, záloha, kvalita a poznámka. Farmár vidí iba svoj bonus („vaša cena“) a svoje podmienky – internú poznámku nie. Pri predaji z aplikácie sa bonus započíta sám."]]},
+test:{t:"Test",i:"🧪",r:"Iba pre teba – pozri aplikáciu očami iných.",s:[
+ ["Test pohľady","Farmár, obchodník (Galajda) a dopravca (Tóth) – testovacie účty v novom okne."],
+ ["👁 Prepínač","Vyber zamestnanca alebo farmára – v novom okne uvidíš aplikáciu presne tak, ako ju má on (záložky, prístupy, údaje). Iba na pozeranie: uloženie a odosielanie je zablokované. Náhľad zavrieš modrým pásom hore. Každé otvorenie sa zapíše."]]},
 wx:{t:"Počasie",i:"🌦️",r:"Počasie a radar zrážok pre Michalovce a okolie.",s:[
  ["Čo ukazuje","Teraz, každú hodinu a 7 dní dopredu; radar zrážok s animáciou posledných 2 hodín."],
  ["Na čo","Plánovanie žatvy, odvozov a nakládky – to isté vidia aj farmári."]]},
@@ -1419,7 +1442,8 @@ function renderStaff(){const nNew=STATE.reqs.filter(r=>r.status==="nova").length
   if(ROLE==="owner")tabs.push(["team","Tím"]);
   if(ROLE==="dispatch")tabs=tabs.filter(t=>["req","trans","fleet","wx"].includes(t[0]));
   if(ROLE==="invoice")tabs=tabs.filter(t=>t[0]!=="fleet")}
-  if(window.vTest&&ROLE==="owner"&&!window.ERNTE_TEST&&!tabs.some(t=>t[0]==="test"))tabs.push(["test","Test"]);if(window.vQd&&(ROLE==="owner"||(typeof can==="function"&&can("deals")))&&!tabs.some(t=>t[0]==="qd"))tabs.unshift(["qd","Uzatvoriť obchod"]);if(!tabs.some(t=>t[0]===TAB))TAB=tabs[0][0];
+  if(!MAIN_OK())tabs=tabs.filter(t=>t[0]!=="pred"&&t[0]!=="test");
+  if(window.vTest&&MAIN_OK()&&!window.ERNTE_TEST&&!window.ERNTE_VIEWAS&&!tabs.some(t=>t[0]==="test"))tabs.push(["test","Test"]);if(window.vQd&&(ROLE==="owner"||(typeof can==="function"&&can("deals")))&&!tabs.some(t=>t[0]==="qd"))tabs.unshift(["qd","Uzatvoriť obchod"]);if(!tabs.some(t=>t[0]===TAB))TAB=tabs[0][0];
   let h=`<nav class="tabs" aria-label="Hlavná navigácia">${tabs.map(t=>{const lb=String(t[1]).split(' <span class="cnt">');return `<button type="button" data-tab="${t[0]}" aria-pressed="${TAB===t[0]}"><span class="ti" aria-hidden="true">${TICO[t[0]]||"•"}</span><span class="tl">${lb[0]}</span>${lb[1]?'<span class="cnt">'+lb[1]:""}</button>`}).join("")}</nav>`;
   h+=`<div class="hrow"><button type="button" class="ds-theme" data-dstheme aria-label="Prepnúť svetlý / tmavý režim" title="Svetlý / tmavý režim">${document.documentElement.dataset.theme==="light"?"🌙":"☀️"}</button>${window.bigBtn?bigBtn():""}${helpBtn(TAB)}</div>`;
   if(tabs.some(t=>t[0]==="price")&&(TAB==="price"||TAB==="req"))h+=priceBanner();
@@ -2842,13 +2866,14 @@ document.addEventListener("input",e=>{if(e.target.id==="dfq"){const h=e.target.f
 document.addEventListener("click",e=>{const b=e.target.closest("[data-dfp]");if(!b)return;const fm=b.closest("form"),f=(STATE.farmers||[]).find(x=>x.id===b.dataset.dfp);if(!fm||!f)return;fm.elements.farmer.value=f.id;document.getElementById("dfq").value=String(f.name).trim();document.getElementById("dfl").innerHTML=`<div class="s">✓ Vybraný: <b>${esc(String(f.name).trim())}</b></div>`});
 </script>
 <script src="ai.js?v=20261027-0030"></script>
-<script src="perms.js?v=20261027-2355"></script>
+<script src="perms.js?v=20261028-0900"></script>
 <script src="bonus.js?v=20261028-0110"></script>
+<script src="fterms.js?v=20261028-0900"></script>
 <script src="hub.js?v=20261027-1340-1b"></script>
 <script src="brand.js?v=20261027-1620"></script>
 <script src="settle.js?v=20261027-1620"></script>
 <script src="qd.js?v=20261028-0710"></script>
-<script src="testview.js?v=20261028-0715"></script>
+<script src="testview.js?v=20261028-0900"></script>
 <script src="odb.js?v=20261027-1600"></script>
 <script src="zdash.js?v=20261027-1620"></script>
 <script src="contract.js?v=20261027-0050"></script>
@@ -2862,8 +2887,8 @@ document.addEventListener("click",e=>{const b=e.target.closest("[data-dfp]");if(
 <script src="opush.js?v=20261028-0050"></script>
 <script src="novinky.js?v=20261027-0845"></script>
 <script src="danube.js?v=20261027-1430"></script>
-<script src="installapp.js?v=20261027-0925"></script>
-<script src="fndesc.js?v=20261028-0020"></script>
+<script src="installapp.js?v=20261028-0900"></script>
+<script src="fndesc.js?v=20261028-0900"></script>
 <script src="sign.js?v=20261027-2345"></script>
 <script src="outbox.js?v=20261027-0120"></script>
 <script src="invitecard.js?v=20261027-0940"></script>
@@ -2876,11 +2901,11 @@ document.addEventListener("click",e=>{const b=e.target.closest("[data-dfp]");if(
 <script src="feedback.js?v=20261027-1930"></script>
 <script src="cancel.js?v=20261027-2345"></script>
 <script src="autocennik.js?v=20261028-0150"></script>
-<script src="desktop.js?v=20261028-0050"></script>
+<script src="desktop.js?v=20261028-0900"></script>
 <script src="guard.js?v=20261028-0050"></script>
 <script src="scrollkeep.js?v=20261028-0100"></script>
 <script src="astro.js?v=20261027-2030"></script>
-<script src="pred.js?v=20261027-2310"></script>
+<script src="pred.js?v=20261028-0900"></script>
 <script src="farmact.js?v=20261027-0150"></script>
 </body>
 </html>

@@ -58,9 +58,24 @@ for (const d of DEV) {
     const ctx = await browsers[key].newContext({ ...d.opt, locale: "sk-SK", timezoneId: "Europe/Bratislava" });
     const pg = await ctx.newPage();
     pg.on("pageerror", e => run.errors.push("JS: " + String(e.message || e).slice(0, 300)));
-    pg.on("console", m => { if (m.type() === "error" && !/favicon|ERR_ABORTED|net::ERR_FAILED|Failed to load resource: the server responded with a status of 404 \(\)/.test(m.text())) run.errors.push("console: " + m.text().slice(0, 300)); });
+    pg.on("console", m => { if (m.type() === "error" && !/favicon|__cf_bm|ERR_ABORTED|net::ERR_FAILED|Failed to load resource: the server responded with a status of 404 \(\)/.test(m.text())) run.errors.push("console: " + m.text().slice(0, 300)); });
     pg.on("response", res => { const u = res.url(); if (res.status() >= 400 && /supabase\.co/.test(u)) run.http.push(res.status() + " " + u.replace(/\?.*/, "").replace(/^https:\/\/[^/]+/, "").slice(0, 140)); });
     const pre = `${d.id}-${c.kind}`;
+    if (c.kind === "viewas") {
+      // 👁 prepínač majiteľa: náhľad testovacieho farmára cez jednorazový token (iba raz – token sa po použití mení)
+      if (R.viewasDone) { run.skip = true; await ctx.close(); continue; }
+      R.viewasDone = true;
+      try {
+        await pg.addInitScript(cr => { try { if (!sessionStorage.getItem("ernte-viewas")) sessionStorage.setItem("ernte-viewas-cred", cr); } catch (x) {} }, JSON.stringify({ rt: c.rt, name: c.name, email: c.login }));
+        await pg.goto(APP + "?viewas=1", { waitUntil: "load", timeout: 60000 }); await pg.waitForTimeout(8000);
+        run.banner = await pg.$eval(".vabar", b => b.innerText.replace(/\s+/g, " ")).catch(() => null);
+        run.farmerText = await pg.$eval("#app", a => a.innerText.replace(/\s+/g, " ").slice(0, 600)).catch(() => null);
+        run.tabList = await pg.$$eval("nav.tabs [data-tab]", L => L.map(b => b.dataset.tab));
+        run.writeTest = await pg.evaluate(async () => { try { const r = await sb.from("app_feedback").insert({ question: "viewas test" }); return r.error ? (r.error.code || r.error.message) : "PREŠLO"; } catch (x) { return "chyba " + x.message; } });
+        await pg.screenshot({ path: `out/${pre}-00-start.jpg`, fullPage: !!d.full, quality: 50, type: "jpeg" });
+      } catch (x) { run.errors.push("beh: " + String(x.message || x).slice(0, 300)); }
+      await ctx.close(); save(); continue;
+    }
     try {
       await pg.goto(APP, { waitUntil: "load", timeout: 60000 }); await pg.waitForTimeout(2500);
       run.login = await pg.evaluate(measure, { touch: !!d.touch, ios: !!d.ios }).catch(() => null);
@@ -84,7 +99,8 @@ for (const d of DEV) {
           await pg.evaluate(t => { const b = document.querySelector(`nav.tabs [data-tab="${t}"]`); if (b) b.click(); }, t);
           await pg.waitForTimeout(3000);
           const m = await pg.evaluate(measure, { touch: !!d.touch, ios: !!d.ios });
-          await pg.screenshot({ path: `out/${pre}-${String(i).padStart(2, "0")}-${t}.jpg`, fullPage: !!d.full, quality: 45, type: "jpeg" });
+          const sp = `out/${pre}-${String(i).padStart(2, "0")}-${t}.jpg`;
+          await pg.screenshot({ path: sp, fullPage: !!d.full, quality: 45, type: "jpeg" }).catch(() => pg.screenshot({ path: sp, quality: 45, type: "jpeg" }));
           run.tabs.push({ t, label, ok: true, newErrors: run.errors.length - e0, m });
         } catch (x) { run.tabs.push({ t, label, ok: false, err: String(x.message || x).slice(0, 200) }); }
         i++;
