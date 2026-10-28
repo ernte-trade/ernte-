@@ -53,7 +53,7 @@ const PRESET={
  evid:{n:"Iba Evidencia",role:"dispatch",k:["ev","ev_doch","sklad","praca","wx","big"]},
  mzdy:{n:"Mzdy ERNTE (mzdárka)",role:"dispatch",k:["ev","ev_doch","ev_mzdy","wx","big"]}};
 /* noví ľudia (28. 10.) – ukážu sa v Tíme ako „ešte nemá prihlásenie“, kým im majiteľ nevytvorí prihlásenie a kód */
-const PEOPLE_X=[["tomas stofa","Tomáš Štofa","Evidencia · Agro služby","ERNTE","evagro"],["tomas valko","Tomáš Vaľko","Evidencia · Agro služby","ERNTE","evagro"],["kacur","Ľuboš Kačur","Evidencia","ERNTE","evid"]];
+const PEOPLE_X=[["tomas stofa","Tomáš Štofa","Evidencia · Agro služby","ERNTE","evagro"],["tomas valko","Tomáš Vaľko","Evidencia · Agro služby","ERNTE","evagro"],["kacur","Ľuboš Kačur","Evidencia","ERNTE","evid"],["valkova st","Jana Valková st.","Mzdárka · Mzdy ERNTE","ERNTE","mzdy"]];
 function peopleX(){for(const x of PEOPLE_X)if(!PEOPLE.some(p=>p[0]===x[0]||norm(p[1]).includes(x[0])))PEOPLE.push(x)}
 let PEOPLE=PEOPLE_X.map(x=>x.slice()),PPL=0;async function loadPeople(){PPL=1;try{const r=await sb.from("staff_cfg").select("value").eq("key","team_people").maybeSingle();if(r.data&&Array.isArray(r.data.value)&&r.data.value.length){PEOPLE=r.data.value.slice();peopleX();if(TAB==="team")renderStaff()}}catch(e){PPL=0}}
 const FCAT=[["f_prices","Výkupné ceny (cenník)",""],["f_sell","Ponúknuť komoditu na predaj",""],["f_offer","Navrhnúť vlastnú cenu + fotky zo skladu",""],["f_deals","Moje obchody a dohodnutá cena",""],["f_remain","Zostatok na vývoz (koľko ešte odvezieme)",""],
