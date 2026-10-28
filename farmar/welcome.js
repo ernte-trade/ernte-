@@ -95,7 +95,11 @@ function hud(k){return `<div class="whud"><div class="whtop"><span class="wlive"
   <div class="whrow"><div class="whc whwx"><small>Počasie</small><div class="whv"><span class="wxi">…</span><b class="wxt">--°</b></div><div class="wxs">načítavam</div><svg class="wspk" viewBox="0 0 120 34" preserveAspectRatio="none"></svg></div>
   <div class="whc whk"><small>${E((KT[k]||KT.tim)[0])}</small><div class="whkb"></div><small class="whk2">${E((KT[k]||KT.tim)[1])}</small><div class="whbars"></div></div></div>${k==="ja"||k==="ceo"||k==="obchod"&&(can_("price_view")||can_("price_edit"))?`<div class="whc whpr"><small>Naše nákupné ceny · €/t</small><div class="whpl"></div></div>`:""}${spotOK(k)?spot():""}</div>`}
 /* 🎵 Spotify – Martin, Jana, Galajda, Ličko, Tóth, Tomáš Štofa, Tomáš Vaľko. Vlastný playlist: „Zmeniť“ → vlož odkaz zo Spotify (Zdieľať → Kopírovať odkaz). Uloží sa v tomto zariadení. */
-const SPK="ernte-spotify",SPDEF="playlist/37i9dQZF1DXcBWIGoYBM5M";
+const SPK="ernte-spotify",SPDEF="playlist/1sri3NOK9SPtrmUq7ActiX";
+/* rádiá: najnovšie hity z playlistov rádií SK, RO, HU, PL, UA (playlisty sa aktualizujú samy, uložené aj v Spotify majiteľa) */
+const SPRAD=[["🇸🇰","Expres","playlist/1sri3NOK9SPtrmUq7ActiX"],["🇸🇰","Europa 2","playlist/22q1eYq2NsomZsTVu2Ss9k"],["🇸🇰","Hot Hits SK","playlist/37i9dQZF1DXdCrbrHtTRdI"],
+ ["🇷🇴","Kiss FM RO","playlist/2W19sWVoqO0StmimPMcZjI"],["🇷🇴","Hot Hits RO","playlist/37i9dQZF1DX9BPHmsKo7pf"],["🇭🇺","Rádió 1","playlist/45i3K85u5AopQboEqAKvOV"],["🇭🇺","Hot Hits HU","playlist/37i9dQZF1DXddoYHYnHJ9N"],
+ ["🇵🇱","RMF FM","playlist/0yZYV1gwGmZjx1Of1TXbHN"],["🇵🇱","ESKA·ZET","playlist/3veBbD2WYsf803JjKKK2UM"],["🇺🇦","Хіт FM","playlist/0qsBS4nvAHvxe0YeDrXzvj"],["🇺🇦","Hot Hits UA","playlist/37i9dQZF1DX1V3tM4cuX0v"]];
 function spRef(){try{return localStorage.getItem(SPK)||SPDEF}catch(x){return SPDEF}}
 function spParse(u){const m=String(u||"").match(/open\.spotify\.com\/(?:intl-[a-z-]+\/)?(?:embed\/)?(playlist|album|track|artist|show|episode)\/([A-Za-z0-9]{10,})/)||String(u||"").match(/spotify:(playlist|album|track|artist|show|episode):([A-Za-z0-9]{10,})/);return m?m[1]+"/"+m[2]:null}
 /* komu Spotify: Martin + vybraní (podľa mena v tíme, bez diakritiky) */
@@ -104,6 +108,7 @@ function spotOK(k){if(k==="ja")return true;if(typeof FARMER!=="undefined"&&FARME
   const raw=((typeof ME!=="undefined"&&ME&&(ME.staffName||""))+" "+(typeof ME!=="undefined"&&ME&&ME.email||"")).toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"");
   const T=raw.split(/[^a-z0-9]+/);return SPWHO.some(ws=>ws.every(w=>T.includes(w)))}
 function spot(){const r=spRef();return `<div class="whc whsp"><div class="wsph"><small>🎵 Spotify</small><span><a class="wspo" href="https://open.spotify.com/${r}" target="_blank" rel="noopener">Otvoriť v Spotify ↗</a><button type="button" class="wspc" data-spchg>Zmeniť</button></span></div>
+  <div class="wspr" role="group" aria-label="Rádiá">${SPRAD.map(x=>`<button type="button" class="wsprb" data-sprad="${x[2]}" aria-pressed="${x[2]===r}">${x[0]} ${E(x[1])}</button>`).join("")}</div>
   <iframe class="wspf" title="Spotify" src="https://open.spotify.com/embed/${r}?utm_source=generator&theme=0" height="80" frameborder="0" loading="lazy" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"></iframe></div>`}
 const WXI=c=>c===0?"☀️":c<=2?"🌤️":c===3?"☁️":c<=48?"🌫️":c<=67?"🌧️":c<=77?"🌨️":c<=82?"🌦️":c<=86?"🌨️":"⛈️";
 const WXN=c=>c===0?"jasno":c<=2?"polojasno":c===3?"zamračené":c<=48?"hmla":c<=57?"mrholenie":c<=67?"dážď":c<=77?"sneh":c<=82?"prehánky":c<=86?"snehové prehánky":"búrka";
@@ -206,6 +211,7 @@ async function show(force){const k=kind();if(!k||document.querySelector(".wlc"))
     if(ev.target.closest(".wcred"))return;
     if(ev.target.closest("[data-spchg]")){const u=prompt("Vlož odkaz na playlist, album alebo skladbu zo Spotify (v Spotify: ⋯ → Zdieľať → Kopírovať odkaz):","");if(u==null)return;const r=spParse(u);
       if(!r){if(typeof toast==="function")toast("Toto nie je odkaz zo Spotify – skús znova.",5000);return}try{localStorage.setItem(SPK,r)}catch(x){}const w=el.querySelector(".whsp");if(w)w.outerHTML=spot();return}
+    {const rb=ev.target.closest("[data-sprad]");if(rb){try{localStorage.setItem(SPK,rb.dataset.sprad)}catch(x){}const w=el.querySelector(".whsp");if(w)w.outerHTML=spot();return}}
     if(ev.target.closest(".whsp"))return;
     if(ev.target.closest(".whc")){const c=ev.target.closest(".whc");c.classList.remove("wtap");void c.offsetWidth;c.classList.add("wtap");honk(false);confetti(el,ev.clientX,ev.clientY);if(navigator.vibrate)try{navigator.vibrate(20)}catch(x){}return}
     if(ev.target.closest("[data-wlgo]"))return;
@@ -338,7 +344,9 @@ html.wlon,html.wlon body{overflow:hidden}
 .whsp{cursor:default;padding:8px 10px 10px}.whsp::before{display:none}.wsph{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:6px}
 .wsph span{display:flex;gap:6px;align-items:center;flex:none}.wspo{font-size:.72rem;font-weight:700;color:#1ed760;text-decoration:none}
 .wspc{min-height:30px!important;padding:0 10px!important;border-radius:999px!important;font-size:.72rem!important}
-.wspf{display:block;width:100%;height:80px;border:0;border-radius:12px;background:#121212}
+.wspf{display:block;width:100%;height:152px;border:0;border-radius:12px;background:#121212}
+.wspr{display:flex;gap:5px;overflow-x:auto;scrollbar-width:none;margin:0 0 6px;padding-bottom:2px}.wspr::-webkit-scrollbar{display:none}
+.wsprb{flex:none;min-height:30px!important;padding:0 10px!important;border-radius:999px!important;font-size:.7rem!important;white-space:nowrap}.wsprb[aria-pressed=true]{background:linear-gradient(135deg,#1ed760,#1db954)!important;color:#05140a!important;border-color:transparent!important;font-weight:800}
 .wlx{position:absolute;z-index:5;top:calc(10px + env(safe-area-inset-top,0px));left:12px;width:44px;height:44px;min-height:44px!important;padding:0!important;border-radius:50%!important;background:rgba(5,8,22,.6)!important;border:1px solid rgba(255,255,255,.3)!important;color:#fff;font-size:1.1rem}
 .wpst{margin-top:6px;font:500 .6rem/1.3 "Geist Mono",ui-monospace,monospace;color:#c9d1e3;opacity:.85;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .wpc b sup,.whu sup{font:700 .58rem/1 "Geist Mono",ui-monospace,monospace;margin-left:3px;vertical-align:super}.wup{color:#b6ff3b}.wdn{color:#fda4af}
