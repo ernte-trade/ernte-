@@ -201,7 +201,7 @@ if(!A.cfg)return `<div class="card acn-card"><div class="tdh"><b>🤖 Automatick
     return `<div class="acn-r${mv?" mine":au&&has?" on":""}"><div class="acn-rh"><b class="n">${e(n)}</b><span class="v"><small>zverejnené</small>${cur[c]==null?"<b class='no'>–</b>":"<b>"+f0(cur[c])+"</b>"}</span><span class="v a"><small>automatická</small>${av}</span></div>${dt?`<div class="acn-rd">${dt}</div>`:""}<div class="acn-rm">${st}</div></div>`}).join("");
   const L=(A.log||[]).slice(-40).reverse();
   return `<div class="card acn-card"><div class="tdh"><b>🤖 Automatický cenník · Somotor a Bunge</b><label class="acn-sw big"><input type="checkbox" data-acnon${A.cfg.on?" checked":""}${own?"":" disabled"}> ${A.cfg.on?"zapnutý":"vypnutý"}</label></div>
-   <div class="s">Ceny pre farmárov (FCA farma, bez DPH) sa počítajú samy z cien odberateľov <b>Agro-Somotor</b> a <b>Bunge</b> – <b>DAP Somotor, DAP Bunge Tállya a DAP Bunge Martfű</b> = za koľko farmári z regiónu vozia na sklad (cena farmárov v regióne + doprava). Od najlepšej DAP sa odpočíta doprava${own?" a tvoj odpočet":""} a výsledok sa zverejní. Zaokrúhľuje sa nadol na celé €. Burza sa použije iba vtedy, keď regionálna cena chýba.
+   <div class="s">👥 <b>Zverejnené pre všetkých ${(STATE.farmers||[]).length} farmárov</b> v aplikácii (každý vidí iba výslednú cenu). Ceny pre farmárov (FCA farma, bez DPH) sa počítajú samy z cien odberateľov <b>Agro-Somotor</b> a <b>Bunge</b> – <b>DAP Somotor, DAP Bunge Tállya a DAP Bunge Martfű</b> = za koľko farmári z regiónu vozia na sklad (cena farmárov v regióne + doprava). Od najlepšej DAP sa odpočíta doprava${own?" a tvoj odpočet":""} a výsledok sa zverejní. Zaokrúhľuje sa nadol na celé €. Burza sa použije iba vtedy, keď regionálna cena chýba.
    Kto čo vidí, sa nemení: farmári vidia iba výslednú cenu ako doteraz, nikdy odberateľa ani burzu. <b>Tvoje ceny</b> zapíš v tabuľke nižšie – majú prednosť do dátumu, potom sa vráti automatická.</div>
    <div class="acn-rows">${rows}</div>
    ${own?`<div class="acn-cfg"><label>Odpočet ERNTE €/t<input data-acncfg="marginOwn" inputmode="decimal" value="${e(A.cfg.marginOwn??"")}" placeholder="${e(f2(A.mg&&A.mg.rec!=null?A.mg.rec:20))}"><small>${A.mg&&A.mg.rec!=null?"prázdne = z Kalkulačky ("+f2(A.mg.rec)+")":"prázdne = 20 €/t"}</small></label>
@@ -257,8 +257,14 @@ document.addEventListener("change",async ev=>{const t=ev.target;if(!t||!A.cfg)re
     await saveCfg();if(typeof toast==="function")toast("Uložené.");await run(true)}},true);
 
 // ---- štart: majiteľ a ľudia s cenníkom + kalkulačkou; kontrola každých 20 min a pri návrate do aplikácie ----
+// cenník vidí každý farmár (partner) v aplikácii – majiteľ pri otvorení zapne prístup „Výkupné ceny“ všetkým, kto ho má vypnutý
+let pubDone=false;
+async function pubAll(){if(pubDone||!OWN()||typeof STATE==="undefined"||!STATE.farmers||!STATE.settings)return;pubDone=true;let n=0;
+  try{const G=STATE.settings.farmer_perms||{};if(G.f_prices===false){const r=await sb.rpc("set_farmer_perm_def",{p:{...G,f_prices:true}});if(!r.error){STATE.settings.farmer_perms={...G,f_prices:true};n++}}
+    for(const f of STATE.farmers){const P=f.perms||{};if(P.f_prices===false){const r=await sb.rpc("set_farmer_perms",{fid:f.id,p:{...P,f_prices:true}});if(!r.error){f.perms={...P,f_prices:true};n++}}}
+    if(n&&typeof toast==="function")toast(`Cenník je zverejnený všetkým farmárom (zapnuté u ${n}).`,5000)}catch(x){pubDone=false}}
 let started=false;
-function start(){if(started||!ED())return;started=true;setTimeout(()=>run(true),3500);setInterval(()=>{if(!document.hidden)run()},20*60e3);
+function start(){if(started||!ED())return;started=true;setTimeout(pubAll,2500);setTimeout(()=>run(true),3500);setInterval(()=>{if(!document.hidden)run()},20*60e3);
   document.addEventListener("visibilitychange",()=>{if(!document.hidden)run()});
   if(OWN())setInterval(async()=>{if(document.hidden&&!("Notification" in window&&Notification.permission==="granted"))return;
     const n=(A.log||[]).length,l=await kget("pricelist","log");if(l&&l.items&&l.items.length!==n){A.log=l.items;notifyNew()}},2*60e3)}
