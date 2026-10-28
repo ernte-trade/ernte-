@@ -106,18 +106,40 @@ function kpis(k,el){const S=typeof STATE!=="undefined"?STATE:{};const t=today();
   const act=(S.deals||[]).filter(d=>!["zrusena","zruseny"].includes(d.status)&&+d.tons>0);const tons=act.reduce((a,d)=>a+(+d.tons||0),0),del=act.reduce((a,d)=>a+Math.min(+d.tons||0,+d.delivered_t||0),0);
   const pct=tons?del/tons*100:0;const D=days7();const trips=D.map(([d])=>(S.trips||[]).filter(x=>String(x.day).slice(0,10)===d).length);
   const nreq=(S.reqs||[]).filter(r=>r.status==="nova").length;
-  if(k==="farmar"){const P=(S.prices||[]).filter(p=>p.price!=null).sort((a,b)=>b.price-a.price).slice(0,5);const nm=c=>typeof comName==="function"?comName(c):c;
-    if(P.length){kb.innerHTML=big(Math.round(P[0].price))+`<span class="whu">€/t · ${E(nm(P[0].com))}<br>najvyššia</span>`;bb.innerHTML=bars(P.map(p=>Math.round(p.price)),P.map(p=>String(nm(p.com)).slice(0,4))," €/t");bb.classList.add("wtall")}
-    else{kb.innerHTML=`<span class="whu">Cenník sa pripravuje</span>`}}
+  if(k==="farmar")farmPx(el,false);
   else if(k==="doprava"){kb.innerHTML=big(trips[6])+`<span class="whu">${tons?Math.round(tons-del).toLocaleString("sk-SK")+" t zostáva":"dnes"}</span>`;bb.innerHTML=bars(trips,D.map(x=>x[1]))}
   else if(k==="evid"){kb.innerHTML=big(act.length)+`<span class="whu">${Math.round(tons).toLocaleString("sk-SK")} t spolu</span>`;bb.innerHTML=bars(D.map(([d])=>(S.deals||[]).filter(x=>String(x.created_at||"").slice(0,10)===d).length),D.map(x=>x[1]))}
   else if(k==="obchod"){kb.innerHTML=ring(pct)+`<span class="whu">${Math.round(del).toLocaleString("sk-SK")} / ${Math.round(tons).toLocaleString("sk-SK")} t</span>`;bb.innerHTML=`<div class="whn">${big(nreq)}<span class="whu">${nreq===1?"čaká na teba":"čakajú na teba"}</span></div>`}
   else if(k==="trus"){kb.innerHTML=big(nreq)+`<span class="whu">nové</span>`;if(k2)k2.remove()}
   else{kb.innerHTML=ring(pct)+`<span class="whu">${Math.round(del).toLocaleString("sk-SK")} / ${Math.round(tons).toLocaleString("sk-SK")} t</span>`;bb.innerHTML=bars(trips,D.map(x=>x[1]))}
-  const pl=el.querySelector(".whpl");if(pl){const nm=c=>typeof comName==="function"?comName(c):c;const P=(S.prices||[]).filter(p=>p.price!=null).sort((a,b)=>b.price-a.price).slice(0,8);const mx=Math.max(1,...P.map(p=>+p.price));
-    pl.innerHTML=P.length?P.map((p,i)=>`<span class="wpc"><em>${E(nm(p.com))}</em><b data-to="${Math.round(p.price)}">0</b><i style="--w:${Math.max(8,p.price/mx*100)}%;animation-delay:${.3+i*.07}s"></i></span>`).join(""):`<span class="whu">Cenník zatiaľ nie je zadaný</span>`}
+  pxPanel(el,false);
   el.querySelectorAll("[data-to]").forEach(n=>countTo(n,+n.dataset.to,n.dataset.suf));requestAnimationFrame(()=>el.classList.add("wgo"))}
 function clock(el){const c=el.querySelector(".wclk");if(!c)return 0;const f=()=>{const d=new Date(),p=n=>String(n).padStart(2,"0");c.innerHTML=`${p(d.getHours())}:${p(d.getMinutes())}<small>:${p(d.getSeconds())}</small>`};f();return setInterval(f,1000)}
+
+
+/* ---------- ceny: vždy aktuálne podľa automatického cenníka (tabuľka prices, ktorú plní autocennik.js) ---------- */
+const PXK="ernte-wlpx";const nmC=c=>typeof comName==="function"?comName(c):c;
+const pxSeen=()=>{try{return JSON.parse(localStorage.getItem(PXK))||{}}catch(x){return {}}};
+const pxList=()=>((typeof STATE!=="undefined"&&STATE.prices)||[]).filter(p=>p.price!=null);
+function pxSave(){const o={};pxList().forEach(p=>o[p.com]=+p.price);try{localStorage.setItem(PXK,JSON.stringify(o))}catch(x){}}
+function dTag(com,v){const o=pxSeen()[com];if(o==null||!isFinite(o)||Math.abs(v-o)<.5)return "";const d=Math.round(v-o);return `<sup class="${d>0?"wup":"wdn"}" title="od poslednej návštevy">${d>0?"▲ +":"▼ "}${d}</sup>`}
+function pxStamp(){const t=pxList().map(p=>p.updated_at).filter(Boolean).sort().pop();if(!t)return "";const d=new Date(t);const td=d.toLocaleDateString("sv-SE")===today();
+  return `🤖 Automatický cenník · ${td?"dnes "+d.toLocaleTimeString("sk-SK",{hour:"2-digit",minute:"2-digit"}):d.toLocaleDateString("sk-SK",{day:"numeric",month:"numeric"})+" "+d.toLocaleTimeString("sk-SK",{hour:"2-digit",minute:"2-digit"})} · obnovuje sa samo`}
+function pxPanel(el,flash){const pl=el.querySelector(".whpl");if(!pl)return;const P=pxList().sort((a,b)=>b.price-a.price).slice(0,8);const mx=Math.max(1,...P.map(p=>+p.price));
+  pl.innerHTML=P.length?P.map((p,i)=>`<span class="wpc${flash&&flash.has(p.com)?" wfl":""}"><em>${E(nmC(p.com))}</em><b><span data-to="${Math.round(p.price)}">${flash?Math.round(p.price).toLocaleString("sk-SK"):0}</span>${dTag(p.com,+p.price)}</b><i style="--w:${Math.max(8,p.price/mx*100)}%;animation-delay:${.3+i*.07}s"></i></span>`).join(""):`<span class="whu">Cenník zatiaľ nie je zadaný</span>`;
+  let st=el.querySelector(".wpst");if(!st){st=document.createElement("div");st.className="wpst";pl.after(st)}st.textContent=pxStamp()}
+function farmPx(el,flash){const kb=el.querySelector(".whkb"),bb=el.querySelector(".whbars");if(!kb||!bb)return;const P=pxList().sort((a,b)=>b.price-a.price).slice(0,5);
+  if(P.length){kb.innerHTML=`<b class="whbig${flash?" wfl":""}" data-to="${Math.round(P[0].price)}">${flash?Math.round(P[0].price).toLocaleString("sk-SK"):0}</b><span class="whu">€/t · ${E(nmC(P[0].com))}${dTag(P[0].com,+P[0].price)}<br>najvyššia</span>`;bb.innerHTML=bars(P.map(p=>Math.round(p.price)),P.map(p=>String(nmC(p.com)).slice(0,4))," €/t");bb.classList.add("wtall")}
+  else kb.innerHTML=`<span class="whu">Cenník sa pripravuje</span>`;
+  let st=el.querySelector(".wpst");if(!st){st=document.createElement("div");st.className="wpst";bb.after(st)}st.textContent=pxStamp()}
+async function pxRefresh(el,k){try{const r=await sb.from("prices").select("com,price,updated_at");if(r.error||!r.data)return;
+    const cur=Object.fromEntries(pxList().map(p=>[p.com,+p.price]));const ch=new Set();
+    r.data.filter(x=>x.price!=null).forEach(x=>{if(cur[x.com]!==+x.price)ch.add(x.com)});
+    const stampOld=pxStamp();if(typeof STATE!=="undefined"){const M=Object.fromEntries((STATE.prices||[]).map(p=>[p.com,p]));r.data.forEach(x=>{if(M[x.com])Object.assign(M[x.com],x);else (STATE.prices=STATE.prices||[]).push({...x})})}
+    if(ch.size||pxStamp()!==stampOld){if(k==="farmar")farmPx(el,ch);else pxPanel(el,ch)}}catch(x){}}
+function pxLive(el,k){if(!el.querySelector(".whpl")&&k!=="farmar")return 0;
+  try{if(k!=="farmar"&&window.autoCennik)autoCennik.run(false)}catch(x){}
+  setTimeout(()=>pxRefresh(el,k),4000);return setInterval(()=>{if(!document.hidden)pxRefresh(el,k)},30000)}
 
 /* ---------- údaje do pozdravu ---------- */
 async function facts(k){const L=[];try{const S=typeof STATE!=="undefined"?STATE:{};const t=today();
@@ -144,7 +166,7 @@ async function show(force){const k=kind();if(!k)return;if(!force&&(sGet(SKEY)||l
    <div class="wla"><button type="button" class="lime" data-wlgo>Poďme na to →</button><button type="button" class="wmore" data-wljoke>😂 Ďalší vtip</button><button type="button" class="wloff" data-wloff>Dnes už neukazovať</button></div></div></div>
    <div class="wltap">${new Date().toLocaleDateString("sk-SK",{weekday:"long",day:"numeric",month:"long"})}</div>`;
   document.body.appendChild(el);document.documentElement.classList.add("wlon");requestAnimationFrame(()=>el.classList.add("in"));
-  const hd=el.querySelector(".whud");let ck=0;if(hd){ck=clock(hd);el._ck=ck;wx(hd);try{kpis(k,hd)}catch(x){}}
+  const hd=el.querySelector(".whud");let ck=0;if(hd){ck=clock(hd);el._ck=ck;wx(hd);try{kpis(k,hd)}catch(x){}el._px=pxLive(hd,k)}
   const f=await facts(k);const ul=el.querySelector(".wlf");if(ul&&f.length)ul.innerHTML=f.map(x=>`<li>${x}</li>`).join("");
   el.addEventListener("click",ev=>{if(ev.target.closest("[data-wloff]")){lSet(DKEY,today());close(el);return}
     if(ev.target.closest("[data-wljoke]")){ji=(ji+1)%FL.length;let p=el.querySelector(".wjk span");if(!p){el.querySelector(".wlt p").insertAdjacentHTML("afterend",`<p class="wjk">😄 <span></span></p>`);p=el.querySelector(".wjk span")}p.textContent=FL[ji];p.parentNode.classList.remove("pop");void p.parentNode.offsetWidth;p.parentNode.classList.add("pop");return}
@@ -157,7 +179,7 @@ let AC=null;function honk(chick){try{AC=AC||new (window.AudioContext||window.web
   if(chick){tone(700,0,.12,"triangle");tone(900,.16,.3,"triangle")}else{tone(392,0,.22);tone(330,.26,.5)}}catch(x){}}
 function confetti(el,x,y){const em=["🌾","🌾","🌻","✨","🟡"];for(let i=0;i<12;i++){const d=document.createElement("span");d.className="wcf";d.textContent=em[i%em.length];d.style.left=x+"px";d.style.top=y+"px";
   d.style.setProperty("--dx",(Math.random()*240-120)+"px");d.style.setProperty("--dy",(-80-Math.random()*160)+"px");el.appendChild(d);setTimeout(()=>d.remove(),1100)}}
-function close(el){if(el._ck)clearInterval(el._ck);el.classList.remove("in");el.classList.add("out");document.documentElement.classList.remove("wlon");setTimeout(()=>el.remove(),380)}
+function close(el){if(el._ck)clearInterval(el._ck);if(el._px)clearInterval(el._px);pxSave();el.classList.remove("in");el.classList.add("out");document.documentElement.classList.remove("wlon");setTimeout(()=>el.remove(),380)}
 window.ernteWelcome=()=>show(true);
 document.addEventListener("click",e=>{const i=e.target.closest&&e.target.closest("header.top img");if(i&&kind()){e.preventDefault();show(true)}});
 function css(){const s=document.createElement("style");s.textContent=`
@@ -258,6 +280,9 @@ html.wlon,html.wlon body{overflow:hidden}
 @media (max-height:640px){.wlc.por .wspk{height:20px}.wlc.por .whbars{height:24px}.wclk{font-size:1.2rem}}
 @media (min-width:900px){.whud{left:auto;right:28px;top:calc(56px + env(safe-area-inset-top,0px));width:420px}.wclk{font-size:2rem}}
 .wltap{z-index:3}
+.wpst{margin-top:6px;font:500 .6rem/1.3 "Geist Mono",ui-monospace,monospace;color:#c9d1e3;opacity:.85;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.wpc b sup,.whu sup{font:700 .58rem/1 "Geist Mono",ui-monospace,monospace;margin-left:3px;vertical-align:super}.wup{color:#b6ff3b}.wdn{color:#fda4af}
+.wfl{animation:wflash 1.6s ease}@keyframes wflash{0%,30%{background:rgba(182,255,59,.35);border-radius:8px}100%{background:transparent}}
 .whpr{animation-delay:.55s!important}.whpl{display:grid;grid-template-columns:repeat(auto-fill,minmax(96px,1fr));gap:6px 10px;margin-top:6px}
 .wpc{position:relative;display:flex;justify-content:space-between;align-items:baseline;gap:6px;padding-bottom:5px;min-width:0}
 .wpc em{font-style:normal;font-size:.72rem;color:#dbe3f3;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
