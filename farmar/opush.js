@@ -22,7 +22,7 @@ async function enable(b){if(!sup()){toast(ios&&!std()?"Na iPhone najprv pridaj a
   catch(x){toast("Nepodarilo sa zapnúť: "+(x&&x.message||x),8000)}finally{if(b&&window.busy)window.busy(b,false)}}
 async function disable(){try{const reg=await navigator.serviceWorker.getRegistration();const s=reg&&await reg.pushManager.getSubscription();if(s){await sb.rpc("push_sub_del",{p_endpoint:s.endpoint});await s.unsubscribe()}}catch(x){}st="off";toast("Upozornenia v tomto zariadení vypnuté.");await load(false)}
 const dt=x=>x?new Date(x).toLocaleString("sk-SK",{day:"numeric",month:"numeric",hour:"2-digit",minute:"2-digit"}):"";
-function listHTML(){const e=typeof esc==="function"?esc:(x=>x);if(PL===null){loadList();return ""}if(!PL.length)return "";let seen=0;try{seen=+localStorage.getItem(SK)||0}catch(x){}
+function listHTML(){const e=typeof esc==="function"?esc:(x=>x);if(PL===null){loadList();return ""}const PL0=PL;const PL=window.nbellDone?PL0.filter(x=>!nbellDone(x)):PL0;if(!PL.length)return "";let seen=0;try{seen=+localStorage.getItem(SK)||0}catch(x){}
   const nw=PL.filter(x=>Date.parse(x.at)>seen).length,L=plOpen?PL:PL.slice(0,3);
   return `<div class="card oplist"><div class="oplh"><b>🔔 Posledné upozornenia${nw?` <span class="cnt">${nw} nové</span>`:""}</b>${nw?`<button type="button" data-opseen="1">✓ Prečítané</button>`:""}</div>
    ${L.map(x=>`<div class="opli${Date.parse(x.at)>seen?" nw":""}"><b>${e(x.t||"")}</b><span>${e(x.b||"")}</span><small>${e(dt(x.at))}${x.done&&!x.ok?" · ⚠️ nedoručené do mobilu":""}</small></div>`).join("")}
@@ -42,7 +42,7 @@ function card(){const e=typeof esc==="function"?esc:(x=>x);
 const _vh=window.vHome;if(typeof _vh==="function")window.vHome=function(){const h=_vh.apply(this,arguments);return OWN()?card()+listHTML()+h:h};
 setInterval(()=>{if(!document.hidden&&OWN()&&typeof TAB!=="undefined"&&TAB==="home")loadList()},60000);document.addEventListener("visibilitychange",()=>{if(!document.hidden&&OWN())loadList()});
 document.addEventListener("click",async e=>{const t=e.target;if(!t.closest||!OWN())return;let x;
-  if(t.closest("[data-opseen]")){try{localStorage.setItem(SK,String(Date.now()))}catch(y){}rs();return}
+  if(t.closest("[data-opseen]")){try{localStorage.setItem(SK,String(Date.now()))}catch(y){}if(window.nbellReadAll)await nbellReadAll(PL||[]);rs();return}
   if(t.closest("[data-opmore]")){plOpen=!plOpen;rs();return}
   if(x=t.closest("[data-ope]")){await enable(x);return}
   if(t.closest("[data-opd]")){await disable();return}

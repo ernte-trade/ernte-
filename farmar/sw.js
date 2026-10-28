@@ -1,6 +1,6 @@
 // Jednoduchý service worker: aplikácia sa otvorí aj pri slabom signáli.
 // Dáta (ceny, obchody) sa vždy berú živo z databázy, necachujú sa.
-const CACHE = "ernte-v169";
+const CACHE = "ernte-v170";
 const SHELL = ["./", "./index.html", "./config.js", "./logo.png", "./icon-192.png", "./icon-512.png", "./manifest.webmanifest"];
 self.addEventListener("install", e => { e.waitUntil(caches.open(CACHE).then(c => c.addAll(SHELL)).then(() => self.skipWaiting())); });
 self.addEventListener("activate", e => { e.waitUntil(caches.keys().then(ks => Promise.all(ks.filter(k => k !== CACHE).map(k => caches.delete(k)))).then(() => self.clients.claim())); });
@@ -17,14 +17,18 @@ self.addEventListener("fetch", e => {
 self.addEventListener("message", e => { if (e.data && e.data.type === "SKIP_WAITING") self.skipWaiting(); });
 
 // ===== Upozornenia majiteľovi (Web Push) =====
+// Rovnaké upozornenie (rovnaký tag alebo text) nahradí predchádzajúce – v lište sa nehromadí 10× to isté.
+const hk = s => { let h = 5381; for (let i = 0; i < s.length; i++) h = ((h << 5) + h + s.charCodeAt(i)) | 0; return (h >>> 0).toString(36); };
 self.addEventListener("push", e => {
   let d = {}; try { d = e.data ? e.data.json() : {}; } catch (x) { d = { title: "ERNTE Trade & Logistic", body: e.data ? e.data.text() : "" }; }
   const hi = (+d.prio || 4) >= 5;
-  e.waitUntil(self.registration.showNotification(d.title || "ERNTE Trade & Logistic", {
-    body: d.body || "", icon: "icon-192.png", badge: "icon-192.png", tag: (d.tag || "ernte") + "-" + Date.now(),
-    renotify: true, silent: false, requireInteraction: hi, vibrate: hi ? [400, 150, 400, 150, 600] : [250, 100, 250],
+  const tag = (d.tag || "ernte") + "-" + hk((d.title || "") + "|" + (d.body || ""));
+  // to isté upozornenie, ktoré už v lište je, sa iba ticho obnoví – nepípa znova
+  e.waitUntil(self.registration.getNotifications({ tag }).catch(() => []).then(old => self.registration.showNotification(d.title || "ERNTE Trade & Logistic", {
+    body: d.body || "", icon: "icon-192.png", badge: "icon-192.png", tag,
+    renotify: !(old && old.length), silent: false, requireInteraction: hi, vibrate: hi ? [400, 150, 400, 150, 600] : [250, 100, 250],
     data: { url: d.url || self.registration.scope }, timestamp: Date.now()
-  }));
+  })));
 });
 self.addEventListener("notificationclick", e => {
   e.notification.close(); const url = (e.notification.data && e.notification.data.url) || self.registration.scope;

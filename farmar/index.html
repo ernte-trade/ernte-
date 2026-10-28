@@ -1096,6 +1096,7 @@ const fName=id=>{const f=STATE.farmers.find(x=>x.id===id);return f?f.name:"?"};
 // ===== NÁPOVEDA „Ako to funguje“ =====
 const HELP={
 home:{t:"Prehľad",i:"🏠",r:"Ranný prehľad firmy: čo je nové, čo čaká na teba, termíny, upozornenia a počasie.",s:[
+ ["🔔 Zvonček v každej sekcii","Hore v každej záložke je 🔔 s počtom. Ukáže iba to, čo patrí do tejto sekcie: „Na vybavenie“ zmizne samo, keď vec vybavíš (prijmeš, odpovieš, zamietneš), a upozornenia z mobilu zmiznú po prečítaní alebo keď v sekcii už nič nečaká. Prečítané platí na všetkých tvojich zariadeniach. Po otvorení sekcie sa jej upozornenia zmažú aj z lišty v telefóne a rovnaké upozornenie už nepípa znova."],
  ["Dlaždice","Každá dlaždica ukazuje jednu vec (nové požiadavky, odvozy, alarmy, sklad…). Ťukni a prejdeš rovno do detailu."],
  ["Upozornenia","Hore sú veci, ktoré treba vybaviť dnes – napríklad nepodpísané zmluvy, chýbajúce váženia alebo nezapísaná práca."],
  ["Obnoviť","Údaje sa obnovujú samé. Tlačidlom ↻ ich načítaš hneď."]]},
@@ -2894,7 +2895,8 @@ document.addEventListener("click",e=>{const b=e.target.closest("[data-dfp]");if(
 <script src="sklad.js?v=20261027-0800"></script>
 <script src="sus.js?v=20261027-0730"></script>
 <script src="praca.js?v=20261027-0810"></script>
-<script src="opush.js?v=20261028-0050"></script>
+<script src="opush.js?v=20261028-1130"></script>
+<script src="nbell.js?v=20261028-1130"></script>
 <script src="novinky.js?v=20261027-0845"></script>
 <script src="danube.js?v=20261027-1430"></script>
 <script src="installapp.js?v=20261028-0900"></script>
