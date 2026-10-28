@@ -61,8 +61,13 @@ function tractor(){return `<g class="wtrac"><rect x="-46" y="4" width="40" heigh
   <rect x="0" y="6" width="26" height="14" rx="3" fill="#b91c1c"/><rect x="14" y="-6" width="12" height="14" rx="2" fill="#b91c1c"/><rect x="16" y="-4" width="8" height="8" fill="#bae6fd"/><rect x="4" y="0" width="3" height="8" fill="#374151"/>${wheel(20,20,8)}${wheel(4,22,5)}</g>`}
 function truck(cls,lbl){return `<g class="${cls}"><rect x="0" y="0" width="70" height="26" rx="3" fill="#f8fafc"/><text x="8" y="17" font-size="10" font-weight="800" fill="#1e2a71" font-family="sans-serif">${lbl}</text>
   <rect x="72" y="6" width="22" height="20" rx="4" fill="#1e2a71"/><rect x="82" y="9" width="10" height="8" rx="1" fill="#bae6fd"/>${wheel(12,28,5)}${wheel(26,28,5)}${wheel(56,28,5)}${wheel(84,28,5)}</g>`}
-const PHOTO={trus:"img/trus-uvod.jpg",farmar:"img/farmar-uvod.jpg"};
-function scene(k,ph,por){if(PHOTO[k])return `<div class="wimg" style="background-image:url(${PHOTO[k]})" role="img" aria-label="${k==="trus"?"Kurací trus – Bio-Fer NATUR":"Farmár na poli s klasmi"}"></div>`;let s=`<svg class="wsvg" viewBox="${por?"105 20 190 200":"0 0 400 220"}" preserveAspectRatio="xMidYMax slice" aria-hidden="true">`+sky(ph);
+const PHOTO={trus:"img/trus-uvod.jpg",farmar:"img/farmar-uvod.jpg",ja:"img/ja-uvod.jpg",ceo:"img/ceo-uvod.jpg",tim:"img/ceo-uvod.jpg",doprava:"img/doprava-uvod.jpg",obchod:"img/obchod-uvod.jpg",evid:"img/evid-uvod.jpg"};
+const ALT={trus:"Kurací trus – Bio-Fer NATUR",farmar:"Farmár na poli s klasmi",ja:"Kombajn pri žatve pri západe slnka",ceo:"Oceľové silá na obilie",tim:"Oceľové silá na obilie",doprava:"Kombajn sype obilie do nákladného auta",obchod:"Zrno sa sype do prívesu",evid:"Klasy obilia pri východe slnka"};
+const CW="https://commons.wikimedia.org/wiki/File:";
+const CREDIT={ja:["SDF Deutschland","CC BY-SA 4.0",CW+"M%C3%A4hdrescher_C9306.jpg"],doprava:["USDA NRCS Montana","voľné dielo",CW+"Harvest_NR_08_(38143696164).jpg"],
+  obchod:["USDA","voľné dielo",CW+"Harvest_(20200724-NRCS-LSC-0490).jpg"],ceo:["Leaflet","CC BY-SA 3.0",CW+"Ralls_Texas_Grain_Silos_2010.jpg"],
+  evid:["Dietmar Rabich","CC BY-SA 4.0",CW+"D%C3%BClmen,_Kirchspiel,_Dernekamp,_Getreide_bei_Sonnenaufgang_--_2021_--_8855.jpg"]};CREDIT.tim=CREDIT.ceo;
+function scene(k,ph,por){if(PHOTO[k]){const c=CREDIT[k];return `<div class="wimg" style="background-image:url(${PHOTO[k]})" role="img" aria-label="${E(ALT[k]||"")}"><i class="wgrid"></i><i class="wscan"></i><i class="wcrn"></i>${hud(k)}${c?`<a class="wcred" href="${c[2]}" target="_blank" rel="noopener">Foto: ${E(c[0])} · ${E(c[1])} · Wikimedia Commons</a>`:""}</div>`}let s=`<svg class="wsvg" viewBox="${por?"105 20 190 200":"0 0 400 220"}" preserveAspectRatio="xMidYMax slice" aria-hidden="true">`+sky(ph);
   const field=`<rect x="0" y="150" width="400" height="70" fill="url(#wfd)"/><rect class="wcut" x="0" y="150" width="400" height="70" fill="url(#wst)"/>${Array.from({length:12},(_,i)=>`<line x1="0" y1="${156+i*5.5}" x2="400" y2="${156+i*5.5}" stroke="#a16207" stroke-width=".5" opacity=".35"/>`).join("")}`;
   const road=`<rect x="0" y="182" width="400" height="38" fill="#374151"/><g class="wlane">${Array.from({length:14},(_,i)=>`<rect x="${i*32}" y="199" width="16" height="3" fill="#f8fafc"/>`).join("")}</g>`;
   if(k==="doprava"){s+=`<rect x="0" y="150" width="400" height="32" fill="url(#wfd)"/>`+road+`<g transform="translate(0 150)">${truck("wtk1","VALKO")}</g><g transform="translate(0 186)">${truck("wtk2","VALKO")}</g>`}
@@ -75,9 +80,48 @@ function scene(k,ph,por){if(PHOTO[k])return `<div class="wimg" style="background
   else{s+=field+`<g transform="translate(0 154)">${combine()}</g>`+(k==="farmar"||k==="ja"||k==="ceo"?`<g transform="translate(0 112)">${tractor()}</g>`:"")+(k==="ja"||k==="ceo"?`<rect x="0" y="198" width="400" height="22" fill="#374151"/><g transform="translate(0 194) scale(.7)">${truck("wtk2","VALKO")}</g>`:"")}
   return s+`</svg>`}
 
+
+/* ---------- ultra moderný HUD cez fotku: živé hodiny, počasie s grafom, čísla a grafy podľa role ---------- */
+const KT={ja:["Vyvezené","Jazdy · 7 dní"],ceo:["Vyvezené","Jazdy · 7 dní"],tim:["Vyvezené","Jazdy · 7 dní"],doprava:["Jazdy dnes","Jazdy · 7 dní"],
+  obchod:["Vyvezené","Požiadavky"],evid:["Obchody","Nové · 7 dní"],farmar:["Výkupné ceny",""],trus:["Požiadavky",""]};
+function hud(k){return `<div class="whud" aria-hidden="true"><div class="whtop"><span class="wlive"><i></i>LIVE</span><span class="wclk">--:--<small>:--</small></span></div>
+  <div class="whrow"><div class="whc whwx"><small>Počasie</small><div class="whv"><span class="wxi">…</span><b class="wxt">--°</b></div><div class="wxs">načítavam</div><svg class="wspk" viewBox="0 0 120 34" preserveAspectRatio="none"></svg></div>
+  <div class="whc whk"><small>${E((KT[k]||KT.tim)[0])}</small><div class="whkb"></div><small class="whk2">${E((KT[k]||KT.tim)[1])}</small><div class="whbars"></div></div></div>${k==="ja"||k==="ceo"||k==="obchod"&&(can_("price_view")||can_("price_edit"))?`<div class="whc whpr"><small>Naše nákupné ceny · €/t</small><div class="whpl"></div></div>`:""}</div>`}
+const WXI=c=>c===0?"☀️":c<=2?"🌤️":c===3?"☁️":c<=48?"🌫️":c<=67?"🌧️":c<=77?"🌨️":c<=82?"🌦️":c<=86?"🌨️":"⛈️";
+const WXN=c=>c===0?"jasno":c<=2?"polojasno":c===3?"zamračené":c<=48?"hmla":c<=57?"mrholenie":c<=67?"dážď":c<=77?"sneh":c<=82?"prehánky":c<=86?"snehové prehánky":"búrka";
+function spark(svg,vals){if(!svg||!vals.length)return;const mn=Math.min(...vals),mx=Math.max(...vals),r=mx-mn||1;const pt=vals.map((v,i)=>[i*120/(vals.length-1||1),30-(v-mn)/r*24]);
+  const d=pt.map((p,i)=>(i?"L":"M")+p[0].toFixed(1)+" "+p[1].toFixed(1)).join(" ");
+  svg.innerHTML=`<defs><linearGradient id="wspg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#b6ff3b" stop-opacity=".45"/><stop offset="1" stop-color="#b6ff3b" stop-opacity="0"/></linearGradient></defs><path d="${d} L120 34 L0 34Z" fill="url(#wspg)" class="wspa"/><path d="${d}" fill="none" stroke="#b6ff3b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" pathLength="1" class="wspl" vector-effect="non-scaling-stroke"/><circle cx="${pt[0][0]}" cy="${pt[0][1]}" r="3" fill="#fff" class="wspd"/>`}
+async function wx(el){const L=(()=>{try{return WXLOC}catch(x){return null}})()||{name:"Michalovce",lat:48.755,lon:21.915};
+  try{const r=await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${L.lat}&longitude=${L.lon}&current=temperature_2m,weather_code,wind_speed_10m&hourly=temperature_2m&forecast_hours=12&timezone=auto`);const j=await r.json();
+    const c=j.current||{};el.querySelector(".wxi").textContent=WXI(c.weather_code);countTo(el.querySelector(".wxt"),Math.round(c.temperature_2m),"°");
+    el.querySelector(".wxs").textContent=`${WXN(c.weather_code)} · ${Math.round(c.wind_speed_10m)} km/h · ${L.name||""}`;spark(el.querySelector(".wspk"),((j.hourly||{}).temperature_2m||[]).filter(v=>v!=null))}
+  catch(x){el.querySelector(".wxs").textContent=L.name||"";el.querySelector(".wxi").textContent="🌾"}}
+function countTo(n,to,suf){if(!n)return;if(!isFinite(to)){n.textContent="–";return}const t0=performance.now(),D=1100;const f=t=>{const p=Math.min(1,(t-t0)/D),e=1-Math.pow(1-p,3);n.textContent=Math.round(to*e).toLocaleString("sk-SK")+(suf||"");if(p<1)requestAnimationFrame(f)};requestAnimationFrame(f)}
+function ring(pct){const C=2*Math.PI*26;return `<div class="wring"><svg viewBox="0 0 64 64"><circle cx="32" cy="32" r="26" class="wrb"/><circle cx="32" cy="32" r="26" class="wrf" stroke-dasharray="${C}" stroke-dashoffset="${C}" style="--to:${C*(1-pct/100)}"/></svg><b data-to="${Math.round(pct)}" data-suf="%">0%</b></div>`}
+function big(v,suf){return `<b class="whbig" data-to="${v}" data-suf="${suf||""}">0</b>`}
+function bars(vals,lbls,unit){const mx=Math.max(1,...vals);return vals.map((v,i)=>`<span title="${E(lbls[i]||"")}: ${v}${unit||""}"><i style="--h:${Math.max(4,v/mx*100)}%;animation-delay:${.15+i*.06}s"></i><em>${E(lbls[i]||"")}</em></span>`).join("")}
+function days7(){const a=[];for(let i=6;i>=0;i--){const d=new Date(Date.now()-i*864e5);a.push([d.toLocaleDateString("sv-SE"),"NPUSŠPS"[d.getDay()]])}return a}
+function kpis(k,el){const S=typeof STATE!=="undefined"?STATE:{};const t=today();const kb=el.querySelector(".whkb"),bb=el.querySelector(".whbars"),k2=el.querySelector(".whk2");
+  const act=(S.deals||[]).filter(d=>!["zrusena","zruseny"].includes(d.status)&&+d.tons>0);const tons=act.reduce((a,d)=>a+(+d.tons||0),0),del=act.reduce((a,d)=>a+Math.min(+d.tons||0,+d.delivered_t||0),0);
+  const pct=tons?del/tons*100:0;const D=days7();const trips=D.map(([d])=>(S.trips||[]).filter(x=>String(x.day).slice(0,10)===d).length);
+  const nreq=(S.reqs||[]).filter(r=>r.status==="nova").length;
+  if(k==="farmar"){const P=(S.prices||[]).filter(p=>p.price!=null).sort((a,b)=>b.price-a.price).slice(0,5);const nm=c=>typeof comName==="function"?comName(c):c;
+    if(P.length){kb.innerHTML=big(Math.round(P[0].price))+`<span class="whu">€/t · ${E(nm(P[0].com))}<br>najvyššia</span>`;bb.innerHTML=bars(P.map(p=>Math.round(p.price)),P.map(p=>String(nm(p.com)).slice(0,4))," €/t");bb.classList.add("wtall")}
+    else{kb.innerHTML=`<span class="whu">Cenník sa pripravuje</span>`}}
+  else if(k==="doprava"){kb.innerHTML=big(trips[6])+`<span class="whu">${tons?Math.round(tons-del).toLocaleString("sk-SK")+" t zostáva":"dnes"}</span>`;bb.innerHTML=bars(trips,D.map(x=>x[1]))}
+  else if(k==="evid"){kb.innerHTML=big(act.length)+`<span class="whu">${Math.round(tons).toLocaleString("sk-SK")} t spolu</span>`;bb.innerHTML=bars(D.map(([d])=>(S.deals||[]).filter(x=>String(x.created_at||"").slice(0,10)===d).length),D.map(x=>x[1]))}
+  else if(k==="obchod"){kb.innerHTML=ring(pct)+`<span class="whu">${Math.round(del).toLocaleString("sk-SK")} / ${Math.round(tons).toLocaleString("sk-SK")} t</span>`;bb.innerHTML=`<div class="whn">${big(nreq)}<span class="whu">${nreq===1?"čaká na teba":"čakajú na teba"}</span></div>`}
+  else if(k==="trus"){kb.innerHTML=big(nreq)+`<span class="whu">nové</span>`;if(k2)k2.remove()}
+  else{kb.innerHTML=ring(pct)+`<span class="whu">${Math.round(del).toLocaleString("sk-SK")} / ${Math.round(tons).toLocaleString("sk-SK")} t</span>`;bb.innerHTML=bars(trips,D.map(x=>x[1]))}
+  const pl=el.querySelector(".whpl");if(pl){const nm=c=>typeof comName==="function"?comName(c):c;const P=(S.prices||[]).filter(p=>p.price!=null).sort((a,b)=>b.price-a.price).slice(0,8);const mx=Math.max(1,...P.map(p=>+p.price));
+    pl.innerHTML=P.length?P.map((p,i)=>`<span class="wpc"><em>${E(nm(p.com))}</em><b data-to="${Math.round(p.price)}">0</b><i style="--w:${Math.max(8,p.price/mx*100)}%;animation-delay:${.3+i*.07}s"></i></span>`).join(""):`<span class="whu">Cenník zatiaľ nie je zadaný</span>`}
+  el.querySelectorAll("[data-to]").forEach(n=>countTo(n,+n.dataset.to,n.dataset.suf));requestAnimationFrame(()=>el.classList.add("wgo"))}
+function clock(el){const c=el.querySelector(".wclk");if(!c)return 0;const f=()=>{const d=new Date(),p=n=>String(n).padStart(2,"0");c.innerHTML=`${p(d.getHours())}:${p(d.getMinutes())}<small>:${p(d.getSeconds())}</small>`};f();return setInterval(f,1000)}
+
 /* ---------- údaje do pozdravu ---------- */
 async function facts(k){const L=[];try{const S=typeof STATE!=="undefined"?STATE:{};const t=today();
-  if(k==="ja"||k==="ceo"||k==="obchod"){const n=(S.requests||[]).filter(r=>r.status==="nova").length;if(n)L.push(`📥 <b>${n}</b> ${n===1?"nová požiadavka":n<5?"nové požiadavky":"nových požiadaviek"}`)}
+  if(k==="ja"||k==="ceo"||k==="obchod"){const n=(S.reqs||[]).filter(r=>r.status==="nova").length;if(n)L.push(`📥 <b>${n}</b> ${n===1?"nová požiadavka":n<5?"nové požiadavky":"nových požiadaviek"}`)}
   if(k==="ja"||k==="ceo"||k==="obchod"||k==="doprava"){const rem=(S.deals||[]).filter(d=>!["zrusena","zruseny","uzavrety","hotovo"].includes(d.status)).reduce((a,d)=>a+Math.max(0,(+d.tons||0)-(+d.delivered_t||0)),0);if(rem>0)L.push(`🚚 <b>${Math.round(rem).toLocaleString("sk-SK")} t</b> zostáva vyviezť`)}
   if(k==="ja"||k==="ceo"||k==="doprava"){const tr=(S.trips||[]).filter(x=>x.day===t);if(tr.length)L.push(`🛣️ <b>${tr.length}</b> ${tr.length===1?"jazda":tr.length<5?"jazdy":"jázd"} dnes`)}
   if(k==="farmar"){const P=(S.prices||[]).filter(p=>p.price!=null).sort((a,b)=>b.price-a.price)[0];if(P)L.push(`🌾 Najvyššia výkupná cena: <b>${E(typeof comName==="function"?comName(P.com):P.com)} ${(+P.price).toLocaleString("sk-SK")} €/t</b>`);
@@ -100,17 +144,20 @@ async function show(force){const k=kind();if(!k)return;if(!force&&(sGet(SKEY)||l
    <div class="wla"><button type="button" class="lime" data-wlgo>Poďme na to →</button><button type="button" class="wmore" data-wljoke>😂 Ďalší vtip</button><button type="button" class="wloff" data-wloff>Dnes už neukazovať</button></div></div></div>
    <div class="wltap">${new Date().toLocaleDateString("sk-SK",{weekday:"long",day:"numeric",month:"long"})}</div>`;
   document.body.appendChild(el);document.documentElement.classList.add("wlon");requestAnimationFrame(()=>el.classList.add("in"));
+  const hd=el.querySelector(".whud");let ck=0;if(hd){ck=clock(hd);el._ck=ck;wx(hd);try{kpis(k,hd)}catch(x){}}
   const f=await facts(k);const ul=el.querySelector(".wlf");if(ul&&f.length)ul.innerHTML=f.map(x=>`<li>${x}</li>`).join("");
   el.addEventListener("click",ev=>{if(ev.target.closest("[data-wloff]")){lSet(DKEY,today());close(el);return}
     if(ev.target.closest("[data-wljoke]")){ji=(ji+1)%FL.length;let p=el.querySelector(".wjk span");if(!p){el.querySelector(".wlt p").insertAdjacentHTML("afterend",`<p class="wjk">😄 <span></span></p>`);p=el.querySelector(".wjk span")}p.textContent=FL[ji];p.parentNode.classList.remove("pop");void p.parentNode.offsetWidth;p.parentNode.classList.add("pop");return}
     if(ev.target.closest(".wcomb,.wtrac,.wtk1,.wtk2,.when")){const g=ev.target.closest(".wcomb,.wtrac,.wtk1,.wtk2,.when");g.classList.add("wboost");setTimeout(()=>g.classList.remove("wboost"),1500);honk(g.classList.contains("when"));confetti(el,ev.clientX,ev.clientY);if(navigator.vibrate)try{navigator.vibrate(30)}catch(x){}return}
+    if(ev.target.closest(".wcred"))return;
+    if(ev.target.closest(".whc")){const c=ev.target.closest(".whc");c.classList.remove("wtap");void c.offsetWidth;c.classList.add("wtap");honk(false);confetti(el,ev.clientX,ev.clientY);if(navigator.vibrate)try{navigator.vibrate(20)}catch(x){}return}
     if(ev.target.closest("[data-wlgo]")||!ev.target.closest(".wlb"))close(el)})}
 let AC=null;function honk(chick){try{AC=AC||new (window.AudioContext||window.webkitAudioContext)();const t=AC.currentTime;
   const tone=(f,a,b,type)=>{const o=AC.createOscillator(),g=AC.createGain();o.type=type||"square";o.frequency.setValueAtTime(f,t+a);if(chick)o.frequency.exponentialRampToValueAtTime(f*1.8,t+b);g.gain.setValueAtTime(0,t+a);g.gain.linearRampToValueAtTime(.08,t+a+.02);g.gain.linearRampToValueAtTime(0,t+b);o.connect(g);g.connect(AC.destination);o.start(t+a);o.stop(t+b+.02)};
   if(chick){tone(700,0,.12,"triangle");tone(900,.16,.3,"triangle")}else{tone(392,0,.22);tone(330,.26,.5)}}catch(x){}}
 function confetti(el,x,y){const em=["🌾","🌾","🌻","✨","🟡"];for(let i=0;i<12;i++){const d=document.createElement("span");d.className="wcf";d.textContent=em[i%em.length];d.style.left=x+"px";d.style.top=y+"px";
   d.style.setProperty("--dx",(Math.random()*240-120)+"px");d.style.setProperty("--dy",(-80-Math.random()*160)+"px");el.appendChild(d);setTimeout(()=>d.remove(),1100)}}
-function close(el){el.classList.remove("in");el.classList.add("out");document.documentElement.classList.remove("wlon");setTimeout(()=>el.remove(),380)}
+function close(el){if(el._ck)clearInterval(el._ck);el.classList.remove("in");el.classList.add("out");document.documentElement.classList.remove("wlon");setTimeout(()=>el.remove(),380)}
 window.ernteWelcome=()=>show(true);
 document.addEventListener("click",e=>{const i=e.target.closest&&e.target.closest("header.top img");if(i&&kind()){e.preventDefault();show(true)}});
 function css(){const s=document.createElement("style");s.textContent=`
@@ -118,7 +165,7 @@ function css(){const s=document.createElement("style");s.textContent=`
 .wlc.in{opacity:1}.wlc.out{opacity:0}
 html.wlon,html.wlon body{overflow:hidden}
 .wsvg{position:absolute;inset:0;width:100%;height:100%}
-.wimg{position:absolute;inset:0;background:#668921 center top/cover no-repeat;animation:wkb 18s ease-in-out infinite alternate}
+.wimg{position:absolute;inset:0;background:#668921 center top/cover no-repeat}
 @keyframes wkb{from{transform:scale(1)}to{transform:scale(1.08)}}
 .wlc.por .wimg{position:relative;inset:auto;flex:1 1 auto;min-height:44vh}
 .wlc.por{--x0:20px;--x1:330px;background:#14210a}.wlc.por .wsvg{position:relative;inset:auto;flex:1 1 auto;min-height:34vh;height:auto}
@@ -162,7 +209,62 @@ html.wlon,html.wlon body{overflow:hidden}
 .wdoc{animation:wdocf 3.6s ease-in infinite}
 .wlane{animation:wback 6s linear infinite}
 .wboost{animation-duration:3s!important}
-@media (prefers-reduced-motion:reduce){.wlc *{animation:none!important}}
+
+.wimg{overflow:hidden}.wimg::after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,rgba(5,8,22,.55) 0%,rgba(5,8,22,.05) 38%,rgba(5,8,22,.05) 62%,rgba(5,8,22,.6) 100%);pointer-events:none}
+.wimg::before{content:"";position:absolute;inset:-4%;background:inherit;animation:wkb 18s ease-in-out infinite alternate}
+.wgrid{position:absolute;inset:0;z-index:1;background-image:linear-gradient(rgba(182,255,59,.09) 1px,transparent 1px),linear-gradient(90deg,rgba(182,255,59,.09) 1px,transparent 1px);background-size:38px 38px;-webkit-mask-image:radial-gradient(ellipse at 50% 35%,#000 0%,transparent 72%);mask-image:radial-gradient(ellipse at 50% 35%,#000 0%,transparent 72%)}
+.wscan{position:absolute;left:0;right:0;top:0;height:90px;z-index:1;background:linear-gradient(180deg,transparent,rgba(182,255,59,.07) 80%,rgba(182,255,59,.45) 100%);animation:wscan 5.5s cubic-bezier(.45,0,.55,1) infinite;pointer-events:none}
+@keyframes wscan{0%{transform:translateY(-100%);opacity:0}15%{opacity:1}85%{opacity:1}100%{transform:translateY(100vh);opacity:0}}
+.wcrn{position:absolute;inset:calc(10px + env(safe-area-inset-top,0px)) 10px 10px;z-index:1;pointer-events:none;background:linear-gradient(#b6ff3b,#b6ff3b) 0 0/18px 2px,linear-gradient(#b6ff3b,#b6ff3b) 0 0/2px 18px,linear-gradient(#b6ff3b,#b6ff3b) 100% 0/18px 2px,linear-gradient(#b6ff3b,#b6ff3b) 100% 0/2px 18px,linear-gradient(#b6ff3b,#b6ff3b) 0 100%/18px 2px,linear-gradient(#b6ff3b,#b6ff3b) 0 100%/2px 18px,linear-gradient(#b6ff3b,#b6ff3b) 100% 100%/18px 2px,linear-gradient(#b6ff3b,#b6ff3b) 100% 100%/2px 18px;background-repeat:no-repeat;opacity:.75}
+.wcred{position:absolute;right:12px;bottom:6px;z-index:3;font-size:.62rem;color:rgba(255,255,255,.75);text-decoration:none;text-shadow:0 1px 3px rgba(0,0,0,.8);max-width:70%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.wlc.por .wcred{bottom:52px}
+.whud{position:absolute;z-index:2;left:14px;right:14px;top:calc(42px + env(safe-area-inset-top,0px));display:flex;flex-direction:column;gap:8px;font-family:"Geist",system-ui,sans-serif;color:#f1f5ff}
+.whtop{display:flex;align-items:center;justify-content:space-between}
+.wlive{display:inline-flex;align-items:center;gap:6px;padding:4px 10px;border-radius:999px;font:700 .66rem/1 "Geist Mono",ui-monospace,monospace;letter-spacing:.14em;background:rgba(5,8,22,.55);border:1px solid rgba(182,255,59,.35);color:#b6ff3b;-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px)}
+.wlive i{width:7px;height:7px;border-radius:50%;background:#b6ff3b;box-shadow:0 0 0 0 rgba(182,255,59,.7);animation:wpulse 1.6s infinite}
+@keyframes wpulse{0%{box-shadow:0 0 0 0 rgba(182,255,59,.7)}70%{box-shadow:0 0 0 9px rgba(182,255,59,0)}100%{box-shadow:0 0 0 0 rgba(182,255,59,0)}}
+.wclk{font:700 1.5rem/1 "Geist Mono",ui-monospace,monospace;letter-spacing:-.02em;text-shadow:0 2px 12px rgba(0,0,0,.6);font-variant-numeric:tabular-nums}.wclk small{font-size:.6em;opacity:.65}
+.whrow{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.whc{position:relative;min-width:0;padding:10px 12px;border-radius:18px;background:linear-gradient(145deg,rgba(10,16,34,.42),rgba(10,16,34,.18));border:1px solid rgba(255,255,255,.22);-webkit-backdrop-filter:blur(7px) saturate(150%);backdrop-filter:blur(7px) saturate(150%);box-shadow:0 10px 30px rgba(0,0,0,.35),inset 0 1px 0 rgba(255,255,255,.25);cursor:pointer;opacity:0;transform:translateY(12px) scale(.97);animation:whin .6s cubic-bezier(.2,.8,.2,1) .25s forwards;overflow:hidden}
+.whc+.whc{animation-delay:.4s}
+@keyframes whin{to{opacity:1;transform:none}}
+.whc::before{content:"";position:absolute;inset:0;background:linear-gradient(115deg,transparent 30%,rgba(255,255,255,.18) 50%,transparent 70%);transform:translateX(-120%);animation:wshine 6s ease-in-out 1.2s infinite;pointer-events:none}
+@keyframes wshine{0%,70%{transform:translateX(-120%)}100%{transform:translateX(120%)}}
+.whc.wtap{animation:wtapk .45s cubic-bezier(.2,.8,.2,1);opacity:1}@keyframes wtapk{0%{transform:scale(.94)}100%{transform:none}}
+.whc small{display:block;font:600 .6rem/1.2 "Geist Mono",ui-monospace,monospace;letter-spacing:.12em;text-transform:uppercase;color:#b6ff3b;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.whv{display:flex;align-items:center;gap:6px;margin-top:4px}.wxi{font-size:1.5rem;line-height:1}.wxt{font:700 1.7rem/1 "Geist",system-ui;letter-spacing:-.04em;font-variant-numeric:tabular-nums}
+.wxs{font-size:.7rem;color:#dbe3f3;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:2px}
+.wspk{display:block;width:100%;height:30px;margin-top:4px;overflow:visible}
+.wspl{stroke-dasharray:1;stroke-dashoffset:1;animation:wdraw 1.6s ease-out .5s forwards;filter:drop-shadow(0 0 4px rgba(182,255,59,.8))}
+.wspa{opacity:0;animation:whin .8s ease 1.4s forwards}
+.wspd{opacity:0;animation:whin .3s ease .5s forwards}
+@keyframes wdraw{to{stroke-dashoffset:0}}
+.whkb{display:flex;align-items:center;gap:8px;margin-top:4px;min-height:34px}
+.whbig{font:700 1.9rem/1 "Geist",system-ui;letter-spacing:-.04em;font-variant-numeric:tabular-nums}
+.whu{font-size:.7rem;color:#dbe3f3;line-height:1.25}
+.wring{position:relative;width:46px;height:46px;flex:none}.wring svg{width:100%;height:100%;transform:rotate(-90deg)}
+.wrb{fill:none;stroke:rgba(255,255,255,.18);stroke-width:7}.wrf{fill:none;stroke:#b6ff3b;stroke-width:7;stroke-linecap:round;filter:drop-shadow(0 0 4px rgba(182,255,59,.7))}
+.wgo .wrf{transition:stroke-dashoffset 1.4s cubic-bezier(.2,.8,.2,1) .4s;stroke-dashoffset:var(--to)}
+.wring b{position:absolute;inset:0;display:grid;place-items:center;font:700 .72rem/1 "Geist Mono",ui-monospace,monospace}
+.whk2{margin-top:6px!important;color:#c9d1e3!important;opacity:.85}
+.whbars{display:flex;align-items:flex-end;gap:4px;height:34px;margin-top:4px}.whbars.wtall{height:48px}
+.whbars span{flex:1;height:100%;display:flex;flex-direction:column;justify-content:flex-end;align-items:center;gap:2px;min-width:0}
+.whbars i{display:block;width:100%;height:var(--h);border-radius:4px 4px 2px 2px;background:linear-gradient(180deg,#b6ff3b,rgba(94,234,212,.55));box-shadow:0 0 8px rgba(182,255,59,.45);transform:scaleY(0);transform-origin:bottom;animation:wbar .7s cubic-bezier(.2,.8,.2,1) forwards}
+.whbars span:last-child i{background:linear-gradient(180deg,#fff,#b6ff3b)}
+.whbars em{font:600 .5rem/1 "Geist Mono",ui-monospace,monospace;font-style:normal;color:#c9d1e3;white-space:nowrap;overflow:hidden;max-width:100%}
+@keyframes wbar{to{transform:scaleY(1)}}
+.whn{display:flex;align-items:center;gap:8px;height:100%}
+.wlc.por .whud{top:calc(40px + env(safe-area-inset-top,0px))}
+@media (max-height:640px){.wlc.por .wspk{height:20px}.wlc.por .whbars{height:24px}.wclk{font-size:1.2rem}}
+@media (min-width:900px){.whud{left:auto;right:28px;top:calc(56px + env(safe-area-inset-top,0px));width:420px}.wclk{font-size:2rem}}
+.wltap{z-index:3}
+.whpr{animation-delay:.55s!important}.whpl{display:grid;grid-template-columns:repeat(auto-fill,minmax(96px,1fr));gap:6px 10px;margin-top:6px}
+.wpc{position:relative;display:flex;justify-content:space-between;align-items:baseline;gap:6px;padding-bottom:5px;min-width:0}
+.wpc em{font-style:normal;font-size:.72rem;color:#dbe3f3;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.wpc b{font:700 .95rem/1 "Geist Mono",ui-monospace,monospace;font-variant-numeric:tabular-nums;color:#fff}
+.wpc i{position:absolute;left:0;bottom:0;height:2px;width:var(--w);border-radius:2px;background:linear-gradient(90deg,#b6ff3b,rgba(94,234,212,.6));box-shadow:0 0 6px rgba(182,255,59,.6);transform:scaleX(0);transform-origin:left;animation:wbarx .8s cubic-bezier(.2,.8,.2,1) forwards}
+@keyframes wbarx{to{transform:scaleX(1)}}
+@media (prefers-reduced-motion:reduce){.wlc *{animation:none!important}.whc,.wspl,.wspa,.wspd{opacity:1!important;transform:none!important;stroke-dashoffset:0!important}.whbars i{transform:none!important}}
 @media (min-width:900px){.wlb{margin-bottom:48px}}`;document.head.appendChild(s)}
 css();
 let tries=0;const t=setInterval(()=>{tries++;const app=document.getElementById("app");
