@@ -25,8 +25,24 @@ function restore(S){if(!S)return;const app=document.getElementById("app");if(!ap
   if(S.fo){let f=null;try{f=app.querySelector("form"+S.fo.f)}catch(x){}const el=f&&f.querySelector(`[name="${CSS.escape(S.fo.n)}"]`);
     if(el&&document.activeElement!==el){try{el.focus({preventScroll:true});if(S.fo.s!=null&&el.setSelectionRange)el.setSelectionRange(S.fo.s,S.fo.e)}catch(x){}}}
   if(S.dirty&&Math.abs(scrollY-S.y)>40)scrollTo(0,S.y)}
+// ===== kým človek píše do formulára, obrazovka sa NEPREKRESLÍ na pozadí (nevyhodí z políčka, nezavrie klávesnicu) =====
+// Prekreslenie vyvolané ťuknutím / uložením / výberom prebehne hneď; obnova z pozadia (nové údaje, časovače) počká,
+// kým človek políčko opustí – potom sa urobí raz.
+let ACT=0,ACTF=0;const PEND={};
+const txt=a=>!!(a&&/INPUT|TEXTAREA|SELECT/.test(a.tagName)&&!/^(checkbox|radio|button|submit|reset|file|range|color)$/.test(a.type||"")&&a.closest&&a.closest("#app"));
+const typing=()=>{const a=document.activeElement;return txt(a)||!!(a&&a.isContentEditable&&a.closest&&a.closest("#app"))};
+addEventListener("click",e=>{const t=e.target;if(!e.isTrusted||txt(t)||(t&&t.closest&&t.closest("label")&&!t.closest("button,a,[data-tab]")))return;ACT=Date.now()+6000},true);
+addEventListener("change",e=>{if(e.isTrusted&&e.target&&(e.target.tagName==="SELECT"||/^(checkbox|radio|date|time|file)$/.test(e.target.type||"")))ACT=Math.max(ACT,Date.now()+4000)},true);
+addEventListener("submit",e=>{ACT=Math.max(ACT,Date.now()+12000)},true);
+// vyhľadávacie polia mimo formulárov sa prekresľujú pri písaní zámerne
+addEventListener("input",e=>{if(e.isTrusted&&e.target&&e.target.closest&&!e.target.closest("form"))ACTF=Date.now()+2500},true);
+const userNow=()=>{const ev=window.event;if(ev&&ev.isTrusted&&ev.type!=="message"&&ev.type!=="visibilitychange")return true;return Date.now()<ACT||Date.now()<ACTF};
+function flush(){if(typing())return;for(const n of Object.keys(PEND)){const args=PEND[n];delete PEND[n];try{window[n].apply(window,args)}catch(x){}}}
+document.addEventListener("focusout",()=>setTimeout(flush,450),true);
+document.addEventListener("visibilitychange",()=>{if(!document.hidden)setTimeout(flush,600)});
 function wrap(name){const o=window[name];if(typeof o!=="function"||o.__fk)return false;
-  const w=function(){const S=snap();const r=o.apply(this,arguments);try{restore(S)}catch(x){}return r};w.__fk=1;window[name]=w;return true}
+  const w=function(){if(typing()&&!userNow()){PEND[name]=[...arguments];return}const S=snap();const r=o.apply(this,arguments);try{restore(S)}catch(x){}return r};w.__fk=1;window[name]=w;return true}
+window.formFlush=flush;
 // odoslaný formulár sa nevracia
 document.addEventListener("submit",e=>{const f=e.target,k=f&&keyOf(f);if(!k)return;SENT[k]=Date.now();
   // keď sa formulár neprekreslil (chyba, zlý údaj), rozpísané údaje sa ďalej chránia
@@ -39,5 +55,5 @@ const tick=setInterval(()=>{wrap("renderStaff");wrap("renderFarmer")},500);setTi
 const kb=()=>{const a=document.activeElement,on=!!(a&&/INPUT|TEXTAREA|SELECT/.test(a.tagName)&&!/checkbox|radio|button|submit|file/.test(a.type||"")&&a.closest&&a.closest("#app"));document.documentElement.classList.toggle("kbd",on)};
 document.addEventListener("focusin",kb);document.addEventListener("focusout",()=>setTimeout(kb,120));
 // kým človek píše, automatické obnovenie po návrate do aplikácie počká
-window.formBusy=()=>{const a=document.activeElement;return !!(a&&a.closest&&a.closest("#app form")&&/INPUT|TEXTAREA|SELECT/.test(a.tagName))};
+window.formBusy=()=>{const a=document.activeElement;if(typing())return true;if(document.querySelector("dialog[open],.modal:not([hidden]),.ovl:not([hidden])")&&a&&/INPUT|TEXTAREA|SELECT/.test(a.tagName))return true;return !!(a&&a.closest&&a.closest("#app form")&&/INPUT|TEXTAREA|SELECT/.test(a.tagName))};
 })();

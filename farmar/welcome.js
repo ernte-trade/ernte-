@@ -365,7 +365,12 @@ html.wlon,html.wlon body{overflow:hidden}
 .wpc i{position:absolute;left:0;bottom:0;height:2px;width:var(--w);border-radius:2px;background:linear-gradient(90deg,#b6ff3b,rgba(94,234,212,.6));box-shadow:0 0 6px rgba(182,255,59,.6);transform:scaleX(0);transform-origin:left;animation:wbarx .8s cubic-bezier(.2,.8,.2,1) forwards}
 @keyframes wbarx{to{transform:scaleX(1)}}
 @media (prefers-reduced-motion:reduce){.wlc *{animation:none!important}.whc,.wspl,.wspa,.wspd{opacity:1!important;transform:none!important;stroke-dashoffset:0!important}.whbars i{transform:none!important}}
-@media (min-width:900px){.wlb{margin-bottom:48px}}`;document.head.appendChild(s)}
+@media (min-width:900px){.wlb{margin-bottom:48px}}
+.wlb{box-sizing:border-box}.wlt{min-width:0;max-width:100%}.wlt *{overflow-wrap:anywhere}
+.wlc.por .wlb{grid-template-columns:minmax(0,1fr);justify-items:center;text-align:center;align-self:center;margin-left:auto!important;margin-right:auto!important;gap:8px}
+.wlc.por .wlb>img{width:44px;height:44px}.wlc.por .wlt{width:100%}.wlc.por .wlt>*{margin-left:auto;margin-right:auto}
+.wlc.por .wjk{text-align:left}.wlc.por .wla{justify-content:center;margin-left:0;margin-right:0}
+.wlc.por .wla>button{flex:1 1 0;min-width:0}`;document.head.appendChild(s)}
 css();
 let tries=0;const t=setInterval(()=>{tries++;const app=document.getElementById("app");
   if(kind()&&app&&app.children.length&&!document.querySelector(".pinmod")){clearInterval(t);setTimeout(()=>show(false),600)}
