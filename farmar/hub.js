@@ -21,6 +21,7 @@ async function load(){if(H.busy)return;H.busy=true;const q=[];
 window.hubReload=()=>{H.at=0;window.OPSDATA=null;load()};
 const tile=(ic,lab,val,sub,cls,go)=>`<button type="button" class="hbt ${cls||""}"${go?` data-hgo="${go}"`:""}><span class="hbi">${ic}</span><span class="hbl">${lab}</span><b class="hbv">${val}</b>${sub?`<small>${sub}</small>`:""}</button>`;
 window.vHome=function(){if(!H.at&&!H.busy)setTimeout(load,0);
+  if(window.owHomeOn&&window.owHome&&owHomeOn())return owHome();
   const R=STATE.reqs||[],nNew=R.filter(r=>r.status==="nova").length,auto=R.filter(r=>r.status==="nova"&&/^🎯 Automaticky/.test(r.note||"")).length;
   const T=(STATE.trips||[]).filter(t=>t.day===today()&&t.status!=="zrusena"),O=window.OPSDATA||[],left=O.filter(d=>["podpisany","odvoz"].includes(d.status)).reduce((s,d)=>s+(+d.left_t||0),0);
   const TG=Array.isArray(H.tg)?H.tg:[],tgA=TG.filter(t=>t.active),tgH=TG.filter(t=>t.hit_at&&Date.now()-new Date(t.hit_at)<7*DAY);
@@ -78,6 +79,7 @@ function mobHTML(){const M=H.mob;let h=`<details class="card hsec" id="hs-mob"><
 // ---- TERMÍNY ----
 function dueHTML(){return `<details class="card hsec" id="hs-due"><summary><span>📅</span><b>Termíny a povinnosti</b><small>legislatíva, ktorá sa týka ERNTE a VALKO</small></summary><div class="hdue">${DUE.map((d,i)=>{const dd=Math.round((new Date(d[0]+"T00:00:00")-todayD())/DAY);return `<div class="hdi ${dd<0?"g":dd<=30?"r":dd<=90?"w":""}"><b>${d[1]} ${esc(dSK(d[0]))}</b><span>${esc(d[2])}</span><small>${esc(d[3])} · ${dd<0?"platí":"o "+dd+" dní"}</small>${window.dueBtns?dueBtns(i):""}</div>`}).join("")}</div>
   <div class="s">ERNTE AI sleduje legislatívu priebežne – pri zmene termínu ti napíše.</div></details>`}
+window.HUBX={H,load,riskHTML,tgHTML,dueHTML,DUE};
 document.addEventListener("click",e=>{let x=e.target.closest("[data-hgo]");if(x){const g=x.dataset.hgo;if(["req","deals","trans","price"].includes(g)){TAB=g;renderStaff();scrollTo(0,0);return}
     const id={mob:"hs-mob",due:"hs-due",tg:"hs-tg",co2:"hs-mob"}[g];if(g==="co2"&&typeof fsecGo==="function"){TAB="fleet";fsecGo("dash");renderStaff();return}
     const el=id&&document.getElementById(id);if(el){el.open=true;el.scrollIntoView({behavior:"smooth",block:"start"})}return}
@@ -101,7 +103,10 @@ document.addEventListener("submit",async e=>{if(e.target.id!=="fFt")return;e.pre
 document.addEventListener("click",async e=>{const x=e.target.closest("[data-ftdel]");if(!x)return;if(!confirm("Zrušiť túto cieľovú cenu?"))return;await sb.from("price_targets").delete().eq("id",+x.dataset.ftdel);ftLoad()});
 // Prehľad ako úvodná záložka
 const _ss=window.startStaff;window.startStaff=async function(){if(typeof TAB!=="undefined"&&TAB==="req")TAB="home";return _ss.apply(this,arguments)};
-try{Object.assign(HELP,{home:{t:"Prehľad",i:"🏠",r:"Všetko dôležité na jednej obrazovke – obchod, vývoz, riziko, flotila a termíny.",s:[
+try{Object.assign(HELP,{home:{t:"Prehľad",i:"🏠",r:"Všetko dôležité na jednej obrazovke v dlaždiciach. Ťuknutím na dlaždicu prejdeš rovno do sekcie.",s:[
+ ["Naše ceny · nákup a predaj (iba Martin a Jana)","Pre každú komoditu naša výkupná cena FCA, za koľko ju predáme (DAP odberateľa – lepší z Bunge a Agro-Somotor), doprava, marža na tonu a burza MATIF / CBOT."],
+ ["Obchody a zisky ERNTE","Nové požiadavky, bežiace obchody, čo zostáva vyviezť, odvozy dnes; realizovaná a zamknutá marža, otvorená pozícia a riziko poklesu burzy."],
+ ["Komodity · služby · evidencia","Burza, cenník, kalkulačka, Danube Trade, Agro služby, kurací trus, evidencia, farmári, kalendár a novinky – každá dlaždica otvorí svoju sekciu."],
  ["Alarmy navrchu","Nové požiadavky, dosiahnuté cieľové ceny farmárov, autá, ktoré musia ísť na dvor (Balík mobility), vypršaný cenník a blížiace sa zákonné termíny. Ťuknutím prejdeš priamo na vec."],
  ["Pozícia a riziko (iba majiteľ)","Koľko ton je nakúpených a ešte nepredaných, za koľko, zamknutá marža z predaných obchodov a koľko by si stratil, keby burza klesla o 10 €/t."],
  ["Cieľové ceny farmárov","Farmár si nastaví cenu, za ktorú chce predať. Vidíš, koľko ton by si získal, keby si cenu zdvihol o 5 alebo 10 €/t. Keď ju dosiahneš, požiadavka na predaj vznikne sama."],

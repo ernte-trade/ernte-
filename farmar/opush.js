@@ -49,7 +49,8 @@ function card(){const e=typeof esc==="function"?esc:(x=>x);
    <div class="btns">${st!=="on"?`<button type="button" class="pri" data-ope="1">🔔 Zapnúť upozornenia</button>`:`<button type="button" class="lime" data-opt="1">Poslať skúšobné upozornenie</button><button type="button" data-opd="1">Vypnúť v tomto zariadení</button>`}
     ${st==="on"?`<button type="button" class="pri" data-opok="1">✓ Pípa mi – hotovo</button>`:""}${ok()?`<button type="button" data-opo="0">Zavrieť</button>`:""}</div>
    <div class="s">Ak skúšobné nepípne (príde do 1 minúty): v nastaveniach telefónu → Aplikácie → prehliadač / ERNTE → Upozornenia → zapni zvuk a vypni pre prehliadač úsporu batérie.</div></div>`}
-const _vh=window.vHome;if(typeof _vh==="function")window.vHome=function(){const h=_vh.apply(this,arguments);return OWN()?card()+listHTML()+h:h};
+const _vh=window.vHome;if(typeof _vh==="function")window.vHome=function(){const h=_vh.apply(this,arguments);return OWN()&&!(window.owHomeOn&&owHomeOn())?card()+listHTML()+h:h};
+window.opushParts={card:()=>card(),list:()=>listHTML(),newCnt:()=>{if(!Array.isArray(PL))return 0;let seen=0;try{seen=+localStorage.getItem(SK)||0}catch(x){}const L=window.nbellDone?PL.filter(x=>!nbellDone(x)):PL;return L.filter(x=>Date.parse(x.at)>seen).length}};
 setInterval(()=>{if(!document.hidden&&OWN()&&typeof TAB!=="undefined"&&TAB==="home")loadList()},60000);document.addEventListener("visibilitychange",()=>{if(!document.hidden&&OWN())loadList()});
 document.addEventListener("click",async e=>{const t=e.target;if(!t.closest||!OWN())return;let x;
   if(t.closest("[data-opseen]")){try{localStorage.setItem(SK,String(Date.now()))}catch(y){}if(window.nbellReadAll)await nbellReadAll(PL||[]);rs();return}
