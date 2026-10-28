@@ -63,10 +63,18 @@ s pripojeným repozitárom `ernte-trade/ernte-`.
   Údaje z databázy sa nikdy necachujú – vždy živé.
 - Úvod sa dá vždy opustiť: „Poďme na to“, ✕ vľavo hore, ťuknutie mimo karty; ukazuje sa aj v náhľade „Pozrieť ako“.
   Rozloženie: pod 1100 px šírky panely nad kartou (bez prekrývania, posúvateľné), nad 1100 px panely vpravo, karta vľavo.
+- Firmy podľa IČO (`firmy.js`, prístup `firmy`): po zadaní IČO / odfotení pečiatky vyplní meno a sídlo z registra RPO
+  (api.statistics.sk, CORS povolený, zadarmo) + odkaz FinStat. DIČ / IČ DPH: RÚZ (registeruz.sk) ich má, ale nemá CORS →
+  iba cez databázu (pg_net); plný FinStat API potrebuje platený kľúč (zadať v aplikácii, nikdy v chate).
+- Vtipy na úvode: ~100 vlastných vo východniarskom nárečí (`KE` vo `welcome.js`), bez opakovania na zariadení.
+- Kontroly bez prístupu k sieti z Claude: workflowy `health.yml` (dostupnosť) a `icotest.yml` (registre) zapisujú výsledok do vetiev
+  `health-results` / `ico-results`.
 - Automatický test živej aplikácie na 7 zariadeniach (`.github/e2e/`, výsledky zašifrované v vetve `e2e-results`).
 - Prezentácie (Claude Slides): majiteľ, farmár, kurací trus, Jana, Galajda, Ličko, Tóth.
 
 ### Čaká / odložené
+- Overiť, či databáza spracúva migrácie z `farmar/supabase/auto/` (od ~10:00 28. 10. nebol žiadny „Audit Claude“ ani push –
+  `Audit Claude 8 (bezpečnosť)` čaká). Bezpečnostná kontrola dát (RLS, anon, funkcie, úložisko) – dokončiť po výsledku auditu.
 - Povolenie na fotky Dominika Klacika (CLAAS) a potvrdenie práv k reklame Bio-Fer NATUR (úvod trusu).
 - Odložené majiteľom („k tomu sa vrátime“): upratanie karty upozornení, vlastná doména (app.ernte.sk), verejná web stránka, aplikácia vs. web.
 - Pozdrav s menom pri kuracom truse (ponúknuté).
