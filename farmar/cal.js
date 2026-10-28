@@ -24,12 +24,12 @@ async function load(force){if(C.busy||(!force&&C.at&&Date.now()-C.at<45e3))retur
   try{const since=new Date(Date.now()-14*864e5).toISOString();
     const [a,b,c]=await Promise.all([sb.from("owner_cal").select("*").gte("start_at",since).order("start_at",{ascending:true}).limit(400),
       sb.from("meet_req").select("*").order("start_at",{ascending:true}).limit(200),sb.rpc("meet_cfg")]);
-    C.err=a.error?a.error.message:b.error?b.error.message:"";C.ev=a.data||[];C.mr=b.data||[];C.cfg=c.data||{};C.at=Date.now()}catch(x){C.err=String(x.message||x)}
+    C.err=a.error?a.error.message:b.error?b.error.message:"";C.ev=a.data||[];try{const au=await sb.from("owner_cal_audio").select("cal_id");const A=new Set((au.data||[]).map(x=>String(x.cal_id)));C.ev.forEach(e=>e.has_audio=A.has(String(e.id)))}catch(x){}C.mr=b.data||[];C.cfg=c.data||{};C.at=Date.now()}catch(x){C.err=String(x.message||x)}
   C.busy=false;if(typeof TAB!=="undefined"&&TAB==="cal"&&typeof renderStaff==="function")renderStaff()}
 window.calOpenCount=()=>(C.mr||[]).filter(m=>m.status==="nova"&&new Date(m.start_at)>Date.now()).length;
 function evRow(e){const past=new Date(e.start_at)<Date.now()-36e5;const rm=(e.remind_min||[]).map(m=>(REM.find(r=>r[0]===m)||[0,m+" min"])[1]).join(", ");
   return `<div class="clev ${e.kind} ${e.done?"done":""} ${past?"past":""}"><div class="clt">${e.all_day?"celý deň":hm(e.start_at)}${e.end_at&&!e.all_day?`<small>${hm(e.end_at)}</small>`:""}</div>
-   <div class="clb"><b>${e.kind==="stretnutie"?"":e.kind==="blok"?"⛔ ":"⏰ "}${E(e.title)}</b>${e.place?`<small>📍 ${E(e.place)}</small>`:""}${e.note?`<small class="cln">${E(e.note)}</small>`:""}<small class="clm">🔔 ${E(rm||"bez upozornenia")}${e.rep?" · 🔁 "+E((REP.find(r=>r[0]===e.rep)||[0,e.rep])[1]):""}</small></div>
+   <div class="clb"><b>${e.kind==="stretnutie"?"":e.kind==="blok"?"⛔ ":"⏰ "}${E(e.title)}</b>${e.place?`<small>📍 ${E(e.place)}</small>`:""}${e.note?`<small class="cln">${E(e.note)}</small>`:""}${e.has_audio?`<button type="button" class="clpb" data-clplay="${e.id}">▶︎ 🎙️ Prehrať hlasovku</button>`:""}<small class="clm">🔔 ${E(rm||"bez upozornenia")}${e.rep?" · 🔁 "+E((REP.find(r=>r[0]===e.rep)||[0,e.rep])[1]):""}</small></div>
    <div class="cla"><button type="button" data-cldone="${e.id}" title="${e.done?"Vrátiť":"Hotovo"}" aria-label="${e.done?"Vrátiť":"Hotovo"}">${e.done?"↩︎":"✓"}</button><button type="button" data-cledit="${e.id}" aria-label="Upraviť">✎</button></div></div>`}
 function reqCard(m){const st=MST[m.status]||[m.status];const fut=new Date(m.start_at)>Date.now();
   return `<div class="clreq ${m.status}"><div class="clrh"><span class="ds-av">${E((String(m.who_name||"?").match(/\p{L}/gu)||["?"]).slice(0,2).join("").toUpperCase())}</span><div><b>${E(m.who_name||m.who_email)}</b><small>${m.farmer_id?"farmár":"tím"} · ${E(m.who_email)}</small></div>${pill_(st)}</div>
@@ -44,6 +44,10 @@ function slotsHTML(L,attr,id){const by={};for(const s of L){(by[dkey(s.start_at)
 function form(e){e=e||{};const d=e.start_at?new Date(e.start_at):new Date(Date.now()+36e5);const dk=dkey(d),tm=e.start_at?hm(d):"09:00";const dur=e.end_at?Math.round((new Date(e.end_at)-new Date(e.start_at))/6e4):30;const rm=e.remind_min||[15];
   const ch=(n,L,cur,multi)=>`<div class="ftchips" data-chg="${n}"${multi?" data-multi":""}>${L.map(x=>`<button type="button" class="ftchip${(multi?cur.includes(x[0]):String(cur)===String(x[0]))?" on":""}" data-v="${E(x[0])}">${E(x[1])}</button>`).join("")}</div>`;
   return `<form class="card clf" id="fCal" data-id="${E(e.id||"")}"><div class="t">${e.id?"✎ Upraviť":"＋ Nová pripomienka"}</div>
+   <div class="clvo"><button type="button" class="clvb" data-clsay>🎤 Povedať</button><button type="button" class="clvb" data-clrec>🎙️ Nahrať hlasovku</button>
+    <input type="file" accept="audio/*" capture id="clAudIn" hidden></div>
+   <div class="s clvh" id="clHeard">${VO.heard?`🎤 „${E(VO.heard)}“`:"Povedz napr. „V pondelok ráno o ôsmej stretnutie v APD Malčice, poriešiť reklamáciu sóje“ – vyplním čo, kedy a kde. Alebo nahraj hlasovku cez záznamník v telefóne."}</div>
+   ${VO.aud||e.has_audio?`<div class="claud">🎙️ ${VO.aud?`<audio controls src="${VO.aud.url}"></audio><button type="button" data-claudx>✕</button>`:`<button type="button" data-clplay="${E(e.id)}">▶︎ Prehrať hlasovku</button>`}</div>`:""}
    <label class="w">Čo<input name="title" required maxlength="200" value="${E(e.title||"")}" placeholder="napr. Zavolať do banky, STK auta, schôdzka s…"></label>
    <div class="ftchips">${[["Dnes",0],["Zajtra",1],["Pozajtra",2],["O týždeň",7]].map(x=>`<button type="button" class="ftchip" data-clday="${x[1]}">${x[0]}</button>`).join("")}</div>
    <div class="clrow"><label>Dátum<input type="date" name="d" required value="${E(dk)}"></label><label>Čas<input type="time" name="t" value="${E(tm)}"${e.all_day?" disabled":""}></label></div>
@@ -78,6 +82,64 @@ window.vCal=function(){if(!MAIN())return "";if(C.ev===null){load(true);return `<
   if(past.length)h+=`<details class="card"><summary>Hotové a minulé · ${past.length}</summary>${past.slice(0,40).map(evRow).join("")}</details>`;
   const old=C.mr.filter(m=>!["nova"].includes(m.status)&&!soon.includes(m));if(old.length)h+=`<details class="card"><summary>História žiadostí · ${old.length}</summary>${old.slice(-30).reverse().map(reqCard).join("")}</details>`;
   return h};
+
+/* ---------------- 🎤 hlas: diktovanie a hlasovka z telefónu ---------------- */
+let VO={heard:"",aud:null},SR_=null;
+const NUM={"jednej":1,"prvej":1,"jedna":1,"druhej":2,"dve":2,"tretej":3,"tri":3,"štvrtej":4,"štyri":4,"piatej":5,"päť":5,"šiestej":6,"šesť":6,"siedmej":7,"sedem":7,"ôsmej":8,"osem":8,"deviatej":9,"deväť":9,"desiatej":10,"desať":10,"jedenástej":11,"jedenásť":11,"dvanástej":12,"dvanásť":12,"trinástej":13,"štrnástej":14,"pätnástej":15,"šestnástej":16,"sedemnástej":17,"osemnástej":18,"devätnástej":19,"dvadsiatej":20};
+const DNI=["nedeľ","pondel","utor","stred","štvrt","piat","sobot"];
+const MES=["januára","februára","marca","apríla","mája","júna","júla","augusta","septembra","októbra","novembra","decembra"];
+function parseSk(raw){let t=" "+String(raw||"").toLowerCase().replace(/[,.!?]/g," ").replace(/\s+/g," ")+" ";const now=new Date();let d=null,h=null,m=0,rem=null,used=[];
+  const take=re=>{const x=t.match(re);if(x){used.push(x[0]);t=t.replace(x[0]," ")}return x};
+  let x;
+  if(x=take(/ (dnes|dneska) /))d=new Date(now);
+  else if(x=take(/ (pozajtra) /)){d=new Date(now);d.setDate(d.getDate()+2)}
+  else if(x=take(/ (zajtra|zajtra) /)){d=new Date(now);d.setDate(d.getDate()+1)}
+  else if(x=take(/ (o|za) (týždeň|tyzden) /)){d=new Date(now);d.setDate(d.getDate()+7)}
+  else if(x=take(/ (?:v |vo |na |budúci |budúcu |budúcu )?(pondelok|utorok|stredu|streda|štvrtok|piatok|sobotu|sobota|nedeľu|nedeľa) /)){const i=DNI.findIndex(p=>x[1].startsWith(p));d=new Date(now);let k=(i-d.getDay()+7)%7;if(k===0)k=7;d.setDate(d.getDate()+k)}
+  if(!d&&(x=take(/ (\d{1,2})\s*(?:\.|\s)\s*(\d{1,2}|januára|februára|marca|apríla|mája|júna|júla|augusta|septembra|októbra|novembra|decembra)\.?(?:\s*(\d{4}))? /))){const mo=isNaN(+x[2])?MES.indexOf(x[2]):+x[2]-1;d=new Date(x[3]?+x[3]:now.getFullYear(),mo,+x[1]);if(d<new Date(now.getFullYear(),now.getMonth(),now.getDate()))d.setFullYear(d.getFullYear()+1)}
+  if(x=take(/ o (\d{1,2})(?::| hodine? | h )?(\d{2})? (minút|minúty|hodín|hodiny|hodinu)? ?/)){if(x[3]&&/min/.test(x[3])){const z=new Date(now.getTime()+(+x[1])*6e4);d=z;h=z.getHours();m=z.getMinutes()}else if(x[3]&&/hod/.test(x[3])){const z=new Date(now.getTime()+(+x[1])*36e5);d=z;h=z.getHours();m=z.getMinutes()}else{h=+x[1];m=x[2]?+x[2]:0}}
+  else if(x=take(/ o pol (\S+) /)){const n=NUM[x[1]];if(n){h=n-1;m=30}}
+  else if(x=take(/ o (\S+?)(?: hodine)? /)){const n=NUM[x[1]];if(n){h=n;m=0}else{t=" "+x[0].trim()+t;used.pop()}}
+  if(x=take(/ (ráno|zrána|skoro ráno) /)){if(h==null){h=8;m=0}}
+  else if(x=take(/ (doobeda|dopoludnia|predpoludním) /)){if(h==null){h=9;m=0}}
+  else if(x=take(/ (na obed|napoludnie|obed) /)){if(h==null){h=12;m=0}}
+  else if(x=take(/ (poobede|popoludní|poobede) /)){if(h==null){h=14;m=0}else if(h<12)h+=12}
+  else if(x=take(/ (večer|navečer) /)){if(h==null){h=18;m=0}else if(h<12)h+=12}
+  if(h!=null&&h>=1&&h<=6&&!/ráno/.test(used.join(" ")))h+=12;
+  if(x=take(/ (pripomeň|upozorni)(?: ma| mi)? (deň|den) (vopred|predtým) /))rem=[1440,60];
+  else if(x=take(/ (pripomeň|upozorni)(?: ma| mi)? (hodinu|hoďku) (vopred|predtým) /))rem=[60];
+  else if(x=take(/ (pripomeň|upozorni)(?: ma| mi)? (\d+) minút (vopred|predtým) /))rem=[+x[2]];
+  let o=" "+String(raw||"").replace(/[,.!?]/g," ").replace(/\s+/g," ")+" ";
+  for(const u of used){const w=u.trim().split(/\s+/).map(z=>z.replace(/[.*+?^${}()|[\]\\]/g,"\\$&")).join("\\s+");o=o.replace(new RegExp("(^|\\s)"+w+"(?=\\s|$)","i")," ")}
+  const U="A-ZÁÄČĎÉÍĽĹŇÓÔŔŠŤÚÝŽ";let place=null;
+  if(x=o.match(new RegExp(" (?:v|vo|na|u) ((?:["+U+"][^ ]*)(?: ["+U+"][^ ]*){0,2})")))place=x[1];
+  else if(x=o.match(/ (?:v|vo|na|u) (apd|pd|bps)( [^ ]+)?/i))place=(x[1].toUpperCase()+(x[2]||""));
+  let title=o.replace(/\s+/g," ").trim().replace(/^(pripomeň mi|pripomeň|upozorni ma|zapíš|daj mi|mám)\s+/i,"");
+  title=title.charAt(0).toUpperCase()+title.slice(1);
+  return {d,time:h!=null?String(h).padStart(2,"0")+":"+String(m).padStart(2,"0"):null,rem,place,title}}
+function applyVoice(txt){const f=document.getElementById("fCal");if(!f)return;const p=parseSk(txt);VO.heard=txt;
+  const h=document.getElementById("clHeard");if(h)h.textContent=`🎤 „${txt}“`;
+  if(p.title)f.title.value=p.title.slice(0,200);if(p.d)f.d.value=dkey(p.d);if(p.time){f.t.value=p.time;f.all_day.checked=false;f.t.disabled=false}
+  if(p.place&&!f.place.value)f.place.value=p.place;if(!f.note.value)f.note.value="🎤 "+txt;
+  if(p.rem){f.querySelectorAll('[data-chg="rem"] .ftchip').forEach(b=>b.classList.toggle("on",p.rem.includes(+b.dataset.v)))}
+  toast_(`✓ Vyplnené: ${p.d?dayL(p.d):"dátum skontroluj"}${p.time?" o "+p.time:""}. Skontroluj a ulož.`,6000)}
+function say(btn){const SR=window.SpeechRecognition||window.webkitSpeechRecognition;const f=document.getElementById("fCal");
+  if(SR_){try{SR_.stop()}catch(x){}return}
+  if(!SR){if(f){f.note.focus();toast_("🎤 Ťukni na mikrofón na klávesnici telefónu a nadiktuj do Poznámky – potom znova ťukni 🎤 Povedať.",8000);if(f.note.value.trim().length>3)applyVoice(f.note.value.replace(/^🎤 /,""))}return}
+  const r=new SR();r.lang="sk-SK";r.interimResults=true;r.continuous=false;let fin="";SR_=r;btn.classList.add("on");btn.textContent="⏹ Počúvam… ťukni = koniec";
+  r.onresult=ev=>{let it="";for(let i=ev.resultIndex;i<ev.results.length;i++){if(ev.results[i].isFinal)fin+=ev.results[i][0].transcript+" ";else it+=ev.results[i][0].transcript}const h=document.getElementById("clHeard");if(h)h.textContent="🎤 "+(fin+it)};
+  r.onerror=ev=>{if(ev.error==="not-allowed"||ev.error==="service-not-allowed")toast_("🎤 Mikrofón je zakázaný. Povoľ ho pre túto stránku alebo diktuj cez klávesnicu do Poznámky.",8000)};
+  r.onend=()=>{SR_=null;btn.classList.remove("on");btn.textContent="🎤 Povedať";if(fin.trim())applyVoice(fin.trim())};
+  try{r.start()}catch(x){SR_=null;btn.classList.remove("on");btn.textContent="🎤 Povedať"}}
+document.addEventListener("change",async e=>{if(e.target.id!=="clAudIn")return;const fl=e.target.files&&e.target.files[0];if(!fl)return;
+  if(fl.size>8*1024*1024){toast_("Hlasovka je príliš dlhá (max. 8 MB, cca 5–8 minút).",7000);return}
+  const url=await new Promise(res=>{const r=new FileReader();r.onload=()=>res(r.result);r.readAsDataURL(fl)});
+  const f=document.getElementById("fCal");const keep=f?{title:f.title.value,d:f.d.value,t:f.t.value,place:f.place.value,note:f.note.value}:null;
+  VO.aud={url,mime:fl.type||"audio/mp4",name:fl.name};renderStaff();
+  const g=document.getElementById("fCal");if(g&&keep){g.title.value=keep.title||"🎙️ Hlasová pripomienka";g.d.value=keep.d;g.t.value=keep.t;g.place.value=keep.place;g.note.value=keep.note}
+  toast_("🎙️ Hlasovka pripojená. Vyber dátum a čas a ulož – pripomienka príde do mobilu.",6000)});
+async function play(id,btn){btn.disabled=true;try{const r=await sb.from("owner_cal_audio").select("data").eq("cal_id",+id).maybeSingle();if(!r.data){toast_("Hlasovka sa nenašla.");return}
+  const a=document.createElement("audio");a.controls=true;a.autoplay=true;a.src=r.data.data;a.className="clplay";btn.replaceWith(a)}catch(x){toast_("Nepodarilo sa prehrať.")}finally{btn.disabled=false}}
 
 /* ---------------- KAŽDÝ: 📅 Stretnutie ---------------- */
 let U={open:false,slots:null,my:null,dur:30,topic:"",place:"Kancelária ERNTE",pick:null,busy:false,err:""};
@@ -122,8 +184,12 @@ document.addEventListener("click",async e=>{const t=e.target;if(!t.closest)retur
     toast_("✓ Žiadosť odoslaná. Keď ju potvrdí, uvidíte to v 📅 Stretnutie.",6000);U.txt="";U.topic="";U.pick=null;uLoad();return}
   if(x=t.closest("[data-mtcancel]")){if(!confirm("Zrušiť tento termín?"))return;const r=await sb.rpc("meet_cancel",{p_id:+x.dataset.mtcancel});if(r.error)toast_("⚠️ "+r.error.message);else toast_("Termín zrušený.");uLoad();return}
   if(!MAIN())return;
-  if(t.closest("[data-clnew]")){C.form="new";renderStaff();scrollTo(0,0);return}
-  if(t.closest("[data-clclose]")){C.form=null;renderStaff();return}
+  if(x=t.closest("[data-clsay]")){say(x);return}
+  if(t.closest("[data-clrec]")){const i=document.getElementById("clAudIn");if(i){i.value="";i.click()}return}
+  if(t.closest("[data-claudx]")){VO.aud=null;renderStaff();return}
+  if(x=t.closest("[data-clplay]")){play(x.dataset.clplay,x);return}
+  if(t.closest("[data-clnew]")){VO={heard:"",aud:null};C.form="new";renderStaff();scrollTo(0,0);return}
+  if(t.closest("[data-clclose]")){C.form=null;VO={heard:"",aud:null};renderStaff();return}
   if(x=t.closest("[data-cledit]")){C.form=x.dataset.cledit;renderStaff();scrollTo(0,0);return}
   if(x=t.closest("[data-clday]")){const f=x.closest("form");f.d.value=dkey(Date.now()+(+x.dataset.clday)*864e5);return}
   if(x=t.closest("[data-chg] .ftchip")){const g=x.closest("[data-chg]");if(g.hasAttribute("data-multi"))x.classList.toggle("on");else g.querySelectorAll(".ftchip").forEach(b=>b.classList.toggle("on",b===x));return}
@@ -140,8 +206,10 @@ document.addEventListener("submit",async e=>{const f=e.target;if(f.id==="fCal"){
     const row={title:f.title.value.trim(),kind:on("kind")[0]||"pripomienka",start_at:st.toISOString(),end_at:new Date(st.getTime()+dur*6e4).toISOString(),all_day:all,
       remind_min:on("rem").map(Number).sort((a,b)=>b-a),reminded:[],rep:on("rep")[0]||null,place:f.place.value.trim()||null,note:f.note.value.trim()||null};
     if(!row.title)return;const id=f.dataset.id;const b=f.querySelector("[type=submit]");b.disabled=true;
-    const r=id?await sb.from("owner_cal").update(row).eq("id",+id):await sb.from("owner_cal").insert(row);b.disabled=false;
-    if(r.error){toast_("⚠️ "+r.error.message,7000);return}C.form=null;toast_(row.remind_min.length?"✓ Uložené – upozorním ťa do mobilu.":"✓ Uložené.");load(true);return}
+    const r=id?await sb.from("owner_cal").update(row).eq("id",+id).select("id").single():await sb.from("owner_cal").insert(row).select("id").single();b.disabled=false;
+    if(r.error){toast_("⚠️ "+r.error.message,7000);return}
+    if(VO.aud&&r.data){const a=await sb.from("owner_cal_audio").upsert({cal_id:r.data.id,mime:VO.aud.mime,data:VO.aud.url});if(a.error)toast_("Hlasovka sa neuložila: "+a.error.message,7000)}
+    VO={heard:"",aud:null};C.form=null;toast_(row.remind_min.length?"✓ Uložené – upozorním ťa do mobilu.":"✓ Uložené.");load(true);return}
   if(f.id==="fCalCfg"){e.preventDefault();e.stopPropagation();if(!MAIN())return;const n=k=>+f[k].value;
     const p={pref_from:n("pref_from"),pref_to:n("pref_to"),work_from:n("work_from"),work_to:n("work_to"),min_hours:n("min_hours"),horizon:n("horizon"),days:[...f.querySelectorAll('[data-chg="days"] .ftchip.on')].map(b=>+b.dataset.v)};
     if(p.pref_to<=p.pref_from||p.work_to<=p.work_from){toast_("Čas „do“ musí byť neskôr ako „od“.");return}
@@ -167,6 +235,9 @@ function css(){if(document.getElementById("clcss"))return;const s=document.creat
 .clf .clck{display:flex!important;flex-direction:row;align-items:center;gap:8px;color:var(--ink)}.clf .clck input{width:22px;height:22px;min-height:0}
 .clcfg summary,.card>summary{cursor:pointer;font-weight:700}.clcf{display:grid;gap:10px;margin-top:10px}.clcf label{display:grid;gap:4px;font-size:.84rem;color:var(--muted)}
 .clmy{display:grid;grid-template-columns:1fr auto auto;gap:8px;align-items:center;padding:8px 0;border-top:1px solid var(--line)}.clmy:first-of-type{border-top:0}.clmy small{display:block;color:var(--muted);font-size:.78rem}
+.clvo{display:grid;grid-template-columns:1fr 1fr;gap:8px}.clvb{min-height:56px!important;font-size:1rem!important;border-color:rgba(34,211,238,.45)!important;background:linear-gradient(135deg,rgba(34,211,238,.16),rgba(139,92,246,.14))!important}
+.clvb.on{background:linear-gradient(135deg,#ef4444,#f97316)!important;color:#fff!important}.clvh{font-style:italic}
+.claud{display:flex;align-items:center;gap:8px}.claud audio,.clplay{width:100%;max-width:420px;height:40px}.clpb{justify-self:start;min-height:36px!important;padding:0 12px!important;font-size:.8rem!important;margin:4px 0}
 .mtbtn{min-height:40px;padding:0 14px;border-radius:999px;font-size:.84rem;border-color:rgba(34,211,238,.45)!important;background:linear-gradient(135deg,rgba(34,211,238,.16),rgba(139,92,246,.12))!important}
 .clu textarea{width:100%;margin-top:6px}
 html[data-theme=light] .clev.stretnutie .clt{color:#0e7490}html[data-theme=light] .clev.blok .clt{color:#b91c1c}`;document.head.appendChild(s)}
