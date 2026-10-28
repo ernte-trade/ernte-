@@ -916,7 +916,7 @@ async function enter(user){ME=user;$("outBtn").hidden=false;
   if(st.data){ROLE=st.data.role;ME.staffName=st.data.name;$("hS").textContent=st.data.name+" · ERNTE";$("hT").textContent="ERNTE Trade & Logistic";document.title="ERNTE Trade & Logistic";startStaff();return}
   const fr=await sb.from("farmers").select("*").limit(1).maybeSingle();
   if(fr.data){FARMER=fr.data;$("hS").textContent=fr.data.name;startFarmer();return}
-  if(window.trusPortal){$("refBtn").hidden=true;if(await trusPortal()){$("refBtn").hidden=false;return}}
+  if(window.trusPortal){$("refBtn").hidden=true;if(await trusPortal()){window.ERNTE_KIND="trus";$("refBtn").hidden=false;return}}
   $("app").innerHTML=`<div class="card"><div class="t">Váš e-mail ešte nemá prístup</div><div class="s">${esc(user.email)} zatiaľ nie je v zozname dodávateľov ERNTE. Zavolajte nám a zapíšeme vás.</div><div class="btns"><a class="btn pri" href="tel:+421918449991">Zavolať ERNTE</a></div></div>`}
 
 
@@ -2885,6 +2885,7 @@ document.addEventListener("click",e=>{const b=e.target.closest("[data-dfp]");if(
 <script src="testview.js?v=20261028-1130"></script>
 <script src="cal.js?v=20261028-1200"></script>
 <script src="dismiss.js?v=20261028-1200"></script>
+<script src="welcome.js?v=20261028-1240"></script>
 <script src="odb.js?v=20261027-1600"></script>
 <script src="zdash.js?v=20261027-1620"></script>
 <script src="contract.js?v=20261027-0050"></script>
@@ -2895,7 +2896,7 @@ document.addEventListener("click",e=>{const b=e.target.closest("[data-dfp]");if(
 <script src="sklad.js?v=20261027-0800"></script>
 <script src="sus.js?v=20261027-0730"></script>
 <script src="praca.js?v=20261027-0810"></script>
-<script src="opush.js?v=20261028-1130"></script>
+<script src="opush.js?v=20261028-1235"></script>
 <script src="nbell.js?v=20261028-1130"></script>
 <script src="novinky.js?v=20261027-0845"></script>
 <script src="danube.js?v=20261027-1430"></script>
