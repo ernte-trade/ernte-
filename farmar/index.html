@@ -850,8 +850,13 @@ const APP_URL=location.origin+location.pathname.replace(/index\.html$/,"");
 // ================= štart =================
 async function boot(){
   if(!CFG.SUPABASE_URL||!CFG.SUPABASE_KEY||!window.supabase){$("app").innerHTML=`<div class="card"><div class="t">Aplikácia ešte nie je pripojená na databázu.</div><div class="s">Doplňte config.js.</div></div>`;return}
-  sb=window.supabase.createClient(CFG.SUPABASE_URL,CFG.SUPABASE_KEY,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}});
-  sb.auth.onAuthStateChange((ev)=>{if(ev==="SIGNED_OUT"){ME=null;ROLE=null;FARMER=null;try{sessionStorage.clear()}catch(x){}location.replace(APP_URL)}});
+  // 🧪 test okno (?test=…): vlastné prihlásenie len v tomto okne, prihlásenie majiteľa v ostatných oknách ostane
+  const TESTK=(new URLSearchParams(location.search).get("test")||"").replace(/[^a-z]/g,"");window.ERNTE_TEST=TESTK||null;
+  sb=window.supabase.createClient(CFG.SUPABASE_URL,CFG.SUPABASE_KEY,{auth:TESTK?{persistSession:true,autoRefreshToken:true,detectSessionInUrl:false,storageKey:"ernte-test-"+TESTK,storage:window.sessionStorage}:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}});
+  if(TESTK){let c=null;try{c=JSON.parse(sessionStorage.getItem("ernte-test-cred")||"null");sessionStorage.removeItem("ernte-test-cred")}catch(x){}
+    window.testBanner&&testBanner(TESTK);
+    if(c&&c.kind===TESTK){try{const r=await sb.auth.signInWithPassword({email:c.login,password:c.pw});if(r.error)toast("Test sa nepodarilo otvoriť: "+r.error.message,7000)}catch(x){toast("Test sa nepodarilo otvoriť.",6000)}}}
+  sb.auth.onAuthStateChange((ev)=>{if(ev==="SIGNED_OUT"){ME=null;ROLE=null;FARMER=null;if(window.ERNTE_TEST){try{window.close()}catch(x){}}try{sessionStorage.clear()}catch(x){}location.replace(APP_URL)}});
   const {data}=await sb.auth.getSession();
   if(data&&data.session)await enter(data.session.user);else showLogin();
 }
@@ -1353,7 +1358,7 @@ function priceBanner(){const v=((STATE.settings||{}).pricelist||{}).valid;
   if(d<=7)return `<div class="pban w"><b>Cenník platí do ${esc(dSK(v))}, obnov ho</b><span>${d<1?"Platí už len dnes.":d===1?"Platí ešte zajtra.":"Zostáva "+d+" "+(d<5?"dni":"dní")+"."}</span></div>`;
   return ""}
 // ===== DIZAJN „sklo – diamant“: zdieľané pomocné funkcie (iba vzhľad) =====
-const TICO={qd:"🤝",pred:"🔮",danube:"🌊",nov:"🆕",evid:"📒",trus:"🐔",agro:"🚜",zuct:"🧾",home:"🏠",req:"📥",price:"💶",trans:"🚚",fleet:"🚛",deals:"🤝",farm:"👨‍🌾",wx:"🌦️",team:"👥",calc:"🧮"};
+const TICO={test:"🧪",qd:"🤝",pred:"🔮",danube:"🌊",nov:"🆕",evid:"📒",trus:"🐔",agro:"🚜",zuct:"🧾",home:"🏠",req:"📥",price:"💶",trans:"🚚",fleet:"🚛",deals:"🤝",farm:"👨‍🌾",wx:"🌦️",team:"👥",calc:"🧮"};
 const dsF2=x=>Number.isFinite(+x)?(+x).toLocaleString("sk-SK",{minimumFractionDigits:2,maximumFractionDigits:2}):"–";
 const dsSg=x=>(x>=0?"+":"−")+Math.round(Math.abs(x)).toLocaleString("sk-SK");
 const dsSg2=x=>(x>=0?"+":"−")+dsF2(Math.abs(x));
@@ -1414,11 +1419,11 @@ function renderStaff(){const nNew=STATE.reqs.filter(r=>r.status==="nova").length
   if(ROLE==="owner")tabs.push(["team","Tím"]);
   if(ROLE==="dispatch")tabs=tabs.filter(t=>["req","trans","fleet","wx"].includes(t[0]));
   if(ROLE==="invoice")tabs=tabs.filter(t=>t[0]!=="fleet")}
-  if(window.vQd&&(ROLE==="owner"||(typeof can==="function"&&can("deals")))&&!tabs.some(t=>t[0]==="qd"))tabs.unshift(["qd","Uzatvoriť obchod"]);if(!tabs.some(t=>t[0]===TAB))TAB=tabs[0][0];
+  if(window.vTest&&ROLE==="owner"&&!window.ERNTE_TEST&&!tabs.some(t=>t[0]==="test"))tabs.push(["test","Test"]);if(window.vQd&&(ROLE==="owner"||(typeof can==="function"&&can("deals")))&&!tabs.some(t=>t[0]==="qd"))tabs.unshift(["qd","Uzatvoriť obchod"]);if(!tabs.some(t=>t[0]===TAB))TAB=tabs[0][0];
   let h=`<nav class="tabs" aria-label="Hlavná navigácia">${tabs.map(t=>{const lb=String(t[1]).split(' <span class="cnt">');return `<button type="button" data-tab="${t[0]}" aria-pressed="${TAB===t[0]}"><span class="ti" aria-hidden="true">${TICO[t[0]]||"•"}</span><span class="tl">${lb[0]}</span>${lb[1]?'<span class="cnt">'+lb[1]:""}</button>`}).join("")}</nav>`;
   h+=`<div class="hrow"><button type="button" class="ds-theme" data-dstheme aria-label="Prepnúť svetlý / tmavý režim" title="Svetlý / tmavý režim">${document.documentElement.dataset.theme==="light"?"🌙":"☀️"}</button>${window.bigBtn?bigBtn():""}${helpBtn(TAB)}</div>`;
   if(tabs.some(t=>t[0]==="price")&&(TAB==="price"||TAB==="req"))h+=priceBanner();
-  if(TAB==="wx"&&!WXD)loadWx().then(renderStaff);if(TAB==="fleet"&&!STATE.fleet)loadFleet().then(renderStaff);if(TAB==="team"&&!STATE.staff)loadTeam().then(renderStaff);h+=({req:vReq,price:vPrice,trans:vTrans,deals:vDeals,farm:vFarm,wx:wxCard,fleet:vFleet,team:vTeam,calc:()=>window.vCalc?vCalc():"",home:()=>window.vHome?vHome():"",zuct:()=>window.vZuct?vZuct():"",agro:()=>window.vAgro?vAgro():"",trus:()=>window.vTrus?vTrus():"",evid:()=>window.vEvid?vEvid():"",nov:()=>window.vNovinky?vNovinky():"",danube:()=>window.vDanube?vDanube():"",qd:()=>window.vQd?vQd():"",pred:()=>window.vPred?vPred():""})[TAB]();if(TAB==="req")h+=pwCard();$("app").innerHTML=h;mountR();dsAfter()}
+  if(TAB==="wx"&&!WXD)loadWx().then(renderStaff);if(TAB==="fleet"&&!STATE.fleet)loadFleet().then(renderStaff);if(TAB==="team"&&!STATE.staff)loadTeam().then(renderStaff);h+=({req:vReq,price:vPrice,trans:vTrans,deals:vDeals,farm:vFarm,wx:wxCard,fleet:vFleet,team:vTeam,calc:()=>window.vCalc?vCalc():"",home:()=>window.vHome?vHome():"",zuct:()=>window.vZuct?vZuct():"",agro:()=>window.vAgro?vAgro():"",trus:()=>window.vTrus?vTrus():"",evid:()=>window.vEvid?vEvid():"",nov:()=>window.vNovinky?vNovinky():"",danube:()=>window.vDanube?vDanube():"",qd:()=>window.vQd?vQd():"",test:()=>window.vTest?vTest():"",pred:()=>window.vPred?vPred():""})[TAB]();if(TAB==="req")h+=pwCard();$("app").innerHTML=h;mountR();dsAfter()}
 function vReq(){const R=ROLE==="owner"||!window.can||can("req")?STATE.reqs:STATE.reqs.filter(r=>r.kind==="transport");if(!R.length)return `<div class="card"><div class="s">Zatiaľ žiadne požiadavky od farmárov.</div></div>`;
   const pri=r=>r.kind==="transport"?(r.deal_id?0:1):0,bySt=st=>R.filter(r=>r.status===st).sort((a,b)=>pri(a)-pri(b)),ord=[...bySt("nova"),...bySt("v_spracovani"),...R.filter(r=>r.status!=="nova"&&r.status!=="v_spracovani")],OWN=ROLE==="owner",RI={sell:"🌾",transport:"🚚",agree:"✍️",message:"💬"};
   return ord.map(r=>{const fr=STATE.farmers.find(x=>x.id===r.farmer_id)||{},d=r.deal_id?STATE.deals.find(x=>x.id===r.deal_id):null;
@@ -2843,6 +2848,7 @@ document.addEventListener("click",e=>{const b=e.target.closest("[data-dfp]");if(
 <script src="brand.js?v=20261027-1620"></script>
 <script src="settle.js?v=20261027-1620"></script>
 <script src="qd.js?v=20261027-2345"></script>
+<script src="testview.js?v=20261028-0715"></script>
 <script src="odb.js?v=20261027-1600"></script>
 <script src="zdash.js?v=20261027-1620"></script>
 <script src="contract.js?v=20261027-0050"></script>
