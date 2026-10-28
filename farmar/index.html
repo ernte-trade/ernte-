@@ -2853,6 +2853,9 @@ document.addEventListener("submit",async e=>{if(!ROLE)return;const f=e.target,fd
 });
 
 if("serviceWorker" in navigator&&location.protocol==="https:")navigator.serviceWorker.register("sw.js").catch(()=>{});
+/* celá aplikácia uložená v telefóne: požiada o trvalé úložisko a nechá service worker stiahnuť všetky súbory (údaje ostávajú živé z databázy) */
+addEventListener("load",()=>setTimeout(()=>{try{if(navigator.storage&&navigator.storage.persist)navigator.storage.persisted().then(p=>p||navigator.storage.persist()).catch(()=>{})}catch(x){}
+  try{if(navigator.serviceWorker)navigator.serviceWorker.ready.then(r=>{const w=navigator.serviceWorker.controller||r.active;if(w)w.postMessage({type:"PRECACHE"})}).catch(()=>{})}catch(x){}},4000));
 // automatická aktualizácia: keď vyjde nová verzia aplikácie, po návrate do aplikácie sa sama obnoví; počas práce ukáže dlaždicu „Obnoviť“
 (function(){const sig=t=>[...String(t).matchAll(/<script src="([^"]+\?v=[^"]+)"/g)].map(m=>m[1]).sort().join("|");
   const cur=[...document.scripts].map(x=>x.getAttribute("src")||"").filter(x=>/\?v=/.test(x)).sort().join("|");let pend=false;
