@@ -2876,7 +2876,7 @@ document.addEventListener("input",e=>{if(e.target.id==="dfq"){const h=e.target.f
 document.addEventListener("click",e=>{const b=e.target.closest("[data-dfp]");if(!b)return;const fm=b.closest("form"),f=(STATE.farmers||[]).find(x=>x.id===b.dataset.dfp);if(!fm||!f)return;fm.elements.farmer.value=f.id;document.getElementById("dfq").value=String(f.name).trim();document.getElementById("dfl").innerHTML=`<div class="s">✓ Vybraný: <b>${esc(String(f.name).trim())}</b></div>`});
 </script>
 <script src="ai.js?v=20261028-2045"></script>
-<script src="perms.js?v=20261028-2300"></script>
+<script src="perms.js?v=20261028-2315"></script>
 <script src="bonus.js?v=20261028-0110"></script>
 <script src="fterms.js?v=20261028-1130"></script>
 <script src="hub.js?v=20261028-2150"></script>
