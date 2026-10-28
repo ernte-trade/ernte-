@@ -117,20 +117,30 @@ function parseSk(raw){let t=" "+String(raw||"").toLowerCase().replace(/[,.!?]/g,
   let title=o.replace(/\s+/g," ").trim().replace(/^(pripomeň mi|pripomeň|upozorni ma|zapíš|daj mi|mám)\s+/i,"");
   title=title.charAt(0).toUpperCase()+title.slice(1);
   return {d,time:h!=null?String(h).padStart(2,"0")+":"+String(m).padStart(2,"0"):null,rem,place,title}}
-function applyVoice(txt){const f=document.getElementById("fCal");if(!f)return;const p=parseSk(txt);VO.heard=txt;
+function applyVoice(txt,quiet){const f=document.getElementById("fCal");if(!f)return;const p=parseSk(txt);VO.heard=txt;
   const h=document.getElementById("clHeard");if(h)h.textContent=`🎤 „${txt}“`;
   if(p.title)f.title.value=p.title.slice(0,200);if(p.d)f.d.value=dkey(p.d);if(p.time){f.t.value=p.time;f.all_day.checked=false;f.t.disabled=false}
-  if(p.place&&!f.place.value)f.place.value=p.place;if(!f.note.value)f.note.value="🎤 "+txt;
+  if(p.place&&!f.place.value)f.place.value=p.place;if(!f.note.value||f.note.value.startsWith("🎤 "))f.note.value="🎤 "+txt;
   if(p.rem){f.querySelectorAll('[data-chg="rem"] .ftchip').forEach(b=>b.classList.toggle("on",p.rem.includes(+b.dataset.v)))}
-  toast_(`✓ Vyplnené: ${p.d?dayL(p.d):"dátum skontroluj"}${p.time?" o "+p.time:""}. Skontroluj a ulož.`,6000)}
-function say(btn){const SR=window.SpeechRecognition||window.webkitSpeechRecognition;const f=document.getElementById("fCal");
+  if(!quiet)toast_(`✓ Vyplnené: ${p.d?dayL(p.d):"dátum skontroluj"}${p.time?" o "+p.time:""}. Skontroluj a ulož.`,6000)}
+const IOS=/iPhone|iPad|iPod/.test(navigator.userAgent)||(navigator.platform==="MacIntel"&&navigator.maxTouchPoints>1);
+/* diktovanie cez klávesnicu telefónu – funguje na iPhone vždy (Safari, Chrome, aplikácia z plochy) */
+function kbdMode(msg){const f=document.getElementById("fCal");if(!f)return;let tx=document.getElementById("clVoiceTx");
+  if(!tx){tx=document.createElement("textarea");tx.id="clVoiceTx";tx.className="clvtx";tx.rows=3;tx.setAttribute("autocapitalize","sentences");tx.setAttribute("lang","sk");
+    tx.placeholder="Ťukni na 🎤 na klávesnici a povedz pripomienku…";const h=document.getElementById("clHeard");(h||f.firstChild).after(tx);
+    let tm=0;const go=q=>{const v=tx.value.trim();if(v.length>2)applyVoice(v,q)};
+    tx.addEventListener("input",()=>{clearTimeout(tm);tm=setTimeout(()=>go(true),1200)});tx.addEventListener("blur",()=>{clearTimeout(tm);go(false)})}
+  tx.hidden=false;tx.focus();const h=document.getElementById("clHeard");if(h)h.textContent=msg||"📱 Na klávesnici ťukni na 🎤 (mikrofón dole) a povedz napr. „V pondelok o ôsmej stretnutie v APD Malčice, poriešiť reklamáciu sóje“. Polia sa vyplnia samé, potom ťukni Uložiť."}
+function say(btn){const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
   if(SR_){try{SR_.stop()}catch(x){}return}
-  if(!SR){if(f){f.note.focus();toast_("🎤 Ťukni na mikrofón na klávesnici telefónu a nadiktuj do Poznámky – potom znova ťukni 🎤 Povedať.",8000);if(f.note.value.trim().length>3)applyVoice(f.note.value.replace(/^🎤 /,""))}return}
-  const r=new SR();r.lang="sk-SK";r.interimResults=true;r.continuous=false;let fin="";SR_=r;btn.classList.add("on");btn.textContent="⏹ Počúvam… ťukni = koniec";
-  r.onresult=ev=>{let it="";for(let i=ev.resultIndex;i<ev.results.length;i++){if(ev.results[i].isFinal)fin+=ev.results[i][0].transcript+" ";else it+=ev.results[i][0].transcript}const h=document.getElementById("clHeard");if(h)h.textContent="🎤 "+(fin+it)};
-  r.onerror=ev=>{if(ev.error==="not-allowed"||ev.error==="service-not-allowed")toast_("🎤 Mikrofón je zakázaný. Povoľ ho pre túto stránku alebo diktuj cez klávesnicu do Poznámky.",8000)};
-  r.onend=()=>{SR_=null;btn.classList.remove("on");btn.textContent="🎤 Povedať";if(fin.trim())applyVoice(fin.trim())};
-  try{r.start()}catch(x){SR_=null;btn.classList.remove("on");btn.textContent="🎤 Povedať"}}
+  if(!SR||IOS){kbdMode();return}
+  const r=new SR();r.lang="sk-SK";r.interimResults=true;r.continuous=false;let fin="",it="",got=false;SR_=r;btn.classList.add("on");btn.textContent="⏹ Počúvam… ťukni = koniec";
+  const guard=setTimeout(()=>{if(!got&&SR_===r){try{r.abort()}catch(x){}}},7000);
+  r.onresult=ev=>{got=true;it="";for(let i=ev.resultIndex;i<ev.results.length;i++){if(ev.results[i].isFinal)fin+=ev.results[i][0].transcript+" ";else it+=ev.results[i][0].transcript}const h=document.getElementById("clHeard");if(h)h.textContent="🎤 "+(fin+it)};
+  r.onerror=ev=>{if(ev.error==="not-allowed"||ev.error==="service-not-allowed")toast_("🎤 Mikrofón je zakázaný – použi mikrofón na klávesnici.",6000)};
+  r.onend=()=>{clearTimeout(guard);SR_=null;btn.classList.remove("on");btn.textContent="🎤 Povedať";const t=(fin+" "+it).trim();
+    if(t)applyVoice(t);else kbdMode("🎤 Nič som nezachytil. Na klávesnici ťukni na 🎤 a povedz pripomienku – polia sa vyplnia samé.")};
+  try{r.start()}catch(x){clearTimeout(guard);SR_=null;btn.classList.remove("on");btn.textContent="🎤 Povedať";kbdMode()}}
 document.addEventListener("change",async e=>{if(e.target.id!=="clAudIn")return;const fl=e.target.files&&e.target.files[0];if(!fl)return;
   if(fl.size>8*1024*1024){toast_("Hlasovka je príliš dlhá (max. 8 MB, cca 5–8 minút).",7000);return}
   const url=await new Promise(res=>{const r=new FileReader();r.onload=()=>res(r.result);r.readAsDataURL(fl)});
@@ -236,7 +246,7 @@ function css(){if(document.getElementById("clcss"))return;const s=document.creat
 .clcfg summary,.card>summary{cursor:pointer;font-weight:700}.clcf{display:grid;gap:10px;margin-top:10px}.clcf label{display:grid;gap:4px;font-size:.84rem;color:var(--muted)}
 .clmy{display:grid;grid-template-columns:1fr auto auto;gap:8px;align-items:center;padding:8px 0;border-top:1px solid var(--line)}.clmy:first-of-type{border-top:0}.clmy small{display:block;color:var(--muted);font-size:.78rem}
 .clvo{display:grid;grid-template-columns:1fr 1fr;gap:8px}.clvb{min-height:56px!important;font-size:1rem!important;border-color:rgba(34,211,238,.45)!important;background:linear-gradient(135deg,rgba(34,211,238,.16),rgba(139,92,246,.14))!important}
-.clvb.on{background:linear-gradient(135deg,#ef4444,#f97316)!important;color:#fff!important}.clvh{font-style:italic}
+.clvb.on{background:linear-gradient(135deg,#ef4444,#f97316)!important;color:#fff!important}.clvtx{width:100%;margin-top:8px;font-size:16px;border-radius:14px;padding:10px 12px}.clvh{font-style:italic}
 .claud{display:flex;align-items:center;gap:8px}.claud audio,.clplay{width:100%;max-width:420px;height:40px}.clpb{justify-self:start;min-height:36px!important;padding:0 12px!important;font-size:.8rem!important;margin:4px 0}
 .mtbtn{min-height:40px;padding:0 14px;border-radius:999px;font-size:.84rem;border-color:rgba(34,211,238,.45)!important;background:linear-gradient(135deg,rgba(34,211,238,.16),rgba(139,92,246,.12))!important}
 .clu textarea{width:100%;margin-top:6px}

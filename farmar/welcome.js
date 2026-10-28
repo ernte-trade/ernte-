@@ -296,7 +296,13 @@ html.wlon,html.wlon body{overflow:hidden}
 .whbars em{font:600 .5rem/1 "Geist Mono",ui-monospace,monospace;font-style:normal;color:#c9d1e3;white-space:nowrap;overflow:hidden;max-width:100%}
 @keyframes wbar{to{transform:scaleY(1)}}
 .whn{display:flex;align-items:center;gap:8px;height:100%}
-.wlc.por .whud{top:calc(40px + env(safe-area-inset-top,0px))}
+.wlc.por{justify-content:flex-start;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch}
+.wlc.por .wimg{display:flex;flex-direction:column;flex:1 0 auto;padding-bottom:78px}
+.wlc.por .wimg::before{position:absolute}
+.wlc.por .whud{position:relative;top:auto;left:auto;right:auto;margin:calc(40px + env(safe-area-inset-top,0px)) 14px 0}
+.wlc.por .wla{flex-wrap:nowrap;position:sticky;bottom:calc(8px + env(safe-area-inset-bottom,0px));z-index:3;padding:8px;margin:12px -8px -8px;border-radius:20px;background:rgba(11,16,32,.88);-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px)}
+.wlc.por .wla>button{flex:1 1 auto;white-space:nowrap}.wlc.por .wla .wmore{flex:0 1 auto}
+.wlc.por .wcred{bottom:54px}.wlc.por .wlb{flex:none;max-height:none;overflow:visible}
 @media (max-height:640px){.wlc.por .wspk{height:20px}.wlc.por .whbars{height:24px}.wclk{font-size:1.2rem}}
 @media (min-width:900px){.whud{left:auto;right:28px;top:calc(56px + env(safe-area-inset-top,0px));width:420px}.wclk{font-size:2rem}}
 .wltap{z-index:3}

@@ -1,6 +1,6 @@
 // Jednoduchý service worker: aplikácia sa otvorí aj pri slabom signáli.
 // Dáta (ceny, obchody) sa vždy berú živo z databázy, necachujú sa.
-const CACHE = "ernte-v181";
+const CACHE = "ernte-v182";
 const ASSETS = "ernte-assets-1"; // verziované súbory (?v=) a obrázky – prežijú nasadenie, nesťahujú sa znova
 // VŠETKO DO TELEFÓNU: po inštalácii / aktualizácii si telefón potichu stiahne všetky súbory aplikácie
 // (skripty a štýly z index.html, písma, fotky, knižnice), aby nič nečakalo na sieť. Údaje z databázy sem nepatria – tie sú vždy živé.
