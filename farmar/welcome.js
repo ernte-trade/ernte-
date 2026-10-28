@@ -92,11 +92,16 @@ const KT={ja:["Vyvezené","Jazdy · 7 dní"],ceo:["Vyvezené","Jazdy · 7 dní"]
   obchod:["Vyvezené","Požiadavky"],evid:["Obchody","Nové · 7 dní"],farmar:["Výkupné ceny",""],trus:["Požiadavky",""]};
 function hud(k){return `<div class="whud"><div class="whtop"><span class="wlive"><i></i>LIVE</span><span class="wclk">--:--<small>:--</small></span></div>
   <div class="whrow"><div class="whc whwx"><small>Počasie</small><div class="whv"><span class="wxi">…</span><b class="wxt">--°</b></div><div class="wxs">načítavam</div><svg class="wspk" viewBox="0 0 120 34" preserveAspectRatio="none"></svg></div>
-  <div class="whc whk"><small>${E((KT[k]||KT.tim)[0])}</small><div class="whkb"></div><small class="whk2">${E((KT[k]||KT.tim)[1])}</small><div class="whbars"></div></div></div>${k==="ja"||k==="ceo"||k==="obchod"&&(can_("price_view")||can_("price_edit"))?`<div class="whc whpr"><small>Naše nákupné ceny · €/t</small><div class="whpl"></div></div>`:""}${k==="ja"?spot():""}</div>`}
-/* 🎵 Spotify – iba pre Martina (úvod majiteľa). Vlastný playlist: „Zmeniť“ → vlož odkaz zo Spotify (Zdieľať → Kopírovať odkaz). Uloží sa v tomto zariadení. */
+  <div class="whc whk"><small>${E((KT[k]||KT.tim)[0])}</small><div class="whkb"></div><small class="whk2">${E((KT[k]||KT.tim)[1])}</small><div class="whbars"></div></div></div>${k==="ja"||k==="ceo"||k==="obchod"&&(can_("price_view")||can_("price_edit"))?`<div class="whc whpr"><small>Naše nákupné ceny · €/t</small><div class="whpl"></div></div>`:""}${spotOK(k)?spot():""}</div>`}
+/* 🎵 Spotify – Martin, Jana, Galajda, Ličko, Tóth, Tomáš Štofa, Tomáš Vaľko. Vlastný playlist: „Zmeniť“ → vlož odkaz zo Spotify (Zdieľať → Kopírovať odkaz). Uloží sa v tomto zariadení. */
 const SPK="ernte-spotify",SPDEF="playlist/37i9dQZF1DXcBWIGoYBM5M";
 function spRef(){try{return localStorage.getItem(SPK)||SPDEF}catch(x){return SPDEF}}
 function spParse(u){const m=String(u||"").match(/open\.spotify\.com\/(?:intl-[a-z-]+\/)?(?:embed\/)?(playlist|album|track|artist|show|episode)\/([A-Za-z0-9]{10,})/)||String(u||"").match(/spotify:(playlist|album|track|artist|show|episode):([A-Za-z0-9]{10,})/);return m?m[1]+"/"+m[2]:null}
+/* komu Spotify: Martin + vybraní (podľa mena v tíme, bez diakritiky) */
+const SPWHO=[["jana"],["galajda"],["licko"],["toth"],["tomas","stofa"],["tomas","valko"]];
+function spotOK(k){if(k==="ja")return true;if(typeof FARMER!=="undefined"&&FARMER)return false;
+  const raw=((typeof ME!=="undefined"&&ME&&(ME.staffName||""))+" "+(typeof ME!=="undefined"&&ME&&ME.email||"")).toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"");
+  const T=raw.split(/[^a-z0-9]+/);return SPWHO.some(ws=>ws.every(w=>T.includes(w)))}
 function spot(){const r=spRef();return `<div class="whc whsp"><div class="wsph"><small>🎵 Spotify</small><span><a class="wspo" href="https://open.spotify.com/${r}" target="_blank" rel="noopener">Otvoriť v Spotify ↗</a><button type="button" class="wspc" data-spchg>Zmeniť</button></span></div>
   <iframe class="wspf" title="Spotify" src="https://open.spotify.com/embed/${r}?utm_source=generator&theme=0" height="80" frameborder="0" loading="lazy" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"></iframe></div>`}
 const WXI=c=>c===0?"☀️":c<=2?"🌤️":c===3?"☁️":c<=48?"🌫️":c<=67?"🌧️":c<=77?"🌨️":c<=82?"🌦️":c<=86?"🌨️":"⛈️";
