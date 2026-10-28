@@ -90,9 +90,15 @@ function scene(k,ph,por){if(PHOTO[k]){const c=CREDIT[k];return `<div class="wimg
 /* ---------- ultra moderný HUD cez fotku: živé hodiny, počasie s grafom, čísla a grafy podľa role ---------- */
 const KT={ja:["Vyvezené","Jazdy · 7 dní"],ceo:["Vyvezené","Jazdy · 7 dní"],tim:["Vyvezené","Jazdy · 7 dní"],doprava:["Jazdy dnes","Jazdy · 7 dní"],
   obchod:["Vyvezené","Požiadavky"],evid:["Obchody","Nové · 7 dní"],farmar:["Výkupné ceny",""],trus:["Požiadavky",""]};
-function hud(k){return `<div class="whud" aria-hidden="true"><div class="whtop"><span class="wlive"><i></i>LIVE</span><span class="wclk">--:--<small>:--</small></span></div>
+function hud(k){return `<div class="whud"><div class="whtop"><span class="wlive"><i></i>LIVE</span><span class="wclk">--:--<small>:--</small></span></div>
   <div class="whrow"><div class="whc whwx"><small>Počasie</small><div class="whv"><span class="wxi">…</span><b class="wxt">--°</b></div><div class="wxs">načítavam</div><svg class="wspk" viewBox="0 0 120 34" preserveAspectRatio="none"></svg></div>
-  <div class="whc whk"><small>${E((KT[k]||KT.tim)[0])}</small><div class="whkb"></div><small class="whk2">${E((KT[k]||KT.tim)[1])}</small><div class="whbars"></div></div></div>${k==="ja"||k==="ceo"||k==="obchod"&&(can_("price_view")||can_("price_edit"))?`<div class="whc whpr"><small>Naše nákupné ceny · €/t</small><div class="whpl"></div></div>`:""}</div>`}
+  <div class="whc whk"><small>${E((KT[k]||KT.tim)[0])}</small><div class="whkb"></div><small class="whk2">${E((KT[k]||KT.tim)[1])}</small><div class="whbars"></div></div></div>${k==="ja"||k==="ceo"||k==="obchod"&&(can_("price_view")||can_("price_edit"))?`<div class="whc whpr"><small>Naše nákupné ceny · €/t</small><div class="whpl"></div></div>`:""}${k==="ja"?spot():""}</div>`}
+/* 🎵 Spotify – iba pre Martina (úvod majiteľa). Vlastný playlist: „Zmeniť“ → vlož odkaz zo Spotify (Zdieľať → Kopírovať odkaz). Uloží sa v tomto zariadení. */
+const SPK="ernte-spotify",SPDEF="playlist/37i9dQZF1DXcBWIGoYBM5M";
+function spRef(){try{return localStorage.getItem(SPK)||SPDEF}catch(x){return SPDEF}}
+function spParse(u){const m=String(u||"").match(/open\.spotify\.com\/(?:intl-[a-z-]+\/)?(?:embed\/)?(playlist|album|track|artist|show|episode)\/([A-Za-z0-9]{10,})/)||String(u||"").match(/spotify:(playlist|album|track|artist|show|episode):([A-Za-z0-9]{10,})/);return m?m[1]+"/"+m[2]:null}
+function spot(){const r=spRef();return `<div class="whc whsp"><div class="wsph"><small>🎵 Spotify</small><span><a class="wspo" href="https://open.spotify.com/${r}" target="_blank" rel="noopener">Otvoriť v Spotify ↗</a><button type="button" class="wspc" data-spchg>Zmeniť</button></span></div>
+  <iframe class="wspf" title="Spotify" src="https://open.spotify.com/embed/${r}?utm_source=generator&theme=0" height="80" frameborder="0" loading="lazy" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"></iframe></div>`}
 const WXI=c=>c===0?"☀️":c<=2?"🌤️":c===3?"☁️":c<=48?"🌫️":c<=67?"🌧️":c<=77?"🌨️":c<=82?"🌦️":c<=86?"🌨️":"⛈️";
 const WXN=c=>c===0?"jasno":c<=2?"polojasno":c===3?"zamračené":c<=48?"hmla":c<=57?"mrholenie":c<=67?"dážď":c<=77?"sneh":c<=82?"prehánky":c<=86?"snehové prehánky":"búrka";
 function spark(svg,vals){if(!svg||!vals.length)return;const mn=Math.min(...vals),mx=Math.max(...vals),r=mx-mn||1;const pt=vals.map((v,i)=>[i*120/(vals.length-1||1),30-(v-mn)/r*24]);
@@ -190,6 +196,9 @@ async function show(force){const k=kind();if(!k||document.querySelector(".wlc"))
   el.addEventListener("click",ev=>{    if(ev.target.closest("[data-wljoke]"))return;
     if(ev.target.closest(".wcomb,.wtrac,.wtk1,.wtk2,.when")){const g=ev.target.closest(".wcomb,.wtrac,.wtk1,.wtk2,.when");g.classList.add("wboost");setTimeout(()=>g.classList.remove("wboost"),1500);honk(g.classList.contains("when"));confetti(el,ev.clientX,ev.clientY);if(navigator.vibrate)try{navigator.vibrate(30)}catch(x){}return}
     if(ev.target.closest(".wcred"))return;
+    if(ev.target.closest("[data-spchg]")){const u=prompt("Vlož odkaz na playlist, album alebo skladbu zo Spotify (v Spotify: ⋯ → Zdieľať → Kopírovať odkaz):","");if(u==null)return;const r=spParse(u);
+      if(!r){if(typeof toast==="function")toast("Toto nie je odkaz zo Spotify – skús znova.",5000);return}try{localStorage.setItem(SPK,r)}catch(x){}const w=el.querySelector(".whsp");if(w)w.outerHTML=spot();return}
+    if(ev.target.closest(".whsp"))return;
     if(ev.target.closest(".whc")){const c=ev.target.closest(".whc");c.classList.remove("wtap");void c.offsetWidth;c.classList.add("wtap");honk(false);confetti(el,ev.clientX,ev.clientY);if(navigator.vibrate)try{navigator.vibrate(20)}catch(x){}return}
     if(ev.target.closest("[data-wlgo]"))return;
     if(ev.target.closest("[data-wlx]")||!ev.target.closest(".wlb")&&!ev.target.closest(".whc")&&!ev.target.closest("a")){if(!el._gone){el._gone=1;close(el);goHome()}}});
@@ -318,6 +327,10 @@ html.wlon,html.wlon body{overflow:hidden}
 .wlc:not(.por) .whud{left:auto;right:28px;top:calc(56px + env(safe-area-inset-top,0px));width:420px}.wlc:not(.por) .wclk{font-size:2rem}.wlc:not(.por) .wlb{margin-left:28px;margin-right:auto}
 .wlc.por .whud{max-width:640px;align-self:center;width:calc(100% - 28px)}.wlc.por .wlb{width:min(640px,calc(100% - 28px))}
 .wltap{z-index:3}
+.whsp{cursor:default;padding:8px 10px 10px}.whsp::before{display:none}.wsph{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:6px}
+.wsph span{display:flex;gap:6px;align-items:center;flex:none}.wspo{font-size:.72rem;font-weight:700;color:#1ed760;text-decoration:none}
+.wspc{min-height:30px!important;padding:0 10px!important;border-radius:999px!important;font-size:.72rem!important}
+.wspf{display:block;width:100%;height:80px;border:0;border-radius:12px;background:#121212}
 .wlx{position:absolute;z-index:5;top:calc(10px + env(safe-area-inset-top,0px));left:12px;width:44px;height:44px;min-height:44px!important;padding:0!important;border-radius:50%!important;background:rgba(5,8,22,.6)!important;border:1px solid rgba(255,255,255,.3)!important;color:#fff;font-size:1.1rem}
 .wpst{margin-top:6px;font:500 .6rem/1.3 "Geist Mono",ui-monospace,monospace;color:#c9d1e3;opacity:.85;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .wpc b sup,.whu sup{font:700 .58rem/1 "Geist Mono",ui-monospace,monospace;margin-left:3px;vertical-align:super}.wup{color:#b6ff3b}.wdn{color:#fda4af}
