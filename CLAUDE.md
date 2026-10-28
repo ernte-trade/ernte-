@@ -44,6 +44,8 @@ s pripojeným repozitárom `ernte-trade/ernte-`.
 - **Aplikácia:** ERNTE Trade & Logistic (PWA) – `https://ernte-trade.github.io/ernte-/farmar/`, zdroj v `farmar/`, nasadzuje sa z `gh-pages`.
 - **Databáza:** Supabase; zmeny iba zašifrovanými migráciami v `farmar/supabase/auto/` (heslo má majiteľ / tajomstvo v GitHube, nikdy nie v repozitári ani v chate).
 - **Majiteľ:** Martin Vaľko (ERNTE spol. s r.o., VALKO s.r.o.). Komunikácia po slovensky, chce hotové a otestované veci, nasadené hneď.
+- **Pravidlo majiteľa (trvalé): všetkým farmárom vždy doplniť údaje podľa registra / FinStatu** – podľa IČO (`firmy.js` → `firmyFillAll`, raz denne
+  automaticky + tlačidlo vo Farmároch); iba dopĺňať prázdne polia, nikdy neprepisovať; ukončené firmy hlásiť. Pri novom farmárovi a odfotení pečiatky hneď.
 - **Príkaz majiteľa (trvalý):** pracovať na 100 %, bezchybne a rýchlo; nič nepoškodiť (model cenníka, nastavenia, údaje). Pred nasadením otestovať.
 
 ### Hotové (október 2026)

@@ -43,5 +43,38 @@ document.addEventListener("focusout",e=>{if(isIco(e.target))run(e.target)},true)
 window.firmyAfterStamp=async(F,done)=>{if(!OK()||!F||!norm(F.ico))return;try{const d=await lookup(F.ico);if(d&&!d.none){if(d.name)F.nazov=d.name;if(d.addr)F.adresa=d.addr;F._reg=d.reg;if(done)done(d)}}catch(x){}};
 {const s=document.createElement("style");s.textContent=`.fsi{margin:4px 0 2px;padding:8px 10px;border-radius:12px;font-size:.84rem;line-height:1.35;background:rgba(56,189,248,.1);border:1px solid rgba(56,189,248,.35)}
 .fsi.ok{background:rgba(182,255,59,.1);border-color:rgba(182,255,59,.4)}.fsi.w{background:rgba(250,204,21,.12);border-color:rgba(250,204,21,.5)}
-.fsi small{display:block;opacity:.8;margin-top:2px}.fsi a{font-weight:700}`;document.head.appendChild(s)}
+.fsi small{display:block;opacity:.8;margin-top:2px}.fsall .btns{margin-top:8px}.fsi a{font-weight:700}`;document.head.appendChild(s)}
+
+// ===== VŠETCI FARMÁRI: doplniť údaje z registra podľa IČO (pravidlo majiteľa: vždy) =====
+// Doplní iba prázdne polia (sídlo), nič neprepíše; firmy ukončené v registri označí. Spúšťa sa samo raz denne u majiteľa
+// (na pozadí, potichu) a tlačidlom v záložke Farmári. Farmári bez IČO sa nedajú overiť – ukáže ich počet.
+const CANF=()=>OK()&&(ROLE==="owner"||(typeof can==="function"&&can("farm")));
+let FA={busy:false,last:null};
+async function fillAll(manual){if(FA.busy||!CANF())return;const L=((typeof STATE!=="undefined"&&STATE.farmers)||[]).filter(f=>f&&f.id);if(!L.length)return;
+  FA.busy=true;let ok=0,filled=0,ended=[],noico=0,miss=0;paintFA(manual?"🔎 Overujem farmárov v registri…":null);
+  for(const f of L){const ico=norm(f.ico);if(!ico){noico++;continue}
+    try{const d=await lookup(ico);if(!d||d.none){miss++;continue}ok++;if(d.ended)ended.push(f.name);
+      const row={};if(!String(f.addr||"").trim()&&d.addr)row.addr=d.addr;
+      if(Object.keys(row).length){const r=await sb.from("farmers").update(row).eq("id",f.id);if(!r.error){Object.assign(f,row);filled++}}}
+    catch(x){}
+    await new Promise(r=>setTimeout(r,250))}
+  FA={busy:false,last:{at:new Date(),ok,filled,ended,noico,miss,n:L.length}};try{localStorage.setItem("ernte-firmy-all",new Date().toLocaleDateString("sv-SE"))}catch(x){}
+  paintFA();if(manual&&typeof toast==="function")toast(`✓ Register: overených ${ok}, doplnené údaje u ${filled}${ended.length?`, ⚠️ ukončené firmy: ${ended.join(", ")}`:""}${noico?`, bez IČO: ${noico}`:""}.`,9000)}
+window.firmyFillAll=fillAll;
+function faHTML(){const L=((typeof STATE!=="undefined"&&STATE.farmers)||[]),n=L.filter(f=>norm(f.ico)).length,x=FA.last;
+  return `<div class="card fsall"><b>🔎 Údaje farmárov z registra</b><div class="s">Podľa IČO sa doplní sídlo (a overí, či firma ešte existuje) – automaticky raz denne. S IČO: <b>${n}</b> z ${L.length}. DIČ / IČ DPH over cez FinStat pri farmárovi.</div>
+   ${x?`<div class="s">Posledná kontrola ${x.at.toLocaleTimeString("sk-SK",{hour:"2-digit",minute:"2-digit"})}: overených ${x.ok}, doplnené ${x.filled}${x.miss?`, nenájdené IČO ${x.miss}`:""}${x.ended.length?` · <b>⚠️ ukončené v registri: ${E(x.ended.join(", "))}</b>`:""}</div>`:""}
+   <div class="btns"><button type="button" data-fsall="1"${FA.busy?" disabled":""}>${FA.busy?"Overujem…":"🔎 Doplniť všetkým teraz"}</button></div></div>`}
+function paintFA(){const c=document.querySelector(".fsall");if(c)c.outerHTML=faHTML()}
+document.addEventListener("click",e=>{if(e.target.closest&&e.target.closest("[data-fsall]")){e.preventDefault();fillAll(true)}});
+// karta v záložke Farmári
+function inject(){if(!CANF()||typeof TAB==="undefined"||TAB!=="farm")return;const app=document.getElementById("app");if(!app||app.querySelector(".fsall"))return;
+  const nav=app.querySelector("nav.tabs");const d=document.createElement("div");d.innerHTML=faHTML();const el=d.firstElementChild;
+  const first=nav?nav.nextElementSibling:app.firstElementChild;if(first&&first.parentNode)first.parentNode.insertBefore(el,first.nextSibling);else app.prepend(el)}
+let q2=0;const sch=()=>{if(q2)return;q2=requestAnimationFrame(()=>{q2=0;try{inject()}catch(x){}})};
+function boot(){const app=document.getElementById("app");if(!app){setTimeout(boot,500);return}new MutationObserver(sch).observe(app,{childList:true});sch();
+  // raz denne automaticky na pozadí
+  let tries=0;const t=setInterval(()=>{tries++;if(tries>60){clearInterval(t);return}if(!CANF()||window.ERNTE_VIEWAS||window.ERNTE_TEST||!(typeof STATE!=="undefined"&&STATE.farmers&&STATE.farmers.length))return;clearInterval(t);
+    let last="";try{last=localStorage.getItem("ernte-firmy-all")||""}catch(x){}if(last!==new Date().toLocaleDateString("sv-SE"))setTimeout(()=>fillAll(false),8000)},2000)}
+if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",boot);else boot();
 })();
