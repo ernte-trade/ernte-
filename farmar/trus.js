@@ -124,7 +124,7 @@ setInterval(()=>{if(!document.hidden&&document.getElementById("trMap"))lvLoad()}
 {const st=document.createElement("style");st.textContent=`.trmap{height:300px;border-radius:16px;overflow:hidden;margin:8px 0;background:#0b1020}@media (min-width:900px){.trmap{height:380px}}
 .trlvt{opacity:.7}.trlv{padding:10px 0;border-top:1px solid rgba(255,255,255,.08)}.trlvk{display:flex;flex-wrap:wrap;gap:6px 12px;margin-top:4px;font-size:.84rem}.trlvk .hl{font-weight:800;color:#b6ff3b}
 .trlvu{margin-top:10px;padding-top:10px;border-top:1px solid rgba(255,255,255,.12);display:grid;gap:6px}.trlvu small{opacity:.75}.trlvu .row{flex-wrap:wrap;gap:6px}
-.trlvtip{background:#0b1020;color:#fff;border:1px solid #f59e0b;font-weight:700}`;document.head.appendChild(st)}
+.trlvtip{background:#0b1020;color:#fff;border:1px solid #f59e0b;font-weight:700;white-space:nowrap;font-size:12px;padding:2px 6px}.trlvu .mini{min-height:34px!important;padding:0 10px!important;font-size:.8rem!important}`;document.head.appendChild(st)}
 window.trusNew=()=>T.d&&!T.d.err?(T.d.orders||[]).filter(o=>o.status==="nahlasene").length:0;
 window.vTrus=function(){const D=T.d;if(!D){loadStaffT();return `<div class="card"><div class="s">Načítavam kurací trus…</div></div>`}
   if(D.err)return `<div class="card"><div class="s">${e(D.err)}</div></div>`;
