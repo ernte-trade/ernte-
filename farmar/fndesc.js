@@ -50,6 +50,8 @@ const SECD={
  "agro:cat":"Katalóg prác a strojov, z ktorého sa skladá cenník."};
 // ---- nadpisy (farmár aj zamestnanci) ----
 const H2=[
+ ["📜 História cien","Každá zmena zverejnenej výkupnej ceny: kedy, kto, stará → nová cena a rozdiel (aj zrušená cena, nová plodina a zmena platnosti). 🤖 = automatický cenník."],
+ ["🔔 Upozornenie na zmenu ceny","Pri zmene ceny zazvoní telefón hneď, aj v noci. Veľkú zmenu treba potvrdiť ťuknutím, inak sa o 10 min zopakuje (najviac 3×). Tvoja vlastná zmena príde ticho."],
  ["Výkupné ceny","Ceny, za ktoré ERNTE kúpi vašu komoditu na farme (bez DPH). Ťuknite Predať, napíšte tony – ERNTE sa vám ozve."],
  ["Moje požiadavky","Čo ste poslali ERNTE (predaj, odvoz, otázky) a v akom je to stave."],
  ["Navrhnite svoju cenu","Napíšte, za koľko chcete predať a koľko ton máte, a pridajte fotky tovaru zo skladu."],

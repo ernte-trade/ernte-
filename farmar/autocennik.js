@@ -143,6 +143,7 @@ async function run(force){if(!ED()||running)return;if(!force&&Date.now()-A.lastR
       const r=await sb.from("prices").upsert(ch.map(c=>({com:c.com,price:c.new,updated_at:now})));
       if(r.error){A.err="Zverejnenie zlyhalo: "+r.error.message;return}
       ch.forEach(c=>{const p=(STATE.prices||[]).find(x=>x.com===c.com);if(p){p.price=c.new;p.updated_at=now}else STATE.prices.push({com:c.com,price:c.new,updated_at:now});delete A.allow[c.com]});
+      try{const ac=ch.filter(c=>c.src==="auto").map(c=>c.com);if(ac.length)sb.rpc("cennik_hist_auto",{p_coms:ac}).then(()=>{},()=>{})}catch(x){}
       const by=(typeof ME!=="undefined"&&ME&&ME.staffName)||"";
       await logAdd(ch.map(c=>({at:now,com:c.com,old:c.old,new:c.new,src:c.src,pl:c.pl,by:c.src==="auto"?"automaticky":by})))}
     // cenník je pri automatike stále platný (farmári nevidia „cenník vypršal“)

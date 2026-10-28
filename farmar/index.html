@@ -1139,7 +1139,9 @@ price:{t:"Cenník",i:"💶",r:"Výkupné ceny, ktoré vidia všetci prihlásení
  ["Uložiť a zverejniť","Po uložení ich farmári vidia <b>okamžite</b> a môžu ťuknúť Predať. Keď sa blíži koniec platnosti (7 dní), hore ťa upozorní žltý pás, po vypršaní červený."],
  ["🤖 Automatický cenník","Ceny sa vypĺňajú samy podľa odberateľov <b>Agro-Somotor a Bunge</b> z regionálnych cien DAP Somotor, DAP Bunge Tállya a DAP Bunge Martfű (za koľko farmári z regiónu vozia na sklad) mínus doprava a odpočet ERNTE a hneď sa zverejnia. Burza iba vtedy, keď regionálna cena chýba. Kontroluje sa každých 20 minút, keď je aplikácia otvorená. Zmenu nad 10 % najprv potvrdíš."],
  ["✍️ Moje ceny","Keď máš vlastné ceny, prepíš ich v tabuľke a ulož – zverejnia sa hneď a platia do zvoleného dátumu (predvolene 7 dní), potom sa cena vráti na automatickú. Raz za čas ťa aplikácia pripomenie, aby si ich zapísal."],
- ["💶 Upozornenie","Pri každej zmene zverejnenej ceny (automatika, ty alebo tím) ti hore vyskočí pás s cenou pred a po. Celá história je v karte Automatický cenník."],
+ ["💶 Upozornenie","Pri každej zmene zverejnenej ceny (automatika, ty alebo tím) ti hore vyskočí pás s cenou pred a po."],
+ ["🔔 Zvonenie pri zmene ceny","Každá zmena (aj zrušená cena, nová plodina, zmena platnosti) príde hneď do telefónu – aj v noci: stará → nová cena, rozdiel v € a %, kto a kedy, platnosť. Viac zmien naraz = jedna správa. <b>Veľká zmena</b> (nad 5 % alebo 15 €/t, nastavíš dole) má ⚠️ a porovnanie s burzou – ťukni na ňu, inak sa o 10 min zopakuje (najviac 3×). Tvoja vlastná zmena príde ticho. Ťuknutie otvorí Cenník. Farmárom sa nič neposiela."],
+ ["📜 História cien","Dole v Cenníku: posledných 50 zmien – kto, kedy, stará a nová cena a rozdiel, s filtrom podľa plodiny."],
  ["Prepojenie","ERNTE AI porovnáva tvoj cenník s burzou (MATIF, CBOT) a upozorní, keď je cena nad burzou alebo máš veľkú rezervu. Farmár nikdy nevidí burzu ani odberateľa."]]},
 trans:{t:"Doprava",i:"🚚",r:"Plánovanie odvozov od farmárov autami VALKO.",s:[
  ["Naplánovať jazdu","Vyber farmára (a obchod), deň, čas, auto a vodiča. Farmár vidí v aplikácii, kedy príde auto, ŠPZ a vodiča."],
@@ -2907,7 +2909,7 @@ document.addEventListener("click",e=>{const b=e.target.closest("[data-dfp]");if(
 <script src="novinky.js?v=20261027-0845"></script>
 <script src="danube.js?v=20261027-1430"></script>
 <script src="installapp.js?v=20261028-0900"></script>
-<script src="fndesc.js?v=20261028-1040"></script>
+<script src="fndesc.js?v=20261028-2345"></script>
 <script src="sign.js?v=20261027-2345"></script>
 <script src="outbox.js?v=20261027-0120"></script>
 <script src="invitecard.js?v=20261027-0940"></script>
@@ -2919,7 +2921,8 @@ document.addEventListener("click",e=>{const b=e.target.closest("[data-dfp]");if(
 <script src="offers.js?v=20261027-2000"></script>
 <script src="feedback.js?v=20261027-1930"></script>
 <script src="cancel.js?v=20261027-2345"></script>
-<script src="autocennik.js?v=20261028-0150"></script>
+<script src="autocennik.js?v=20261028-2345"></script>
+<script src="cennikalert.js?v=20261028-2345"></script>
 <script src="desktop.js?v=20261028-0900"></script>
 <script src="guard.js?v=20261028-0050"></script>
 <script src="scrollkeep.js?v=20261028-0100"></script>
