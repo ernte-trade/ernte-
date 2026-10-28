@@ -1,0 +1,43 @@
+# Automatický test živej aplikácie (testovacie účty farmár / obchodník / dopravca).
+# Spúšťa Claude cez repository_dispatch s jednorazovým tokenom. Výsledky (snímky obrazovky, chyby) sú ZAŠIFROVANÉ
+# verejným kľúčom .github/e2e/results.pub.asc a uložené do vetvy e2e-results – bez kľúča ich nikto neprečíta.
+name: ernte-e2e
+on:
+  repository_dispatch:
+    types: [ernte-e2e]
+permissions:
+  contents: write
+concurrency:
+  group: ernte-e2e
+jobs:
+  e2e:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            .github/e2e
+            farmar/config.js
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: npm i --no-save --silent playwright@1.48.2 && npx playwright install --with-deps chromium > /dev/null
+        working-directory: .github/e2e
+      - run: node e2e.mjs
+        working-directory: .github/e2e
+        env:
+          E2E_TOKEN: ${{ github.event.client_payload.token }}
+          E2E_RUN: ${{ github.event.client_payload.run }}
+      - name: Zašifrovať a uložiť výsledky
+        if: always()
+        working-directory: .github/e2e
+        run: |
+          [ -d out ] || exit 0
+          tar czf r.tgz out
+          gpg --batch --yes --trust-model always --recipient-file results.pub.asc -o r.tgz.gpg -e r.tgz
+          RUN="${{ github.event.client_payload.run }}"
+          git config --global user.name "ernte-e2e"; git config --global user.email "e2e@ernte.invalid"
+          git clone -q --depth 1 --branch e2e-results "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git" res 2>/dev/null || { mkdir res; cd res; git init -q; git checkout -q -b e2e-results; git remote add origin "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git"; cd ..; }
+          mkdir -p res/runs && cp r.tgz.gpg "res/runs/${RUN:-run}.tgz.gpg"
+          cd res && git add -A && git commit -q -m "e2e ${RUN:-run} (zašifrované)" && git push -q origin e2e-results
