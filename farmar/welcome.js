@@ -14,6 +14,7 @@ function kind(){if(typeof FARMER!=="undefined"&&FARMER)return "farmar";if(window
   if(typeof ROLE==="undefined"||!ROLE)return null;
   if(ROLE==="owner")return (window.MAIN_OK&&MAIN_OK())?"ja":"ceo";
   if(ROLE==="dispatch"||can_("fleet")||can_("assign"))return "doprava";
+  if(can_("trus")&&!can_("price_edit")&&!can_("price_view"))return "trus";
   if(can_("deals")||can_("price_edit"))return "obchod";
   if(can_("trus"))return "trus";if(can_("ev"))return "evid";return "tim"}
 function phase(){const h=window.__wlh!=null?window.__wlh:new Date().getHours();return h<5||h>=21?"noc":h<8?"rano":h<18?"den":"vecer"}
@@ -60,7 +61,8 @@ function tractor(){return `<g class="wtrac"><rect x="-46" y="4" width="40" heigh
   <rect x="0" y="6" width="26" height="14" rx="3" fill="#b91c1c"/><rect x="14" y="-6" width="12" height="14" rx="2" fill="#b91c1c"/><rect x="16" y="-4" width="8" height="8" fill="#bae6fd"/><rect x="4" y="0" width="3" height="8" fill="#374151"/>${wheel(20,20,8)}${wheel(4,22,5)}</g>`}
 function truck(cls,lbl){return `<g class="${cls}"><rect x="0" y="0" width="70" height="26" rx="3" fill="#f8fafc"/><text x="8" y="17" font-size="10" font-weight="800" fill="#1e2a71" font-family="sans-serif">${lbl}</text>
   <rect x="72" y="6" width="22" height="20" rx="4" fill="#1e2a71"/><rect x="82" y="9" width="10" height="8" rx="1" fill="#bae6fd"/>${wheel(12,28,5)}${wheel(26,28,5)}${wheel(56,28,5)}${wheel(84,28,5)}</g>`}
-function scene(k,ph,por){let s=`<svg class="wsvg" viewBox="${por?"105 20 190 200":"0 0 400 220"}" preserveAspectRatio="xMidYMax slice" aria-hidden="true">`+sky(ph);
+const PHOTO={trus:"img/trus-uvod.jpg"};
+function scene(k,ph,por){if(PHOTO[k])return `<div class="wimg" style="background-image:url(${PHOTO[k]})" role="img" aria-label="Kurací trus – Bio-Fer NATUR"></div>`;let s=`<svg class="wsvg" viewBox="${por?"105 20 190 200":"0 0 400 220"}" preserveAspectRatio="xMidYMax slice" aria-hidden="true">`+sky(ph);
   const field=`<rect x="0" y="150" width="400" height="70" fill="url(#wfd)"/><rect class="wcut" x="0" y="150" width="400" height="70" fill="url(#wst)"/>${Array.from({length:12},(_,i)=>`<line x1="0" y1="${156+i*5.5}" x2="400" y2="${156+i*5.5}" stroke="#a16207" stroke-width=".5" opacity=".35"/>`).join("")}`;
   const road=`<rect x="0" y="182" width="400" height="38" fill="#374151"/><g class="wlane">${Array.from({length:14},(_,i)=>`<rect x="${i*32}" y="199" width="16" height="3" fill="#f8fafc"/>`).join("")}</g>`;
   if(k==="doprava"){s+=`<rect x="0" y="150" width="400" height="32" fill="url(#wfd)"/>`+road+`<g transform="translate(0 150)">${truck("wtk1","VALKO")}</g><g transform="translate(0 186)">${truck("wtk2","VALKO")}</g>`}
@@ -116,6 +118,9 @@ function css(){const s=document.createElement("style");s.textContent=`
 .wlc.in{opacity:1}.wlc.out{opacity:0}
 html.wlon,html.wlon body{overflow:hidden}
 .wsvg{position:absolute;inset:0;width:100%;height:100%}
+.wimg{position:absolute;inset:0;background:#668921 center top/cover no-repeat;animation:wkb 18s ease-in-out infinite alternate}
+@keyframes wkb{from{transform:scale(1)}to{transform:scale(1.08)}}
+.wlc.por .wimg{position:relative;inset:auto;flex:1 1 auto;min-height:44vh}
 .wlc.por{--x0:20px;--x1:330px;background:#14210a}.wlc.por .wsvg{position:relative;inset:auto;flex:1 1 auto;min-height:34vh;height:auto}
 .wlc.por .wlb{margin-top:-46px}
 .wlc.por .wcomb{animation-duration:11s}.wlc.por .wcut{animation-duration:11s}.wlc.por .wtrac{animation-duration:9s}.wlc.por .wtk1{animation-duration:6s}.wlc.por .wtk2{animation-duration:7.5s}.wlc.por .wlane{--x0:-40px;--x1:0px;animation-duration:1.2s}
