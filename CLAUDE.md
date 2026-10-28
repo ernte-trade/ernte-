@@ -30,8 +30,9 @@ Platí pre Claude aj ERNTE AI pri každej novej sekcii, záložke, funkcii alebo
 ## Nasadenie
 - Zvýšiť `CACHE` v `farmar/sw.js` a `?v=` pri zmenených skriptoch v `farmar/index.html`.
 - Push do `main` aj `gh-pages`.
-- **`?v=` je povinné** pri každom zmenenom skripte / štýle: service worker drží verziované súbory v pamäti telefónu
-  (cache-first, overenie na pozadí najviac raz za 6 h). Bez zvýšenia `?v=` sa zmena k ľuďom dostane až o niekoľko hodín.
+- **`?v=` je povinné** pri každom zmenenom skripte / štýle.
+- **Service worker meniť iba po teste na serveri s gzip kompresiou** (ako GitHub Pages). 28. 10. ukladanie súborov do telefónu
+  (cache-first) s kopírovanými hlavičkami (Content-Encoding/Length) rozbilo aplikáciu všetkým – vrátené na overený network-first.
 - Každý commit: autor `ERNTE Trade <report.valko@gmail.com>`, committer `Claude <noreply@anthropic.com>`. Históriu `main` neprepisovať
   (bot „Trhové ceny“ do nej zapisuje).
 
@@ -57,8 +58,11 @@ s pripojeným repozitárom `ernte-trade/ernte-`.
   (`autocennik.js` → tabuľka `prices`, každých 30 s, ▲/▼ od poslednej návštevy), vtipy, trúbenie.
   Pravidlá: zobrazí sa vždy po prihlásení / otvorení a po návrate z pozadia (≥ 30 s, nie počas rozpísaného formulára);
   **žiadne „Dnes už neukazovať“**; „Poďme na to →“ vždy otvorí pridelené sekcie (Prehľad, inak prvá záložka).
-- Rýchlosť: service worker (`sw.js`) drží všetky súbory aplikácie v telefóne (`ernte-assets-1`), po otvorení ich stiahne vopred,
-  žiada trvalé úložisko. Údaje z databázy sa nikdy necachujú – vždy živé.
+- Service worker (`sw.js`): overená verzia network-first (súbory sa vždy overia u servera). Zrýchlenie s ukladaním do telefónu
+  je VYPNUTÉ (28. 10. núdzovo vrátené); `index.html` má jednorazové vyčistenie uložených súborov (`ernte-clean-2810b`).
+  Údaje z databázy sa nikdy necachujú – vždy živé.
+- Úvod sa dá vždy opustiť: „Poďme na to“, ✕ vľavo hore, ťuknutie mimo karty; ukazuje sa aj v náhľade „Pozrieť ako“.
+  Rozloženie: pod 1100 px šírky panely nad kartou (bez prekrývania, posúvateľné), nad 1100 px panely vpravo, karta vľavo.
 - Automatický test živej aplikácie na 7 zariadeniach (`.github/e2e/`, výsledky zašifrované v vetve `e2e-results`).
 - Prezentácie (Claude Slides): majiteľ, farmár, kurací trus, Jana, Galajda, Ličko, Tóth.
 

@@ -161,7 +161,8 @@ async function show(force){const k=kind();if(!k||document.querySelector(".wlc"))
   const sub=k==="ja"?"Firma beží, čísla sú tu – poďme na to. 💪":(ROLE_TXT[k]||ROLE_TXT.tim)[1];const joke=FL[ji];
   const tag=k==="ja"?"majiteľ · ERNTE · VALKO":(ROLE_TXT[k]||ROLE_TXT.tim)[0];
   const el=document.createElement("div");el.className="wlc "+ph;el.setAttribute("role","dialog");el.setAttribute("aria-label","Úvod");
-  const por=innerHeight>innerWidth*1.1;if(por)el.classList.add("por");
+  const POR=()=>innerWidth<1100||innerHeight<640;const por=POR();if(por)el.classList.add("por");
+  const rz=()=>{if(!el.isConnected){removeEventListener("resize",rz);return}el.classList.toggle("por",POR())};addEventListener("resize",rz);
   el.innerHTML=`${scene(k,ph,por)}<div class="wlb"><img src="icon-192.png" alt=""><div class="wlt"><small>${E(tag)}</small><b>${g}</b><p>${E(sub)}</p>${joke?`<p class="wjk">😄 <span>${E(joke)}</span></p>`:""}<ul class="wlf"></ul>
    <div class="wla"><button type="button" class="lime" data-wlgo>Poďme na to →</button><button type="button" class="wmore" data-wljoke>😂 Ďalší vtip</button></div></div></div>
    <button type="button" class="wlx" data-wlx aria-label="Zavrieť a pokračovať">✕</button><div class="wltap">${new Date().toLocaleDateString("sk-SK",{weekday:"long",day:"numeric",month:"long"})}</div>`;
@@ -299,12 +300,13 @@ html.wlon,html.wlon body{overflow:hidden}
 .wlc.por{justify-content:flex-start;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch}
 .wlc.por .wimg{display:flex;flex-direction:column;flex:1 0 auto;padding-bottom:78px}
 .wlc.por .wimg::before{position:absolute}
-.wlc.por .whud{position:relative;top:auto;left:auto;right:auto;margin:calc(40px + env(safe-area-inset-top,0px)) 14px 0}
+.wlc.por .whud{position:relative;top:auto;left:auto;right:auto;margin:calc(40px + env(safe-area-inset-top,0px)) auto 0}
 .wlc.por .wla{flex-wrap:nowrap;position:sticky;bottom:calc(8px + env(safe-area-inset-bottom,0px));z-index:3;padding:8px;margin:12px -8px -8px;border-radius:20px;background:rgba(11,16,32,.88);-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px)}
 .wlc.por .wla>button{flex:1 1 auto;white-space:nowrap}.wlc.por .wla .wmore{flex:0 1 auto}
 .wlc.por .wcred{bottom:54px}.wlc.por .wlb{flex:none;max-height:none;overflow:visible}
 @media (max-height:640px){.wlc.por .wspk{height:20px}.wlc.por .whbars{height:24px}.wclk{font-size:1.2rem}}
-@media (min-width:900px){.whud{left:auto;right:28px;top:calc(56px + env(safe-area-inset-top,0px));width:420px}.wclk{font-size:2rem}}
+.wlc:not(.por) .whud{left:auto;right:28px;top:calc(56px + env(safe-area-inset-top,0px));width:420px}.wlc:not(.por) .wclk{font-size:2rem}.wlc:not(.por) .wlb{margin-left:28px;margin-right:auto}
+.wlc.por .whud{max-width:640px;align-self:center;width:calc(100% - 28px)}.wlc.por .wlb{width:min(640px,calc(100% - 28px))}
 .wltap{z-index:3}
 .wlx{position:absolute;z-index:5;top:calc(10px + env(safe-area-inset-top,0px));left:12px;width:44px;height:44px;min-height:44px!important;padding:0!important;border-radius:50%!important;background:rgba(5,8,22,.6)!important;border:1px solid rgba(255,255,255,.3)!important;color:#fff;font-size:1.1rem}
 .wpst{margin-top:6px;font:500 .6rem/1.3 "Geist Mono",ui-monospace,monospace;color:#c9d1e3;opacity:.85;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
