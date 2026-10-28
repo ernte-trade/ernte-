@@ -1,0 +1,25 @@
+name: icotest
+on:
+  repository_dispatch:
+    types: [ernte-icotest]
+permissions:
+  contents: write
+jobs:
+  t:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - name: Test verejných registrov (iba verejné údaje firiem)
+        run: |
+          ICO="${{ github.event.client_payload.ico || '52341356' }}"
+          O=-H; H="Origin: https://ernte-trade.github.io"
+          {
+          echo "== RPO search"; curl -s -m 20 -D - -H "$H" "https://api.statistics.sk/rpo/v1/search?identifier=$ICO" | head -c 6000; echo
+          echo "== RUZ list"; curl -s -m 20 -D - -H "$H" "https://www.registeruz.sk/cruz-public/api/uctovne-jednotky?zmenene-od=2000-01-01&ico=$ICO" | head -c 3000; echo
+          ID=$(curl -s -m 20 "https://www.registeruz.sk/cruz-public/api/uctovne-jednotky?zmenene-od=2000-01-01&ico=$ICO" | grep -o '"id":\[[0-9]*' | grep -o '[0-9]*$' | head -1)
+          echo "== RUZ detail $ID"; curl -s -m 20 -D - -H "$H" "https://www.registeruz.sk/cruz-public/api/uctovna-jednotka?id=$ID" | head -c 4000; echo
+          echo "== FinStat api detail (bez kľúča)"; curl -s -m 20 -D - -H "$H" -X POST "https://www.finstat.sk/api/detail" -d "ico=$ICO" | head -c 1500; echo
+          } > out.txt 2>&1
+          git config user.name bot; git config user.email bot@users.noreply.github.com
+          git checkout --orphan ico-results; git rm -rfq . >/dev/null; git add out.txt; git commit -qm ico; git push -fq origin ico-results
