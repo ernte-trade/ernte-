@@ -73,6 +73,10 @@ s pripojeným repozitárom `ernte-trade/ernte-`.
 - Kontroly bez prístupu k sieti z Claude: workflowy `health.yml` (dostupnosť) a `icotest.yml` (registre) zapisujú výsledok do vetiev
   `health-results` / `ico-results`.
 - Automatický test živej aplikácie na 7 zariadeniach (`.github/e2e/`, výsledky zašifrované v vetve `e2e-results`).
+- **Push centrum (29. 10.)** – `farmar/supabase/push*.sql`, `pushcenter.js`: ntfy (témy flotila / majiteľ / kalendár) + Web Push, `push_log` (HTTP kódy),
+  deduplikácia, tiché hodiny, hodinový (`push-hodina`) a ranný súhrn (5:00). Alarmy Flotily podľa stupňa (`fleet_push_scan`, pôvodné okamžité ntfy z kontrol vypnuté),
+  udalosti aplikácie (`push_app`), pripomienky kalendára so zvonením a „Beriem na vedomie“ (`cal_ring`, `cal_ack`). Nastavenia → 🔔 Notifikácie / 🩺 Diagnostika (Stav úloh AI).
+- **Výpis kariet po obdobiach** (`karty_obdobie.sql`, `fleet_cfg.cardcfg`): výpočty nafty iba do posledného výpisu, poskytovatelia kariet, pokrytie skupín.
 - Prezentácie (Claude Slides): majiteľ, farmár, kurací trus, Jana, Galajda, Ličko, Tóth.
 
 ### Čaká / odložené

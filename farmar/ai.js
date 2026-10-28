@@ -274,10 +274,11 @@ function view(){const el=$("aiSheet");if(!el)return;CB.length=0;el.classList.tog
 async function openAI(){if($("aiSheet"))return;const d=document.createElement("div");d.id="aiSheet";d.className="aish";d.setAttribute("role","dialog");d.setAttribute("aria-label","ERNTE AI Podpora");
   d.innerHTML=`<div class="aihd"><div class="aiorb"></div><div><h2>ERNTE AI</h2><small>Podpora · kontrola · trhy</small></div><button type="button" class="x airef" data-ai="refresh" aria-label="Obnoviť" title="Obnoviť"><span>↻</span></button><button type="button" class="x" data-ai="close" aria-label="Zavrieť" style="margin-left:8px">×</button></div>
   <div class="aitabs"></div><div class="aibody"></div>
-  <div class="aichips">${["Ako sme na tom dnes?","Trhy – predať alebo držať?","Kde strácame peniaze?","Skontroluj flotilu a naftu","Čo mám dnes urobiť?"].map(q=>`<button type="button" data-aiq="${esc(q)}">${esc(q)}</button>`).join("")}</div>
+  <div class="aichips">${typeof window.MAIN_OK==="function"&&window.MAIN_OK()&&window.calNew?`<button type="button" data-aical="1" title="Nová pripomienka v Kalendári – zazvoní do mobilu">＋ Pripomienka</button>`:""}${["Ako sme na tom dnes?","Trhy – predať alebo držať?","Kde strácame peniaze?","Skontroluj flotilu a naftu","Čo mám dnes urobiť?"].map(q=>`<button type="button" data-aiq="${esc(q)}">${esc(q)}</button>`).join("")}</div>
   <div class="aipend" hidden></div><form class="aiin"><button type="button" class="aiplus" data-aiplus="1" aria-label="Pridať fotku alebo súbor">+</button><input type="file" id="aiFile" multiple accept="image/*,application/pdf,.pdf,.txt,.csv,.xlsx,.xls,.docx,.doc,.json,.md" hidden><textarea rows="1" placeholder="Napíš otázku alebo úlohu…" aria-label="Správa pre AI"></textarea><button type="submit" aria-label="Odoslať">➤</button></form>`;
   document.body.appendChild(d);document.documentElement.style.overflow="hidden";A.jump=true;view();await load();A.jump=true;view();markSeen();
   if(A.msgs.some(x=>x.status==="wait"))poll()}
+document.addEventListener("click",e=>{if(e.target.closest&&e.target.closest("[data-aical]")){closeAI();setTimeout(()=>{if(window.calNew)window.calNew()},60)}});
 function closeAI(){const d=$("aiSheet");if(d)d.remove();document.documentElement.style.overflow="";markSeen();refreshDash()}
 
 let pollT=null;

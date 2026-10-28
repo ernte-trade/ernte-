@@ -17,6 +17,8 @@ function start(){if(on||!staffOn())return;on=true;ME_E=String(ME.email).toLowerC
   setInterval(()=>{if(!document.hidden&&ctx){close();since=Date.now()}flush()},60000)}
 document.addEventListener("visibilitychange",()=>{if(!on)return;if(document.hidden){close();flush()}else{since=Date.now();if(!ctx)mark()}});
 addEventListener("pagehide",()=>{if(on){close();flush()}});
+// odhlásenie: zápis „end“ ešte pred odhlásením (upozornenie majiteľovi „Odhlásenie“)
+const _bl=window.ernteBeforeLogout;window.ernteBeforeLogout=async function(){try{if(_bl)await _bl()}catch(e){}if(!on)return;close();push({kind:"end",what:"odhlásenie",dev:dev()});await flush()};
 // akcie: tlačidlá a formuláre – zaznamená sa iba názov tlačidla a časť aplikácie
 const SKIP="[data-tab],[data-fsec],[data-dstheme],.ds-theme,summary";
 document.addEventListener("click",e=>{if(!on)return;const b=e.target.closest("button,a.btn");if(!b||b.closest(SKIP)||b.matches(SKIP)||!b.closest("#app"))return;

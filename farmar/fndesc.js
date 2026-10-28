@@ -50,6 +50,10 @@ const SECD={
  "agro:cat":"Katalóg prác a strojov, z ktorého sa skladá cenník."};
 // ---- nadpisy (farmár aj zamestnanci) ----
 const H2=[
+ ["🔔 Notifikácie","Upozornenia do mobilu: témy ntfy (Kopírovať, QR kód na odber), stupne alarmov Flotily (VYSOKÝ hneď, STREDNÝ hodinový súhrn, NÍZKY ranný súhrn o 5:00), udalosti aplikácie, koho sledovať, tiché hodiny a testovacie upozornenie."],
+ ["🔔 Upozornenia do mobilu","Koľko upozornení odišlo za 24 h, posledných 20 odoslaní s HTTP kódom (200 = doručené na server ntfy / GitHub) a chyby."],
+ ["🤖 Stav úloh AI","Posledných 30 úloh z Podpory: nová → odoslaná → hotová (dátum nasadenia) alebo chyba. Filter podľa stavu. Úloha odoslaná viac ako 2 h = upozornenie do mobilu."],
+ ["📅 Obdobie výpisu kariet","Výpis z palivových kariet chodí raz za 2 týždne (1.–15. a 16.–koniec mesiaca). Rozdiely nafty a € straty sa počítajú len do posledného výpisu; potom je obdobie sivé „čaká na výpis“. Poskytovatelia kariet podľa skupín áut."],
  ["📜 História cien","Každá zmena zverejnenej výkupnej ceny: kedy, kto, stará → nová cena a rozdiel (aj zrušená cena, nová plodina a zmena platnosti). 🤖 = automatický cenník."],
  ["🔔 Upozornenie na zmenu ceny","Pri zmene ceny zazvoní telefón hneď, aj v noci. Veľkú zmenu treba potvrdiť ťuknutím, inak sa o 10 min zopakuje (najviac 3×). Tvoja vlastná zmena príde ticho."],
  ["Výkupné ceny","Ceny, za ktoré ERNTE kúpi vašu komoditu na farme (bez DPH). Ťuknite Predať, napíšte tony – ERNTE sa vám ozve."],

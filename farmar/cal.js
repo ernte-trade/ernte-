@@ -24,12 +24,14 @@ async function load(force){if(C.busy||(!force&&C.at&&Date.now()-C.at<45e3))retur
   try{const since=new Date(Date.now()-14*864e5).toISOString();
     const [a,b,c]=await Promise.all([sb.from("owner_cal").select("*").gte("start_at",since).order("start_at",{ascending:true}).limit(400),
       sb.from("meet_req").select("*").order("start_at",{ascending:true}).limit(200),sb.rpc("meet_cfg")]);
-    C.err=a.error?a.error.message:b.error?b.error.message:"";C.ev=a.data||[];try{const au=await sb.from("owner_cal_audio").select("cal_id");const A=new Set((au.data||[]).map(x=>String(x.cal_id)));C.ev.forEach(e=>e.has_audio=A.has(String(e.id)))}catch(x){}C.mr=b.data||[];C.cfg=c.data||{};C.at=Date.now()}catch(x){C.err=String(x.message||x)}
+    C.err=a.error?a.error.message:b.error?b.error.message:"";C.ev=a.data||[];try{const au=await sb.from("owner_cal_audio").select("cal_id");const A=new Set((au.data||[]).map(x=>String(x.cal_id)));C.ev.forEach(e=>e.has_audio=A.has(String(e.id)))}catch(x){}C.mr=b.data||[];C.cfg=c.data||{};C.at=Date.now();
+    try{const rg=await sb.from("cal_ring").select("cal_id").is("acked_at",null).gte("created_at",new Date(Date.now()-40*6e4).toISOString());C.ring=rg.error?[]:[...new Set((rg.data||[]).map(x=>x.cal_id))]}catch(x){C.ring=[]}}catch(x){C.err=String(x.message||x)}
   C.busy=false;if(typeof TAB!=="undefined"&&TAB==="cal"&&typeof renderStaff==="function")renderStaff()}
+window.calNew=function(){if(!MAIN())return false;VO={heard:"",aud:null};C.form="new";try{TAB="cal";if(C.ev===null)load(true);renderStaff();scrollTo(0,0)}catch(x){}return true};
 window.calOpenCount=()=>(C.mr||[]).filter(m=>m.status==="nova"&&new Date(m.start_at)>Date.now()).length;
 function evRow(e){const past=new Date(e.start_at)<Date.now()-36e5;const rm=(e.remind_min||[]).map(m=>(REM.find(r=>r[0]===m)||[0,m+" min"])[1]).join(", ");
   return `<div class="clev ${e.kind} ${e.done?"done":""} ${past?"past":""}"><div class="clt">${e.all_day?"celý deň":hm(e.start_at)}${e.end_at&&!e.all_day?`<small>${hm(e.end_at)}</small>`:""}</div>
-   <div class="clb"><b>${e.kind==="stretnutie"?"":e.kind==="blok"?"⛔ ":"⏰ "}${E(e.title)}</b>${e.place?`<small>📍 ${E(e.place)}</small>`:""}${e.note?`<small class="cln">${E(e.note)}</small>`:""}${e.has_audio?`<button type="button" class="clpb" data-clplay="${e.id}">▶︎ 🎙️ Prehrať hlasovku</button>`:""}<small class="clm">🔔 ${E(rm||"bez upozornenia")}${e.rep?" · 🔁 "+E((REP.find(r=>r[0]===e.rep)||[0,e.rep])[1]):""}</small></div>
+   <div class="clb"><b>${e.kind==="stretnutie"?"":e.kind==="blok"?"⛔ ":"⏰ "}${E(e.title)}</b>${e.place?`<small>📍 ${E(e.place)}</small>`:""}${e.who||e.phone?`<small>${e.who?`👤 ${E(e.who)}`:""}${e.who&&e.phone?" · ":""}${e.phone?`<a href="tel:${E(String(e.phone).replace(/[^0-9+]/g,""))}">📞 ${E(e.phone)}</a>`:""}</small>`:""}${(C.ring||[]).includes(e.id)?`<button type="button" class="clpb clack" data-clack="${e.id}">✓ Beriem na vedomie</button>`:""}${e.note?`<small class="cln">${E(e.note)}</small>`:""}${e.has_audio?`<button type="button" class="clpb" data-clplay="${e.id}">▶︎ 🎙️ Prehrať hlasovku</button>`:""}<small class="clm">🔔 ${E(rm||"bez upozornenia")}${e.rep?" · 🔁 "+E((REP.find(r=>r[0]===e.rep)||[0,e.rep])[1]):""}</small></div>
    <div class="cla"><button type="button" data-cldone="${e.id}" title="${e.done?"Vrátiť":"Hotovo"}" aria-label="${e.done?"Vrátiť":"Hotovo"}">${e.done?"↩︎":"✓"}</button><button type="button" data-cledit="${e.id}" aria-label="Upraviť">✎</button></div></div>`}
 function reqCard(m){const st=MST[m.status]||[m.status];const fut=new Date(m.start_at)>Date.now();
   return `<div class="clreq ${m.status}"><div class="clrh"><span class="ds-av">${E((String(m.who_name||"?").match(/\p{L}/gu)||["?"]).slice(0,2).join("").toUpperCase())}</span><div><b>${E(m.who_name||m.who_email)}</b><small>${m.farmer_id?"farmár":"tím"} · ${E(m.who_email)}</small></div>${pill_(st)}</div>
@@ -57,6 +59,7 @@ function form(e){e=e||{};const d=e.start_at?new Date(e.start_at):new Date(Date.n
    <label>Upozorniť do mobilu</label>${ch("rem",REM,rm,true)}
    <label>Opakovať</label>${ch("rep",REP,e.rep||"")}
    <label class="w">Miesto (nepovinné)<input name="place" value="${E(e.place||"")}"></label>
+   <div class="clrow"><label>S kým (nepovinné)<input name="who" maxlength="120" value="${E(e.who||"")}" placeholder="meno, firma"></label><label>Telefón (nepovinné)<input name="phone" type="tel" inputmode="tel" maxlength="30" value="${E(e.phone||"")}" placeholder="+421 9…"></label></div>
    <label class="w">Poznámka (nepovinné)<textarea name="note" rows="2">${E(e.note||"")}</textarea></label>
    <div class="w btns"><button type="submit" class="pri">💾 Uložiť</button><button type="button" data-clclose>Zavrieť</button>${e.id?`<button type="button" class="dng" data-cldel="${e.id}">Zmazať</button>`:""}</div></form>`}
 function cfgCard(){const c=C.cfg||{};const D=[[1,"Po"],[2,"Ut"],[3,"St"],[4,"Št"],[5,"Pi"],[6,"So"],[7,"Ne"]];
@@ -202,6 +205,7 @@ document.addEventListener("click",async e=>{const t=e.target;if(!t.closest)retur
   if(x=t.closest("[data-clplay]")){play(x.dataset.clplay,x);return}
   if(t.closest("[data-clnew]")){VO={heard:"",aud:null};C.form="new";renderStaff();scrollTo(0,0);return}
   if(t.closest("[data-clclose]")){C.form=null;VO={heard:"",aud:null};renderStaff();return}
+  if(x=t.closest("[data-clack]")){const r=await sb.rpc("cal_ack_ev",{p_id:+x.dataset.clack});if(r.error)toast_("⚠️ "+r.error.message);else{C.ring=(C.ring||[]).filter(i=>i!==+x.dataset.clack);toast_("✓ Beriem na vedomie – zvonenie stíchlo.");renderStaff()}return}
   if(x=t.closest("[data-cledit]")){C.form=x.dataset.cledit;renderStaff();scrollTo(0,0);return}
   if(x=t.closest("[data-clday]")){const f=x.closest("form");f.d.value=dkey(Date.now()+(+x.dataset.clday)*864e5);return}
   if(x=t.closest("[data-chg] .ftchip")){const g=x.closest("[data-chg]");if(g.hasAttribute("data-multi"))x.classList.toggle("on");else g.querySelectorAll(".ftchip").forEach(b=>b.classList.toggle("on",b===x));return}
@@ -217,11 +221,13 @@ document.addEventListener("submit",async e=>{const f=e.target;if(f.id==="fCal"){
     const st=new Date(`${f.d.value}T${all?"08:00":(f.t.value||"09:00")}:00`);const dur=+(on("dur")[0]||30);
     const row={title:f.title.value.trim(),kind:on("kind")[0]||"pripomienka",start_at:st.toISOString(),end_at:new Date(st.getTime()+dur*6e4).toISOString(),all_day:all,
       remind_min:on("rem").map(Number).sort((a,b)=>b-a),reminded:[],rep:on("rep")[0]||null,place:f.place.value.trim()||null,note:f.note.value.trim()||null};
+    {const w=(f.who&&f.who.value||"").trim(),ph=(f.phone&&f.phone.value||"").trim(),old=f.dataset.id?C.ev.find(x=>String(x.id)===f.dataset.id):null;
+     if(w||(old&&old.who))row.who=w||null;if(ph||(old&&old.phone))row.phone=ph||null}
     if(!row.title)return;const id=f.dataset.id;const b=f.querySelector("[type=submit]");b.disabled=true;
     const r=id?await sb.from("owner_cal").update(row).eq("id",+id).select("id").single():await sb.from("owner_cal").insert(row).select("id").single();b.disabled=false;
     if(r.error){toast_("⚠️ "+r.error.message,7000);return}
     if(VO.aud&&r.data){const a=await sb.from("owner_cal_audio").upsert({cal_id:r.data.id,mime:VO.aud.mime,data:VO.aud.url});if(a.error)toast_("Hlasovka sa neuložila: "+a.error.message,7000)}
-    VO={heard:"",aud:null};C.form=null;toast_(row.remind_min.length?"✓ Uložené – upozorním ťa do mobilu.":"✓ Uložené.");load(true);return}
+    VO={heard:"",aud:null};C.form=null;toast_(row.kind==="blok"&&!row.remind_min.length?"✓ Uložené.":"✓ Uložené – zazvoním deň vopred o 18:00, 1 h a 15 min pred začiatkom.");load(true);return}
   if(f.id==="fCalCfg"){e.preventDefault();e.stopPropagation();if(!MAIN())return;const n=k=>+f[k].value;
     const p={pref_from:n("pref_from"),pref_to:n("pref_to"),work_from:n("work_from"),work_to:n("work_to"),min_hours:n("min_hours"),horizon:n("horizon"),days:[...f.querySelectorAll('[data-chg="days"] .ftchip.on')].map(b=>+b.dataset.v)};
     if(p.pref_to<=p.pref_from||p.work_to<=p.work_from){toast_("Čas „do“ musí byť neskôr ako „od“.");return}

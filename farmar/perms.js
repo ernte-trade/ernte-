@@ -78,7 +78,7 @@ const TABP={req:["req","trans","assign"],price:["price_view","price_edit","marke
 window.tabOK=k=>ROLE==="owner"||(k!=="nov"&&(TABP[k]?TABP[k].some(can):true)); // Novinky vidia iba majitelia
 // sekcie flotily
 const FSP={dash:["fleet"],fuel:["diesel","yard","cams"],alarm:["alarms"],money:["fleet_cost"],drv:["drivers"],veh:["drivers"],map:["fleet"],set:["fleet_set"]};
-const FSUBP={yard:["yard"],cams:["cams"],main:null,cmd:["__owner"],firm:["fleet"],moves:["fleet"],places:["fleet_set"],find:["drivers"]};
+const FSUBP={yard:["yard"],cams:["cams"],main:null,cmd:["__owner"],notif:["__owner"],diag:["__owner"],firm:["fleet"],moves:["fleet"],places:["fleet_set"],find:["drivers"]};
 window.secOK=k=>ROLE==="owner"||(FSP[k]?FSP[k].some(can):true);
 window.subOK=(sec,sub)=>{if(ROLE==="owner")return true;if(sec==="fuel"&&sub==="main")return can("diesel");const p=FSUBP[sub];return !p||p.some(x=>x!=="__owner"&&can(x))};
 window.fleetAll=()=>can("fleet_all");

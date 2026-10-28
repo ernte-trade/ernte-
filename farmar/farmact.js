@@ -20,6 +20,8 @@ function start(){if(on||!who())return;on=true;push({kind:"session",what:"otvoren
 const waitT=setInterval(()=>{if(who()){clearInterval(waitT);start()}},1500);setTimeout(()=>clearInterval(waitT),10*60e3);
 document.addEventListener("visibilitychange",()=>{if(!on)return;if(document.hidden){close();flush()}else{since=Date.now();ctx=cur()}});
 addEventListener("pagehide",()=>{if(on){close();flush()}});
+// odhlásenie: zápis ešte pred odhlásením (upozornenie majiteľovi „Odhlásenie“)
+const _bl=window.ernteBeforeLogout;window.ernteBeforeLogout=async function(){try{if(_bl)await _bl()}catch(e){}if(!on)return;close();if(!Q.some(x=>x.kind==="action"&&/^Odhlásenie/.test(x.what||"")))push({kind:"action",what:"Odhlásenie",dev:dev()});await flush()};
 // tlačidlá → zrozumiteľný názov akcie (bez zadaných údajov)
 const dealNo=id=>{try{const d=(STATE.deals||[]).find(x=>x.id===id);return d?" "+d.no:""}catch(x){return ""}};
 const A=[["[data-cpdf]",x=>"Otvoril zmluvu PDF"+dealNo(x.dataset.cpdf)],["[data-fsign]",x=>"Otvoril podpis zmluvy"+dealNo(x.dataset.fsign)],["[data-sgsave]",x=>"Podpísal zmluvu"+dealNo(x.dataset.sgsave)],

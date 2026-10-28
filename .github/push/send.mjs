@@ -14,7 +14,7 @@ for (let i = 0; i < 4; i++) { try { job = await rpc("push_job_take", { p_id: id 
 if (!job) { console.log("úloha už vybavená alebo neplatná"); process.exit(0); }
 const v = job.vapid, P = job.payload;
 webpush.setVapidDetails(v.subject || "mailto:ernte@ernte.sk", v.pub, v.priv);
-const data = JSON.stringify({ title: P.title, body: P.body, url: P.url, tag: P.tag, prio: P.prio });
+const data = JSON.stringify({ title: P.title, body: P.body, url: P.url, tag: P.tag, prio: P.prio, badge: P.badge, ri: P.ri, ack: P.ack, tel: P.tel });
 let sent = 0; const gone = []; let err = null;
 for (const s of job.subs || []) {
   try { await webpush.sendNotification(s, data, { TTL: 3600, urgency: P.prio >= 4 ? "high" : "normal" }); sent++; }
