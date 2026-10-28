@@ -67,6 +67,8 @@ for (const d of DEV) {
       R.viewasDone = true;
       try {
         await pg.addInitScript(cr => { try { if (!sessionStorage.getItem("ernte-viewas")) sessionStorage.setItem("ernte-viewas-cred", cr); } catch (x) {} }, JSON.stringify({ rt: c.rt, name: c.name, email: c.login }));
+        run.auth = [];
+        pg.on("response", async res => { if (/\/auth\/v1\//.test(res.url())) { let b = ""; try { b = (await res.text()).replace(/"(access_token|refresh_token|provider_token)":"[^"]*"/g, '"$1":"…"').slice(0, 300); } catch (x) {} run.auth.push(res.request().method() + " " + res.status() + " " + res.url().replace(/^https:\/\/[^/]+/, "").replace(/\?.*$/, "") + " " + b); } });
         await pg.goto(APP + "?viewas=1", { waitUntil: "load", timeout: 60000 }); await pg.waitForTimeout(8000);
         run.banner = await pg.$eval(".vabar", b => b.innerText.replace(/\s+/g, " ")).catch(() => null);
         run.farmerText = await pg.$eval("#app", a => a.innerText.replace(/\s+/g, " ").slice(0, 600)).catch(() => null);
