@@ -1,0 +1,29 @@
+# Vyhľadanie skutočných fotiek s voľnou licenciou (Wikimedia Commons) pre úvodné obrazovky. Spúšťa Claude.
+name: ernte-imgfetch
+on:
+  repository_dispatch:
+    types: [ernte-imgfetch]
+permissions:
+  contents: write
+jobs:
+  fetch:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: .github/imgfetch
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: node fetch.mjs
+        working-directory: .github/imgfetch
+        env:
+          QUERIES: ${{ toJSON(github.event.client_payload.queries) }}
+      - name: Uložiť do vetvy img-candidates
+        working-directory: .github/imgfetch
+        run: |
+          git config --global user.name "ernte-img"; git config --global user.email "img@ernte.invalid"
+          git clone -q --depth 1 --branch img-candidates "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git" res 2>/dev/null || { mkdir res; cd res; git init -q; git checkout -q -b img-candidates; git remote add origin "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git"; cd ..; }
+          rm -rf res/c && cp -r out res/c
+          cd res && git add -A && git commit -q -m "kandidáti fotiek" && git push -q -f origin img-candidates
