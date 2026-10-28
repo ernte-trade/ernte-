@@ -12,6 +12,7 @@ jobs:
       - uses: actions/checkout@v4
       - name: Test verejných registrov (iba verejné údaje firiem)
         run: |
+          set +e
           ICO="${{ github.event.client_payload.ico || '52341356' }}"
           O=-H; H="Origin: https://ernte-trade.github.io"
           {
