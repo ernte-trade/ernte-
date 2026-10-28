@@ -10,23 +10,29 @@ function make(){if(D&&D.isConnected)return D;css();
   D=document.createElement("div");D.id="spdock";D.className="spd min";D.setAttribute("role","region");D.setAttribute("aria-label","Hudba Spotify");
   D.innerHTML=`<div class="spdb"><button type="button" class="spdt" data-spdt aria-expanded="false"><i aria-hidden="true">🎵</i><span>Rádio</span><em aria-hidden="true">▲</em></button><a class="spdo" target="_blank" rel="noopener" href="https://open.spotify.com/">Spotify ↗</a><button type="button" class="spdx" data-spdx aria-label="Vypnúť hudbu">✕</button></div><div class="spdw"><iframe title="Spotify" height="80" frameborder="0" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"></iframe></div>`;
   document.body.appendChild(D);return D}
-function setMin(m){if(!D)return;D.classList.toggle("min",m);const t=D.querySelector("[data-spdt]");if(t)t.setAttribute("aria-expanded",String(!m));sv(m?"1":"0")}
+function setMin(m){if(!D)return;D.classList.toggle("min",m);const t=D.querySelector("[data-spdt]");if(t)t.setAttribute("aria-expanded",String(!m));sv(m?"1":"0");syncBody()}
+/* Podľa stavu docku nastaví triedy na <body>, aby sa plávajúce tlačidlá (napr. 💬 spätná väzba)
+   vedeli uhnúť: spd-on = dock je v rohu, spd-open = dock je rozbalený (hrozí prekrytie). */
+function syncBody(){const b=document.body;if(!b)return;
+  const on=!!(D&&D.isConnected&&!D.hidden&&!D.classList.contains("att"));
+  const open=on&&!D.classList.contains("min");
+  b.classList.toggle("spd-on",on);b.classList.toggle("spd-open",open)}
 function loop(){cancelAnimationFrame(raf);const st=()=>{if(!D)return;if(!slot||!slot.isConnected||slot.closest(".out")){api.detach();return}
     const r=slot.getBoundingClientRect();D.style.left=r.left+"px";D.style.top=r.top+"px";D.style.width=r.width+"px";raf=requestAnimationFrame(st)};st()}
 const api={
   /* spustí / prepne playlist – rovnaký playlist sa nenačítava znova, hudba teda nepreruší */
   play(ref,name){const d=make(),f=d.querySelector("iframe");if(f.dataset.ref!==ref){f.src="https://open.spotify.com/embed/"+ref+"?utm_source=generator";f.dataset.ref=ref}
-    d.querySelector(".spdt span").textContent=name||"Môj playlist";d.querySelector(".spdo").href="https://open.spotify.com/"+ref;d.hidden=false},
+    d.querySelector(".spdt span").textContent=name||"Môj playlist";d.querySelector(".spdo").href="https://open.spotify.com/"+ref;d.hidden=false;syncBody()},
   /* úvod: prehrávač sa zobrazí presne na mieste panelu */
-  attach(s){slot=s;const d=make();d.classList.add("att");d.classList.remove("min");loop()},
+  attach(s){slot=s;const d=make();d.classList.add("att");d.classList.remove("min");syncBody();loop()},
   /* úvod sa zavrel: prehrávač ostane hrať, zbalí sa nad spodnú lištu */
-  detach(){slot=null;cancelAnimationFrame(raf);if(!D)return;const was=D.classList.contains("att");D.classList.remove("att");D.style.left=D.style.top=D.style.width="";if(was)setMin(true)},
+  detach(){slot=null;cancelAnimationFrame(raf);if(!D)return;const was=D.classList.contains("att");D.classList.remove("att");D.style.left=D.style.top=D.style.width="";if(was)setMin(true);syncBody()},
   on:()=>!!(D&&D.isConnected&&!D.hidden),
   ref:()=>D&&D.querySelector("iframe").dataset.ref||""};
 window.spDock=api;
 document.addEventListener("click",e=>{if(!D||!e.target.closest)return;
   if(e.target.closest("[data-spdt]")){setMin(!D.classList.contains("min"));return}
-  if(e.target.closest("[data-spdx]")){cancelAnimationFrame(raf);slot=null;D.remove();D=null;document.querySelectorAll(".whsp").forEach(w=>w.classList.add("spoff"))}});
+  if(e.target.closest("[data-spdx]")){cancelAnimationFrame(raf);slot=null;D.remove();D=null;document.querySelectorAll(".whsp").forEach(w=>w.classList.add("spoff"));syncBody()}});
 function css(){if(document.getElementById("spd-css"))return;const s=document.createElement("style");s.id="spd-css";s.textContent=`
 .spd{position:fixed;z-index:1600;right:12px;bottom:calc(16px + env(safe-area-inset-bottom,0px));width:min(360px,calc(100vw - 24px));display:grid;gap:6px;padding:8px;border-radius:20px;
   background:linear-gradient(150deg,rgba(30,36,58,.86),rgba(12,16,30,.9));border:1px solid rgba(165,243,252,.35);-webkit-backdrop-filter:blur(18px) saturate(150%);backdrop-filter:blur(18px) saturate(150%);
@@ -57,5 +63,9 @@ html[data-theme=light] .spd:not(.att){background:linear-gradient(150deg,rgba(255
 html[data-theme=light] .spd .spdo{color:#3f6212}
 @media (prefers-reduced-motion:reduce){.spd.min .spdt i{animation:none}}
 @media print{.spd{display:none!important}}
+/* Plávajúce tlačidlo spätnej väzby (💬) sa uhne nad Spotify dock, nech sa neprekrývajú. */
+body.spd-on .fbbtn{transition:bottom .25s ease}
+body.spd-on .fbbtn{bottom:calc(150px + env(safe-area-inset-bottom,0px))}
+body.spd-open .fbbtn{bottom:calc(252px + env(safe-area-inset-bottom,0px))}
 `;document.head.appendChild(s)}
 })();
