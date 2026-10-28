@@ -35,6 +35,7 @@ const PCAT=[
  ["praca","Denník prác – zapísať čo robil a koľko ha","Evidencia","roľníci, strojníci"],
  ["sklad","Sklad – vziať a pridať diely (bez cien)","Evidencia","strojníci"],
  ["ev_doch","Dochádzka – dni, dovolenka, PN, pole, víkendy, nadčasy","Evidencia","bez peňazí"],
+ ["ev_mzdy","💶 Mzdy ERNTE – výplaty, odvody, výplatné pásky (mzdárka)","Evidencia","bez výsledku firmy a marže"],
  ["wx","Počasie","Ostatné",""],
  ["big","Veľké písmo a tlačidlá","Ostatné","lepšia čitateľnosť"]];
 const PLOCK=[["margin","Marža, zisk a predajné ceny odberateľom"],["payroll","Mzdy vodičov"],["costs","Pevné náklady firmy"],["ai","ERNTE AI Podpora"],["team","Tím a prístupy"]];
@@ -64,7 +65,7 @@ window.canAny=(...k)=>k.some(x=>can(x));
 function fDefs(){const g=((STATE.settings||{}).farmer_perms)||{};return g}
 window.fcan=k=>{if(typeof FARMER==="undefined"||!FARMER)return true;const v=(FARMER.perms||{})[k];if(v===true||v===false)return v;const g=fDefs()[k];if(g===true||g===false)return g;return FDEF.includes(k)};
 // hlavné záložky
-const TABP={req:["req","trans","assign"],price:["price_view","price_edit","market"],trans:["trans","assign"],fleet:["fleet"],deals:["deals","deals_qty","remain","notes"],farm:["farm"],wx:["wx"],calc:["calc"],team:["team"],agro:["agro"],trus:["trus","trus_price"],evid:["ev","ev_doch","sklad","praca"],danube:["danube"],nov:["nov"],qd:["deals"],pred:["pred_owner_only"]};
+const TABP={req:["req","trans","assign"],price:["price_view","price_edit","market"],trans:["trans","assign"],fleet:["fleet"],deals:["deals","deals_qty","remain","notes"],farm:["farm"],wx:["wx"],calc:["calc"],team:["team"],agro:["agro"],trus:["trus","trus_price"],evid:["ev","ev_doch","sklad","praca","ev_mzdy"],danube:["danube"],nov:["nov"],qd:["deals"],pred:["pred_owner_only"]};
 window.tabOK=k=>ROLE==="owner"||(k!=="nov"&&(TABP[k]?TABP[k].some(can):true)); // Novinky vidia iba majitelia
 // sekcie flotily
 const FSP={dash:["fleet"],fuel:["diesel","yard","cams"],alarm:["alarms"],money:["fleet_cost"],drv:["drivers"],veh:["drivers"],map:["fleet"],set:["fleet_set"]};

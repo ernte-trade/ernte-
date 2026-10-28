@@ -16,7 +16,7 @@ function kind(){if(typeof FARMER!=="undefined"&&FARMER)return "farmar";if(window
   if(ROLE==="dispatch"||can_("fleet")||can_("assign"))return "doprava";
   if(can_("trus")&&!can_("price_edit")&&!can_("price_view"))return "trus";
   if(can_("deals")||can_("price_edit"))return "obchod";
-  if(can_("trus"))return "trus";if(can_("ev"))return "evid";return "tim"}
+  if(can_("trus"))return "trus";if(can_("ev_mzdy"))return "mzdy";if(can_("ev"))return "evid";return "tim"}
 function phase(){const h=window.__wlh!=null?window.__wlh:new Date().getHours();return h<5||h>=21?"noc":h<8?"rano":h<18?"den":"vecer"}
 const GREET={noc:(window.__wlh!=null?window.__wlh:new Date().getHours())<5?"Pekná noc":"Dobrý večer",rano:"Dobré ráno",den:"Dobrý deň",vecer:"Dobrý večer"};
 const firstName=n=>{const p=String(n||"").replace(/^(Ing\.|Bc\.|Mgr\.|Shr\.|🧪)\s*/g,"").trim().split(/\s+/);return p[0]||""};
@@ -43,6 +43,7 @@ const ROLE_TXT={
  obchod:["obchod ERNTE","Nový obchod uzavrieš za minútu – odfotíš, povieš alebo vyplníš."],
  trus:["kurací trus","Vývozy, autá a váženie – každý krok na jednom mieste."],
  evid:["evidencia","Doklady, zmluvy a zúčtovanie – všetko pekne v poriadku."],
+ mzdy:["mzdy ERNTE","Výplaty, odvody a výplatné pásky – presne podľa zákona."],
  tim:["tím ERNTE","Všetko, čo potrebuješ, je na pár ťuknutí."]};
 
 /* ---------- SVG scéna ---------- */
@@ -67,12 +68,12 @@ function tractor(){return `<g class="wtrac"><rect x="-46" y="4" width="40" heigh
   <rect x="0" y="6" width="26" height="14" rx="3" fill="#b91c1c"/><rect x="14" y="-6" width="12" height="14" rx="2" fill="#b91c1c"/><rect x="16" y="-4" width="8" height="8" fill="#bae6fd"/><rect x="4" y="0" width="3" height="8" fill="#374151"/>${wheel(20,20,8)}${wheel(4,22,5)}</g>`}
 function truck(cls,lbl){return `<g class="${cls}"><rect x="0" y="0" width="70" height="26" rx="3" fill="#f8fafc"/><text x="8" y="17" font-size="10" font-weight="800" fill="#1e2a71" font-family="sans-serif">${lbl}</text>
   <rect x="72" y="6" width="22" height="20" rx="4" fill="#1e2a71"/><rect x="82" y="9" width="10" height="8" rx="1" fill="#bae6fd"/>${wheel(12,28,5)}${wheel(26,28,5)}${wheel(56,28,5)}${wheel(84,28,5)}</g>`}
-const PHOTO={trus:"img/trus-uvod.jpg",farmar:"img/farmar-uvod.jpg",ja:"img/ja-uvod.jpg",ceo:"img/ceo-uvod.jpg",tim:"img/ceo-uvod.jpg",doprava:"img/doprava-uvod.jpg",obchod:"img/obchod-uvod.jpg",evid:"img/evid-uvod.jpg"};
-const ALT={trus:"Kurací trus – Bio-Fer NATUR",farmar:"Farmár na poli s klasmi",ja:"Kombajn pri žatve pri západe slnka",ceo:"Oceľové silá na obilie",tim:"Oceľové silá na obilie",doprava:"Kombajn sype obilie do nákladného auta",obchod:"Zrno sa sype do prívesu",evid:"Klasy obilia pri východe slnka"};
+const PHOTO={mzdy:"img/evid-uvod.jpg",trus:"img/trus-uvod.jpg",farmar:"img/farmar-uvod.jpg",ja:"img/ja-uvod.jpg",ceo:"img/ceo-uvod.jpg",tim:"img/ceo-uvod.jpg",doprava:"img/doprava-uvod.jpg",obchod:"img/obchod-uvod.jpg",evid:"img/evid-uvod.jpg"};
+const ALT={mzdy:"Klasy obilia pri východe slnka",trus:"Kurací trus – Bio-Fer NATUR",farmar:"Farmár na poli s klasmi",ja:"Kombajn pri žatve pri západe slnka",ceo:"Oceľové silá na obilie",tim:"Oceľové silá na obilie",doprava:"Kombajn sype obilie do nákladného auta",obchod:"Zrno sa sype do prívesu",evid:"Klasy obilia pri východe slnka"};
 const CW="https://commons.wikimedia.org/wiki/File:";
 const CREDIT={ja:["SDF Deutschland","CC BY-SA 4.0",CW+"M%C3%A4hdrescher_C9306.jpg"],doprava:["USDA NRCS Montana","voľné dielo",CW+"Harvest_NR_08_(38143696164).jpg"],
   obchod:["USDA","voľné dielo",CW+"Harvest_(20200724-NRCS-LSC-0490).jpg"],ceo:["Leaflet","CC BY-SA 3.0",CW+"Ralls_Texas_Grain_Silos_2010.jpg"],
-  evid:["Dietmar Rabich","CC BY-SA 4.0",CW+"D%C3%BClmen,_Kirchspiel,_Dernekamp,_Getreide_bei_Sonnenaufgang_--_2021_--_8855.jpg"]};CREDIT.tim=CREDIT.ceo;
+  evid:["Dietmar Rabich","CC BY-SA 4.0",CW+"D%C3%BClmen,_Kirchspiel,_Dernekamp,_Getreide_bei_Sonnenaufgang_--_2021_--_8855.jpg"]};CREDIT.tim=CREDIT.ceo;CREDIT.mzdy=CREDIT.evid;
 function scene(k,ph,por){if(PHOTO[k]){const c=CREDIT[k];return `<div class="wimg" style="background-image:url(${PHOTO[k]})" role="img" aria-label="${E(ALT[k]||"")}"><i class="wgrid"></i><i class="wscan"></i><i class="wcrn"></i>${hud(k)}${c?`<a class="wcred" href="${c[2]}" target="_blank" rel="noopener">Foto: ${E(c[0])} · ${E(c[1])} · Wikimedia Commons</a>`:""}</div>`}let s=`<svg class="wsvg" viewBox="${por?"105 20 190 200":"0 0 400 220"}" preserveAspectRatio="xMidYMax slice" aria-hidden="true">`+sky(ph);
   const field=`<rect x="0" y="150" width="400" height="70" fill="url(#wfd)"/><rect class="wcut" x="0" y="150" width="400" height="70" fill="url(#wst)"/>${Array.from({length:12},(_,i)=>`<line x1="0" y1="${156+i*5.5}" x2="400" y2="${156+i*5.5}" stroke="#a16207" stroke-width=".5" opacity=".35"/>`).join("")}`;
   const road=`<rect x="0" y="182" width="400" height="38" fill="#374151"/><g class="wlane">${Array.from({length:14},(_,i)=>`<rect x="${i*32}" y="199" width="16" height="3" fill="#f8fafc"/>`).join("")}</g>`;
@@ -89,7 +90,7 @@ function scene(k,ph,por){if(PHOTO[k]){const c=CREDIT[k];return `<div class="wimg
 
 /* ---------- ultra moderný HUD cez fotku: živé hodiny, počasie s grafom, čísla a grafy podľa role ---------- */
 const KT={ja:["Vyvezené","Jazdy · 7 dní"],ceo:["Vyvezené","Jazdy · 7 dní"],tim:["Vyvezené","Jazdy · 7 dní"],doprava:["Jazdy dnes","Jazdy · 7 dní"],
-  obchod:["Vyvezené","Požiadavky"],evid:["Obchody","Nové · 7 dní"],farmar:["Výkupné ceny",""],trus:["Požiadavky",""]};
+  obchod:["Vyvezené","Požiadavky"],evid:["Tento mesiac",""],mzdy:["Tento mesiac",""],farmar:["Výkupné ceny",""],trus:["Požiadavky",""]};
 function hud(k){return `<div class="whud"><div class="whtop"><span class="wlive"><i></i>LIVE</span><span class="wclk">--:--<small>:--</small></span></div>
   <div class="whrow"><div class="whc whwx"><small>Počasie</small><div class="whv"><span class="wxi">…</span><b class="wxt">--°</b></div><div class="wxs">načítavam</div><svg class="wspk" viewBox="0 0 120 34" preserveAspectRatio="none"></svg></div>
   <div class="whc whk"><small>${E((KT[k]||KT.tim)[0])}</small><div class="whkb"></div><small class="whk2">${E((KT[k]||KT.tim)[1])}</small><div class="whbars"></div></div></div>${k==="ja"||k==="ceo"||k==="obchod"&&(can_("price_view")||can_("price_edit"))?`<div class="whc whpr"><small>Naše nákupné ceny · €/t</small><div class="whpl"></div></div>`:""}${spotOK(k)?spot():""}</div>`}
@@ -125,7 +126,9 @@ function kpis(k,el){const S=typeof STATE!=="undefined"?STATE:{};const t=today();
   const nreq=(S.reqs||[]).filter(r=>r.status==="nova").length;
   if(k==="farmar")farmPx(el,false);
   else if(k==="doprava"){kb.innerHTML=big(trips[6])+`<span class="whu">${tons?Math.round(tons-del).toLocaleString("sk-SK")+" t zostáva":"dnes"}</span>`;bb.innerHTML=bars(trips,D.map(x=>x[1]))}
-  else if(k==="evid"){kb.innerHTML=big(act.length)+`<span class="whu">${Math.round(tons).toLocaleString("sk-SK")} t spolu</span>`;bb.innerHTML=bars(D.map(([d])=>(S.deals||[]).filter(x=>String(x.created_at||"").slice(0,10)===d).length),D.map(x=>x[1]))}
+  else if(k==="evid"||k==="mzdy"){const n=new Date(),last=new Date(n.getFullYear(),n.getMonth()+1,0).getDate();let wd=0;for(let d=n.getDate();d<=last;d++){const w=new Date(n.getFullYear(),n.getMonth(),d).getDay();if(w&&w<6)wd++}
+    kb.innerHTML=big(wd)+`<span class="whu">${wd===1?"pracovný deň":wd<5?"pracovné dni":"pracovných dní"} do konca mesiaca${k==="mzdy"?"<br>potom výplaty":""}</span>`;if(k2)k2.remove();if(bb)bb.remove()}
+  else if(k==="evid_old"){kb.innerHTML=big(act.length)+`<span class="whu">${Math.round(tons).toLocaleString("sk-SK")} t spolu</span>`;bb.innerHTML=bars(D.map(([d])=>(S.deals||[]).filter(x=>String(x.created_at||"").slice(0,10)===d).length),D.map(x=>x[1]))}
   else if(k==="obchod"){kb.innerHTML=ring(pct)+`<span class="whu">${Math.round(del).toLocaleString("sk-SK")} / ${Math.round(tons).toLocaleString("sk-SK")} t</span>`;bb.innerHTML=`<div class="whn">${big(nreq)}<span class="whu">${nreq===1?"čaká na teba":"čakajú na teba"}</span></div>`}
   else if(k==="trus"){kb.innerHTML=big(nreq)+`<span class="whu">nové</span>`;if(k2)k2.remove()}
   else{kb.innerHTML=ring(pct)+`<span class="whu">${Math.round(del).toLocaleString("sk-SK")} / ${Math.round(tons).toLocaleString("sk-SK")} t</span>`;bb.innerHTML=bars(trips,D.map(x=>x[1]))}

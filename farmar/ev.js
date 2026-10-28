@@ -39,6 +39,7 @@ window.vEvid=function(){
   const SEC=[];
   if(CAN("ev"))SEC.push(["zap","🧾","Náklady a výnosy","PHM, nákupy, služby, servis – zápis s dátumom, strojom a poľom"]);
   if(CAN("ev_doch"))SEC.push(["doch","🗓️","Dochádzka",OWN()?"dni, dovolenka, PN, pole, víkendy, nadčasy":"zapíš dni, pole, víkendy a nadčasy – bez peňazí"]);
+  if(!OWN()&&CAN("ev_mzdy"))SEC.push(["mzdy","💶","Výplaty podľa zákona","hrubá → odvody → daň → čistá · cena práce · výplatné pásky"]);
   if(OWN())SEC.push(["mzdy","💶","Výplaty podľa zákona","hrubá → odvody → daň → čistá · cena práce · výplatné pásky"],["prehl","📊","Prehľad a výsledok","výnosy, náklady, mzdy, výsledok po mesiacoch"]);
   if(CAN("ev")||CAN("sklad"))SEC.splice(CAN("ev")?1:0,0,["sklad","📦","Sklad",CAN("ev")?"diely, materiál, náradie · odfoť bloček alebo súčiastku":"vziať diel do stroja · pridať na sklad"]);
   if(CAN("ev"))SEC.push(["vyk","🌾","Výkony","žatva po kombajnoch, vápnenie po podnikoch"]);
