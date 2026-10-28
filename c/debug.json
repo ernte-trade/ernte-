@@ -1,6 +1,6 @@
 [
  {
-  "q": "agricultural cooperative",
+  "q": "grain silos",
   "keys": [
    "batchcomplete",
    "continue",
@@ -9,191 +9,70 @@
   "n": 40,
   "lic": [
    [
-    "CC0",
-    4896,
-    3672,
+    "CC BY-SA 4.0",
+    5472,
+    3648,
+    "ent=original"
+   ],
+   [
+    "CC BY-SA 4.0",
+    4608,
+    2592,
+    "ent=original"
+   ],
+   [
+    "CC BY-SA 4.0",
+    8000,
+    4986,
+    "ent=original"
+   ],
+   [
+    "CC BY-SA 4.0",
+    4608,
+    2592,
+    "ent=original"
+   ],
+   [
+    "CC BY-SA 4.0",
+    4608,
+    3456,
+    "ent=original"
+   ],
+   [
+    "CC BY-SA 4.0",
+    4608,
+    3456,
+    "ent=original"
+   ]
+  ]
+ },
+ {
+  "q": "grain truck harvest",
+  "keys": [
+   "batchcomplete",
+   "continue",
+   "query"
+  ],
+  "n": 40,
+  "lic": [
+   [
+    "CC BY-SA 4.0",
+    6720,
+    4480,
     "ent=original"
    ],
    [
     "Public domain",
     4928,
-    3280,
+    3264,
     "ent=original"
    ],
    [
-    "No restrictions",
-    3146,
-    2461,
+    "CC BY 2.0 de",
+    2560,
+    1920,
     "ent=original"
    ],
-   [
-    "No restrictions",
-    3116,
-    2455,
-    "ent=original"
-   ],
-   [
-    "No restrictions",
-    3137,
-    2450,
-    "ent=original"
-   ],
-   [
-    "No restrictions",
-    3150,
-    2467,
-    "ent=original"
-   ]
-  ]
- },
- {
-  "q": "grain silos aerial",
-  "keys": [
-   "batchcomplete",
-   "query"
-  ],
-  "n": 13,
-  "lic": [
-   [
-    "CC BY-SA 2.0",
-    4288,
-    2848,
-    "ent=original"
-   ],
-   [
-    "CC BY 4.0",
-    4000,
-    2250,
-    "ent=original"
-   ],
-   [
-    "CC BY 3.0",
-    1795,
-    1197,
-    "ent=original"
-   ],
-   [
-    "CC BY-SA 4.0",
-    2688,
-    1792,
-    "ent=original"
-   ],
-   [
-    "CC BY-SA 2.5",
-    5108,
-    3139,
-    "ent=original"
-   ],
-   [
-    "CC BY-SA 3.0 de",
-    555,
-    800,
-    "ent=original"
-   ]
-  ]
- },
- {
-  "q": "wheat field aerial view",
-  "keys": [
-   "batchcomplete",
-   "query"
-  ],
-  "n": 38,
-  "lic": [
-   [
-    "CC0",
-    1173,
-    877,
-    "ent=original"
-   ],
-   [
-    "CC BY 3.0",
-    1850,
-    1200,
-    "ent=original"
-   ],
-   [
-    "CC BY-SA 2.0",
-    640,
-    480,
-    "ent=original"
-   ],
-   [
-    "CC BY-SA 2.0",
-    640,
-    477,
-    "ent=original"
-   ],
-   [
-    "CC BY-SA 2.0",
-    1024,
-    768,
-    "ent=original"
-   ],
-   [
-    "CC BY 3.0",
-    1024,
-    612,
-    "ent=original"
-   ]
-  ]
- },
- {
-  "q": "farm office",
-  "keys": [
-   "batchcomplete",
-   "continue",
-   "query"
-  ],
-  "n": 40,
-  "lic": [
-   [
-    "CC BY-SA 2.0",
-    640,
-    480,
-    "ent=original"
-   ],
-   [
-    "CC BY-SA 2.0",
-    640,
-    480,
-    "ent=original"
-   ],
-   [
-    "CC BY-SA 2.0",
-    1024,
-    776,
-    "ent=original"
-   ],
-   [
-    "CC BY-SA 4.0",
-    4000,
-    3000,
-    "ent=original"
-   ],
-   [
-    "CC BY-SA 2.0",
-    640,
-    480,
-    "ent=original"
-   ],
-   [
-    "CC BY 4.0",
-    6000,
-    4000,
-    "ent=original"
-   ]
-  ]
- },
- {
-  "q": "grain truck harvest field",
-  "keys": [
-   "batchcomplete",
-   "continue",
-   "query"
-  ],
-  "n": 40,
-  "lic": [
    [
     "CC BY-SA 4.0",
     4000,
@@ -202,128 +81,14 @@
    ],
    [
     "Public domain",
-    8042,
-    5361,
+    3264,
+    4743,
     "ent=original"
    ],
    [
     "Public domain",
-    5420,
-    3613,
-    "ent=original"
-   ],
-   [
-    "Public domain",
-    8256,
-    5504,
-    "ent=original"
-   ],
-   [
-    "Public domain",
-    8256,
-    5504,
-    "ent=original"
-   ],
-   [
-    "Public domain",
-    8256,
-    5504,
-    "ent=original"
-   ]
-  ]
- },
- {
-  "q": "semi-trailer truck grain",
-  "keys": [
-   "batchcomplete",
-   "query"
-  ],
-  "n": 27,
-  "lic": [
-   [
-    "CC0",
-    3783,
-    2530,
-    "ent=original"
-   ],
-   [
-    "CC0",
-    3929,
-    2534,
-    "ent=original"
-   ],
-   [
-    "CC BY-SA 3.0 au",
-    3648,
-    2736,
-    "ent=original"
-   ],
-   [
-    "CC BY-SA 3.0 au",
-    3648,
-    2736,
-    "ent=original"
-   ],
-   [
-    "CC BY 3.0",
-    4320,
-    3240,
-    "ent=original"
-   ],
-   [
-    "CC BY 2.0",
-    936,
-    779,
-    "ent=original"
-   ]
-  ]
- },
- {
-  "q": "truck loading wheat combine",
-  "keys": [
-   "batchcomplete",
-   "query"
-  ],
-  "n": 1,
-  "lic": [
-   [
-    "CC BY 2.0",
-    800,
-    600,
-    "ent=original"
-   ]
-  ]
- },
- {
-  "q": "tractor trailer grain transport",
-  "keys": [
-   "batchcomplete",
-   "query"
-  ],
-  "n": 4,
-  "lic": [
-   [
-    "CC BY 2.0",
-    936,
-    779,
-    "ent=original"
-   ],
-   [
-    "CC BY-SA 2.0",
-    640,
-    480,
-    "ent=original"
-   ],
-   [
-    "CC BY-SA 2.0",
-    640,
-    480,
-    "ent=original"
-   ],
-   [
-    "Public domain",
-    1772,
-    1841,
+    1600,
+    1060,
     "ent=original"
    ]
   ]
@@ -376,357 +141,141 @@
   ]
  },
  {
-  "q": "grain sample",
-  "keys": [
-   "batchcomplete",
-   "continue",
-   "query"
-  ],
-  "n": 40,
-  "lic": [
-   [
-    "CC0",
-    5472,
-    3648,
-    "ent=original"
-   ],
-   [
-    "CC0",
-    2000,
-    2000,
-    "ent=original"
-   ],
-   [
-    "CC0",
-    703,
-    701,
-    "ent=original"
-   ],
-   [
-    "CC0",
-    3900,
-    4800,
-    "ent=original"
-   ],
-   [
-    "CC BY-SA 3.0 de",
-    3616,
-    3584,
-    "ent=original"
-   ],
-   [
-    "Public domain",
-    2200,
-    1700,
-    "ent=original"
-   ]
-  ]
- },
- {
-  "q": "weighbridge truck",
-  "keys": [
-   "batchcomplete",
-   "continue",
-   "query"
-  ],
-  "n": 40,
-  "lic": [
-   [
-    "CC BY-SA 4.0",
-    3912,
-    2608,
-    "ent=original"
-   ],
-   [
-    "CC BY-SA 2.0",
-    640,
-    427,
-    "ent=original"
-   ],
-   [
-    "CC0",
-    4000,
-    3000,
-    "ent=original"
-   ],
-   [
-    "CC BY-SA 4.0",
-    3954,
-    2636,
-    "ent=original"
-   ],
-   [
-    "CC BY-SA 2.0",
-    640,
-    421,
-    "ent=original"
-   ],
-   [
-    "CC BY-SA 4.0",
-    4608,
-    3456,
-    "ent=original"
-   ]
-  ]
- },
- {
-  "q": "grain quality laboratory",
-  "keys": [
-   "batchcomplete",
-   "continue",
-   "query"
-  ],
-  "n": 40,
-  "lic": [
-   [
-    "No restrictions",
-    2896,
-    2296,
-    "ent=original"
-   ],
-   [
-    "No restrictions",
-    1713,
-    1194,
-    "ent=original"
-   ],
-   [
-    "CC BY-SA 4.0",
-    2048,
-    2048,
-    "ent=original"
-   ],
-   [
-    "CC BY 4.0",
-    1173,
-    1173,
-    "ent=original"
-   ],
-   [
-    "Public domain",
-    2300,
-    1700,
-    "ent=original"
-   ],
-   [
-    "Public domain",
-    2880,
-    1800,
-    "ent=original"
-   ]
-  ]
- },
- {
   "q": "combine harvester sunset",
   "keys": [
-   "error",
-   "servedby"
+   "batchcomplete",
+   "query"
   ],
-  "err": "Search is currently too busy. Please try again later.",
-  "n": 0,
-  "lic": []
+  "n": 10,
+  "lic": [
+   [
+    "CC BY 2.0",
+    1500,
+    1071,
+    "ent=original"
+   ],
+   [
+    "CC BY-SA 2.0",
+    3888,
+    2592,
+    "ent=original"
+   ],
+   [
+    "CC BY-SA 2.0",
+    3888,
+    2592,
+    "ent=original"
+   ],
+   [
+    "CC BY-SA 2.0",
+    3888,
+    2592,
+    "ent=original"
+   ],
+   [
+    "CC BY-SA 2.0",
+    640,
+    480,
+    "ent=original"
+   ],
+   [
+    "CC BY-SA 4.0",
+    7360,
+    4912,
+    "ent=original"
+   ]
+  ]
  },
  {
   "q": "combine harvester wheat field",
   "keys": [
-   "error",
-   "servedby"
-  ],
-  "err": "Search is currently too busy. Please try again later.",
-  "n": 0,
-  "lic": []
- },
- {
-  "q": "combine harvester unloading grain trailer",
-  "keys": [
    "batchcomplete",
+   "continue",
    "query"
   ],
-  "n": 2,
+  "n": 40,
   "lic": [
    [
     "CC BY-SA 2.0",
-    2592,
-    1936,
-    "ent=original"
-   ],
-   [
-    "CC BY-SA 4.0",
-    5184,
-    3888,
-    "ent=original"
-   ]
-  ]
- },
- {
-  "q": "Mähdrescher Ernte",
-  "keys": [
-   "batchcomplete",
-   "continue",
-   "query"
-  ],
-  "n": 40,
-  "lic": [
-   [
-    "CC BY-SA 3.0",
-    4000,
-    2655,
-    "ent=original"
-   ],
-   [
-    "CC BY-SA 3.0",
-    4000,
-    3000,
-    "ent=original"
-   ],
-   [
-    "CC BY-SA 3.0",
-    4000,
-    3000,
-    "ent=original"
-   ],
-   [
-    "CC BY-SA 3.0",
-    4000,
-    2655,
-    "ent=original"
-   ],
-   [
-    "CC BY-SA 3.0",
-    4000,
-    2655,
-    "ent=original"
-   ],
-   [
-    "CC BY-SA 3.0",
-    4000,
-    2655,
-    "ent=original"
-   ]
-  ]
- },
- {
-  "q": "farmer handshake field",
-  "keys": [
-   "error",
-   "servedby"
-  ],
-  "err": "Search is currently too busy. Please try again later.",
-  "n": 0,
-  "lic": []
- },
- {
-  "q": "farmers wheat field talking",
-  "keys": [
-   "batchcomplete",
-   "continue",
-   "query"
-  ],
-  "n": 40,
-  "lic": [
-   [
-    "No restrictions",
-    1606,
-    1012,
-    "ent=original"
-   ],
-   [
-    "CC BY-SA 2.0",
-    3264,
-    2448,
-    "ent=original"
-   ],
-   [
-    "Public domain",
-    4608,
-    2810,
-    "ent=original"
-   ],
-   [
-    "Public domain",
-    4863,
-    2735,
-    "ent=original"
-   ],
-   [
-    "Public domain",
-    4548,
-    2558,
-    "ent=original"
-   ],
-   [
-    "Public domain",
-    4700,
-    3235,
-    "ent=original"
-   ]
-  ]
- },
- {
-  "q": "grain silo truck loading",
-  "keys": [
-   "batchcomplete",
-   "query"
-  ],
-  "n": 2,
-  "lic": [
-   [
-    "CC BY 3.0",
-    3872,
-    2592,
-    "ent=original"
-   ],
-   [
-    "CC BY-SA 3.0",
-    4506,
-    3097,
-    "ent=original"
-   ]
-  ]
- },
- {
-  "q": "grain elevator",
-  "keys": [
-   "batchcomplete",
-   "continue",
-   "query"
-  ],
-  "n": 40,
-  "lic": [
-   [
-    "CC BY-SA 3.0",
-    1824,
-    1342,
-    "ent=original"
-   ],
-   [
-    "CC BY-SA 4.0",
-    2048,
-    1536,
-    "ent=original"
-   ],
-   [
-    "FAL",
-    4812,
-    4812,
-    "ent=original"
-   ],
-   [
-    "CC BY-SA 4.0",
-    3780,
-    2544,
-    "ent=original"
-   ],
-   [
-    "CC BY-SA 4.0",
-    4642,
-    3648,
+    640,
+    480,
     "ent=original"
    ],
    [
     "CC BY 4.0",
-    11648,
-    7768,
+    4123,
+    2655,
+    "ent=original"
+   ],
+   [
+    "CC BY-SA 2.0",
+    640,
+    425,
+    "ent=original"
+   ],
+   [
+    "CC BY-SA 3.0",
+    5144,
+    4761,
+    "ent=original"
+   ],
+   [
+    "CC BY-SA 2.0",
+    1280,
+    960,
+    "ent=original"
+   ],
+   [
+    "CC BY-SA 3.0",
+    4037,
+    2691,
+    "ent=original"
+   ]
+  ]
+ },
+ {
+  "q": "farmer handshake",
+  "keys": [
+   "batchcomplete",
+   "continue",
+   "query"
+  ],
+  "n": 40,
+  "lic": [
+   [
+    "CC BY-SA 4.0",
+    720,
+    480,
+    "ent=original"
+   ],
+   [
+    "Public domain",
+    4240,
+    2832,
+    "ent=original"
+   ],
+   [
+    "Public domain",
+    2832,
+    4240,
+    "ent=original"
+   ],
+   [
+    "Public domain",
+    2832,
+    4240,
+    "ent=original"
+   ],
+   [
+    "Public domain",
+    2832,
+    4240,
+    "ent=original"
+   ],
+   [
+    "Public domain",
+    3000,
+    1968,
     "ent=original"
    ]
   ]
