@@ -48,8 +48,14 @@ const PRESET={
  strojnik:{n:"Strojník / roľník",role:"dispatch",k:["praca","sklad","wx","big"]},
  manazer:{n:"Manažér obchodu",role:"admin",k:["req","price_view","price_edit","deals","farm","farm_login","calc","market","trans","remain","notes","wx","big"]},
  obchodnik:{n:"Obchodník",role:"admin",k:["req","price_view","deals","farm","farm_login","calc","market","trans","remain","notes","wx","big"]},
- fakt:{n:"Fakturácia",role:"invoice",k:["req","price_view","deals","farm","trans","remain","wx"]}};
-let PEOPLE=[],PPL=0;async function loadPeople(){PPL=1;try{const r=await sb.from("staff_cfg").select("value").eq("key","team_people").maybeSingle();if(r.data&&Array.isArray(r.data.value)&&r.data.value.length){PEOPLE=r.data.value;if(TAB==="team")renderStaff()}}catch(e){PPL=0}}
+ fakt:{n:"Fakturácia",role:"invoice",k:["req","price_view","deals","farm","trans","remain","wx"]},
+ evagro:{n:"Evidencia + Agro služby",role:"dispatch",k:["ev","ev_doch","sklad","praca","agro","wx","big"]},
+ evid:{n:"Iba Evidencia",role:"dispatch",k:["ev","ev_doch","sklad","praca","wx","big"]},
+ mzdy:{n:"Mzdy ERNTE (mzdárka)",role:"dispatch",k:["ev","ev_doch","ev_mzdy","wx","big"]}};
+/* noví ľudia (28. 10.) – ukážu sa v Tíme ako „ešte nemá prihlásenie“, kým im majiteľ nevytvorí prihlásenie a kód */
+const PEOPLE_X=[["tomas stofa","Tomáš Štofa","Evidencia · Agro služby","ERNTE","evagro"],["tomas valko","Tomáš Vaľko","Evidencia · Agro služby","ERNTE","evagro"],["kacur","Ľuboš Kačur","Evidencia","ERNTE","evid"]];
+function peopleX(){for(const x of PEOPLE_X)if(!PEOPLE.some(p=>p[0]===x[0]||norm(p[1]).includes(x[0])))PEOPLE.push(x)}
+let PEOPLE=PEOPLE_X.map(x=>x.slice()),PPL=0;async function loadPeople(){PPL=1;try{const r=await sb.from("staff_cfg").select("value").eq("key","team_people").maybeSingle();if(r.data&&Array.isArray(r.data.value)&&r.data.value.length){PEOPLE=r.data.value.slice();peopleX();if(TAB==="team")renderStaff()}}catch(e){PPL=0}}
 const FCAT=[["f_prices","Výkupné ceny (cenník)",""],["f_sell","Ponúknuť komoditu na predaj",""],["f_offer","Navrhnúť vlastnú cenu + fotky zo skladu",""],["f_deals","Moje obchody a dohodnutá cena",""],["f_remain","Zostatok na vývoz (koľko ešte odvezieme)",""],
  ["f_transport","Objednať odvoz",""],["f_trucks","Pridelené autá – ŠPZ, vodič, telefón",""],["f_gps","Poloha auta cestou na nakládku","len keď ju doprava zapne"],
  ["f_notes","Poznámky k vývozu (posielať a čítať)",""],["f_agro","Agro služby – cenník a objednávka prác strojmi",""],["f_wx","Počasie",""],["f_big","Veľké písmo a tlačidlá",""]];
