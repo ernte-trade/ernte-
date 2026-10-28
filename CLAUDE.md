@@ -30,3 +30,40 @@ Platí pre Claude aj ERNTE AI pri každej novej sekcii, záložke, funkcii alebo
 ## Nasadenie
 - Zvýšiť `CACHE` v `farmar/sw.js` a `?v=` pri zmenených skriptoch v `farmar/index.html`.
 - Push do `main` aj `gh-pages`.
+- **`?v=` je povinné** pri každom zmenenom skripte / štýle: service worker drží verziované súbory v pamäti telefónu
+  (cache-first, overenie na pozadí najviac raz za 6 h). Bez zvýšenia `?v=` sa zmena k ľuďom dostane až o niekoľko hodín.
+- Každý commit: autor `ERNTE Trade <report.valko@gmail.com>`, committer `Claude <noreply@anthropic.com>`. Históriu `main` neprepisovať
+  (bot „Trhové ceny“ do nej zapisuje).
+
+## Stav projektu (pamäť pre každý nový rozhovor – čítaj ako prvé)
+Hlavná pamäť projektu je tento repozitár. Telefóny (Samsung Galaxy Z Fold, iPhone) sú iba zariadenia na používanie –
+Claude k ich úložisku nemá prístup. Pokračovať sa dá v tom istom rozhovore na hocijakom zariadení, alebo v novom rozhovore
+s pripojeným repozitárom `ernte-trade/ernte-`.
+
+- **Aplikácia:** ERNTE Trade & Logistic (PWA) – `https://ernte-trade.github.io/ernte-/farmar/`, zdroj v `farmar/`, nasadzuje sa z `gh-pages`.
+- **Databáza:** Supabase; zmeny iba zašifrovanými migráciami v `farmar/supabase/auto/` (heslo má majiteľ / tajomstvo v GitHube, nikdy nie v repozitári ani v chate).
+- **Majiteľ:** Martin Vaľko (ERNTE spol. s r.o., VALKO s.r.o.). Komunikácia po slovensky, chce hotové a otestované veci, nasadené hneď.
+
+### Hotové (október 2026)
+- Moderný vzhľad (`ui.css`, písmo Geist), podpora iPhone/iPad/Android/PC, inštalácia na plochu (`installapp.js`, manifest).
+- Podmienky a bonusy pre každého farmára (`fterms.js`, ⚙️ pri farmárovi).
+- Prepínač „👁 Pozrieť ako konkrétny človek“ (záložka Test, iba Martin a ERNTE spol.), iba na čítanie.
+- Predikcia, Test, Kalendár: iba Martin a ERNTE spol. (`MAIN_OK()`), nie Jana.
+- Kalendár majiteľa (`cal.js`): pripomienky do mobilu (pg_cron `ernte-kalendar`), hlasové pripomienky (diktovanie, záznamník),
+  žiadosti o stretnutie od používateľov z voľných termínov (prednostne 8–13).
+- Skrytie automatických upozornení potiahnutím doľava / ✕ (`dismiss.js`, iba majitelia; vrátia sa pri novej informácii).
+- Úvodná obrazovka (`welcome.js`): reálna fotka podľa roly (Wikimedia Commons, autor a licencia na fotke; farmár a trus fotky od majiteľa),
+  živé panely (hodiny, počasie s grafom, KPI a grafy podľa roly), **naše nákupné ceny obnovované automaticky podľa automatického cenníka**
+  (`autocennik.js` → tabuľka `prices`, každých 30 s, ▲/▼ od poslednej návštevy), vtipy, trúbenie.
+  Pravidlá: zobrazí sa vždy po prihlásení / otvorení a po návrate z pozadia (≥ 30 s, nie počas rozpísaného formulára);
+  **žiadne „Dnes už neukazovať“**; „Poďme na to →“ vždy otvorí pridelené sekcie (Prehľad, inak prvá záložka).
+- Rýchlosť: service worker (`sw.js`) drží všetky súbory aplikácie v telefóne (`ernte-assets-1`), po otvorení ich stiahne vopred,
+  žiada trvalé úložisko. Údaje z databázy sa nikdy necachujú – vždy živé.
+- Automatický test živej aplikácie na 7 zariadeniach (`.github/e2e/`, výsledky zašifrované v vetve `e2e-results`).
+- Prezentácie (Claude Slides): majiteľ, farmár, kurací trus, Jana, Galajda, Ličko, Tóth.
+
+### Čaká / odložené
+- Povolenie na fotky Dominika Klacika (CLAAS) a potvrdenie práv k reklame Bio-Fer NATUR (úvod trusu).
+- Odložené majiteľom („k tomu sa vrátime“): upratanie karty upozornení, vlastná doména (app.ernte.sk), verejná web stránka, aplikácia vs. web.
+- Pozdrav s menom pri kuracom truse (ponúknuté).
+- Staršie: KROS, údaje firiem Agro-Somotor / Danube.
