@@ -76,8 +76,9 @@ s pripojeným repozitárom `ernte-trade/ernte-`.
 - Prezentácie (Claude Slides): majiteľ, farmár, kurací trus, Jana, Galajda, Ličko, Tóth.
 
 ### Čaká / odložené
-- Overiť, či databáza spracúva migrácie z `farmar/supabase/auto/` (od ~10:00 28. 10. nebol žiadny „Audit Claude“ ani push –
-  `Audit Claude 8 (bezpečnosť)` čaká). Bezpečnostná kontrola dát (RLS, anon, funkcie, úložisko) – dokončiť po výsledku auditu.
+- Databáza migrácie SPRACÚVA (Diagnostika → Automatické zmeny databázy, 28. 10. všetky ✅). Nefunguje ZÁPIS do GitHubu
+  (issues/komentáre): od ~09:56 28. 10. neodišlo žiadne upozornenie do mobilu a „Audit Claude 8/9“ neprišli. Príčinu ukáže
+  riadok „GitHub – zápis“ v Diagnostike (gh_diag) – majiteľ ju pošle tlačidlom 📋 Kopírovať. Potom dokončiť bezpečnostný audit.
 - Povolenie na fotky Dominika Klacika (CLAAS) a potvrdenie práv k reklame Bio-Fer NATUR (úvod trusu).
 - Odložené majiteľom („k tomu sa vrátime“): upratanie karty upozornení, vlastná doména (app.ernte.sk), verejná web stránka, aplikácia vs. web.
 - Pozdrav s menom pri kuracom truse (ponúknuté).
