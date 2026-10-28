@@ -102,9 +102,9 @@ const SPRAD=[["🇸🇰","Expres","playlist/1sri3NOK9SPtrmUq7ActiX"],["🇸🇰"
  ["🇵🇱","RMF FM","playlist/0yZYV1gwGmZjx1Of1TXbHN"],["🇵🇱","ESKA·ZET","playlist/3veBbD2WYsf803JjKKK2UM"],["🇺🇦","Хіт FM","playlist/0qsBS4nvAHvxe0YeDrXzvj"],["🇺🇦","Hot Hits UA","playlist/37i9dQZF1DX1V3tM4cuX0v"]];
 function spRef(){try{return localStorage.getItem(SPK)||SPDEF}catch(x){return SPDEF}}
 function spParse(u){const m=String(u||"").match(/open\.spotify\.com\/(?:intl-[a-z-]+\/)?(?:embed\/)?(playlist|album|track|artist|show|episode)\/([A-Za-z0-9]{10,})/)||String(u||"").match(/spotify:(playlist|album|track|artist|show|episode):([A-Za-z0-9]{10,})/);return m?m[1]+"/"+m[2]:null}
-/* komu Spotify: Martin + vybraní (podľa mena v tíme, bez diakritiky) */
+/* komu Spotify: celý tím ERNTE/VALKO (každý zamestnanec v aplikácii); farmári a partnerské firmy trusu nie */
 const SPWHO=[["jana"],["galajda"],["licko"],["toth"],["tomas","stofa"],["tomas","valko"]];
-function spotOK(k){if(k==="ja")return true;if(typeof FARMER!=="undefined"&&FARMER)return false;
+function spotOK(k){if(k==="ja")return true;if(typeof FARMER!=="undefined"&&FARMER)return false;if(window.ERNTE_KIND!=="trus"&&typeof ROLE!=="undefined"&&ROLE)return true;/* celý tím (zamestnanci); farmári a partneri trusu nie */
   const raw=((typeof ME!=="undefined"&&ME&&(ME.staffName||""))+" "+(typeof ME!=="undefined"&&ME&&ME.email||"")).toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"");
   const T=raw.split(/[^a-z0-9]+/);return SPWHO.some(ws=>ws.every(w=>T.includes(w)))}
 function spot(){const r=spRef(),cur=SPRAD.find(x=>x[2]===r);return `<div class="whc whsp"><div class="wsph"><div class="wspt"><small>🎵 Rádio · Spotify</small><b>${cur?`<i>${cur[0]}</i> <span>${E(cur[1])}</span>`:"<span>Môj playlist</span>"}</b></div><span><a class="wspo" href="https://open.spotify.com/${r}" target="_blank" rel="noopener">Spotify ↗</a><button type="button" class="wspc" data-spchg>Zmeniť</button></span></div>
