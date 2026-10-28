@@ -2,20 +2,25 @@ name: health
 on:
   repository_dispatch:
     types: [ernte-health]
+permissions:
+  contents: write
 jobs:
   h:
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
+      - uses: actions/checkout@v4
       - name: Kontrola dostupnosti (iba stavové kódy)
         run: |
           K="sb_publishable_AOel6p4QZFP_-t4sSoziAA_ESUooutQ"
           U="https://cflliscddsgleyeykzje.supabase.co"
-          for i in 1 2 3; do
+          ( for i in 1 2 3; do
             echo "pages: $(curl -s -o /dev/null -w '%{http_code} %{time_total}s' https://ernte-trade.github.io/ernte-/farmar/)"
             echo "sw: $(curl -s -w ' %{http_code}' https://ernte-trade.github.io/ernte-/farmar/sw.js | grep -o 'ernte-v[0-9]*\| [0-9]*$' | tr '\n' ' ')"
             echo "auth health: $(curl -s -o /dev/null -w '%{http_code} %{time_total}s' -H "apikey: $K" $U/auth/v1/health)"
             echo "rest prices: $(curl -s -o /dev/null -w '%{http_code} %{time_total}s' -H "apikey: $K" "$U/rest/v1/prices?select=com&limit=1")"
             echo "rest root: $(curl -s -o /dev/null -w '%{http_code} %{time_total}s' -H "apikey: $K" "$U/rest/v1/")"
             sleep 5
-          done
+          done ) | tee out.txt
+          git config user.name bot; git config user.email bot@users.noreply.github.com
+          git checkout --orphan health-results; git rm -rfq . >/dev/null; date -u > t.txt; git add out.txt t.txt; git commit -qm health; git push -fq origin health-results
