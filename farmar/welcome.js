@@ -164,7 +164,7 @@ async function show(force){const k=kind();if(!k||document.querySelector(".wlc"))
   const por=innerHeight>innerWidth*1.1;if(por)el.classList.add("por");
   el.innerHTML=`${scene(k,ph,por)}<div class="wlb"><img src="icon-192.png" alt=""><div class="wlt"><small>${E(tag)}</small><b>${g}</b><p>${E(sub)}</p>${joke?`<p class="wjk">😄 <span>${E(joke)}</span></p>`:""}<ul class="wlf"></ul>
    <div class="wla"><button type="button" class="lime" data-wlgo>Poďme na to →</button><button type="button" class="wmore" data-wljoke>😂 Ďalší vtip</button></div></div></div>
-   <div class="wltap">${new Date().toLocaleDateString("sk-SK",{weekday:"long",day:"numeric",month:"long"})}</div>`;
+   <button type="button" class="wlx" data-wlx aria-label="Zavrieť a pokračovať">✕</button><div class="wltap">${new Date().toLocaleDateString("sk-SK",{weekday:"long",day:"numeric",month:"long"})}</div>`;
   document.body.appendChild(el);
   const nextJoke=ev=>{if(ev){ev.preventDefault();ev.stopPropagation()}const now=Date.now();if(nextJoke.t&&now-nextJoke.t<500)return;nextJoke.t=now;
     let n=ji;if(FL.length>1)while(n===ji)n=Math.floor(Math.random()*FL.length);ji=n;
@@ -181,7 +181,7 @@ async function show(force){const k=kind();if(!k||document.querySelector(".wlc"))
     if(ev.target.closest(".wcred"))return;
     if(ev.target.closest(".whc")){const c=ev.target.closest(".whc");c.classList.remove("wtap");void c.offsetWidth;c.classList.add("wtap");honk(false);confetti(el,ev.clientX,ev.clientY);if(navigator.vibrate)try{navigator.vibrate(20)}catch(x){}return}
     if(ev.target.closest("[data-wlgo]"))return;
-    if(ev.target.closest(".wimg")&&!ev.target.closest("a")){honk(false);confetti(el,ev.clientX,ev.clientY)}});
+    if(ev.target.closest("[data-wlx]")||!ev.target.closest(".wlb")&&!ev.target.closest(".whc")&&!ev.target.closest("a")){if(!el._gone){el._gone=1;close(el);goHome()}}});
   el.addEventListener("keydown",ev=>{if(ev.key==="Escape"||ev.key==="Enter"&&!ev.target.closest("button")){ev.preventDefault();if(!el._gone){el._gone=1;close(el);goHome()}}});
   setTimeout(()=>{try{el.querySelector("[data-wlgo]").focus({preventScroll:true})}catch(x){}},400)}
 /* „Poďme na to“ → vždy do pridelených sekcií (Prehľad / prvá záložka používateľa) */
@@ -306,6 +306,7 @@ html.wlon,html.wlon body{overflow:hidden}
 @media (max-height:640px){.wlc.por .wspk{height:20px}.wlc.por .whbars{height:24px}.wclk{font-size:1.2rem}}
 @media (min-width:900px){.whud{left:auto;right:28px;top:calc(56px + env(safe-area-inset-top,0px));width:420px}.wclk{font-size:2rem}}
 .wltap{z-index:3}
+.wlx{position:absolute;z-index:5;top:calc(10px + env(safe-area-inset-top,0px));left:12px;width:44px;height:44px;min-height:44px!important;padding:0!important;border-radius:50%!important;background:rgba(5,8,22,.6)!important;border:1px solid rgba(255,255,255,.3)!important;color:#fff;font-size:1.1rem}
 .wpst{margin-top:6px;font:500 .6rem/1.3 "Geist Mono",ui-monospace,monospace;color:#c9d1e3;opacity:.85;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .wpc b sup,.whu sup{font:700 .58rem/1 "Geist Mono",ui-monospace,monospace;margin-left:3px;vertical-align:super}.wup{color:#b6ff3b}.wdn{color:#fda4af}
 .wfl{animation:wflash 1.6s ease}@keyframes wflash{0%,30%{background:rgba(182,255,59,.35);border-radius:8px}100%{background:transparent}}

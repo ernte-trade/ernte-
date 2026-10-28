@@ -800,7 +800,7 @@ html[data-theme=light] .ftbl th{color:#0f172a}html[data-theme=light] .fdban{colo
 .rst{display:inline-block;margin-top:4px;font-style:normal;font-size:.7rem;font-weight:700;padding:3px 8px;border-radius:999px;background:rgba(148,163,184,.18);white-space:nowrap}.rst.on{background:rgba(182,255,59,.2);color:#d9ff9a}.rst.fut{background:rgba(94,234,212,.18);color:#99f6e4}
 .rdel{min-width:40px;min-height:40px;padding:0;border-radius:10px}
 </style>
-<script>/* NÚDZOVÁ OPRAVA 28.10.: zmaže poškodené uložené súbory z rýchlej verzie a načíta aplikáciu znova */(async()=>{try{if(!("caches" in window))return;const k=await caches.keys();if(!k.some(x=>x.indexOf("ernte-assets")===0))return;await Promise.all(k.map(x=>caches.delete(x)));const R=navigator.serviceWorker?await navigator.serviceWorker.getRegistrations():[];await Promise.all(R.map(r=>r.unregister()));if(!sessionStorage.getItem("ernte-fix1")){sessionStorage.setItem("ernte-fix1","1");location.reload()}}catch(e){}})()</script>
+<script>/* NÚDZOVÁ OPRAVA 28.10.: raz na každom zariadení zmaže všetky uložené súbory aplikácie a service worker, potom načíta aplikáciu čisto zo servera */(async()=>{try{var K="ernte-clean-2810b";if(localStorage.getItem(K))return;localStorage.setItem(K,"1");if("caches" in window){const k=await caches.keys();await Promise.all(k.map(x=>caches.delete(x)))}if(navigator.serviceWorker){const R=await navigator.serviceWorker.getRegistrations();await Promise.all(R.map(r=>r.unregister()))}location.reload()}catch(e){}})()</script>
 <script>try{if(localStorage.getItem('ernte-theme')==='light')document.documentElement.dataset.theme='light'}catch(e){}</script>
 <link rel="stylesheet" href="perms.css?v=20261026-1955">
 <link rel="stylesheet" href="trus.css?v=20261027-0140">
@@ -2886,7 +2886,7 @@ document.addEventListener("click",e=>{const b=e.target.closest("[data-dfp]");if(
 <script src="testview.js?v=20261028-1130"></script>
 <script src="cal.js?v=20261028-1500"></script>
 <script src="dismiss.js?v=20261028-1200"></script>
-<script src="welcome.js?v=20261028-1500"></script>
+<script src="welcome.js?v=20261028-1510"></script>
 <script src="odb.js?v=20261027-1600"></script>
 <script src="zdash.js?v=20261027-1620"></script>
 <script src="contract.js?v=20261027-0050"></script>
