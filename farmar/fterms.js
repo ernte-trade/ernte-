@@ -33,7 +33,7 @@ function farmerCard(){if(!MY)return "";const L=[];
   if(hasBon(MY)&&active(MY))L.push(["🎁","Bonus",(+MY.bonus._all?`+${F2(+MY.bonus._all)} €/t na všetky komodity`:"podľa komodity – vidíte ho pri cenách")+(MY.bonus_do?` · do ${E(dSK(MY.bonus_do))}`:"")]);
   if(MY.note_farmer)L.push(["📝","Dohoda",E(MY.note_farmer)]);
   if(!L.length)return "";
-  return `<div class="card ftcard" data-ftc="1"><div class="t">🤝 Vaše podmienky s ERNTE</div>${L.map(x=>`<div class="ftl"><span>${x[0]}</span><div><small>${x[1]}</small><b>${x[2]}</b></div></div>`).join("")}<div class="s">Individuálne podmienky dohodnuté s ERNTE. Platia pre nové obchody.</div></div>`}
+  return `<div class="card ftcard" data-ftc="1"><div class="t">🤝 Vaše podmienky s ERNTE</div>${L.map(x=>`<div class="ftrw"><span>${x[0]}</span><div><small>${x[1]}</small><b>${x[2]}</b></div></div>`).join("")}<div class="s">Individuálne podmienky dohodnuté s ERNTE. Platia pre nové obchody.</div></div>`}
 
 /* ---------- TÍM: tlačidlo pri každom farmárovi ---------- */
 function deco(){if(!staffOK())return;const app=document.getElementById("app");if(!app)return;
@@ -86,8 +86,8 @@ document.addEventListener("submit",async e=>{const fm=e.target;if(fm.id!=="fFT")
 
 function css(){if(document.getElementById("ftcss"))return;const s=document.createElement("style");s.id="ftcss";s.textContent=`
 .ftb{grid-column:1/-1;margin-top:6px;padding:8px 12px;border-radius:12px;font-size:.84rem;background:linear-gradient(135deg,rgba(52,211,153,.16),rgba(34,211,238,.08));border:1px solid rgba(52,211,153,.4);color:var(--ink)}
-.ftb b{color:#6ee7b7}.ftcard .t{margin-bottom:8px}.ftl{display:grid;grid-template-columns:34px 1fr;gap:8px;align-items:start;padding:8px 0;border-top:1px solid var(--line)}.ftl:first-of-type{border-top:0}
-.ftl>span{font-size:1.2rem;text-align:center}.ftl small{display:block;color:var(--muted);font-size:.72rem;letter-spacing:.06em;text-transform:uppercase;font-weight:600}.ftl b{font-weight:600}
+.ftb b{color:#6ee7b7}.ftcard .t{margin-bottom:8px}.ftrw{display:grid;grid-template-columns:34px 1fr;gap:8px;align-items:start;padding:8px 0;border-top:1px solid var(--line)}.ftrw:first-of-type{border-top:0}
+.ftrw>span{font-size:1.2rem;text-align:center}.ftrw small{display:block;color:var(--muted);font-size:.72rem;letter-spacing:.06em;text-transform:uppercase;font-weight:600}.ftrw b{font-weight:600}
 .ftpill{color:#6ee7b7}.ftbtn{white-space:nowrap}
 html.ftlock,html.ftlock body{overflow:hidden}
 .ftmod{position:fixed;inset:0;z-index:3000;background:rgba(2,6,23,.62);-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);display:flex;align-items:flex-end;justify-content:center;padding:0}
