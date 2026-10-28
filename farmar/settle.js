@@ -52,6 +52,29 @@ async function savePaste(b){const P=Z.paste;if(!P.data||!P.data.length)return;bu
   else{r=await sb.from("wheat_prices").upsert(P.data.map(x=>({...x,updated_at:new Date().toISOString()})));busy(b,false);if(r.error){toast("Chyba: "+r.error.message,7000);return}toast(`✓ Ceny pšenice pre ${P.data.length} zmlúv uložené.`)}
   P.txt="";P.prev=null;P.data=null;Z.C=null;Z.rep=null;renderStaff()}
 // --- zúčtovanie farmára ---
+// zoznam farmárov pri písaní – prekreslí sa iba zoznam (obrazovka neskáče, klávesnica ostane otvorená)
+function zflList(){const q=nz(Z.fq);const F=(STATE.farmers||[]).filter(f=>String(f.name||"").trim()).sort((a,b)=>String(a.name).localeCompare(String(b.name),"sk"));
+  const L=q?F.filter(f=>nz(f.name+" "+(f.code||"")+" "+(f.ico||"")).includes(q)).slice(0,40):[];
+  return L.length?`<div class="zfl">${L.map(f=>`<button type="button" data-zfarm="${esc(f.id)}"><b>${esc(f.name)}</b><small>${esc([f.code,f.ico&&"IČO "+f.ico].filter(Boolean).join(" · "))}</small></button>`).join("")}</div>`:`<div class="s">${q?"Nikto taký – skús časť mena, ID alebo IČO.":"Napíš meno farmára, jeho ID alebo IČO."}</div>`}
+// lístky farmára bez zmluvy → vytvoriť zmluvu na dodané množstvo
+async function loadNoc(fid){const r=await sb.from("deliveries").select("ticket,com,day,gross_kg,net_kg").eq("farmer_id",fid).is("deal_id",null).order("day");Z.noc=Z.noc||{};Z.noc[fid]=r.error?{err:r.error.message}:r.data||[];renderStaff()}
+function nocHTML(F){Z.noc=Z.noc||{};const N=Z.noc[F.id];if(N===undefined){Z.noc[F.id]=null;loadNoc(F.id);return ""}if(!N||N.err||!N.length)return "";
+  const G={};N.forEach(x=>{const k=x.com||"?";(G[k]=G[k]||[]).push(x)});
+  return `<div class="card zno"><b class="sth">⚠️ Lístky bez zmluvy</b><div class="s">Tieto dodávky nemajú kúpnu zmluvu, preto nie sú v zúčtovaní. Vytvor zmluvu presne na dodané množstvo – lístky sa k nej hneď priradia.</div>
+   ${Object.entries(G).map(([k,L])=>{const t=Math.round(L.reduce((a,x)=>a+(+(x.gross_kg??x.net_kg)||0),0)/10)/100,d0=L[0].day,d1=L[L.length-1].day;
+     return `<form class="znoc" data-znoc="${esc(k)}"><div class="w"><b>${esc(comName(k))}</b> · ${L.length} ${L.length===1?"lístok":L.length<5?"lístky":"lístkov"} · <b>${fmt(t,2)} t</b> · ${esc(dSK(d0))}${d1!==d0?" – "+esc(dSK(d1)):""}<small>${L.slice(0,8).map(x=>esc(x.ticket)).join(", ")}${L.length>8?" …":""}</small></div>
+      <label>Množstvo t<input name="tons" inputmode="decimal" value="${String(t).replace(".",",")}" required></label><label>Cena €/t<input name="price" inputmode="decimal" required placeholder="napr. 480"></label>
+      <div class="w btns"><button type="submit" class="pri">📄 Vytvoriť zmluvu na ${fmt(t,2)} t</button></div></form>`}).join("")}</div>`}
+document.addEventListener("submit",async e=>{const fm=e.target;if(!fm.dataset||fm.dataset.znoc==null)return;e.preventDefault();e.stopPropagation();if(fm._b)return;
+  const F=Z.C&&Z.C.farmer;if(!F)return;const com=fm.dataset.znoc,d=new FormData(fm),tons=num(d.get("tons")),price=num(d.get("price"));
+  if(!(tons>0)){toast("Zadaj množstvo v t.");return}if(!(price>0)){toast("Zadaj cenu €/t.");return}
+  const L=((Z.noc||{})[F.id]||[]).filter(x=>(x.com||"?")===com);if(!L.length)return;fm._b=1;const b=fm.querySelector("button[type=submit]");if(typeof busy==="function")busy(b,true);
+  try{const r=await sb.rpc("qd_save",{p:{farmer_id:F.id,farmar:{nazov:F.name},com,tons,price,od:L[0].day,do:L[L.length-1].day,miesto:"",note:"zmluva na dodané lístky bez zmluvy"}});if(r.error)throw r.error;
+    const a=await sb.rpc("deliveries_assign",{p_tickets:L.map(x=>x.ticket),p_farmer:F.id});if(a.error)throw a.error;
+    toast(`✓ Zmluva ${r.data&&r.data.no?r.data.no+" ":""}na ${fmt(tons,2)} t vytvorená, ${L.length} lístkov priradených. Farmárovi odišla na podpis.`,7000);
+    Z.noc[F.id]=undefined;Z.C=null;Z.L={};Z.com=com;Z.deal=r.data&&r.data.deal_id||"";renderStaff()}
+  catch(x){toast("Chyba: "+(x.message||x),7000)}finally{fm._b=0;if(typeof busy==="function")busy(b,false)}},true);
+
 function farmHTML(){const F=(STATE.farmers||[]).filter(f=>String(f.name||"").trim()).sort((a,b)=>String(a.name).localeCompare(String(b.name),"sk")),q=nz(Z.fq);
   const C=Z.C&&!Z.C.err?Z.C:null,K=C?C.contracts||[]:[],coms=[...new Set(K.map(k=>k.com))];
   if(C&&K.length){if(!coms.includes(Z.com))Z.com=coms[0];const KC=K.filter(k=>k.com===Z.com);if(!KC.some(k=>k.id===Z.deal))Z.deal=(KC.find(k=>k.remain_t>0.01)||KC[0]).id}
@@ -61,10 +84,11 @@ function farmHTML(){const F=(STATE.farmers||[]).filter(f=>String(f.name||"").tri
    <label>Číslo zmluvy<select id="zdeal">${K.filter(k=>k.com===Z.com).map(k=>`<option value="${esc(k.id)}"${k.id===Z.deal?" selected":""}>${esc(k.no)} · ${fmt(k.tons,0)} t${k.remain_t<=0.01?" ✓":""}</option>`).join("")}</select></label>`:""}
    <label>Dátum od<input type="date" id="zd0" value="${esc(Z.d0)}"></label><label>Dátum do<input type="date" id="zd1" value="${esc(Z.d1)}"></label>
    ${Z.d0||Z.d1?`<div class="w btns"><button type="button" data-zclr="1">✕ Celá zmluva (bez dátumu)</button></div>`:`<div class="w s">Bez dátumu = celá zmluva. Zadaj od–do, ak zúčtovávaš len časť dodávok (napr. za týždeň).</div>`}</div>`;
-  if(!Z.farm){const L=q?F.filter(f=>nz(f.name+" "+(f.code||"")).includes(q)).slice(0,30):[];return h+(L.length?`<div class="zfl">${L.map(f=>`<button type="button" data-zfarm="${esc(f.id)}"><b>${esc(f.name)}</b><small>${esc(f.code||"")}</small></button>`).join("")}</div>`:`<div class="s">Napíš meno farmára alebo jeho ID.</div>`)}
+  if(!Z.farm)return h+`<div id="zflBox">${zflList()}</div>`;
   if(!Z.C){loadC();return h+`<div class="card"><div class="s">Počítam zúčtovanie…</div></div>`}if(Z.C.err)return h+`<div class="card"><div class="s">${/settle_contracts/.test(Z.C.err)?"Zúčtovanie sa zapne po aktualizácii databázy (pár minút).":esc(Z.C.err)}</div></div>`;
   const f=C.farmer||{};h+=`<div class="card zfh"><div><b>${esc(f.name||"")}</b><small>${esc([f.code,f.addr,f.phone].filter(Boolean).join(" · "))}</small></div><button type="button" data-zfarm="">Iný farmár</button></div>`;
-  if(!K.length)return h+`<div class="card"><div class="s">Farmár nemá žiadnu zmluvu.</div></div>`;
+  h+=nocHTML(f);
+  if(!K.length)return h+`<div class="card"><div class="s">Farmár nemá žiadnu zmluvu.${(Z.noc||{})[f.id]&&(Z.noc[f.id]||[]).length?" Vytvor ju vyššie z jeho lístkov.":""}</div></div>`;
   const k=K.find(x=>x.id===Z.deal);if(!k)return h;const LA=Z.L[k.id];if(!LA){loadL(k.id).then(renderStaff);return h+`<div class="card"><div class="s">Načítavam lístky…</div></div>`}
   const P=periodOf(LA),S=sumL(P),A=sumL(LA),per=Z.d0||Z.d1,over=k.remain_t<0,kg=LA[0]&&LA[0].kg_mode;
   const st=k.last&&over&&-k.remain_t>tolOf(k)?`Fakturuje sa celé dodané množstvo (${fmt(k.delivered_t,2)} t) – posledná zmluva prekročená o ${fmt(-k.remain_t,0)} t`:`Fakturuje sa podľa zmluvy (${fmt(k.delivered_t,2)} t)`;
@@ -155,7 +179,7 @@ document.addEventListener("click",async e=>{if(typeof ROLE==="undefined"||ROLE!=
   if(x=t.closest("[data-zpk]")){Z.paste.kind=x.dataset.zpk;Z.paste.prev=null;renderStaff();return}
   if(t.closest("[data-zprev]")){preview();return}
   if(x=t.closest("[data-zsave]")){await savePaste(x);return}
-  if(x=t.closest("[data-zfarm]")){Z.farm=x.dataset.zfarm;Z.C=null;Z.L={};Z.open=null;Z.com="";Z.deal="";if(!Z.farm)Z.fq="";renderStaff();return}
+  if(x=t.closest("[data-zfarm]")){if(x.dataset.zfarm){const ff=(STATE.farmers||[]).find(y=>y.id===x.dataset.zfarm);if(ff)Z.fq=ff.name}Z.farm=x.dataset.zfarm;Z.C=null;Z.L={};Z.open=null;Z.com="";Z.deal="";if(!Z.farm)Z.fq="";renderStaff();return}
   if(x=t.closest("[data-zopen]")){const id=x.dataset.zopen;Z.open=Z.open===id?null:id;renderStaff();if(Z.open&&!Z.L[id]){await loadL(id);renderStaff()}return}
   if(x=t.closest("[data-zpdf]")){const id=x.dataset.zpdf,k=Z.C&&Z.C.contracts.find(y=>y.id===id);if(!k)return;const L=periodOf(Z.L[id]||await loadL(id));openPdf(pdfHTML(Z.C.farmer,k,L));return}
   if(x=t.closest("[data-zwa]")){const k=Z.C&&Z.C.contracts.find(y=>y.id===x.dataset.zwa),F=Z.C&&Z.C.farmer;if(!k||!F)return;const tel=String(F.phone||"").replace(/\D/g,"").replace(/^00/,"").replace(/^0/,"421");
@@ -167,7 +191,9 @@ document.addEventListener("click",async e=>{if(typeof ROLE==="undefined"||ROLE!=
 document.addEventListener("change",e=>{if(e.target.id==="zcom"){Z.com=e.target.value;Z.deal="";renderStaff();return}if(e.target.id==="zdeal"){Z.deal=e.target.value;renderStaff();return}
   if(e.target.id==="zd0"||e.target.id==="zd1"){Z[e.target.id.slice(1)]=e.target.value;Z.rep=null;if(Z.sec==="farm"){renderStaff();return}Z.L={};if(Z.open&&Z.C)loadL(Z.open).then(renderStaff);else renderStaff()}
   if(e.target.id==="zfq"){const v=nz(e.target.value),f=(STATE.farmers||[]).find(x=>nz(x.name)===v||nz(x.code)===v);if(f){Z.farm=f.id;Z.fq=f.name;Z.C=null;Z.L={};Z.com="";Z.deal="";renderStaff()}}});
-document.addEventListener("input",e=>{if(e.target.id==="zfq"){Z.fq=e.target.value;if(Z.farm&&Z.C&&Z.C.farmer&&nz(Z.fq)!==nz(Z.C.farmer.name)){Z.farm="";Z.C=null;Z.L={};Z.com="";Z.deal=""}clearTimeout(e.target._t);e.target._t=setTimeout(()=>{if(Z.farm)return;renderStaff();const i=document.getElementById("zfq");if(i){i.focus();i.setSelectionRange(i.value.length,i.value.length)}},300)}
+document.addEventListener("input",e=>{if(e.target.id==="zfq"){Z.fq=e.target.value;
+    if(Z.farm&&Z.C&&Z.C.farmer&&nz(Z.fq)!==nz(Z.C.farmer.name)){Z.farm="";Z.C=null;Z.L={};Z.com="";Z.deal="";renderStaff();const i=document.getElementById("zfq");if(i){i.focus();i.setSelectionRange(i.value.length,i.value.length)}return}
+    clearTimeout(e.target._t);e.target._t=setTimeout(()=>{if(Z.farm)return;const bx=document.getElementById("zflBox");if(bx)bx.innerHTML=zflList()},150)}
   if(e.target.id==="zpTxt")Z.paste.txt=e.target.value});
 document.addEventListener("submit",async e=>{if(e.target.id!=="fZbc")return;e.preventDefault();e.stopPropagation();const fm=e.target;if(fm._b)return;const d=new FormData(fm),t=num(d.get("tons"));if(!(t>0)){toast("Zadaj množstvo v t.");return}if(!String(d.get("buyer")||"").trim()){toast("Zadaj odberateľa.");return}fm._b=1;
   const r=await sb.from("buy_contracts").insert({buyer:String(d.get("buyer")).trim(),com:d.get("com"),no:d.get("no")||null,tons:t,price:isFinite(num(d.get("price")))?num(d.get("price")):null,d0:d.get("d0")||null,d1:d.get("d1")||null});
@@ -200,3 +226,6 @@ try{Object.assign(HELP,{zuct:{t:"Zúčtovanie",i:"🧾",r:"Zúčtovanie farmáro
  ["Farmár","Ťukni Zúčtovanie farmára, vyber farmára, otvor zmluvu, vytlač PDF alebo pošli súhrn cez WhatsApp."],
  ["Čo vidí farmár","Len svoje zmluvy, lístky, cenu a zúčtovanie. Nikdy predajnú cenu, odberateľa ani zisk."]]}})}catch(e){}
 })();
+;(function(){const s=document.createElement("style");s.textContent=`.zno{border-color:rgba(250,204,21,.5)!important;background:linear-gradient(135deg,rgba(250,204,21,.1),rgba(250,204,21,.03))!important}
+.znoc{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px;padding-top:10px;border-top:1px solid rgba(255,255,255,.1)}.znoc .w{grid-column:1/-1}.znoc label{display:grid;gap:4px;min-width:0}
+.znoc small{display:block;opacity:.75;margin-top:2px;word-break:break-word}@media (max-width:420px){.znoc{grid-template-columns:1fr}}`;document.head.appendChild(s)})();
