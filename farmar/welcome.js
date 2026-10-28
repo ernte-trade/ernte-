@@ -158,17 +158,23 @@ async function show(force){const k=kind();if(!k||document.querySelector(".wlc"))
   const ph=phase();const nm=k==="farmar"?(FARMER.name||""):k==="trus"?"":firstName((typeof ME!=="undefined"&&ME&&ME.staffName)||"");
   const who=k==="ja"?"Martin":nm;const g=`${GREET[ph]}${who?", "+E(who):""}!`;
   const FL=FUN[k]||FUN.tim;let ji=Math.floor(Date.now()/864e5)%FL.length;
-  const sub=k==="ja"?FL[ji]:(ROLE_TXT[k]||ROLE_TXT.tim)[1];const joke=k==="ja"?"":FL[ji];
+  const sub=k==="ja"?"Firma beží, čísla sú tu – poďme na to. 💪":(ROLE_TXT[k]||ROLE_TXT.tim)[1];const joke=FL[ji];
   const tag=k==="ja"?"majiteľ · ERNTE · VALKO":(ROLE_TXT[k]||ROLE_TXT.tim)[0];
   const el=document.createElement("div");el.className="wlc "+ph;el.setAttribute("role","dialog");el.setAttribute("aria-label","Úvod");
   const por=innerHeight>innerWidth*1.1;if(por)el.classList.add("por");
   el.innerHTML=`${scene(k,ph,por)}<div class="wlb"><img src="icon-192.png" alt=""><div class="wlt"><small>${E(tag)}</small><b>${g}</b><p>${E(sub)}</p>${joke?`<p class="wjk">😄 <span>${E(joke)}</span></p>`:""}<ul class="wlf"></ul>
    <div class="wla"><button type="button" class="lime" data-wlgo>Poďme na to →</button><button type="button" class="wmore" data-wljoke>😂 Ďalší vtip</button></div></div></div>
    <div class="wltap">${new Date().toLocaleDateString("sk-SK",{weekday:"long",day:"numeric",month:"long"})}</div>`;
-  document.body.appendChild(el);document.documentElement.classList.add("wlon");requestAnimationFrame(()=>el.classList.add("in"));
+  document.body.appendChild(el);
+  const nextJoke=ev=>{if(ev){ev.preventDefault();ev.stopPropagation()}const now=Date.now();if(nextJoke.t&&now-nextJoke.t<500)return;nextJoke.t=now;
+    let n=ji;if(FL.length>1)while(n===ji)n=Math.floor(Math.random()*FL.length);ji=n;
+    let w=el.querySelector(".wjk");if(!w){el.querySelector(".wlt p").insertAdjacentHTML("afterend",`<p class="wjk">😄 <span></span></p>`);w=el.querySelector(".wjk")}
+    w.querySelector("span").textContent=FL[ji];w.classList.remove("pop");void w.offsetWidth;w.classList.add("pop");
+    try{w.scrollIntoView({block:"nearest",behavior:"smooth"})}catch(x){}if(navigator.vibrate)try{navigator.vibrate(15)}catch(x){}};
+  const jb=el.querySelector("[data-wljoke]");if(jb){jb.addEventListener("click",nextJoke);jb.addEventListener("touchend",nextJoke,{passive:false})}document.documentElement.classList.add("wlon");requestAnimationFrame(()=>el.classList.add("in"));
   const hd=el.querySelector(".whud");let ck=0;if(hd){ck=clock(hd);el._ck=ck;wx(hd);try{kpis(k,hd)}catch(x){}el._px=pxLive(hd,k)}
   const f=await facts(k);const ul=el.querySelector(".wlf");if(ul&&f.length)ul.innerHTML=f.map(x=>`<li>${x}</li>`).join("");
-  el.addEventListener("click",ev=>{    if(ev.target.closest("[data-wljoke]")){ji=(ji+1)%FL.length;let p=el.querySelector(".wjk span");if(!p){el.querySelector(".wlt p").insertAdjacentHTML("afterend",`<p class="wjk">😄 <span></span></p>`);p=el.querySelector(".wjk span")}p.textContent=FL[ji];p.parentNode.classList.remove("pop");void p.parentNode.offsetWidth;p.parentNode.classList.add("pop");return}
+  el.addEventListener("click",ev=>{    if(ev.target.closest("[data-wljoke]"))return;
     if(ev.target.closest(".wcomb,.wtrac,.wtk1,.wtk2,.when")){const g=ev.target.closest(".wcomb,.wtrac,.wtk1,.wtk2,.when");g.classList.add("wboost");setTimeout(()=>g.classList.remove("wboost"),1500);honk(g.classList.contains("when"));confetti(el,ev.clientX,ev.clientY);if(navigator.vibrate)try{navigator.vibrate(30)}catch(x){}return}
     if(ev.target.closest(".wcred"))return;
     if(ev.target.closest(".whc")){const c=ev.target.closest(".whc");c.classList.remove("wtap");void c.offsetWidth;c.classList.add("wtap");honk(false);confetti(el,ev.clientX,ev.clientY);if(navigator.vibrate)try{navigator.vibrate(20)}catch(x){}return}
