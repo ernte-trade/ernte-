@@ -1,12 +1,12 @@
 // ===== 🌾 ÚVODNÁ OBRAZOVKA PO PRIHLÁSENÍ – animovaná scéna podľa toho, kto sa prihlásil =====
 // Majiteľ (Martin): osobný pozdrav, dnešné čísla, najbližšie stretnutie z kalendára, vtip dňa.
 // CEO, farmár, doprava, obchod, kurací trus, evidencia: vlastná scéna (kombajn, traktor, kamióny VALKO, silá, hydina, šanóny).
-// Ukáže sa raz pri každom otvorení aplikácie. Ťuknutím sa zavrie; „Dnes už neukazovať“ ju skryje do zajtra.
+// Ukáže sa vždy po prihlásení / otvorení aplikácie a po návrate do aplikácie (na pozadí aspoň 30 s; nie počas rozpísaného formulára).
+// „Poďme na to →“ vždy otvorí pridelené sekcie (Prehľad, inak prvá záložka používateľa).
 // Iba vzhľad – nič neukladá, žiadne údaje navyše (čísla sú tie, ktoré používateľ aj tak vidí).
 (function(){
 const E=s=>String(s==null?"":s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const today=()=>new Date().toLocaleDateString("sv-SE");
-const WV="3";const SKEY="ernte-welcome-shown"+WV,DKEY="ernte-welcome-off"+WV;
 const sGet=k=>{try{return sessionStorage.getItem(k)}catch(x){return null}},sSet=(k,v)=>{try{sessionStorage.setItem(k,v)}catch(x){}};
 const lGet=k=>{try{return localStorage.getItem(k)}catch(x){return null}},lSet=(k,v)=>{try{localStorage.setItem(k,v)}catch(x){}};
 const can_=k=>typeof can==="function"&&can(k);
@@ -154,7 +154,7 @@ async function facts(k){const L=[];try{const S=typeof STATE!=="undefined"?STATE:
  }catch(x){}return L}
 
 /* ---------- zobrazenie ---------- */
-async function show(force){const k=kind();if(!k)return;if(!force&&(sGet(SKEY)||lGet(DKEY)===today()||window.ERNTE_TEST||window.ERNTE_VIEWAS))return;sSet(SKEY,"1");
+async function show(force){const k=kind();if(!k||document.querySelector(".wlc"))return;if(window.ERNTE_TEST||window.ERNTE_VIEWAS||sGet("ernte-welcome-skip"))return;
   const ph=phase();const nm=k==="farmar"?(FARMER.name||""):k==="trus"?"":firstName((typeof ME!=="undefined"&&ME&&ME.staffName)||"");
   const who=k==="ja"?"Martin":nm;const g=`${GREET[ph]}${who?", "+E(who):""}!`;
   const FL=FUN[k]||FUN.tim;let ji=Math.floor(Date.now()/864e5)%FL.length;
@@ -163,17 +163,26 @@ async function show(force){const k=kind();if(!k)return;if(!force&&(sGet(SKEY)||l
   const el=document.createElement("div");el.className="wlc "+ph;el.setAttribute("role","dialog");el.setAttribute("aria-label","Úvod");
   const por=innerHeight>innerWidth*1.1;if(por)el.classList.add("por");
   el.innerHTML=`${scene(k,ph,por)}<div class="wlb"><img src="icon-192.png" alt=""><div class="wlt"><small>${E(tag)}</small><b>${g}</b><p>${E(sub)}</p>${joke?`<p class="wjk">😄 <span>${E(joke)}</span></p>`:""}<ul class="wlf"></ul>
-   <div class="wla"><button type="button" class="lime" data-wlgo>Poďme na to →</button><button type="button" class="wmore" data-wljoke>😂 Ďalší vtip</button><button type="button" class="wloff" data-wloff>Dnes už neukazovať</button></div></div></div>
+   <div class="wla"><button type="button" class="lime" data-wlgo>Poďme na to →</button><button type="button" class="wmore" data-wljoke>😂 Ďalší vtip</button></div></div></div>
    <div class="wltap">${new Date().toLocaleDateString("sk-SK",{weekday:"long",day:"numeric",month:"long"})}</div>`;
   document.body.appendChild(el);document.documentElement.classList.add("wlon");requestAnimationFrame(()=>el.classList.add("in"));
   const hd=el.querySelector(".whud");let ck=0;if(hd){ck=clock(hd);el._ck=ck;wx(hd);try{kpis(k,hd)}catch(x){}el._px=pxLive(hd,k)}
   const f=await facts(k);const ul=el.querySelector(".wlf");if(ul&&f.length)ul.innerHTML=f.map(x=>`<li>${x}</li>`).join("");
-  el.addEventListener("click",ev=>{if(ev.target.closest("[data-wloff]")){lSet(DKEY,today());close(el);return}
-    if(ev.target.closest("[data-wljoke]")){ji=(ji+1)%FL.length;let p=el.querySelector(".wjk span");if(!p){el.querySelector(".wlt p").insertAdjacentHTML("afterend",`<p class="wjk">😄 <span></span></p>`);p=el.querySelector(".wjk span")}p.textContent=FL[ji];p.parentNode.classList.remove("pop");void p.parentNode.offsetWidth;p.parentNode.classList.add("pop");return}
+  el.addEventListener("click",ev=>{    if(ev.target.closest("[data-wljoke]")){ji=(ji+1)%FL.length;let p=el.querySelector(".wjk span");if(!p){el.querySelector(".wlt p").insertAdjacentHTML("afterend",`<p class="wjk">😄 <span></span></p>`);p=el.querySelector(".wjk span")}p.textContent=FL[ji];p.parentNode.classList.remove("pop");void p.parentNode.offsetWidth;p.parentNode.classList.add("pop");return}
     if(ev.target.closest(".wcomb,.wtrac,.wtk1,.wtk2,.when")){const g=ev.target.closest(".wcomb,.wtrac,.wtk1,.wtk2,.when");g.classList.add("wboost");setTimeout(()=>g.classList.remove("wboost"),1500);honk(g.classList.contains("when"));confetti(el,ev.clientX,ev.clientY);if(navigator.vibrate)try{navigator.vibrate(30)}catch(x){}return}
     if(ev.target.closest(".wcred"))return;
     if(ev.target.closest(".whc")){const c=ev.target.closest(".whc");c.classList.remove("wtap");void c.offsetWidth;c.classList.add("wtap");honk(false);confetti(el,ev.clientX,ev.clientY);if(navigator.vibrate)try{navigator.vibrate(20)}catch(x){}return}
-    if(ev.target.closest("[data-wlgo]")||!ev.target.closest(".wlb"))close(el)})}
+    if(ev.target.closest("[data-wlgo]")){close(el);goHome();return}
+    if(ev.target.closest(".wimg")&&!ev.target.closest("a")){honk(false);confetti(el,ev.clientX,ev.clientY)}});
+  el.addEventListener("keydown",ev=>{if(ev.key==="Escape"||ev.key==="Enter"&&!ev.target.closest("button")){ev.preventDefault();close(el);goHome()}});
+  setTimeout(()=>{try{el.querySelector("[data-wlgo]").focus({preventScroll:true})}catch(x){}},400)}
+/* „Poďme na to“ → vždy do pridelených sekcií (Prehľad / prvá záložka používateľa) */
+function goHome(){try{if(typeof FARMER!=="undefined"&&FARMER){window.scrollTo(0,0);return}
+  const b=document.querySelector('nav.tabs [data-tab="home"]')||document.querySelector("nav.tabs [data-tab]");
+  if(b){if(typeof TAB!=="undefined"&&TAB===b.dataset.tab){window.scrollTo(0,0);return}b.click()}window.scrollTo(0,0)}catch(x){}}
+/* po návrate do aplikácie (bola na pozadí aspoň 30 s) sa úvod ukáže znova */
+let hidAt=0;document.addEventListener("visibilitychange",()=>{if(document.hidden){hidAt=Date.now();return}
+  if(hidAt&&Date.now()-hidAt>=30000&&kind()&&!document.querySelector(".pinmod,dialog[open],.modal,.ovl")&&!(typeof window.formBusy==="function"&&formBusy()))show(true);hidAt=0});
 let AC=null;function honk(chick){try{AC=AC||new (window.AudioContext||window.webkitAudioContext)();const t=AC.currentTime;
   const tone=(f,a,b,type)=>{const o=AC.createOscillator(),g=AC.createGain();o.type=type||"square";o.frequency.setValueAtTime(f,t+a);if(chick)o.frequency.exponentialRampToValueAtTime(f*1.8,t+b);g.gain.setValueAtTime(0,t+a);g.gain.linearRampToValueAtTime(.08,t+a+.02);g.gain.linearRampToValueAtTime(0,t+b);o.connect(g);g.connect(AC.destination);o.start(t+a);o.stop(t+b+.02)};
   if(chick){tone(700,0,.12,"triangle");tone(900,.16,.3,"triangle")}else{tone(392,0,.22);tone(330,.26,.5)}}catch(x){}}
