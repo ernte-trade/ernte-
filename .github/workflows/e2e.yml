@@ -12,7 +12,7 @@ concurrency:
 jobs:
   e2e:
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 60
     steps:
       - uses: actions/checkout@v4
         with:
@@ -22,13 +22,14 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22
-      - run: npm i --no-save --silent playwright@1.48.2 && npx playwright install --with-deps chromium > /dev/null
+      - run: npm i --no-save --silent playwright@1.48.2 && npx playwright install --with-deps chromium webkit firefox > /dev/null
         working-directory: .github/e2e
       - run: node e2e.mjs
         working-directory: .github/e2e
         env:
           E2E_TOKEN: ${{ github.event.client_payload.token }}
           E2E_RUN: ${{ github.event.client_payload.run }}
+          E2E_DEV: ${{ github.event.client_payload.dev }}
       - name: Zašifrovať a uložiť výsledky
         if: always()
         working-directory: .github/e2e
