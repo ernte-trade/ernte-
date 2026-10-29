@@ -25,7 +25,28 @@ window.pracaTile=function(){if(OWN()||typeof can!=="function"||!can("praca"))ret
   return `<button type="button" class="card prtile" data-prgo><span>🌾</span><div><b>Zapíš dnešnú prácu</b><small>Čo si robil, akým strojom, kde a koľko hektárov – zaberie to 20 sekúnd.</small></div><i>›</i></button>`};
 const _vh=window.vHome;if(typeof _vh==="function")window.vHome=function(){return (window.pracaTile?pracaTile():"")+_vh.apply(this,arguments)};
 
-window.vPraca=function(){if(W.L===null){load();return `<div class="card"><div class="s">Načítavam denník prác…</div></div>`}if(W.L.err)return `<div class="card"><div class="s">${e(W.L.err)}</div></div>`;
+// ---- automatická cena: stroj + náradie + ha → Cenník služieb (rovnaké párovanie ako databáza agro_match) ----
+const PS={L:null,ok:false,busy:false};
+async function psLoad(){if(PS.busy||PS.L)return;PS.busy=true;try{const r=await sb.from("agro_services").select("id,name,machine,tool,unit,price,price_small,small_limit,sort,active").eq("active",true).order("sort");
+  PS.L=r.error?[]:(r.data||[]);PS.ok=!r.error&&PS.L.length>0}catch(x){PS.L=[]}PS.busy=false;if(PS.ok&&typeof TAB!=="undefined"&&document.getElementById("prF"))renderStaff()}
+const nz=t=>String(t||"").normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase().replace(/[^a-z0-9]+/g," ").trim();
+const has=(kde,co)=>{const K=" "+nz(kde)+" ",W=nz(co).split(" ").filter(Boolean);return W.length>0&&W.every(w=>K.includes(" "+w+" ")||(w.length>=4&&K.includes(w)))};
+function psMatch(stroj,nar){if(!PS.L||!String(stroj||"").trim())return null;const nn=String(nar||"").trim();
+  const C=PS.L.filter(s=>["ha","h"].includes(s.unit)&&has((s.machine||"")+" "+s.name,stroj)&&(!nn||has((s.tool||"")+" "+s.name,nn)));
+  C.sort((a,b)=>((nn&&has(b.tool||"",nn))-(nn&&has(a.tool||"",nn)))||((((b.tool||"")==="")===(!nn))-(((a.tool||"")==="")===(!nn)))||((a.sort||0)-(b.sort||0)));return C[0]||null}
+const tier=(s,q)=>s.price_small!=null&&s.small_limit!=null&&q<=+s.small_limit?+s.price_small:+s.price;
+function prCenaHTML(stroj,nar,ha,hod){if(!String(stroj||"").trim())return `<span class="prci">💎</span><div><b>Automatická cena</b><small>Zadaj stroj, náradie a hektáre – cenu vypočítam z Cenníka služieb.</small></div>`;
+  const s=psMatch(stroj,nar);if(!s)return `<span class="prci">💎</span><div><b>Pre „${e(stroj)}${nar?" + "+e(nar):""}“ nie je cena v Cenníku služieb</b><small>Doplň službu v Agro služby → Cenník služieb (stroj a náradie).</small></div>`;
+  const q=s.unit==="h"?num(hod):num(ha),c=tier(s,q||0),u=s.unit==="h"?"mth":"ha";
+  return `<span class="prci">💎</span><div><small>${e(s.name)}${s.tool?" · "+e(s.tool):""}</small><b>${f2(c,2)} €/${u}${q?` × ${f2(q,u==="ha"?2:1)} ${u} = <em>${f2(q*c,2)} €</em>`:""}</b><small>${q?"cena podľa pásma množstva z Cenníka služieb":"zadaj "+(u==="ha"?"hektáre":"hodiny")}</small></div>`}
+document.addEventListener("input",ev=>{const f=ev.target.form;if(!f||f.id!=="prF"||!PS.ok)return;if(!["stroj","naradie","ha","hod"].includes(ev.target.name))return;const b=document.getElementById("prCena");if(b)b.innerHTML=prCenaHTML(f.stroj.value,f.naradie.value,f.ha.value,f.hod.value)});
+{const st=document.createElement("style");st.textContent=`.prcena{display:flex;gap:12px;align-items:center;padding:12px 14px;border-radius:18px;position:relative;overflow:hidden;
+ background:linear-gradient(135deg,rgba(165,243,252,.16),rgba(139,92,246,.14) 55%,rgba(182,255,59,.10));border:1px solid rgba(165,243,252,.45);
+ box-shadow:inset 0 1px 0 rgba(255,255,255,.35),0 10px 30px -14px rgba(34,211,238,.55);-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px)}
+.prcena::after{content:"";position:absolute;inset:0;background:linear-gradient(115deg,transparent 30%,rgba(255,255,255,.18) 45%,transparent 60%);pointer-events:none}
+.prcena .prci{font-size:1.6rem;filter:drop-shadow(0 0 10px rgba(165,243,252,.8))}.prcena div{display:grid;gap:2px;min-width:0}.prcena b{font-size:1.05rem;overflow-wrap:anywhere}.prcena em{font-style:normal;color:#b6ff3b}
+.prcena small{opacity:.78;overflow-wrap:anywhere}.prsum{color:#b6ff3b;font-weight:700}`;document.head.appendChild(st)}
+window.vPraca=function(){if(!PS.L)psLoad();if(W.L===null){load();return `<div class="card"><div class="s">Načítavam denník prác…</div></div>`}if(W.L.err)return `<div class="card"><div class="s">${e(W.L.err)}</div></div>`;
   const boss=BOSS();let h="";
   if(boss)h+=`<div class="btns seg2">${[["moje","✍️ Zapísať"],["prehl","📊 Prehľad"]].map(x=>`<button type="button" data-prv="${x[0]}" aria-pressed="${W.view===x[0]}">${x[1]}</button>`).join("")}</div>`;
   if(boss&&W.view==="prehl")return h+prehl();
@@ -36,18 +57,20 @@ window.vPraca=function(){if(W.L===null){load();return `<div class="card"><div cl
    ${boss?`<label>Kto<input name="kto" list="prK" value="${e(ed?ed.kto:meName())}" required></label><datalist id="prK">${KTO.map(x=>`<option value="${e(x)}">`).join("")}</datalist>`:""}
    <label>Práca<input name="praca" list="prP" required value="${e(v.praca||"")}" placeholder="sejba, postrek…"></label><datalist id="prP">${PRACE.map(x=>`<option value="${e(x)}">`).join("")}</datalist>
    <label>Stroj<input name="stroj" list="prS" value="${e(v.stroj||"")}" placeholder="Axion 850, Xerion…"></label><datalist id="prS">${STR.map(x=>`<option value="${e(x)}">`).join("")}</datalist>
+   <label>Náradie<input name="naradie" list="prN" value="${e(v.naradie||"")}" placeholder="pluh, tanierovka, sejačka…"></label><datalist id="prN">${[...new Set((PS.L||[]).map(x=>x.tool).filter(Boolean).concat(L.map(x=>x.naradie).filter(Boolean)))].slice(0,80).map(x=>`<option value="${e(x)}">`).join("")}</datalist>
    <label>Kde / pre koho<input name="podnik" list="prD" value="${e(ed?ed.podnik||"":"")}" placeholder="ERNTE, farmár, obec…"></label><datalist id="prD">${POD.map(x=>`<option value="${e(x)}">`).join("")}</datalist>
    <label>Pole / lokalita<input name="pole" value="${e(ed?ed.pole||"":"")}"></label>
    <label>Plodina<input name="plodina" list="prC" value="${e(ed?ed.plodina||"":"")}"></label><datalist id="prC">${["pšenica","repka","kukurica","sója","jačmeň","slnečnica"].map(x=>`<option value="${x}">`).join("")}</datalist>
    <label class="prha">Hektáre<input name="ha" inputmode="decimal" value="${ed&&ed.ha!=null?String(ed.ha).replace(".",","):""}" placeholder="napr. 25,5"></label>
    <label>Hodiny<input name="hod" inputmode="decimal" value="${ed&&ed.hod!=null?String(ed.hod).replace(".",","):""}" placeholder="napr. 9"></label>
+   ${PS.ok?`<div class="w prcena" id="prCena">${prCenaHTML(v.stroj,v.naradie,ed&&ed.ha,ed&&ed.hod)}</div>`:""}
    <label class="w">Poznámka<input name="pozn" value="${e(ed?ed.pozn||"":"")}" placeholder="napr. porucha, prestoj, materiál"></label>
    <div class="w btns"><button class="lime" type="submit">💾 Uložiť</button>${ed?`<button type="button" data-prx>Zrušiť</button><button type="button" class="red" data-prdel="${ed.id}">🗑️ Zmazať</button>`:""}</div></form>`;
   const M=L.filter(x=>boss?true:x.created_by===meMail()),td=M.filter(x=>x.d===today()&&(boss?x.created_by===meMail():true));
   const wk=new Date();wk.setDate(wk.getDate()-6);const W7=M.filter(x=>x.d>=wk.toISOString().slice(0,10)&&(!boss||x.created_by===meMail()));
   h+=`<div class="hrk"><div class="${td.length?"ps":"wn"}"><small>Dnes</small><b>${td.length?f2(td.reduce((s,x)=>s+(+x.ha||0),0),1)+" ha":"nezapísané"}</b></div><div><small>Posledných 7 dní</small><b>${f2(W7.reduce((s,x)=>s+(+x.ha||0),0),1)} ha</b></div><div><small>Dní s prácou (7 dní)</small><b>${new Set(W7.map(x=>x.d)).size}</b></div></div>`;
   const R=(boss?M.filter(x=>x.created_by===meMail()||x.d===today()):M).slice(0,40);
-  if(R.length)h+=`<div class="card trtab prtab"><table><thead><tr><th>Deň</th>${boss?"<th>Kto</th>":""}<th>Práca</th><th>Kde</th><th class="r">ha</th><th></th></tr></thead><tbody>${R.map(x=>`<tr><td>${e(dSK(x.d))}</td>${boss?`<td>${e(x.kto)}</td>`:""}<td><b>${e(x.praca)}</b>${x.stroj?`<br><small>🚜 ${e(x.stroj)}</small>`:""}</td><td>${e([x.podnik,x.pole,x.plodina].filter(Boolean).join(" · "))}</td><td class="r"><b>${x.ha!=null?f2(x.ha,1):"–"}</b>${x.hod?`<br><small>${f2(x.hod,1)} h</small>`:""}</td>
+  if(R.length)h+=`<div class="card trtab prtab"><table><thead><tr><th>Deň</th>${boss?"<th>Kto</th>":""}<th>Práca</th><th>Kde</th><th class="r">ha</th><th></th></tr></thead><tbody>${R.map(x=>`<tr><td>${e(dSK(x.d))}</td>${boss?`<td>${e(x.kto)}</td>`:""}<td><b>${e(x.praca)}</b>${x.stroj?`<br><small>🚜 ${e(x.stroj)}${x.naradie?" + "+e(x.naradie):""}</small>`:""}</td><td>${e([x.podnik,x.pole,x.plodina].filter(Boolean).join(" · "))}</td><td class="r"><b>${x.ha!=null?f2(x.ha,1):"–"}</b>${x.hod?`<br><small>${f2(x.hod,1)} h</small>`:""}${PS.ok&&x.suma!=null?`<br><small class="prsum">${f2(x.suma,0)} €</small>`:""}</td>
     <td>${boss||(x.created_by===meMail()&&Date.now()-new Date(x.created_at)<3*864e5)?`<button type="button" class="evmini" data-pre="${x.id}" aria-label="Opraviť">✏️</button>`:""}</td></tr>`).join("")}</tbody></table></div>`;
   return h+`<div class="s">Zapisuj každý deň. Zápis môžeš 3 dni opraviť. Vedúci z toho vidí hektáre podľa ľudí, strojov a zákazníkov a doplní dochádzku (dni na poli).</div>`};
 
@@ -76,10 +99,11 @@ document.addEventListener("click",async ev=>{const g=s=>ev.target.closest&&ev.ta
 });
 document.addEventListener("submit",async ev=>{const f=ev.target;if(f.id!=="prF")return;ev.preventDefault();const d=new FormData(f),b=f.querySelector("button.lime");
   const o={d:d.get("d"),kto:String(d.get("kto")||meName()).trim(),praca:String(d.get("praca")||"").trim(),stroj:String(d.get("stroj")||"").trim()||null,podnik:String(d.get("podnik")||"").trim()||null,
-    pole:String(d.get("pole")||"").trim()||null,plodina:String(d.get("plodina")||"").trim()||null,ha:num(d.get("ha")),hod:num(d.get("hod")),pozn:String(d.get("pozn")||"").trim()||null};
+    pole:String(d.get("pole")||"").trim()||null,plodina:String(d.get("plodina")||"").trim()||null,ha:num(d.get("ha")),hod:num(d.get("hod")),pozn:String(d.get("pozn")||"").trim()||null};if(f.naradie)o.naradie=String(d.get("naradie")||"").trim()||null;
   if(!o.praca){tst("Napíš, akú prácu si robil.");return}if(o.ha!=null&&(o.ha<0||o.ha>2000)){tst("Skontroluj hektáre.");return}if(o.hod!=null&&(o.hod<0||o.hod>24)){tst("Hodín môže byť najviac 24.");return}
-  busy(b,true);const id=W.edit;const r=id?await sb.from("ev_praca").update(o).eq("id",id).select().single():await sb.from("ev_praca").insert(o).select().single();busy(b,false);
+  busy(b,true);const id=W.edit;const sv=x=>id?sb.from("ev_praca").update(x).eq("id",id).select().single():sb.from("ev_praca").insert(x).select().single();
+  let r=await sv(o);if(r.error&&/naradie/.test(r.error.message||"")){delete o.naradie;r=await sv(o)}busy(b,false);
   if(r.error){tst("⚠️ "+r.error.message);return}
-  if(id)W.L=W.L.map(y=>y.id===id?r.data:y);else W.L.unshift(r.data);W.edit=null;W.last={praca:o.praca,stroj:o.stroj};try{localStorage.setItem("ernte-praca-last",JSON.stringify(W.last))}catch(x){}
+  if(id)W.L=W.L.map(y=>y.id===id?r.data:y);else W.L.unshift(r.data);W.edit=null;W.last={praca:o.praca,stroj:o.stroj,naradie:o.naradie||null};try{localStorage.setItem("ernte-praca-last",JSON.stringify(W.last))}catch(x){}
   tst("✓ Zapísané. Ďakujeme!");rr()});
 })();
