@@ -74,29 +74,67 @@ window.sellRecHTML=function(){if(!OWN())return "";if(!D.B){if(!D.busy)load();ret
   h+=`<details class="smod"><summary>📚 Modely odberateľov – podľa čoho rátajú</summary>${(D.B||[]).map(b=>`<div class="srow"><b>${E(b.name)}</b>${(b.sites||[]).length?` <small>· ${(b.sites||[]).map(s=>E(s.n)+" ~"+f0(dop(s))+" €/t doprava").join(" · ")}</small>`:""}<small>${E(b.model||"")}</small></div>`).join("")}</details>`;
   h+=D.form?formHTML():`<div class="btns"><button type="button" class="lime" data-sform="1">➕ Vložiť ponuku odberateľa</button><button type="button" data-sref>↻ Prepočítať</button></div>`;
   return h+`</div>`};
-function formHTML(){const B=D.B||[],b=B.find(x=>x.id===D.form.buyer)||B[0]||{},C=(typeof MK!=="undefined"?MK:[]);
+function newRow(o){return Object.assign({on:true,com:"repka",site:"",del:"DDP",price:"",period:"",note:""},o||{})}
+const COMS=["repka","psenica_p","psenica_k","soja","jacmen_k","jacmen_s","kukurica","lo","ho","cirok"];
+function formHTML(){const B=D.B||[],F=D.form,C=(typeof MK!=="undefined"?MK:[]).filter(m=>COMS.includes(m[0])||true);
+  const b=findBuyer(F.buyer),sites=b?(b.sites||[]).map(x=>x.n):[];
   return `<form class="f sform" id="sForm"><div class="w t">➕ Ponuka odberateľa</div>
-   <label>Odberateľ<select name="buyer" data-sbuy>${B.map(x=>`<option value="${E(x.id)}"${x.id===b.id?" selected":""}>${E(x.name)}</option>`).join("")}</select></label>
-   <label>Komodita<select name="com">${C.map(m=>`<option value="${m[0]}">${E(m[1])}</option>`).join("")}</select></label>
-   <label>Miesto<input name="site" list="sSites" placeholder="napr. Tállya"></label><datalist id="sSites">${(b.sites||[]).map(s=>`<option value="${E(s.n)}">`).join("")}</datalist>
-   <label>Parita<select name="del"><option>DDP</option><option>DAP</option><option>FCA</option></select></label>
-   <label>Cena €/t<input name="price" inputmode="decimal" required></label><label>Obdobie dodania<input name="period" placeholder="napr. 2026-11"></label>
-   <label>Dátum ponuky<input type="date" name="d" value="${new Date().toISOString().slice(0,10)}"></label><label class="w">Poznámka<input name="note"></label>
-   <div class="w s">Ak odberateľ ráta z burzy, uloží sa aj dnešná burza – ponuka sa potom sama posúva s burzou.</div>
+   <div class="w sscan"><b>📷 Načítať ponuku z fotky alebo dokumentu</b><small>Aplikácia prečíta všetky ceny a vyplní riadky nižšie – skontroluj a ulož.</small>
+    <div class="btns"><label class="btn lime sfile">📸 Odfotiť<input type="file" accept="image/*" capture="environment" data-sscan hidden></label><label class="btn sfile">🖼️ Fotka / 📄 PDF<input type="file" accept="image/*,application/pdf" data-sscan hidden></label></div>
+    ${F.scan?`<div class="s">${F.scan==="busy"?"⏳ Čítam ponuku… (do 1 minúty)":E(F.scan)}</div>`:""}</div>
+   <label class="w">Odberateľ (vyber alebo napíš nového)<input name="buyer" list="sBuyers" value="${E(F.buyer||"")}" data-sbuy required placeholder="napr. Agro-Somotor"></label><datalist id="sBuyers">${B.map(x=>`<option value="${E(x.name)}">`).join("")}</datalist>
+   <label>Dátum ponuky<input type="date" name="d" value="${E(F.d||new Date().toISOString().slice(0,10))}"></label>
+   <datalist id="sSites">${sites.map(x=>`<option value="${E(x)}">`).join("")}</datalist>
+   <div class="w srows">${F.rows.map((r,i)=>`<div class="srowf" data-si="${i}"><label class="sck"><input type="checkbox" data-sk="on"${r.on?" checked":""}> ${i+1}.</label>
+     <label>Komodita<select data-sk="com">${C.map(m=>`<option value="${m[0]}"${m[0]===r.com?" selected":""}>${E(m[1])}</option>`).join("")}</select></label>
+     <label>Miesto<input data-sk="site" list="sSites" value="${E(r.site)}" placeholder="Tállya, Somotor…"></label>
+     <label>Parita<select data-sk="del">${["DDP","DAP","FCA"].map(x=>`<option${x===r.del?" selected":""}>${x}</option>`).join("")}</select></label>
+     <label>Cena ${r.cur==="HUF"?"HUF":"€"}/t<input data-sk="price" inputmode="decimal" value="${E(r.price)}"></label>
+     <label>Obdobie<input data-sk="period" value="${E(r.period)}" placeholder="2026-11"></label>
+     <label class="w">Poznámka<input data-sk="note" value="${E(r.note)}"></label></div>`).join("")}
+    <div class="btns"><button type="button" data-sadd>＋ Ďalší riadok</button></div></div>
+   <div class="w s">Nový odberateľ sa založí sám. Ak odberateľ ráta z burzy, uloží sa aj dnešná burza – ponuka sa potom sama posúva s burzou.</div>
    <div class="w btns"><button class="pri" type="submit">💾 Uložiť ponuku</button><button type="button" class="ghost" data-sform="0">Zrušiť</button></div></form>`}
-document.addEventListener("click",e=>{const t=e.target.closest&&e.target.closest("[data-sform],[data-sref]");if(!t||!OWN())return;e.preventDefault();
-  if(t.dataset.sref!==undefined){D.at=0;load();return}D.form=t.dataset.sform==="1"?{buyer:(D.B&&D.B[0]||{}).id}:false;renderStaff()},true);
-document.addEventListener("change",e=>{const x=e.target;if(!x.dataset||x.dataset.sbuy===undefined||!D.form)return;D.form.buyer=x.value;const l=document.getElementById("sSites"),b=(D.B||[]).find(y=>y.id===x.value);if(l&&b)l.innerHTML=(b.sites||[]).map(s=>`<option value="${E(s.n)}">`).join("")},true);
-document.addEventListener("submit",async e=>{const f=e.target;if(f.id!=="sForm"||!OWN())return;e.preventDefault();e.stopPropagation();const d=new FormData(f),btn=f.querySelector("button[type=submit]");
-  const price=+String(d.get("price")||"").replace(",",".").replace(/\s/g,"");if(!(price>0)){toast("Zadaj cenu.",4000);return}
-  const com=String(d.get("com")),b=(D.B||[]).find(x=>x.id===d.get("buyer")),n=b&&b.float_burza?bzNow(BZ[com]):null;
-  const row={buyer:String(d.get("buyer")),com,site:String(d.get("site")||"").trim()||null,del:String(d.get("del")),price,period:String(d.get("period")||"").trim()||null,d:d.get("d")||null,note:String(d.get("note")||"").trim()||null,bz_sym:n?BZ[com]:null,bz_val:n?n.v:null};
-  if(typeof busy==="function")busy(btn,true);const r=await sb.from("sell_offers").insert(row);if(typeof busy==="function")busy(btn,false);
-  if(r.error){toast("Nepodarilo sa uložiť: "+r.error.message,7000);return}toast("✓ Ponuka uložená – prepočítavam.",4000);D.form=false;D.at=0;load()},true);
+const nzs=t=>String(t||"").normalize("NFD").replace(/[̀-ͯ]/g,"").toLowerCase().replace(/[^a-z0-9]+/g," ").trim();
+function findBuyer(name){const n=nzs(name);if(!n)return null;const B=D.B||[];return B.find(b=>nzs(b.name)===n)||B.find(b=>b.rx&&new RegExp(b.rx,"i").test(name))||B.find(b=>nzs(b.name).includes(n)||n.includes(nzs(b.name)))||null}
+function syncForm(){const f=document.getElementById("sForm");if(!f||!D.form)return;D.form.buyer=f.buyer.value;D.form.d=f.d.value;
+  f.querySelectorAll(".srowf").forEach(el=>{const r=D.form.rows[+el.dataset.si];if(!r)return;el.querySelectorAll("[data-sk]").forEach(x=>{r[x.dataset.sk]=x.type==="checkbox"?x.checked:x.value})})}
+// fotka → JPEG max 1800 px; PDF → base64
+function fileData(file){return new Promise((ok,no)=>{if(file.type==="application/pdf"){const r=new FileReader();r.onload=()=>ok({data:String(r.result).split(",")[1],mime:"application/pdf"});r.onerror=no;r.readAsDataURL(file);return}
+  const u=URL.createObjectURL(file),im=new Image();im.onload=()=>{const k=Math.min(1,1800/Math.max(im.width,im.height)),c=document.createElement("canvas");c.width=Math.round(im.width*k);c.height=Math.round(im.height*k);
+    c.getContext("2d").drawImage(im,0,0,c.width,c.height);URL.revokeObjectURL(u);ok({data:c.toDataURL("image/jpeg",.86).split(",")[1],mime:"image/jpeg"})};im.onerror=()=>{URL.revokeObjectURL(u);no(new Error("Fotku sa nepodarilo otvoriť."))};im.src=u})}
+async function scan(file){syncForm();D.form.scan="busy";renderStaff();
+  try{if(file.size>12e6)throw new Error("Súbor je príliš veľký (max. 12 MB).");const f=await fileData(file);const r=await sb.rpc("sell_scan",{p_data:f.data,p_mime:f.mime});if(r.error)throw new Error(r.error.message);
+    const sid=r.data,t0=Date.now();let g;while(Date.now()-t0<190e3){await new Promise(z=>setTimeout(z,2500));g=await sb.rpc("sell_scan_get",{sid});if(g.error)throw new Error(g.error.message);if(g.data.status!=="wait")break}
+    if(!g||g.data.status==="wait")throw new Error("Čítanie trvá príliš dlho – skús znova.");if(g.data.status==="err")throw new Error(g.data.err||"Nepodarilo sa prečítať.");
+    const R=g.data.result||{},P=Array.isArray(R.ponuky)?R.ponuky:[];if(!P.length)throw new Error("V prílohe som nenašiel žiadne ceny.");
+    if(R.odberatel)D.form.buyer=(findBuyer(R.odberatel)||{name:R.odberatel}).name;if(/^\d{4}-\d\d-\d\d$/.test(R.datum||""))D.form.d=R.datum;
+    D.form.rows=P.filter(x=>+x.cena>0).map(x=>newRow({com:COMS.includes(x.komodita)?x.komodita:"repka",site:x.miesto||"",del:["DDP","DAP","FCA"].includes(String(x.parita||"").toUpperCase())?String(x.parita).toUpperCase():"DDP",
+      price:String(x.cena).replace(".",","),cur:String(x.mena||"EUR").toUpperCase()==="HUF"?"HUF":"EUR",period:x.obdobie||"",note:[x.pozn,R.burza].filter(Boolean).join(" · ")}));
+    D.form.scan=`✓ Načítaných ${D.form.rows.length} cien – skontroluj a ulož.`}
+  catch(x){D.form.scan="⚠️ "+(x&&x.message||x)}renderStaff()}
+document.addEventListener("click",e=>{const t=e.target.closest&&e.target.closest("[data-sform],[data-sref],[data-sadd]");if(!t||!OWN())return;e.preventDefault();
+  if(t.dataset.sref!==undefined){D.at=0;load();return}if(t.dataset.sadd!==undefined){syncForm();D.form.rows.push(newRow());renderStaff();return}
+  D.form=t.dataset.sform==="1"?{buyer:"",rows:[newRow()]}:false;renderStaff();if(D.form)setTimeout(()=>{const f=document.getElementById("sForm");if(f)f.scrollIntoView({block:"start",behavior:"smooth"})},60)},true);
+document.addEventListener("change",e=>{const x=e.target;if(!x.dataset||!D.form)return;if(x.dataset.sscan!==undefined&&x.files&&x.files[0]){scan(x.files[0]);x.value="";return}
+  if(x.dataset.sbuy!==undefined){const b=findBuyer(x.value),l=document.getElementById("sSites");if(l)l.innerHTML=(b&&b.sites||[]).map(s=>`<option value="${E(s.n)}">`).join("")}},true);
+document.addEventListener("submit",async e=>{const f=e.target;if(f.id!=="sForm"||!OWN())return;e.preventDefault();e.stopPropagation();syncForm();const btn=f.querySelector("button[type=submit]");
+  const F=D.form,name=String(F.buyer||"").trim();if(!name){toast("Zadaj odberateľa.",4000);return}
+  const R=F.rows.filter(r=>r.on&&+String(r.price).replace(",",".").replace(/\s/g,"")>0);if(!R.length){toast("Zadaj aspoň jednu cenu.",4000);return}
+  if(typeof busy==="function")busy(btn,true);
+  try{let b=findBuyer(name);
+    if(!b){const id=(nzs(name).replace(/ /g,"-")||"odb").slice(0,40)+"-"+Date.now().toString(36).slice(-4);const nb={id,name,rx:nzs(name).split(" ").filter(w=>w.length>=3).slice(0,2).join(".*")||null,coms:[...new Set(R.map(r=>r.com))],sites:[],float_burza:false,model:"Ceny z ich ponúk.",sort:200};
+      const q=await sb.from("sell_buyers").insert(nb);if(q.error)throw new Error(q.error.message);b=nb;(D.B=D.B||[]).push(nb)}
+    const huf=(D.mk&&D.mk.fx&&D.mk.fx.huf)||null;
+    const rows=R.map(r=>{let p=+String(r.price).replace(",",".").replace(/\s/g,""),note=r.note||null;if(r.cur==="HUF"){if(!huf)throw new Error("Chýba kurz HUF – zadaj cenu v €.");note=[note,"z "+Math.round(p)+" HUF/t"].filter(Boolean).join(" · ");p=Math.round(p/huf*100)/100}
+      const n=b.float_burza?bzNow(BZ[r.com]):null;return {buyer:b.id,com:r.com,site:String(r.site||"").trim()||null,del:r.del,price:p,period:String(r.period||"").trim()||null,d:F.d||null,note,bz_sym:n?BZ[r.com]:null,bz_val:n?n.v:null}});
+    const q=await sb.from("sell_offers").insert(rows);if(q.error)throw new Error(q.error.message);
+    toast(`✓ Uložené ${rows.length} ${rows.length===1?"cena":rows.length<5?"ceny":"cien"} – prepočítavam.`,4000);D.form=false;D.at=0;load()}
+  catch(x){toast("Nepodarilo sa uložiť: "+(x&&x.message||x),7000)}finally{if(typeof busy==="function")busy(btn,false)}},true);
 {const s=document.createElement("style");s.textContent=`.srec .srt{display:block;font-size:1.05rem;margin-bottom:4px}.srec .s{margin:4px 0 8px}
 .scom{border-top:1px solid rgba(255,255,255,.08);padding:8px 0}.scom summary{display:flex;justify-content:space-between;align-items:center;gap:10px;cursor:pointer;list-style:none}.scom summary::-webkit-details-marker{display:none}
 .scom .sn{display:grid}.scom .sn small{opacity:.7;font-size:.78rem}.scom .sb{text-align:right;display:grid;font-size:.86rem}.scom .sb b{font-size:1.05rem}.sb.ps b,.srow.ps .srh span{color:#86efac}.sb.ng b,.srow.ng .srh span{color:#fca5a5}
 .srow{display:grid;gap:2px;padding:7px 10px;margin:6px 0;border-radius:12px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08)}.srow .srh{display:flex;justify-content:space-between;gap:8px}.srow small{opacity:.8;overflow-wrap:anywhere;line-height:1.4}
 .srow em{color:#fcd34d;font-style:normal}.smiss{font-size:.8rem;opacity:.75;margin-top:4px}.smiss span{text-decoration:underline dotted}.smod{margin:10px 0}.smod summary{cursor:pointer;font-weight:700}
-.owrec{display:block;margin-top:4px;font-size:.78rem;font-weight:700}.owrec.ps{color:#86efac}.owrec.ng{color:#fca5a5}.sform{margin-top:8px}`;document.head.appendChild(s)}
+.owrec{display:block;margin-top:4px;font-size:.78rem;font-weight:700}.owrec.ps{color:#86efac}.owrec.ng{color:#fca5a5}.sform{margin-top:8px}.sscan{display:grid;gap:6px;padding:12px;border-radius:16px;border:1px solid rgba(165,243,252,.4);background:linear-gradient(135deg,rgba(165,243,252,.12),rgba(139,92,246,.10))}.sscan small{opacity:.8}.sfile{cursor:pointer;display:inline-flex;align-items:center;justify-content:center}.srows{display:grid;gap:8px}.srowf{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:6px 8px;padding:10px;border-radius:14px;border:1px solid rgba(255,255,255,.1);background:rgba(255,255,255,.03)}.srowf .w{grid-column:1/-1}.sck{display:flex;align-items:center;gap:6px;grid-column:1/-1;font-weight:700}`;document.head.appendChild(s)}
 })();
