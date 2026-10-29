@@ -94,6 +94,8 @@ s pripojeným repozitárom `ernte-trade/ernte-`.
   Modely odberateľov a mená iba v DB. Nové ponuky odberateľov vkladať do `sell_offers` (formulár v Prehľade).
 - **BURZA = bot „Trhové ceny“** (`market_bot_tick`, pg_cron `burza-bot` každých 5 min, raw `market.json`): `market_px` sa plní z overených kurzov, kontrakt = najbližší končiaci najskôr o 20 dní
   (ako rátajú odberatelia). Webové vyhľadávanie (`market_collect`) je iba záloha – nezapíše, ak má bot dáta < 48 h alebo ak sa líši o > 5 %. Rozdiel zdrojov > 3 % → push majiteľovi.
+- **STRÁŽCA** (`ernte_watch`, pg_cron `strazca` každých 15 min → ai_state `ernte_watch`, v sonde `ernte_probe2.watch`): burza z bota, zlyhané úlohy, check_err, migrácie, sója, čakajúce ceny.
+  Nové problémy → push majiteľovi; Claude ich pri pravidelnej kontrole (naplánovaná správa v rozhovore) opraví. Predikcia (`pred.js`) ráta s `sellOpts` (Kde predať) a otvorenými nákupmi (`deal_watch_list`).
 - **Zámok cien** (`prices_lock`): ceny riadené modelom (sója, repka, kukurica, LO) z aplikácie (jwt) nejdú zmeniť – iba databázové funkcie (`ernte.allow_price`).
 - **Konkurenčné ceny** (`konk.js`, kalk_store `pricelist/konk`): vložený text ponuky → rozpoznanie, porovnanie, báza voči burze. Mená firiem iba v DB.
 - **Príkaz majiteľa (trvalý):** pracovať na 100 %, bezchybne a rýchlo; nič nepoškodiť (model cenníka, nastavenia, údaje). Pred nasadením otestovať.

@@ -48,6 +48,7 @@ async function load(force){if(!OWN()||S.busy)return;if(!force&&S.at&&Date.now()-
     const st=await stGet(["pred_cfg","pred_pin","pred_hist","pred_log","pred_nov","pred_natal"]);S.natal=st.pred_natal||null;
     S.cfg=Object.assign({},DEF,{quotes:[]},st.pred_cfg||{});S.pin=st.pred_pin||null;S.hist=st.pred_hist||[];S.log=st.pred_log||[];S.nov=st.pred_nov||null;
     if(!unlocked()){S.at=0;S.busy=false;rr();return}
+    try{const w=await sb.rpc("deal_watch_list");S.dw=w.error?[]:(w.data||[])}catch(x){S.dw=[]}
     const q=await Promise.all([
       fetch("market.json",{cache:"no-store"}).then(r=>r.ok?r.json():null).catch(()=>null),
       sb.from("market_px").select("*"),
@@ -97,6 +98,8 @@ function sinks(c){const out=[],y=yard(),T=today();
     const p=q.place?S.pl.find(x=>String(x.id)===String(q.place)):null;out.push({k:"quote",id:q.id,name:q.buyer,price:+q.price,pos:p?{lat:+p.lat,lon:+p.lon}:plc(q.buyer),km:N(q.km),note:q.till?"platí do "+q.till.split("-").reverse().join(". "):"",age:dAgo(q.at||T)})}
   for(const b of S.bc.filter(b=>b.com===c&&+b.price>0&&(!b.d1||b.d1>=T)))out.push({k:"contract",name:b.buyer+(b.no?" · zml. "+b.no:""),price:+b.price,tons:+b.tons||null,pos:plc(b.buyer),note:"zmluva s odberateľom"});
   for(const L of Object.values(S.last||{}).filter(x=>x.c===c))out.push({k:"last",name:L.b+" · posledný predaj",price:L.p,pos:plc(L.b),note:"podľa vážneho lístka z "+String(L.d).split("-").reverse().join(". ")+" – over aktuálnu cenu",age:dAgo(L.d)});
+  // ponuky odberateľov, konkurencie a skutočné predaje z „🏆 Kde predať“ (cena posunutá s burzou, doprava z regiónu farmárov)
+  for(const x of (window.sellOpts?sellOpts(c):[]))out.push({k:"sell",name:x.b.name+(x.siteName?" "+x.siteName:"")+" · "+x.del,price:x.price,tfix:x.dop||0,pos:null,note:x.src+" "+String(x.d||"").split("-").reverse().join(". ")+(x.bz?" · posunuté s burzou":"")+(x.term?" · "+x.term:""),age:x.age});
   const dom=((S.mj&&S.mj.rows)||[]).filter(r=>r.c===c&&r.kind==="fyzický"&&/hazai|miesto produkcie/i.test(r.place)).sort((a,b)=>b.price-a.price)[0];
   if(dom)out.push({k:"burza",name:"orientačne: "+dom.market,price:+dom.price,pos:null,km:+S.cfg.defKm||0,note:"cena farmárom "+dom.date.split("-").reverse().join(". ")+" · doprava odhad "+f0(S.cfg.defKm)+" km – zapíš skutočnú ponuku",ind:true});
   else{const bz=bzNow(c);if(bz!=null)out.push({k:"burza",name:"orientačne: burza − báza",price:bz-(+S.cfg.basis||0),pos:null,km:+S.cfg.defKm||0,note:"burza "+f0(bz)+" €/t − báza "+f0(S.cfg.basis)+" €/t",ind:true})}
@@ -105,7 +108,7 @@ function sinks(c){const out=[],y=yard(),T=today();
 // ---------- vyhodnotenie komodity ----------
 function evalCom(c){const src=sources(c),snk=sinks(c),y=yard(),C=S.cfg,H=+C.handle||0;
   const leg=(a,b)=>{if(b.km!=null)return b.km+(a.pos?km(a.pos,y)||0:0);if(a.pos&&b.pos)return km(a.pos,b.pos);if(b.pos)return km(y,b.pos)+(a.pos?0:0);return null};
-  const pairs=[];for(const a of src)for(const b of snk){const k=leg(a,b),t=tcost(k);
+  const pairs=[];for(const a of src)for(const b of snk){const k=b.tfix!=null?null:leg(a,b),t=b.tfix!=null?b.tfix:tcost(k);
     const X=a.ua?(+C.ua||0):0;pairs.push({a,b,km:k,t,ux:X,net:b.price-a.price-t-H-X,tot:a.tons?(b.price-a.price-t-H-X)*a.tons:null})}
   pairs.sort((x,z)=>(z.b.ind?0:1)-(x.b.ind?0:1)||z.net-x.net);
   const real=pairs.filter(p=>!p.b.ind),best=real[0]||null,ind=pairs.filter(p=>p.b.ind).sort((x,z)=>z.net-x.net)[0]||null;
@@ -125,7 +128,10 @@ function evalCom(c){const src=sources(c),snk=sinks(c),y=yard(),C=S.cfg,H=+C.hand
   if(best&&best.net<0)warn.push("Ani najlepšia kombinácia nevychádza v zisku – nekupuj, kým nemáš lepšieho odberateľa.");
   if(pairs.slice(0,3).some(p=>p.a.ua))warn.push("Nákup z Ukrajiny: pred obchodom over aktuálne dovozné obmedzenia SK/HU, fytosanitu a clo.");
   if(best&&best.a.k==="mkt")warn.push("Cena zdroja je z prehľadu trhu ("+best.a.note+") – pred nákupom si ju potvrď u predávajúceho.");
-  return {c,src,snk,pairs,best,ind,timing,trend,P,dom,hist,warn}}
+  const OP=(S.dw||[]).filter(x=>x.com===c&&+x.tons>0&&+x.buy>0),sale=snk.filter(b=>!b.ind).map(b=>({b,n:b.price-(b.tfix!=null?b.tfix:tcost(b.km!=null?b.km:(b.pos?km(y,b.pos):+C.defKm)))-H})).sort((a,z)=>z.n-a.n)[0]||null;
+  let pos=null;if(OP.length){const t=OP.reduce((s,x)=>s+(+x.tons),0),avg=OP.reduce((s,x)=>s+(+x.tons)*(+x.buy),0)/t;pos={t,avg,n:OP.length,sale,pl:sale?sale.n-avg:null,hold:OP.filter(x=>x.state==="rise").length,sell:OP.filter(x=>["fall","sell","termin"].includes(x.state)).length,until:OP.map(x=>x.hold).filter(Boolean).sort()[0]||null}
+    if(pos.sell)warn.unshift(`Stráženie nákupov: ${pos.sell}× PREDAJ / KLESÁ – rozhodni dnes.`)}
+  return {c,src,snk,pairs,best,ind,timing,trend,P,dom,hist,warn,pos}}
 function mIdx(t){const m={jan:0,feb:1,mar:2,apr:3,máj:4,maj:4,may:4,jún:5,jun:5,júl:6,jul:6,aug:7,sep:8,okt:9,oct:9,nov:10,dec:11},x=String(t||"").toLowerCase().match(/([a-záéíóúýčďľňŕšťž]+)\s*(\d{4})/);
   if(!x||m[x[1]]==null)return null;return +x[2]*12+m[x[1]]}
 const coms=()=>{const M=typeof MK!=="undefined"?MK.map(m=>m[0]):["repka","lo","ho","soja","psenica_p","psenica_k","jacmen_k","jacmen_s","kukurica","cirok"];return M};
@@ -214,7 +220,7 @@ function accCard(){const comp=[["num","🔢 Čísla"],["cards","🃏 Karty"],["m
    ${tot<20?`<div class="s">Zatiaľ málo dát – prvé výsledky o týždeň, zmysluplné asi po 1–2 mesiacoch.</div>`:""}</div>`}
 
 // ---------- zobrazenie ----------
-const KN={offer:"ponuka farmára",list:"cenník",mkt:"trh",quote:"ponuka odberateľa",contract:"zmluva",last:"posledný predaj",burza:"odhad"};
+const KN={sell:"odberateľ (Kde predať)",offer:"ponuka farmára",list:"cenník",mkt:"trh",quote:"ponuka odberateľa",contract:"zmluva",last:"posledný predaj",burza:"odhad"};
 function msg(all){const ok=all.filter(r=>r.best&&r.best.net>0).sort((a,b)=>(b.best.tot??b.best.net)-(a.best.tot??a.best.net));
   const L=[];for(const r of ok.slice(0,4)){const b=r.best;L.push(`<li><b>${e(CN(r.c))}:</b> kúp – <b>${e(b.a.name)}</b> za ${f0(b.a.price)} €/t${b.a.tons?` (${f1(b.a.tons)} t)`:""}, predaj – <b>${e(b.b.name)}</b> za ${f0(b.b.price)} €/t. Doprava ~${f0(b.t)} €/t${b.km!=null?` (${f0(b.km)} km)`:""} ${b.ux?`+ dovoz UA ~${f0(b.ux)} €/t `:""}→ marža <b>${sg(b.net)} €/t</b>${b.tot!=null?` ≈ <b>${f0(b.tot)} €</b>`:""}.${(()=>{const M=mix(r);return ` 🔢 ${e(M.vn)}${M.vk!==M.vn?` · 🔮 s vesmírom: <b>${e(M.vk)}</b>`:""}.`})()}${r.timing?(r.timing.hold?` Ak môžeš skladovať, burza ${e(r.timing.b.t)} platí po skladovaní o ${f0(r.timing.gain)} €/t viac.`:" Predávať priebežne, držanie sa podľa burzy neoplatí."):""}</li>`)}
   const neg=all.filter(r=>r.best&&r.best.net<=0).map(r=>CN(r.c)),miss=all.filter(r=>!r.best&&(r.src.length||r.trend.now!=null)).map(r=>CN(r.c));
@@ -230,7 +236,7 @@ function comCard(R){const o=S.open[R.c],b=R.best,t=R.trend;
    ${t.now!=null?`<small>burza ${f0(t.now)}${t.d7!=null?` · 7d ${sg(t.d7)}`:""}</small>`:""}<span aria-hidden="true">${o?"▴":"▾"}</span></button>`;
   if(!o)return h+"</div>";
   if(b)h+=`<div class="box"><div><b>Najlepšie teraz:</b> kúp: <b>${e(b.a.name)}</b> (${e(KN[b.a.k])}) ${f0(b.a.price)} €/t → predaj: <b>${e(b.b.name)}</b> (${e(KN[b.b.k])}) ${f0(b.b.price)} €/t</div>
-    <div class="s">Doprava ${f0(b.t)} €/t${b.km!=null?` · ${f0(b.km)} km`:" · vzdialenosť neznáma, použitých "+f0(S.cfg.defKm)+" km"}${+S.cfg.handle?` · manipulácia ${f0(S.cfg.handle)} €/t`:""} · marža <b>${sg(b.net)} €/t</b>${b.tot!=null?` · spolu ≈ ${f0(b.tot)} €`:""}</div></div>`;
+    <div class="s">Doprava ${f0(b.t)} €/t${b.b.tfix!=null?" · z regiónu farmárov (Kalkulačka)":b.km!=null?` · ${f0(b.km)} km`:" · vzdialenosť neznáma, použitých "+f0(S.cfg.defKm)+" km"}${+S.cfg.handle?` · manipulácia ${f0(S.cfg.handle)} €/t`:""} · marža <b>${sg(b.net)} €/t</b>${b.tot!=null?` · spolu ≈ ${f0(b.tot)} €`:""}</div></div>`;
   h+=cosmoBox(R);
   if(R.warn.length)h+=`<div class="prd-w">${R.warn.map(w=>`<div>⚠️ ${e(w)}</div>`).join("")}</div>`;
   // trend a časovanie
@@ -238,6 +244,7 @@ function comCard(R){const o=S.open[R.c],b=R.best,t=R.trend;
   if(t.now!=null&&t.d7==null)tl.push("Trend sa začne ukazovať po pár dňoch – každý deň sa uloží záznam burzy.");
   if(R.timing){const T=R.timing;tl.push(`Termíny: ${e(T.a.t)} ${f0(T.a.p)} → ${e(T.b.t)} ${f0(T.b.p)} €/t (${sg(T.b.p-T.a.p)}). Skladovanie ${T.mo} mes. ≈ ${f0(T.cost)} €/t. ${T.hold?`<b>Držanie sa oplatí</b> (+${f0(T.gain)} €/t po nákladoch).`:"<b>Držanie sa neoplatí</b> – predávať priebežne."}`)}
   if(R.dom.length)tl.push("Trh platí farmárom: "+R.dom.map(d=>`${e(d.n)} ${f0(d.p)} €/t`).join(" · ")+(R.P?` · tvoj výkup ${f0(R.P.price)} €/t`:""));
+  if(R.pos){const q=R.pos;tl.push(`📦 Otvorené nákupy: <b>${f0(q.t)} t</b> (${q.n}×) za priemerne ${f0(q.avg)} €/t${q.sale?` → najlepší predaj teraz <b>${e(q.sale.b.name)}</b> ${f0(q.sale.n)} €/t po doprave = <b>${sg(q.pl)} €/t</b>, spolu ≈ ${sg(q.pl*q.t)} €`:" – zatiaľ bez ponuky odberateľa"}.${q.hold?` 📈 Drž ${q.hold}×${q.until?" najneskôr do "+e(String(q.until).split("-").reverse().join(". ")):""}.`:""}${q.sell?` ⚠️ ${q.sell}× predaj / klesá.`:""}`)}
   if(R.hist)tl.push(`Tvoje obchody: ${R.hist.n}× · ${f0(R.hist.t)} t · priemerná marža ${sg(R.hist.m)} €/t.`);
   if(tl.length)h+=`<div class="s prd-tl">${tl.map(x=>`<div>${x}</div>`).join("")}</div>`;
   // ďalšie kombinácie

@@ -34,7 +34,7 @@ async function load(){if(!OWN()||D.busy)return;D.busy=true;D.err="";
     if(s.error){D.err=/sell_data/.test(s.error.message)?"Zapne sa po aktualizácii databázy (pár minút).":s.error.message;D.B=[]}else{D.B=s.data.buyers||[];D.O=s.data.offers||[]}
     D.mk=mk;D.K=(k&&k.data&&k.data.data&&k.data.data.items)||[];D.T=(t&&!t.error&&t.data)||[]}
   catch(x){D.err=String(x&&x.message||x);D.B=D.B||[]}
-  D.at=Date.now();D.busy=false;if(typeof TAB!=="undefined"&&TAB==="home"&&typeof renderStaff==="function")renderStaff()}
+  D.at=Date.now();D.busy=false;if(typeof TAB!=="undefined"&&(TAB==="home"||TAB==="pred")&&typeof renderStaff==="function")renderStaff()}
 
 // všetky možnosti predaja pre komoditu
 function options(com,buy){const out=[],B=D.B||[];
@@ -56,6 +56,8 @@ function options(com,buy){const out=[],B=D.B||[];
   for(const bn in last){const t=last[bn],b=buyerOf(bn)||{id:"t:"+bn,name:bn,sites:[]},site=(b.sites||[])[0]||null;push(b,site&&site.n,site,"DAP",+t.s,t.d,"skutočný predaj (vážne lístky)",{})}
   return out.filter(o=>o.age<=Math.max(MAXAGE,o.src.startsWith("skutočný")?45:MAXAGE)).sort((a,b)=>(b.profit??-1e9)-(a.profit??-1e9))}
 function missing(com,opts){const have=new Set(opts.map(o=>o.b.id));return (D.B||[]).filter(b=>(b.coms||[]).includes(com)&&!have.has(b.id))}
+// pre Predikciu: všetky predajné možnosti s cenou (posunutou s burzou) a dopravou z regiónu
+window.sellOpts=function(com){if(!OWN())return [];if(!D.B){if(!D.busy)load();return []}return options(com,0).filter(o=>o.net!=null)};
 window.sellBest=function(com,buy){if(!OWN()||!D.B)return null;const o=options(com,buy).find(x=>x.profit!=null);return o||null};
 window.sellBestLine=function(com,buy){if(!OWN())return "";if(!D.B){if(!D.busy&&Date.now()-D.at>60e3)load();return ""}const o=window.sellBest(com,buy);if(!o)return "";
   return `<span class="owrec ${o.profit>=0?"ps":"ng"}">🏆 ${E(o.b.name)}${o.siteName?" "+E(o.siteName):""} ${sg(o.profit)} €/t</span>`};
