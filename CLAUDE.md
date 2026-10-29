@@ -96,6 +96,9 @@ s pripojeným repozitárom `ernte-trade/ernte-`.
   (ako rátajú odberatelia). Webové vyhľadávanie (`market_collect`) je iba záloha – nezapíše, ak má bot dáta < 48 h alebo ak sa líši o > 5 %. Rozdiel zdrojov > 3 % → push majiteľovi.
 - **STRÁŽCA** (`ernte_watch`, pg_cron `strazca` každých 15 min → ai_state `ernte_watch`, v sonde `ernte_probe2.watch`): burza z bota, zlyhané úlohy, check_err, migrácie, sója, čakajúce ceny.
   Nové problémy → push majiteľovi; Claude ich pri pravidelnej kontrole (naplánovaná správa v rozhovore) opraví. Predikcia (`pred.js`) ráta s `sellOpts` (Kde predať) a otvorenými nákupmi (`deal_watch_list`).
+- **PÔDA Z PPA** (`ppa.js`, tabuľka `ppa_farms`, iba majiteľ, záložka Farmári): verejné údaje PPA – užívané plochy 2025 (13 549 užívateľov, orná/TTP, lokality)
+  + prijímatelia dotácií FY2024/2025 (sídlo, sumy) + obce z Wikidata (okres, PSČ, súradnice; km vzdušne od Zbudze). Párovanie s farmármi podľa mena (`ppaKey`).
+  IČO a sídlo podľa mena z RPO (`fullName`, CORS OK). Telefóny/e-maily verejne nie sú. Nové dáta: workflow `ppa.yml` → vetva `ppa-results` (zašifrované).
 - **Zámok cien** (`prices_lock`): ceny riadené modelom (sója, repka, kukurica, LO) z aplikácie (jwt) nejdú zmeniť – iba databázové funkcie (`ernte.allow_price`).
 - **Konkurenčné ceny** (`konk.js`, kalk_store `pricelist/konk`): vložený text ponuky → rozpoznanie, porovnanie, báza voči burze. Mená firiem iba v DB.
 - **Príkaz majiteľa (trvalý):** pracovať na 100 %, bezchybne a rýchlo; nič nepoškodiť (model cenníka, nastavenia, údaje). Pred nasadením otestovať.
