@@ -111,6 +111,7 @@ function ordHTML(){const O=A.orders;if(!O){loadOrders();return `<div class="card
   const op=O.filter(F.open),qty=op.reduce((s,o)=>s+(o.unit==="ha"?+o.qty:0),0),done=O.filter(o=>o.status==="hotova").reduce((s,o)=>s+(+o.total||0),0);
   let h=`<div class="hrk"><div class="${O.some(F.nova)?"wn":""}"><small>Nové objednávky</small><b>${O.filter(F.nova).length}</b></div><div><small>Otvorené</small><b>${op.length} · ${f2(qty,1)} ha</b></div><div><small>Otvorené v cene</small><b>${f2(op.reduce((s,o)=>s+(+o.total||0),0),0)} €</b></div><div class="ps"><small>Hotové spolu</small><b>${f2(done,0)} €</b></div></div>
    <div class="btns seg2">${[["open","Otvorené"],["nova","Nové"],["hotova","Hotové"],["all","Všetky"]].map(x=>`<button type="button" data-aflt="${x[0]}" aria-pressed="${A.flt===x[0]}">${x[1]}</button>`).join("")}</div>`;
+  h+=newOrdHTML();
   if(!L.length)return h+`<div class="card"><div class="s">Žiadne objednávky v tomto zozname.</div></div>`;
   return h+`<div class="agl">${L.map(o=>{const tel=String(o.phone||"").replace(/\D/g,"").replace(/^00/,"").replace(/^0/,"421");
     return `<div class="card agc ${o.status}"><div class="row"><span class="t">${esc(o.service_name||"Služba")}</span>${pill(STS[o.status]||[o.status])}</div>
@@ -121,6 +122,34 @@ function ordHTML(){const O=A.orders;if(!O){loadOrders();return `<div class="card
       <label class="w">Odpoveď farmárovi<input name="reply" value="${esc(o.reply||"")}" placeholder="napr. prídeme v utorok ráno"></label>
       <div class="w btns">${o.status==="nova"?`<button class="pri" name="st" value="potvrdena">✓ Potvrdiť</button>`:""}${o.status!=="v_praci"?`<button name="st" value="v_praci">🚜 V práci</button>`:""}<button class="lime" name="st" value="hotova">✅ Hotovo</button><button name="st" value="">💾 Uložiť</button><button class="ghost" name="st" value="zrusena">✕ Zrušiť</button></div></form>`:""}
     <div class="btns">${o.phone?`<a class="btn" href="tel:${esc(String(o.phone).replace(/\s/g,""))}">📞 Zavolať</a><a class="btn" target="_blank" rel="noopener" href="https://wa.me/${tel}?text=${encodeURIComponent(`Dobrý deň, ERNTE Agro služby – objednávka ${o.no}: ${o.service_name}, ${f2(o.qty,1)} ${UN[o.unit]||o.unit}.${o.planned?" Termín: "+dSK(o.planned)+".":""}${o.reply?" "+o.reply:""}`)}">WhatsApp</a>`:""}</div></div>`}).join("")}</div>`}
+// --- nová objednávka služby (zamestnanec s prístupom Agro služby, napr. Tomáš Štofa) ---
+async function loadNS(){A.ns=[];const r=await sb.from("agro_services").select("id,name,unit,price,min_qty,kind,machine").eq("active",true).order("sort").order("name");A.ns=r.error?[]:r.data||[];if(typeof TAB!=="undefined"&&TAB==="agro")renderStaff()}
+function newOrdHTML(){if(!A.nf)return `<div class="btns"><button type="button" class="lime" data-anew="1">➕ Nová objednávka služby</button></div>`;
+  if(!A.ns){loadNS();return `<div class="card"><div class="s">Načítavam služby…</div></div>`}
+  const F=(STATE.farmers||[]).filter(f=>f.active!==false).sort((a,b)=>String(a.name||"").localeCompare(String(b.name||""),"sk")),nw=A.nf.cust==="new";
+  return `<form class="card f agnew" id="agNew"><div class="w t">➕ Nová objednávka služby</div>
+   <label class="w">Zákazník<select name="farmer" data-agcust required><option value="">– vyber –</option><option value="new"${nw?" selected":""}>➕ Nový zákazník</option>${F.map(f=>`<option value="${esc(f.id)}"${A.nf.cust===f.id?" selected":""}>${esc(f.name)}</option>`).join("")}</select></label>
+   ${nw?`<label class="w">Meno / firma<input name="cname" required></label><label>Telefón<input name="cphone" inputmode="tel" placeholder="0905 123 456"></label><label>IČO<input name="cico" inputmode="numeric"></label><label class="w">Adresa<input name="caddr"></label>`:""}
+   <label class="w">Služba<select name="service" required><option value="">– vyber –</option>${A.ns.map(v=>`<option value="${esc(v.id)}">${esc(v.name)}${v.price!=null?` · ${f2(v.price)} €/${UN[v.unit]||v.unit}`:""}</option>`).join("")}</select></label>
+   <label>Množstvo (ha / t / hod. podľa služby)<input name="qty" inputmode="decimal" required></label>
+   <label>Stav<select name="status"><option value="potvrdena">✓ Potvrdená (dohodnuté so zákazníkom)</option><option value="nova">Nová (ešte potvrdiť)</option></select></label>
+   <label>Termín od<input type="date" name="od"></label><label>Termín do<input type="date" name="do"></label>
+   <label class="w">Miesto / pozemok<input name="place" placeholder="obec, lokalita, parcela"></label><label class="w">Poznámka<input name="note"></label>
+   <div class="w s">Cena sa vypočíta podľa cenníka služieb (podľa množstva). Objednávka sa hneď objaví v zozname a majiteľ dostane upozornenie.</div>
+   <div class="w btns"><button class="pri" type="submit">💾 Uložiť objednávku</button><button type="button" class="ghost" data-anew="0">Zrušiť</button></div></form>`}
+document.addEventListener("click",e=>{const b=e.target.closest&&e.target.closest("[data-anew]");if(!b)return;e.preventDefault();A.nf=b.dataset.anew==="1"?{cust:""}:null;renderStaff();
+  if(A.nf)setTimeout(()=>{const f=document.getElementById("agNew");if(f)f.scrollIntoView({block:"start",behavior:"smooth"})},60)},true);
+document.addEventListener("change",e=>{const x=e.target;if(!x.dataset||x.dataset.agcust===undefined||!A.nf)return;const was=A.nf.cust==="new";A.nf.cust=x.value;if(was!==(x.value==="new"))renderStaff()},true);
+document.addEventListener("submit",async e=>{const f=e.target;if(f.id!=="agNew")return;e.preventDefault();e.stopPropagation();const d=new FormData(f),b=f.querySelector("button[type=submit]");
+  const qty=+String(d.get("qty")||"").replace(",",".").replace(/\s/g,"");if(!(qty>0)){toast("Zadaj množstvo.",4000);return}
+  busy(b,true);let fid=String(d.get("farmer")||"");
+  if(fid==="new"){const r=await sb.rpc("agro_customer_new",{p_name:String(d.get("cname")||"").trim(),p_phone:String(d.get("cphone")||"").trim(),p_addr:String(d.get("caddr")||"").trim(),p_ico:String(d.get("cico")||"").trim()});
+    if(r.error){busy(b,false);toast("Zákazníka sa nepodarilo uložiť: "+r.error.message,7000);return}fid=r.data;if(STATE.farmers)STATE.farmers.push({id:fid,name:String(d.get("cname")||"").trim(),active:true})}
+  if(!fid){busy(b,false);toast("Vyber zákazníka.",4000);return}
+  const row={farmer_id:fid,service_id:String(d.get("service")||"")||null,qty,status:String(d.get("status")||"potvrdena"),date_from:d.get("od")||null,date_to:d.get("do")||null,place:String(d.get("place")||"").trim()||null,note:String(d.get("note")||"").trim()||null};
+  const r=await sb.from("agro_orders").insert(row).select("no").single();busy(b,false);
+  if(r.error){toast("Objednávku sa nepodarilo uložiť: "+r.error.message,7000);return}
+  toast("✓ Objednávka "+(r.data&&r.data.no||"")+" uložená.",5000);A.nf=null;A.flt="open";A.orders=null;loadOrders()},true);
 // --- cenník služieb ---
 async function loadSrv(){const r=await sb.from("agro_services").select("*").order("sort").order("name");A.srv=r.error?{err:r.error.message}:r.data||[];rerender()}
 function srvForm(s){s=s||{unit:"ha",active:false,fuel_by_customer:true,sort:100};
