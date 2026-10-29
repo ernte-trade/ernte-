@@ -84,6 +84,9 @@ s pripojeným repozitárom `ernte-trade/ernte-`.
 - **Pravidlo majiteľa (trvalé): CENY OBCHODNÍKA S ÚPRAVOU** (`staff.price_adj`, `my_price_adj`, `padjSet` v `index.html`): Ceperko = zverejnené ceny − 5 €/t
   (Prešovský kraj – vyššie náklady na dopravu) všade, kde ceny vidí (Cenník, Uzatvoriť obchod, úvod, ceny na neskorší odber, história, upozornenie na pokles); zverejnený cenník nemení.
   Ostatné nastavenia ako Galajda a Ličko. Všeobecné upozornenia cenníka (zverejnené ceny) mu nechodia.
+- **Pravidlo majiteľa (trvalé): DANUBE ZMLUVA = vzor S-HU** (`dnzmluva.js`, `danube_contract_save`): pri pridaní zmluvy v Danube Trade sa vždy vytvorí dvojjazyčná zmluva SK | HU
+  presne podľa vzoru S-HU-2026/1 (kupujúci Danube Commodities Kft., bez príloh GMP+ a ISCC, pri rozpore platí SK znenie). Cena = naša aktuálna nákupná cena u farmára
+  (predvyplní sa, dá sa zmeniť), Príloha 1 = parametre podľa komodity, predávajúci z karty farmára. Číslo S/K/P/R/L/J-HU-rok/poradie.
 - **Zámok cien** (`prices_lock`): ceny riadené modelom (sója, repka, kukurica, LO) z aplikácie (jwt) nejdú zmeniť – iba databázové funkcie (`ernte.allow_price`).
 - **Konkurenčné ceny** (`konk.js`, kalk_store `pricelist/konk`): vložený text ponuky → rozpoznanie, porovnanie, báza voči burze. Mená firiem iba v DB.
 - **Príkaz majiteľa (trvalý):** pracovať na 100 %, bezchybne a rýchlo; nič nepoškodiť (model cenníka, nastavenia, údaje). Pred nasadením otestovať.
