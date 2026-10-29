@@ -1,0 +1,44 @@
+/* ===== ERNTE · FIT – nič sa neprekrýva, nič nepretŕča, nadpisy a popisy čitateľné (29. 10.) =====
+   Platí pre všetky prihlásenia. Pravidlá majú #app, aby vyhrali nad štýlmi modulov. */
+/* jednostĺpcové mriežky sa nesmú roztiahnuť podľa najdlhšieho riadku */
+#app .owh,#app .owsec,#app .hub{grid-template-columns:minmax(0,1fr)}
+#app .owg,#app .owpg{grid-template-columns:repeat(auto-fill,minmax(min(150px,100%),1fr))}
+@media (max-width:520px){#app .owg,#app .owpg{grid-template-columns:repeat(2,minmax(0,1fr))}}
+/* nadpisy sekcií: zalomia sa, štítok (napr. „iba Martin a Jana“) ide pod nadpis */
+#app .owsh{flex-wrap:wrap;row-gap:6px}
+#app .owsh>span{white-space:normal;min-width:0}
+/* hlavička Prehľadu: dátum + nadpis vľavo, ↻ vpravo, popis pod celým riadkom */
+#app .owhd,#app .hubh{align-items:center}
+#app .owhd>div,#app .hubh>div{min-width:0}
+#app .hubt{overflow-wrap:anywhere}
+/* dlaždice Prehľadu: obsah zarovnaný na stred */
+#app .owt{display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;gap:2px}
+#app .owt .owi{margin-left:auto;margin-right:auto}
+#app .owt .owv{max-width:100%}
+/* všeobecne: dlhé slová a mená sa zalomia, nevytŕčajú */
+#app h1,#app h2,#app h3,#app .t,#app .ds-ttl b,#app .ds-ttl small{overflow-wrap:anywhere}
+#app .card,#app .ds-fc,#app .ds-tile{min-width:0;max-width:100%}
+#app img,#app video,#app canvas,#app iframe{max-width:100%}
+/* tlačidlá: text sa nikdy neoreže – radšej sa zalomí */
+#app .btns{flex-wrap:wrap}
+#app .btns>button,#app .btns>a{max-width:100%;white-space:normal}
+/* popisy funkcií (ℹ️) vždy na celú šírku */
+#app .fdesc{max-width:100%;box-sizing:border-box}
+/* hlavička aplikácie: logo + názov hore, tlačidlá (↻ Podpora ⏻) pod ním na stred */
+header.top{flex-wrap:wrap;justify-content:center;row-gap:8px}
+header.top>.tt{flex:1 1 calc(100% - 90px);min-width:0}
+header.top>.tt h1,header.top>.tt small{overflow-wrap:anywhere}
+@media (min-width:700px){header.top{justify-content:flex-end}header.top>.tt{flex:1 1 auto}}
+/* okrúhle ikonové tlačidlá (obálka, zvonček, téma, A+, ↻, ⏻) – presný kruh, nie vajce */
+#app .hrow{justify-content:center;flex-wrap:wrap;row-gap:8px}
+#app .hrow>button:not(.hbtn),header.top>.topref,header.top>.out,#app .hubr{width:44px!important;height:44px!important;min-width:44px!important;min-height:44px!important;max-width:44px;flex:0 0 44px!important;padding:0!important;border-radius:50%!important;aspect-ratio:1/1;display:inline-flex!important;align-items:center;justify-content:center;gap:1px;box-sizing:border-box;line-height:1}
+#app .hrow>button:not(.hbtn) *{line-height:1}
+@media (min-width:700px){#app .hrow{justify-content:flex-end}}
+header.top>button{margin-left:0!important;margin-right:0!important}
+/* cenové dlaždice Prehľadu: obsah na stred */
+#app .owp{text-align:center}
+#app .owp .owpn{justify-content:center}
+#app .owp .owps{justify-items:center}
+#app .owp .owps small{max-width:100%}
+/* na mobile tlačidlá a štítky v kartách na stred */
+@media (max-width:600px){#app .btns{justify-content:center}#app .ds-meta{justify-content:center}}

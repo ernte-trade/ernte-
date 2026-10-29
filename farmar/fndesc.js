@@ -114,7 +114,14 @@ function apply(){const app=document.getElementById("app");if(!app)return;
   // 3) nadpisy (iba farmár a zamestnanci – nie portál partnerov trusu)
   if(!isF()&&!app.querySelector("nav.tabs"))return;
   app.querySelectorAll("h2").forEach(h=>{if(h.closest(".zt")&&h.parentElement.classList.contains("zt"))return;const nx=h.nextElementSibling;if(nx&&nx.classList&&nx.classList.contains("fdesc"))return;
-    const n=norm(h.textContent);const m=H2N.find(x=>n.startsWith(x[0]));if(m)h.insertAdjacentHTML("afterend",strip("fh2",e(m[1])))});
+    const n=norm(h.textContent);const m=H2N.find(x=>n.startsWith(x[0]));if(!m)return;
+    // nadpis v riadku s tlačidlom (napr. Prehľad + ↻) → popis pod celý riadok na plnú šírku, nie stlačený vedľa tlačidla
+    let a=h;for(let i=0;i<2;i++){const pp=a.parentElement;if(!pp||pp.id==="app"||pp.classList.contains("card"))break;const cs=getComputedStyle(pp);
+      if((cs.display.includes("flex")&&!cs.flexDirection.startsWith("column")&&pp.children.length>1)||(cs.display.includes("grid")&&cs.gridTemplateColumns.split(" ").length>1)){a=pp;break}
+      if(pp.children.length===1||(pp.children.length===2&&pp.firstElementChild.tagName==="SMALL")){a=pp;continue}break}
+    if(a!==h){const p2=a.parentElement;if(!p2||!(getComputedStyle(p2).display.includes("flex")&&!getComputedStyle(p2).flexDirection.startsWith("column"))){}else a=h}
+    if(a!==h){const nx2=a.nextElementSibling;if(nx2&&nx2.classList&&nx2.classList.contains("fdesc"))return}
+    a.insertAdjacentHTML("afterend",strip("fh2",e(m[1])))});
   // 4) farmár – úvod raz navrchu
   if(isF()&&!app.querySelector(".fdesc.ffarm")){const hero=app.querySelector(".hero");if(hero)hero.insertAdjacentHTML("afterend",strip("ffarm","Tu vidíte výkupné ceny, môžete ponúknuť komoditu na predaj, objednať odvoz alebo služby, podpísať zmluvu a sledovať dodávky a peniaze. Pod každým nadpisom je krátky popis."))}}
 let q=0;function sched(){if(q)return;q=requestAnimationFrame(()=>{q=0;try{apply()}catch(x){}})}
