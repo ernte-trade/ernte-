@@ -24,7 +24,7 @@ function dop(site){if(!site||!site.ke)return null;const f=D.mk&&D.mk.fuel,huf=(D
   if(f&&f.ref){const xs=[f.sk&&f.sk.netL,f.hu&&f.hu.netL].filter(Number.isFinite);if(xs.length)ekm=f.ref.ekm+f.ref.cons*(xs.reduce((a,b)=>a+b,0)/xs.length-f.ref.netL)}
   const one=a=>{const [km,sk,hu,at]=a;return (km*ekm*2+2*((sk||0)*0.1942+(hu||0)*192.38/huf+(at||0)*0.5724))/25};
   return Math.round(((one(site.ke)+one(site.po||site.ke))/2)*10)/10}
-const siteOf=(b,txt)=>{const S=(b&&b.sites)||[];if(!S.length)return null;if(txt){const s=S.find(x=>x.rx&&new RegExp(x.rx,"i").test(txt));if(s)return s}return null};
+const siteOf=(b,txt)=>{const S=(b&&b.sites)||[];if(!S.length)return null;if(txt){const s=S.find(x=>x.rx&&new RegExp(x.rx,"i").test(txt));if(s)return s}return S.length===1?S[0]:null};
 const buyerOf=who=>(D.B||[]).find(b=>b.rx&&new RegExp(b.rx,"i").test(who||""));
 
 async function load(){if(!OWN()||D.busy)return;D.busy=true;D.err="";
@@ -46,8 +46,8 @@ function options(com,buy){const out=[],B=D.B||[];
     let p=+o.price,bz=null;if(b.float_burza&&o.bz_val!=null){const n=bzNow(o.bz_sym||BZ[com]);if(n){bz={d:n.v-(+o.bz_val),n:n.n};p+=bz.d}}
     push(b,o.site,siteOf(b,o.site)||((b.sites||[]).find(s=>s.n===o.site)),o.del,p,o.d,"ponuka odberateľa",{bz,term:o.period})}
   // 2) ponuky konkurencie (ich výkupná cena = za toľko by kúpili od nás)
-  const KK=D.K.filter(x=>x.com===com&&+x.price>0&&age(x.d)<=MAXAGE&&!/nad\s*500/i.test(x.term||""));
-  for(const x of KK){const b=buyerOf(x.who);if(!b)continue;const del=String(x.del||"").toUpperCase()||"DAP",fca=del==="FCA"||del==="EXW",site=fca?{n:"FCA farma"}:(siteOf(b,(x.place||"")+" "+(x.term||"")+" "+(x.who||""))||((b.sites||[])[0]||null));
+  const KK=D.K.filter(x=>x.com===com&&+x.price>0&&age(x.d)<=MAXAGE&&!/nad\s*500/i.test(x.term||"")&&!/hamburg|z[aá]pad/i.test((x.who||"")+" "+(x.place||"")));
+  for(const x of KK){const b=buyerOf(x.who);if(!b)continue;const del=String(x.del||"").toUpperCase()||"DAP",fca=del==="FCA"||del==="EXW",site=fca?{n:"FCA farma"}:siteOf(b,(x.place||"")+" "+(x.term||"")+" "+(x.who||""));
     const k=b.id+"|"+(site&&site.n||"")+"|"+del+"|"+(x.term||"");if(seen.has(k))continue;seen.add(k);
     let p=+x.price,bz=null;if(b.float_burza&&x.b!=null){const n=bzNow(BZ[com]);if(n){const np=n.v+(+x.b);bz={d:np-p,n:n.n};p=np}}
     push(b,site&&site.n,site,del,p,x.d,"ponuka (Konkurenčné ceny)",{bz,term:/odber\s*[0-9]/i.test(x.term||"")?x.term:""})}
