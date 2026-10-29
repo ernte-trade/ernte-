@@ -89,6 +89,9 @@ s pripojeným repozitárom `ernte-trade/ernte-`.
   (predvyplní sa, dá sa zmeniť), Príloha 1 = parametre podľa komodity, predávajúci z karty farmára. Číslo S/K/P/R/L/J-HU-rok/poradie.
 - **Pravidlo majiteľa (trvalé): TOMÁŠ ŠTOFA** – Evidencia celá ako majiteľ (`ev_full`, `ev_full()`), Agro služby celé – park, kalkulácia, katalóg, cenník (`agro_calc`, `agro_full()`),
   GPS traktorov vo Flotile (`fleet_trak` → iba skupina Traktory). Tieto kľúče má iba on (+ majiteľ a Jana); nikomu inému nezapínať bez príkazu majiteľa.
+- **Pravidlo majiteľa (trvalé): KDE PREDAŤ – NAJVYŠŠÍ ZISK** (`predaj.js`, `sell_buyers`, `sell_offers`, `sell_data`, iba majiteľ): ku každej zverejnenej nákupnej cene odporúčanie odberateľa
+  s najvyšším ziskom = cena odberateľa (ponuky odberateľov posunuté s burzou, ponuky z Konkurenčných cien, skutočné predaje z vážnych lístkov) − doprava z regiónu (vzorec Kalkulačky) − nákup.
+  Modely odberateľov a mená iba v DB. Nové ponuky odberateľov vkladať do `sell_offers` (formulár v Prehľade).
 - **Zámok cien** (`prices_lock`): ceny riadené modelom (sója, repka, kukurica, LO) z aplikácie (jwt) nejdú zmeniť – iba databázové funkcie (`ernte.allow_price`).
 - **Konkurenčné ceny** (`konk.js`, kalk_store `pricelist/konk`): vložený text ponuky → rozpoznanie, porovnanie, báza voči burze. Mená firiem iba v DB.
 - **Príkaz majiteľa (trvalý):** pracovať na 100 %, bezchybne a rýchlo; nič nepoškodiť (model cenníka, nastavenia, údaje). Pred nasadením otestovať.

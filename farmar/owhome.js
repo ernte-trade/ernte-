@@ -38,10 +38,10 @@ function pricesHTML(){const P=(STATE.prices||[]).filter(p=>p.price!=null&&+p.pri
       <span class="owpn">${img?`<img src="${img}" alt="" loading="lazy" onerror="this.remove()">`:"<i></i>"}<span>${e(comName(p.com))}</span></span>
       <span class="owpk">Nákup FCA</span><b class="owpv">${F(buy,0)}<small> €/t</small></b>
       <span class="owps">${dap!=null?`Predaj <b>${F(dap,0)} €/t</b>`:`Predaj <b>–</b>`}<small>${dap!=null?e(String(s.pl||"").replace("Bunge · ","Bunge "))+(dop?` · doprava ${F(dop,0)} €`:""):"čaká na trh"}</small></span>
-      <span class="owpf"><span class="owpm ${mg==null?"":mg>=0?"ps":"ng"}">${mg==null?"marža –":`marža ${mg>0?"+":mg<0?"−":""}${F(Math.abs(mg),0)} €/t`}</span>${bx!=null?`<span class="owpb">${e(bs==="soja_usc_bu"?"CBOT":"MATIF")} ${F(bx,0)}</span>`:""}</span></button>`}).join("");
+      ${window.sellBestLine?sellBestLine(p.com,buy):""}<span class="owpf"><span class="owpm ${mg==null?"":mg>=0?"ps":"ng"}">${mg==null?"marža –":`marža ${mg>0?"+":mg<0?"−":""}${F(Math.abs(mg),0)} €/t`}</span>${bx!=null?`<span class="owpb">${e(bs==="soja_usc_bu"?"CBOT":"MATIF")} ${F(bx,0)}</span>`:""}</span></button>`}).join("");
   if(!anySell)later();
   const valid=((STATE.settings||{}).pricelist||{}).valid;
-  return `<div class="owg owpg">${cards}</div><div class="owfoot">Nákup = naša výkupná cena FCA farma, ktorú vidia farmári. Predaj = DAP odberateľa (lepší z Bunge a Agro-Somotor), marža = predaj − doprava − nákup.${valid?` Cenník platí do ${e(dSK(valid))}.`:""}</div>`}
+  return `<div class="owg owpg">${cards}</div>${window.sellRecHTML?sellRecHTML():""}<div class="owfoot">Nákup = naša výkupná cena FCA farma, ktorú vidia farmári. Predaj = DAP odberateľa (lepší z Bunge a Agro-Somotor), marža = predaj − doprava − nákup.${valid?` Cenník platí do ${e(dSK(valid))}.`:""}</div>`}
 
 // ---- 2. čo riešiť ----
 function todoHTML(){const R=STATE.reqs||[],nNew=R.filter(r=>r.status==="nova").length,auto=R.filter(r=>r.status==="nova"&&/^🎯 Automaticky/.test(r.note||"")).length,AL=[];
