@@ -30,7 +30,10 @@ function pricesHTML(){const P=(STATE.prices||[]).filter(p=>p.price!=null&&+p.pri
   if(!P.length)return `<div class="owempty">Cenník je prázdny – zadaj ceny v záložke <button type="button" class="owlink" data-owgo="price">💶 Cenník</button>.</div>`;
   const order=(typeof MK!=="undefined"?MK.map(m=>m[0]):[]);P.sort((a,b)=>order.indexOf(a.com)-order.indexOf(b.com));
   let anySell=false;
-  const cards=P.map(p=>{const s=S[p.com],buy=+p.price,dap=s&&Number.isFinite(+s.dap)?+s.dap:null,dop=s&&Number.isFinite(+s.dop)?+s.dop:0;
+  const cards=P.map(p=>{let s=S[p.com];if(s&&(s.arx||s.ia))s=s.rg||null;/* náš NÁKUPNÝ model (ADM, Interagros, VSK) nie je predaj – iba Kalkulačka (región Bunge/Somotor) */const buy=+p.price,bst=window.sellBest?sellBest(p.com,+p.price):null;
+    // jedno číslo všade: ak máme skutočné ponuky odberateľov, predaj a marža = najlepšia z nich (to isté ako 🏆 Kde predať)
+    if(bst&&bst.net!=null)s={dap:bst.price,dop:bst.dop||0,pl:bst.b.name+(bst.siteName?" "+bst.siteName:"")+" · "+bst.del};
+    const dap=s&&Number.isFinite(+s.dap)?+s.dap:null,dop=s&&Number.isFinite(+s.dop)?+s.dop:0;
     const mg=dap!=null?Math.round((dap-dop-buy)*100)/100:null;if(dap!=null)anySell=true;
     const bs=typeof MKB!=="undefined"?MKB[p.com]:null,bx=bs&&M&&M[bs]&&M[bs].eur_t!=null?+M[bs].eur_t:null;
     const img=typeof imgUrl==="function"?imgUrl(p.com):"";
@@ -38,10 +41,10 @@ function pricesHTML(){const P=(STATE.prices||[]).filter(p=>p.price!=null&&+p.pri
       <span class="owpn">${img?`<img src="${img}" alt="" loading="lazy" onerror="this.remove()">`:"<i></i>"}<span>${e(comName(p.com))}</span></span>
       <span class="owpk">Nákup FCA</span><b class="owpv">${F(buy,0)}<small> €/t</small></b>
       <span class="owps">${dap!=null?`Predaj <b>${F(dap,0)} €/t</b>`:`Predaj <b>–</b>`}<small>${dap!=null?e(String(s.pl||"").replace("Bunge · ","Bunge "))+(dop?` · doprava ${F(dop,0)} €`:""):"čaká na trh"}</small></span>
-      ${window.sellBestLine?sellBestLine(p.com,buy):""}<span class="owpf"><span class="owpm ${mg==null?"":mg>=0?"ps":"ng"}">${mg==null?"marža –":`marža ${mg>0?"+":mg<0?"−":""}${F(Math.abs(mg),0)} €/t`}</span>${bx!=null?`<span class="owpb">${e(bs==="soja_usc_bu"?"CBOT":"MATIF")} ${F(bx,0)}</span>`:""}</span></button>`}).join("");
+      <span class="owpf"><span class="owpm ${mg==null?"":mg>=0?"ps":"ng"}">${mg==null?"marža –":`marža ${mg>0?"+":mg<0?"−":""}${F(Math.abs(mg),0)} €/t`}</span>${bx!=null?`<span class="owpb">${e(bs==="soja_usc_bu"?"CBOT":"MATIF")} ${F(bx,0)}</span>`:""}</span></button>`}).join("");
   if(!anySell)later();
   const valid=((STATE.settings||{}).pricelist||{}).valid;
-  return `<div class="owg owpg">${cards}</div>${window.sellRecHTML?sellRecHTML():""}<div class="owfoot">Nákup = naša výkupná cena FCA farma, ktorú vidia farmári. Predaj = DAP odberateľa (lepší z Bunge a Agro-Somotor), marža = predaj − doprava − nákup.${valid?` Cenník platí do ${e(dSK(valid))}.`:""}</div>`}
+  return `<div class="owg owpg">${cards}</div>${window.sellRecHTML?sellRecHTML():""}<div class="owfoot">Nákup = naša výkupná cena FCA farma, ktorú vidia farmári. Predaj = najlepšia ponuka odberateľa (rovnaká ako v „🏆 Kde predať“), inak odhad Kalkulačky; marža = predaj − doprava − nákup.${valid?` Cenník platí do ${e(dSK(valid))}.`:""}</div>`}
 
 // ---- 2. čo riešiť ----
 function todoHTML(){const R=STATE.reqs||[],nNew=R.filter(r=>r.status==="nova").length,auto=R.filter(r=>r.status==="nova"&&/^🎯 Automaticky/.test(r.note||"")).length,AL=[];
