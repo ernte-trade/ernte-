@@ -113,7 +113,7 @@ document.addEventListener("click",ev=>{const g=s=>ev.target.closest&&ev.target.c
   if(x=g("[data-cxack]")){setAck(x.dataset.cxack);const i=x.closest(".cxi");if(i)i.remove();const al=document.querySelector(".cxal");if(al&&!al.querySelector(".cxi"))al.remove();return}
   if(x=g("[data-cxconf]")){confirmF(x.dataset.cxconf);return}},true);
 document.addEventListener("submit",ev=>{if(ev.target.id!=="cxF")return;ev.preventDefault();ev.stopPropagation();const fd=new FormData(ev.target),r=String(fd.get("r")||""),d=String(fd.get("d")||"").trim();if(!r){say("Vyberte dôvod.");return}doCancel(r,d)},true);
-function wrap(n,fn){const o=window[n];if(typeof o!=="function"||o["__cx"+n])return;const w=function(){const r=o.apply(this,arguments);try{fn()}catch(x){}return r};w["__cx"+n]=1;window[n]=w;try{fn()}catch(x){}}
+function wrap(n,fn){const o=window[n];if(typeof o!=="function"||o["__cx"+n])return;const w=function(){const r=o.apply(this,arguments);try{fn()}catch(x){}return r};w["__cx"+n]=1;Object.keys(o).forEach(k=>{try{if(!(k in w))w[k]=o[k]}catch(x){}});window[n]=w;try{fn()}catch(x){}}
 const t=setInterval(()=>{wrap("renderStaff",injectStaff);wrap("renderFarmer",injectFarmer)},400);setTimeout(()=>clearInterval(t),60000);
 // nové zrušenie od farmára → hneď obnoviť (ostatné zmeny chodia cez existujúce živé kanály)
 setInterval(()=>{if(document.hidden)return;if(isS()&&seesAlerts()&&typeof loadStaff==="function"&&!(window.formBusy&&formBusy())&&!document.getElementById("cxMod"))loadStaff().then(()=>{if(items().length&&!document.querySelector(".cxal"))renderStaff()})},90000);

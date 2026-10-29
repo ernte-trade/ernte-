@@ -109,3 +109,13 @@ table{font-variant-numeric:tabular-nums}
 .hbt .hbl{font-weight:600;font-size:.8rem;color:var(--ink);opacity:.78;letter-spacing:-.005em}
 .hbt .hbv{font-size:2rem;font-weight:700;letter-spacing:-.045em;line-height:1.05}
 html[data-theme=light] .hbt .hbi{background:rgba(15,23,42,.05);border-color:rgba(15,23,42,.08)}
+
+/* ===== Rýchlosť (29. 10.): rozmazanie pozadia (sklo) iba na vonkajšej karte. Vnorené prvky v karte rozmazávali
+   to isté pozadie druhý a tretí raz – na mobile to pri posúvaní sekalo. Vzhľad sa prakticky nemení. ===== */
+.card .card,.card .kb,.card .vd,.card .xv,.card .xd,.card .pyc,.card .xc,.card .xtl,.card .vfirm,.card .vt,.card .ds-g,.card .ds-kpi,.card .ds-tile,.card .ds-trow,.card .ds-fc,
+.card .pban,.card .xprof>div,.card .vnav button,.card .vlive div,.ds-tile .ds-tile,.ds-g .ds-tile,.ds-g .ds-kpi{-webkit-backdrop-filter:none!important;backdrop-filter:none!important}
+@media (hover:none) and (pointer:coarse){
+  /* na telefóne menší polomer rozmazania = rovnaký dojem, menej práce pre grafiku */
+  .card,.kb,.vd,.xv,.xd,.pyc,.xc,.xmap,.xtl,.vfirm,.vt,.ds-g,.ds-kpi,.ds-tile,.ds-trow,.ds-fc{--ds-blur:blur(10px) saturate(150%)}
+  .card,.ds-fc,.ds-g{transition:none}
+}

@@ -21,6 +21,12 @@ Platí pre Claude aj ERNTE AI pri každej novej sekcii, záložke, funkcii alebo
    obchod, výkup, zúčtovanie, zmluvy a kurací trus v štýle **ERNTE spol. s r.o.** Hlavička cez `brandHead("valko"|"ernte", nadpis, podnadpis)`
    a farby cez `brandCss(...)` (`farmar/brand.js`).
 
+## Výkon (29. 10.)
+- Kto obaľuje `renderStaff` / `renderFarmer`, MUSÍ skopírovať značky z pôvodnej funkcie
+  (`Object.keys(o).forEach(k=>{if(!(k in w))w[k]=o[k]})`) – inak sa moduly obaľovali donekonečna (stovky vrstiev, aplikácia sekala).
+- Načítanie dát, ktoré po návrate volá `renderStaff`, nesmie nechať stav `null` (inak nekonečný cyklus) – pri prázdnej odpovedi `{err}` / `{}`.
+- Kým človek píše do políčka, prekreslenie z pozadia počká (`formkeep.js`).
+
 ## Bezpečnosť a dáta
 - Žiadne heslá, kľúče, pečiatky ani obchodné dáta v čitateľnej podobe v repozitári – iba zašifrované migrácie.
 - Marža, zisk, mzdy a výsledok vidí iba majiteľ. Farmár nikdy nevidí odberateľa, burzu, predajné ceny ani iných farmárov.

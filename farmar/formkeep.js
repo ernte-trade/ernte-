@@ -41,7 +41,7 @@ function flush(){if(typing())return;for(const n of Object.keys(PEND)){const args
 document.addEventListener("focusout",()=>setTimeout(flush,450),true);
 document.addEventListener("visibilitychange",()=>{if(!document.hidden)setTimeout(flush,600)});
 function wrap(name){const o=window[name];if(typeof o!=="function"||o.__fk)return false;
-  const w=function(){if(typing()&&!userNow()){PEND[name]=[...arguments];return}const S=snap();const r=o.apply(this,arguments);try{restore(S)}catch(x){}return r};w.__fk=1;window[name]=w;return true}
+  const w=function(){if(typing()&&!userNow()){PEND[name]=[...arguments];return}const S=snap();const r=o.apply(this,arguments);try{restore(S)}catch(x){}return r};w.__fk=1;Object.keys(o).forEach(k=>{try{if(!(k in w))w[k]=o[k]}catch(x){}});window[name]=w;return true}
 window.formFlush=flush;
 // odoslaný formulár sa nevracia
 document.addEventListener("submit",e=>{const f=e.target,k=f&&keyOf(f);if(!k)return;SENT[k]=Date.now();

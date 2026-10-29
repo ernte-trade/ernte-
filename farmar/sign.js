@@ -30,7 +30,7 @@ const needSign=d=>{const s=SF[d.id];return d.status!=="zruseny"&&!(s&&s.signed_a
 // ---------- FARMÁR ----------
 async function loadSF(){try{const r=await sb.rpc("deal_signs_mine");if(!r.error&&Array.isArray(r.data)){SF={};for(const x of r.data)SF[x.deal_id]=x}}catch(x){}}
 if(typeof window.loadFarmer==="function"){const _lf=window.loadFarmer;window.loadFarmer=async function(){const r=await _lf.apply(this,arguments);await loadSF();return r}}
-if(typeof window.renderFarmer==="function"){const _rf=window.renderFarmer;window.renderFarmer=function(){const r=_rf.apply(this,arguments);try{decorF()}catch(x){}return r}}
+if(typeof window.renderFarmer==="function"){const _rf=window.renderFarmer;window.renderFarmer=function(){const r=_rf.apply(this,arguments);try{decorF()}catch(x){}return r};Object.keys(_rf).forEach(k=>{try{if(!(k in window.renderFarmer))window.renderFarmer[k]=_rf[k]}catch(x){}})}
 function decorF(){if(typeof FARMER==="undefined"||!FARMER||!STATE.deals)return;const app=document.getElementById("app");if(!app)return;
   const L=STATE.deals.filter(needSign);
   for(const d of STATE.deals){const b=app.querySelector(`[data-cpdf="${CSS.escape(d.id)}"]`);const card=b&&b.closest(".card");if(!card)continue;const bt=card.querySelector(".btns")||b.parentElement,s=SF[d.id];
@@ -93,7 +93,7 @@ document.addEventListener("click",async ev=>{const g=s=>ev.target.closest&&ev.ta
   if(g("[data-sgcopy]")){try{await navigator.clipboard.writeText(window._sgTxt||"");tm("Skopírované ✓")}catch(y){}return}
 });
 async function loadSS(){if(SSload)return;SSload=true;try{const r=await sb.rpc("deal_signs_staff");SS={};if(!r.error&&Array.isArray(r.data))for(const x of r.data)SS[x.deal_id]=x}catch(x){SS={}}SSload=false;if(typeof TAB!=="undefined"&&TAB==="deals"&&typeof renderStaff==="function")renderStaff()}
-if(typeof window.renderStaff==="function"){const _rs=window.renderStaff;window.renderStaff=function(){const r=_rs.apply(this,arguments);try{decorS()}catch(x){}return r}}
+if(typeof window.renderStaff==="function"){const _rs=window.renderStaff;window.renderStaff=function(){const r=_rs.apply(this,arguments);try{decorS()}catch(x){}return r};Object.keys(_rs).forEach(k=>{try{if(!(k in window.renderStaff))window.renderStaff[k]=_rs[k]}catch(x){}})}
 function decorS(){if(typeof TAB==="undefined"||TAB!=="deals"||typeof FARMER!=="undefined"&&FARMER)return;if(SS===null){loadSS();return}
   const app=document.getElementById("app");for(const d of (STATE.deals||[])){const b=app.querySelector(`.card [data-cpdf="${CSS.escape(d.id)}"]`);if(!b)continue;const bt=b.parentElement,s=SS[d.id];
     if(bt.querySelector(".sgst"))continue;const sp=document.createElement("span");sp.className="pill sgst";

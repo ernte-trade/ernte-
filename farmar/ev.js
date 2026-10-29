@@ -29,7 +29,7 @@ async function loadEnt(){const r=await all(()=>sb.from("ev_entries").select("*")
   const k=await sb.from("ev_kat").select("*");E.kat=k.error?[]:(k.data||[]);rr()}
 async function loadPay(){const [p,y,a]=await Promise.all([sb.from("ev_people").select("*").order("meno"),all(()=>sb.from("ev_pay").select("*").order("mes")),sb.from("ev_param").select("*").order("rok")]);
   if(p.error){E.err=errTxt(p);E.ppl=[];E.pay=[];E.par=[];rr();return}E.ppl=p.data||[];E.pay=y.data||[];E.par=a.data||[];rr()}
-async function loadDoch(){E.dochM=E.m;const r=await sb.rpc("ev_doch_list",{m:E.m+"-01"});E.doch=r.error?{err:errTxt(r)}:r.data;rr()}
+async function loadDoch(){E.dochM=E.m;const r=await sb.rpc("ev_doch_list",{m:E.m+"-01"});E.doch=r.error?{err:errTxt(r)}:(r.data??{err:"Žiadne údaje."});rr()}
 async function loadOps(){const r=await all(()=>sb.from("ev_ops").select("*").order("d",{ascending:false}));E.ops=r.error?[]:r.data;rr()}
 const presun=k=>(E.kat||[]).some(x=>x.presun&&x.kat===k);
 const person=id=>(E.ppl||[]).find(p=>p.id===id)||{};

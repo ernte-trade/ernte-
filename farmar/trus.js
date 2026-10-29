@@ -85,12 +85,12 @@ function loadsHTML(o,mode){const L=o.loads||[];if(!L.length)return "";
       <div class="w btns"><button class="lime">${mode==="sup"?(T.lang==="hu"?"✓ Megrakva":"✓ Naložené"):mode==="buy"?"✓ Prevzaté":"💾 Uložiť váženie"}</button></div></form></details>`:""}</div>`}).join("")}</div>`}
 
 // ================= ZAMESTNANCI (ERNTE / VALKO) =================
-async function loadStaffT(){const r=await sb.rpc("trus_staff");T.d=r.error?{err:errMsg(r)}:r.data;if(T.d&&T.d.own){const u=await sb.rpc("trus_users_list");T.d.users=u.error?null:(u.data||[]);try{const l=await sb.from("trus_partners").select("id,lang");for(const x of (l.data||[])){const p=(T.d.partners||[]).find(y=>y.id===x.id);if(p)p.lang=x.lang}}catch(x){}}if(typeof TAB!=="undefined"&&TAB==="trus")renderStaff()}
+let _ltB=false;async function loadStaffT(){if(_ltB)return;_ltB=true;let r;try{r=await sb.rpc("trus_staff")}catch(x){r={error:{message:String(x&&x.message||x)}}}finally{_ltB=false}T.d=r.error?{err:errMsg(r)}:(r.data||{err:"Kurací trus: žiadne údaje (skús neskôr)."});if(T.d&&T.d.own){const u=await sb.rpc("trus_users_list");T.d.users=u.error?null:(u.data||[]);try{const l=await sb.from("trus_partners").select("id,lang");for(const x of (l.data||[])){const p=(T.d.partners||[]).find(y=>y.id===x.id);if(p)p.lang=x.lang}}catch(x){}}if(typeof TAB!=="undefined"&&TAB==="trus")renderStaff()}
 
 // ---------- 🗺️ kamióny naživo (nakládka → vykládka), súradnice vykládky, čas príchodu ----------
 const LV={d:null,t:0,busy:false,map:null,lay:null,el:null};
 function liveHTML(){return `<div class="card trlive"><div class="row"><b>🗺️ ${tr("Kamióny naživo")}</b><small class="trlvt" id="trLvT"></small></div><div class="trmap" id="trMap"></div><div id="trLvL"><div class="s">${tr("Načítavam polohy áut…")}</div></div></div>`}
-async function lvLoad(){if(LV.busy)return;LV.busy=true;try{const r=await sb.rpc("trus_live");LV.d=r.error?{err:r.error.message}:r.data;LV.t=Date.now()}catch(x){LV.d={err:String(x)}}LV.busy=false;lvPaint()}
+async function lvLoad(){if(LV.busy)return;LV.busy=true;try{const r=await sb.rpc("trus_live");LV.d=r.error?{err:r.error.message}:(r.data??{loads:[],unloads:[]});LV.t=Date.now()}catch(x){LV.d={err:String(x)}}LV.busy=false;lvPaint()}
 const ago=t=>{if(!t)return "";const m=Math.round((Date.now()-new Date(t))/6e4);return m<2?"teraz":m<60?m+" min":Math.round(m/60)+" h"};
 const hhmm=min=>new Date(Date.now()+min*6e4).toLocaleTimeString("sk-SK",{hour:"2-digit",minute:"2-digit"});
 function lvPaint(){const L=document.getElementById("trLvL");if(!L)return;const D=LV.d;const tt=document.getElementById("trLvT");if(tt&&LV.t)tt.textContent=tr("obnovené")+" "+new Date(LV.t).toLocaleTimeString("sk-SK",{hour:"2-digit",minute:"2-digit"})+" · "+tr("každých 30 s");

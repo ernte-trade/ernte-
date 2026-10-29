@@ -37,7 +37,7 @@ async function obCount(){if(!isOwner())return;try{const r=await sb.from("notify_
 function paintBtn(){const hr=document.querySelector("#app .hrow");if(!hr||!isOwner())return;let b=hr.querySelector(".obbtn");
   if(!b){b=document.createElement("button");b.type="button";b.className="ds-theme obbtn";b.dataset.obopen="1";b.setAttribute("aria-label","Na odoslanie");b.title="Na odoslanie – správy čakajú na tvoje schválenie";hr.prepend(b)}
   b.innerHTML=`📤${OB.n?`<span class="obn">${OB.n}</span>`:""}`;b.classList.toggle("on",OB.n>0)}
-if(typeof window.renderStaff==="function"){const _rs=window.renderStaff;window.renderStaff=function(){const r=_rs.apply(this,arguments);try{paintBtn();if(!obTimer&&isOwner()){obCount();obTimer=setInterval(()=>{if(!document.hidden)obCount()},60e3)}}catch(x){}return r}}
+if(typeof window.renderStaff==="function"){const _rs=window.renderStaff;window.renderStaff=function(){const r=_rs.apply(this,arguments);try{paintBtn();if(!obTimer&&isOwner()){obCount();obTimer=setInterval(()=>{if(!document.hidden)obCount()},60e3)}}catch(x){}return r};Object.keys(_rs).forEach(k=>{try{if(!(k in window.renderStaff))window.renderStaff[k]=_rs[k]}catch(x){}})}
 async function obLoad(){const [a,b]=await Promise.all([sb.from("notify_outbox").select("*").eq("status","caka").order("created_at",{ascending:false}).limit(100),
   sb.from("notify_outbox").select("id,to_kind,to_name,title,status,sent_at,read_at,pushed").neq("status","caka").order("sent_at",{ascending:false}).limit(60)]);
   OB.list=a.error?{err:a.error.message}:a.data||[];OB.sent=b.data||[];OB.n=Array.isArray(OB.list)?OB.list.length:OB.n;paintBtn()}
@@ -65,7 +65,7 @@ function inDecor(){const app=document.getElementById("app");if(!app||!IN)return;
   if(U.length)h+=`<div class="inbx" role="alert"><div class="inhd"><span class="ingem" aria-hidden="true">💎</span><div><b>${U.length===1?"Nová správa od ERNTE":"Nové správy od ERNTE ("+U.length+")"}</b><small>prečítajte si a ťuknite Rozumiem</small></div></div>${U.map(x=>`<div class="inm"><b>${e(x.title)}</b><p>${e(x.body)}</p><small>${e(dt(x.sent_at))}</small><div class="btns"><button type="button" class="inok" data-inread="${e(x.id)}">✓ Rozumiem</button></div></div>`).join("")}</div>`;
   if(h){const d=document.createElement("div");d.innerHTML=h;if(window.trusHu&&trusHu())trusHuDom(d);const first=app.querySelector(".sgban");[...d.children].reverse().forEach(c=>first?first.after(c):app.prepend(c))}}
 window.inboxDecor=()=>{if(IN)inDecor();inLoad()};
-if(typeof window.renderFarmer==="function"){const _rf=window.renderFarmer;window.renderFarmer=function(){const r=_rf.apply(this,arguments);try{IN?inDecor():inLoad()}catch(x){}return r}}
+if(typeof window.renderFarmer==="function"){const _rf=window.renderFarmer;window.renderFarmer=function(){const r=_rf.apply(this,arguments);try{IN?inDecor():inLoad()}catch(x){}return r};Object.keys(_rf).forEach(k=>{try{if(!(k in window.renderFarmer))window.renderFarmer[k]=_rf[k]}catch(x){}})}
 setInterval(()=>{if(document.hidden)return;if((typeof FARMER!=="undefined"&&FARMER)||document.querySelector(".trtabs"))inLoad()},90e3);
 async function pushSetup(test){const r=await sb.rpc("my_notify_on",{p_test:!!test});if(r.error){tm(/my_notify_on/.test(r.error.message)?"Upozornenia sa zapnú po aktualizácii (pár minút).":r.error.message,6000);return}
   const tp=r.data,ios=/iPhone|iPad|iPod/.test(navigator.userAgent);const m=document.createElement("div");m.className="obmod";m.id="obMod";

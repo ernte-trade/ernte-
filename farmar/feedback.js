@@ -65,7 +65,7 @@ document.addEventListener("click",ev=>{const g=s=>ev.target.closest&&ev.target.c
   if(g("[data-fbq]")){const L=Q[who()]||Q.staff,t=document.querySelector("#fbF textarea")?.value||"";S.qi=(S.qi+1)%L.length;paint();const n=document.querySelector("#fbF textarea");if(n)n.value=t;return}
   if(x=g("[data-fbr]")){S.rate=+x.dataset.fbr;document.querySelectorAll("[data-fbr]").forEach(b=>b.setAttribute("aria-pressed",String(+b.dataset.fbr===S.rate)));return}},true);
 document.addEventListener("submit",ev=>{if(ev.target.id!=="fbF")return;ev.preventDefault();ev.stopPropagation();const a=String(new FormData(ev.target).get("a")||"").trim();if(a)send(a)},true);
-function wrap(n,fn){const o=window[n];if(typeof o!=="function"||o["__fb"+n])return;const w=function(){const r=o.apply(this,arguments);try{fn()}catch(x){}return r};w["__fb"+n]=1;window[n]=w}
+function wrap(n,fn){const o=window[n];if(typeof o!=="function"||o["__fb"+n])return;const w=function(){const r=o.apply(this,arguments);try{fn()}catch(x){}return r};w["__fb"+n]=1;Object.keys(o).forEach(k=>{try{if(!(k in w))w[k]=o[k]}catch(x){}});window[n]=w}
 const t=setInterval(()=>{wrap("renderStaff",injectHome);if(who())btn()},500);setTimeout(()=>clearInterval(t),120000);
 // občasná otázka: po 90 s používania, najviac raz za 3 dni
 setTimeout(()=>{if(who()){btn();tip()}},90000);

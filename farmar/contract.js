@@ -159,7 +159,7 @@ html[data-theme=light] .cabox{background:#fff;color:#0f172a}.cahd{display:flex;j
 .car{display:flex;flex-wrap:wrap;align-items:center;gap:6px 12px;padding:6px 0;border-top:1px solid rgba(255,255,255,.08);font-size:.92rem}.cano{font-weight:800;min-width:96px}.cast{opacity:.7;font-size:.8rem}.car button{margin-left:auto;min-height:38px;padding:0 12px}
 .carch{margin:0 0 10px}`;document.head.appendChild(st)}
 if(typeof window.renderStaff==="function"){const _rs=window.renderStaff;window.renderStaff=function(){const r=_rs.apply(this,arguments);try{if(typeof TAB!=="undefined"&&TAB==="deals"&&!(typeof FARMER!=="undefined"&&FARMER)){const app=document.getElementById("app"),hr=app&&app.querySelector(".hrow");
-  if(hr&&!app.querySelector(".carch")){const b=document.createElement("div");b.className="btns carch";b.innerHTML=`<button type="button" class="lime" data-caopen>📁 Archív zmlúv podľa farmárov (${(STATE.deals||[]).length})</button>`;hr.after(b)}}}catch(x){}return r}}
+  if(hr&&!app.querySelector(".carch")){const b=document.createElement("div");b.className="btns carch";b.innerHTML=`<button type="button" class="lime" data-caopen>📁 Archív zmlúv podľa farmárov (${(STATE.deals||[]).length})</button>`;hr.after(b)}}}catch(x){}return r};Object.keys(_rs).forEach(k=>{try{if(!(k in window.renderStaff))window.renderStaff[k]=_rs[k]}catch(x){}})}
 document.addEventListener("click",ev=>{const g=s=>ev.target.closest&&ev.target.closest(s);let x;
   if(g("[data-caopen]")){AQ="";archOpen();return}if(g("[data-caclose]")||ev.target.id==="caMod"){const m=document.getElementById("caMod");if(m)m.remove();return}
   if(x=g("[data-cpall]")){openAll(x.dataset.cpall);return}});

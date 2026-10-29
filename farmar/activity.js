@@ -13,7 +13,7 @@ function cur(){if(typeof TAB==="undefined")return null;let c=TAB;try{if(TAB==="f
 function mark(){if(!on||document.hidden)return;const c=cur();if(c===ctx)return;close();ctx=c;since=Date.now()}
 function close(){if(ctx&&since){const s=Math.round((Date.now()-since)/1000);if(s>=2)push({kind:"tab",what:ctx,dur_s:Math.min(s,43200)})}since=0}
 function start(){if(on||!staffOn())return;on=true;ME_E=String(ME.email).toLowerCase();push({kind:"session",what:"otvorenie aplikácie",dev:dev()});mark();
-  const _r=window.renderStaff;if(typeof _r==="function"&&!_r.__aa){window.renderStaff=function(){const x=_r.apply(this,arguments);try{mark()}catch(e){}return x};window.renderStaff.__aa=1}
+  const _r=window.renderStaff;if(typeof _r==="function"&&!_r.__aa){window.renderStaff=function(){const x=_r.apply(this,arguments);try{mark()}catch(e){}return x};Object.keys(_r).forEach(k=>{try{if(!(k in window.renderStaff))window.renderStaff[k]=_r[k]}catch(x){}});window.renderStaff.__aa=1}
   setInterval(()=>{if(!document.hidden&&ctx){close();since=Date.now()}flush()},60000)}
 document.addEventListener("visibilitychange",()=>{if(!on)return;if(document.hidden){close();flush()}else{since=Date.now();if(!ctx)mark()}});
 addEventListener("pagehide",()=>{if(on){close();flush()}});

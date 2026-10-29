@@ -39,7 +39,7 @@ function inject(){if(typeof FARMER==="undefined"||!FARMER)return;const app=docum
 // dlaždice vždy hneď pod menom farmára (iné moduly vkladajú svoje karty tiež za hlavičku)
 function place(){const app=document.getElementById("app"),hero=app&&app.querySelector(".hero"),h=app&&app.querySelector("h2.ftl-h"),g=app&&app.querySelector(".ftl");if(!hero||!h||!g)return;
   if(hero.nextElementSibling===h&&h.nextElementSibling===g)return;hero.after(h,g)}
-function wrap(){const o=window.renderFarmer;if(typeof o!=="function"||o.__ftl)return;const w=function(){const r=o.apply(this,arguments);try{inject();place();setTimeout(place,0);setTimeout(place,400)}catch(x){}return r};w.__ftl=1;window.renderFarmer=w}
+function wrap(){const o=window.renderFarmer;if(typeof o!=="function"||o.__ftl)return;const w=function(){const r=o.apply(this,arguments);try{inject();place();setTimeout(place,0);setTimeout(place,400)}catch(x){}return r};w.__ftl=1;Object.keys(o).forEach(k=>{try{if(!(k in w))w[k]=o[k]}catch(x){}});window.renderFarmer=w}
 const t=setInterval(wrap,400);setTimeout(()=>clearInterval(t),60000);wrap();
 function toH(txt){const H=[...document.querySelectorAll("#app h2")].find(h=>h.textContent.toLowerCase().includes(txt.toLowerCase())&&!h.classList.contains("ftl-h"));
   if(!H){if(typeof toast==="function")toast("Táto časť sa ešte načítava – skúste o chvíľu.");return}
