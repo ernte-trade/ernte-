@@ -65,6 +65,9 @@ s pripojeným repozitárom `ernte-trade/ernte-`.
   bez +0,777 %. Báza: ručná (Automatický cenník), inak priemer posledných 3 ponúk ADM z východu (Sečovce/Parchovany) v „Konkurenčné ceny“
   (DDP − doprava `admDop`, predvolene 10 €/t), inak 64. Západ (Hamburg) sa nepočíta. Zverejňuje iba databáza (`soja_adm_tick`, pg_cron `soja-adm`
   každých 30 min); klient sóju nezverejňuje (žiadne preskakovanie cien). Ručná cena sóje sa neukladá.
+- **Pravidlo majiteľa (trvalé): REPKA, KUKURICA, LO SLNEČNICA = Interagros − 10 €/t.** Naša výkupná cena = posledná ponuka Interagros
+  (v „Konkurenčné ceny“; FCA prednostne, inak DAP; bez „nad 500 t“, neskoršieho odberu a DAP Parchovany) mínus `iaMinus` (10 €).
+  Zverejňuje iba databáza (`ia_tick`, pg_cron `interagros` každých 30 min, `ia_run` hneď po vložení ponuky); klient ich nezverejňuje, ručná cena sa neukladá.
 - **Konkurenčné ceny** (`konk.js`, kalk_store `pricelist/konk`): vložený text ponuky → rozpoznanie, porovnanie, báza voči burze. Mená firiem iba v DB.
 - **Príkaz majiteľa (trvalý):** pracovať na 100 %, bezchybne a rýchlo; nič nepoškodiť (model cenníka, nastavenia, údaje). Pred nasadením otestovať.
 

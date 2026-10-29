@@ -90,8 +90,9 @@ document.addEventListener("click",async e=>{const t=e.target.closest&&e.target.c
     const d=K.d||P.d||today(),who=(K.who||P.who||"Konkurencia").trim(),oid="k"+Date.now().toString(36),at=new Date().toISOString();
     const add=sel.map((r,i)=>{const bz=bzAt(r.com,d);return {id:oid+"-"+i,oid,at,d,who,place:r.place,del:r.del,com:r.com,price:r.price,term:r.term,bz:bz?bz.v:null,bzn:bz?(BZN[r.com]||"")+" "+dk(bz.d):"",b:bz?Math.round((r.price-bz.v)*100)/100:null}});
     t.disabled=true;const v=await kget();const L=((v&&v.items)||[]).concat(add).slice(-400);const ok=await kset({items:L,firms:(v&&v.firms)||K.firms||[]});t.disabled=false;
-    if(!ok){toast("Uloženie zlyhalo – skús znova.",6000);return}K.items=L;K.prev=null;K.txt="";K.who="";K.d="";paint(true);
+    if(!ok){toast("Uloženie zlyhalo – skús znova.",6000);return}K.items=L;try{if(window.autoCennik&&autoCennik.state)autoCennik.state.konk={items:L}}catch(x){}K.prev=null;K.txt="";K.who="";K.d="";paint(true);
     const noBz=add.filter(x=>HK[x.com]&&x.b==null).length;toast(`✓ Uložené ${add.length} ${add.length===1?"cena":add.length<5?"ceny":"cien"} – porovnanie je nižšie.${noBz?" Pri "+noBz+" chýba burza z toho dňa (báza sa nepočíta).":""}`,7000);
+    if(/interagros/i.test(who)){try{await sb.rpc("ia_run");await autoCennik.run(true);toast("🤖 Repka, kukurica a LO slnečnica prepočítané: Interagros − 10 €.",6000)}catch(x){}}
     if(add.some(x=>x.com==="soja"&&/adm/i.test(who))){try{await sb.rpc("soja_adm_run");await autoCennik.run(true);toast("🤖 Báza ADM pre sóju prepočítaná podľa novej ponuky.",6000)}catch(x){}}}},true);
 {const s=document.createElement("style");s.textContent=`.kkcard h2{margin:0 0 6px;font-size:1.05rem}.kkcard textarea{width:100%;box-sizing:border-box;margin:8px 0;min-height:110px;font:inherit}
 .kkf{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:8px}.kkf label{display:flex;flex-direction:column;gap:4px;min-width:0}
