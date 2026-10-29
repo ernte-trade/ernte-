@@ -52,7 +52,7 @@ const FIRMS0=["ADM Sečovce","ADM Hamburg","Interagros","Agro-podnik (Tajba)","P
 function firms(){const S=new Set(FIRMS0.concat(K.firms||[]));for(const x of (K.items||[]))if(x.who)S.add(x.who);return [...S].slice(0,40)}
 async function load(){if(K.busy)return;K.busy=true;let v=await kget();K.busy=false;if(v===undefined){K.err="Konkurenčné ceny sa nepodarilo načítať.";K.items=K.items||[];paint();return}
   if(!v||!Array.isArray(v.items))v={items:[]};
-  K.firms=Array.isArray(v.firms)?v.firms:[];K.items=v.items;K.err="";paint()}
+  K.firms=Array.isArray(v.firms)?v.firms:[];K.items=v.items;try{const [pp,pw]=await Promise.all([sb.rpc("price_pending",{}),sb.rpc("price_watch_get")]);K.pend=pp.error?null:pp.data;K.watch=pw.error?null:pw.data}catch(x){}K.err="";paint()}
 // ---- vzhľad ----
 function ourPrice(c){const p=((typeof STATE!=="undefined"&&STATE.prices)||[]).find(x=>x.com===c);return p&&p.price!=null?+p.price:null}
 function offerHTML(L){const o=L[0];const rows=L.map(x=>{const our=ourPrice(x.com),df=our!=null?our-x.price:null;
@@ -73,11 +73,19 @@ function html(){let h=`<div class="card kkcard" id="kkCard"><h2>🏷️ Konkuren
     h+=`<div class="kkl">${O.slice(0,K.open?50:4).map(offerHTML).join("")}</div>${O.length>4?`<button type="button" class="kkmore" data-kkmore="1">${K.open?"Menej":"Všetky ponuky ("+O.length+")"}</button>`:""}
     <div class="s">„my“ = naša zverejnená výkupná cena FCA farma; ▲/▼ rozdiel oproti ich cene. Pozor na paritu (DDP = dovezené k nim, FCA = na farme).</div>`}
   return h+`</div>`}
+function guardHTML(){const P=K.pend&&typeof K.pend==="object"?Object.entries(K.pend).filter(([c,x])=>!x.rejected):[],W=(K.watch&&K.watch.w)||[];
+  if(!P.length&&!W.length)return `<div class="card kkg ok" id="kkGuard"><b>🛡️ Kontrola cien</b><div class="s">Automatické ceny sú v poriadku${K.watch&&K.watch.at?" · kontrola "+new Date(K.watch.at).toLocaleString("sk-SK",{day:"numeric",month:"numeric",hour:"2-digit",minute:"2-digit"}):""}. Skok väčší ako 25 €/t sa nezverejní sám – príde na potvrdenie sem.</div></div>`;
+  return `<div class="card kkg" id="kkGuard"><b>🛡️ Kontrola cien</b>${P.map(([c,x])=>`<div class="kkp"><div><b>${E(nm(c))}: ${f0(x.old)} → ${f0(x.new)} €/t</b><small>${E(x.src||"")} · čaká od ${new Date(x.at).toLocaleString("sk-SK",{day:"numeric",month:"numeric",hour:"2-digit",minute:"2-digit"})}</small></div><div class="btns"><button type="button" class="lime" data-ppok="${E(c)}">✓ Zverejniť ${f0(x.new)}</button><button type="button" data-ppno="${E(c)}">✕ Nechať ${f0(x.old)}</button></div></div>`).join("")}
+   ${W.map(t=>`<div class="kkw">⚠️ ${E(t)}</div>`).join("")}</div>`}
+function paintGuard(){const old=document.getElementById("kkGuard"),kk=document.getElementById("kkCard");if(!kk)return;const d=document.createElement("div");d.innerHTML=guardHTML();if(old)old.replaceWith(d.firstElementChild);else{const ac=document.querySelector(".acn-card");(ac||kk).before(d.firstElementChild)}}
+document.addEventListener("click",async e=>{const b=e.target.closest&&e.target.closest("[data-ppok],[data-ppno]");if(!b||!OK())return;e.preventDefault();const c=b.dataset.ppok||b.dataset.ppno,ok=!!b.dataset.ppok;
+  if(ok&&!confirm(`Zverejniť novú cenu ${nm(c)}? Hneď ju uvidia farmári.`))return;b.disabled=true;const r=await sb.rpc("price_pending",{p_com:c,p_apply:ok});b.disabled=false;
+  if(r.error){toast("Nepodarilo sa: "+r.error.message,6000);return}K.pend=r.data;paintGuard();toast(ok?"✓ Cena zverejnená.":"Cena ostáva – zmena zamietnutá.",5000);if(ok&&typeof loadStaff==="function"){await loadStaff();try{renderStaff()}catch(x){}}},true);
 function paint(force){if(typeof TAB==="undefined"||TAB!=="price"||!OK())return;const app=document.getElementById("app");if(!app)return;
   const old=document.getElementById("kkCard");if(old){const ae=document.activeElement;if(!force&&old.contains(ae)&&ae&&/INPUT|TEXTAREA|SELECT/.test(ae.tagName)&&ae.type!=="checkbox")return;const d=document.createElement("div");d.innerHTML=html();old.replaceWith(d.firstElementChild);return}
   const anchor=document.getElementById("chHist")||document.getElementById("fPrice");if(!anchor)return;const d=document.createElement("div");d.innerHTML=html();
   if(anchor.id==="chHist")anchor.before(d.firstElementChild);else anchor.after(d.firstElementChild)}
-function inject(){if(typeof TAB==="undefined"||TAB!=="price"||!OK())return;if(!document.getElementById("kkCard")){paint();if(K.items===null)load()}}
+function inject(){if(typeof TAB==="undefined"||TAB!=="price"||!OK())return;if(!document.getElementById("kkCard")){paint();if(K.items===null)load()}if(!document.getElementById("kkGuard")&&K.items!==null)paintGuard()}
 document.addEventListener("input",e=>{const t=e.target;if(!t)return;if(t.id==="kkTxt")K.txt=t.value;else if(t.id==="kkW")K.who=t.value;else if(t.id==="kkD")K.d=t.value});
 document.addEventListener("change",e=>{if(e.target&&e.target.id==="kkD")K.d=e.target.value});
 document.addEventListener("click",async e=>{const t=e.target.closest&&e.target.closest("[data-kkparse],[data-kksave],[data-kkcancel],[data-kkdel],[data-kkmore]");if(!t||!OK())return;e.preventDefault();
@@ -103,7 +111,7 @@ document.addEventListener("click",async e=>{const t=e.target.closest&&e.target.c
 .kkdel{min-height:32px!important;min-width:32px;padding:0 8px!important;border-radius:50%!important;margin-left:auto}
 .kkr{display:grid;grid-template-columns:minmax(0,1.4fr) minmax(0,1fr) minmax(0,.8fr);gap:8px;align-items:center;padding:6px 0;border-top:1px solid rgba(255,255,255,.07)}
 .kkc,.kkv,.kko{display:flex;flex-direction:column;min-width:0}.kkc small,.kkv small,.kko small{font-size:.74rem;opacity:.75;overflow-wrap:anywhere}.kkv{text-align:right}.kko{text-align:right}
-.kko.up b,.kko.up small:last-child{color:#4ade80}.kko.dn b,.kko.dn small:last-child{color:#f87171}.kkmore{margin-top:8px}`;document.head.appendChild(s)}
+.kko.up b,.kko.up small:last-child{color:#4ade80}.kko.dn b,.kko.dn small:last-child{color:#f87171}.kkmore{margin-top:8px}.kkg{border-color:rgba(250,204,21,.5)!important}.kkg.ok{border-color:rgba(74,222,128,.35)!important}.kkg>b{display:block;margin-bottom:6px}.kkp{display:grid;gap:6px;padding:8px 0;border-top:1px solid rgba(255,255,255,.08)}.kkp small{display:block;opacity:.75;overflow-wrap:anywhere}.kkw{padding:6px 0;color:#fde68a;overflow-wrap:anywhere}`;document.head.appendChild(s)}
 let q=0;const sch=()=>{if(q)return;q=requestAnimationFrame(()=>{q=0;try{inject()}catch(x){}})};
 function boot(){const app=document.getElementById("app");if(!app){setTimeout(boot,500);return}new MutationObserver(sch).observe(app,{childList:true});sch()}
 if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",boot);else boot();

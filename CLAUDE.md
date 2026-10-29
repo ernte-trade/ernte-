@@ -68,6 +68,8 @@ s pripojeným repozitárom `ernte-trade/ernte-`.
 - **Pravidlo majiteľa (trvalé): REPKA, KUKURICA, LO SLNEČNICA = Interagros − 10 €/t.** Naša výkupná cena = posledná ponuka Interagros
   (v „Konkurenčné ceny“; FCA prednostne, inak DAP; bez „nad 500 t“, neskoršieho odberu a DAP Parchovany) mínus `iaMinus` (10 €).
   Zverejňuje iba databáza (`ia_tick`, pg_cron `interagros` každých 30 min, `ia_run` hneď po vložení ponuky); klient ich nezverejňuje, ručná cena sa neukladá.
+- **Kontrola automatických cien** (`price_guard`, `price_pending`, `price_watch`): skok > 25 €/t (`autoMaxJump`) sa nezverejní sám – push + potvrdenie v Cenníku
+  (🛡️ Kontrola cien); 2× denne (pg_cron `cennik-kontrola`) kontrola čerstvosti: burza ≤ 3 dni, Interagros ≤ 10 dní, ADM východ ≤ 45 dní.
 - **Konkurenčné ceny** (`konk.js`, kalk_store `pricelist/konk`): vložený text ponuky → rozpoznanie, porovnanie, báza voči burze. Mená firiem iba v DB.
 - **Príkaz majiteľa (trvalý):** pracovať na 100 %, bezchybne a rýchlo; nič nepoškodiť (model cenníka, nastavenia, údaje). Pred nasadením otestovať.
 
