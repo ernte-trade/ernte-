@@ -74,6 +74,7 @@ s pripojeným repozitárom `ernte-trade/ernte-`.
   Trh (burza, inak konkurencia) klesne o ≥ 1,5 % / 5 €/t → „📉 KLESÁ“ priorita 5, opakuje sa každých 30 min, kým majiteľ nepotvrdí „Prečítal som“.
   Stúpa → „📈 DRŽ, NEPREDÁVAJ“ s termínom (max 60 dní, 15 dní pred mesiacom burzového kontraktu); obrat o ½ zisku alebo koniec termínu → „PREDAJ“ (opakuje sa).
   Končí zadaním predajnej ceny (deal_fin.sell_price) alebo zrušením obchodu.
+- **Zámok cien** (`prices_lock`): ceny riadené modelom (sója, repka, kukurica, LO) z aplikácie (jwt) nejdú zmeniť – iba databázové funkcie (`ernte.allow_price`).
 - **Konkurenčné ceny** (`konk.js`, kalk_store `pricelist/konk`): vložený text ponuky → rozpoznanie, porovnanie, báza voči burze. Mená firiem iba v DB.
 - **Príkaz majiteľa (trvalý):** pracovať na 100 %, bezchybne a rýchlo; nič nepoškodiť (model cenníka, nastavenia, údaje). Pred nasadením otestovať.
 
