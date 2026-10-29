@@ -1,5 +1,10 @@
 -- ERNTE – Flotila VALKO: jazdy, spotreba, nádrže, km, vodiči (Commander API) + tím ERNTE (prihlásenia)
 alter table cmd_log add column if not exists url text;
+alter table cmd_log add column if not exists n int;
+alter table cmd_log add column if not exists gps_max timestamptz;
+alter table cmd_log add column if not exists ref bigint;
+create table if not exists check_err(fn text primary key, msg text, at timestamptz default now(), ok_at timestamptz, n int default 0);
+alter table check_err enable row level security;
 alter table trucks add column if not exists tank numeric;
 alter table trucks add column if not exists odometer numeric;
 
@@ -29,7 +34,7 @@ create or replace function public.cmd_num(t text) returns numeric language plpgs
 begin if t is null or t='' then return null; end if; return replace(t,',','.')::numeric; exception when others then return null; end $$;
 
 create or replace function public.cmd_sync() returns text language plpgsql security definer set search_path=public, extensions, net as $$
-declare r record; j jsonb; p jsonb; f jsonb; n int:=0; a text; base text:='https://online.commander-systems.com/api/v1/'; d date; e bigint; s bigint;
+declare r record; j jsonb; p jsonb; f jsonb; n int:=0; a text; base text:='https://online.commander-systems.com/api/v1/'; d date; e bigint; s bigint; pn int; gmax timestamptz; perr text; bu text; rq bigint;
 begin
   a:=cmd_auth(); if a is null then return 'chýbajú prihlasovacie údaje'; end if;
   for r in select l.id,l.kind,l.url,h.status_code,h.content from cmd_log l join net._http_response h on h.id=l.id where not l.done loop
@@ -44,16 +49,30 @@ begin
              where upper(regexp_replace(spz,'[^A-Za-z0-9]','','g'))=upper(regexp_replace(coalesce(p->>'vehicleRegistrationPlate',''),'[^A-Za-z0-9]','','g'));
           end loop;
         elsif r.kind='pos' then
-          for p in select * from jsonb_array_elements(coalesce(j->'positions','[]'::jsonb)) loop
-            insert into cmd_vehicles(id,lat,lon,gps_at,speed,ign,tank,odometer,engine_hours,voltage,updated_at)
-              values(p->>'vehicleId',cmd_num(p->>'gpsLat'),cmd_num(p->>'gpsLon'),to_timestamp(cmd_num(p->>'gpsTime')),cmd_num(p->>'gpsSpeed')::int,cmd_num(p->>'carIgnition')::int,
-                nullif(cmd_num(p->>'canTankValue'),0),nullif(cmd_num(p->>'canOdometer'),0),nullif(cmd_num(p->>'canEngineHours'),0),cmd_num(p->>'voltage'),now())
-              on conflict(id) do update set lat=excluded.lat,lon=excluded.lon,gps_at=excluded.gps_at,speed=excluded.speed,ign=excluded.ign,
-                tank=coalesce(excluded.tank,cmd_vehicles.tank),odometer=coalesce(excluded.odometer,cmd_vehicles.odometer),engine_hours=coalesce(excluded.engine_hours,cmd_vehicles.engine_hours),voltage=excluded.voltage,updated_at=now();
-            update trucks set gps_lat=cmd_num(p->>'gpsLat'),gps_lon=cmd_num(p->>'gpsLon'),gps_at=to_timestamp(cmd_num(p->>'gpsTime')),gps_speed=cmd_num(p->>'gpsSpeed')::int,
-              gps_ign=cmd_num(p->>'carIgnition')::int,tank=coalesce(nullif(cmd_num(p->>'canTankValue'),0),tank),odometer=coalesce(nullif(cmd_num(p->>'canOdometer'),0),odometer)
-             where cmd_id=p->>'vehicleId'; n:=n+1;
+          -- každá poloha zvlášť: chyba jedného záznamu nezahodí ostatné; počet a najnovší GPS čas sa zapíšu do cmd_log
+          pn:=0; gmax:=null; perr:=null;
+          for p in select * from jsonb_array_elements(case when jsonb_typeof(j)='array' then j else coalesce(j->'positions',j->'data','[]'::jsonb) end) loop
+            begin
+              if coalesce(p->>'vehicleId','')<>'' then
+                insert into cmd_vehicles(id,lat,lon,gps_at,speed,ign,tank,odometer,engine_hours,voltage,updated_at)
+                  values(p->>'vehicleId',cmd_num(p->>'gpsLat'),cmd_num(p->>'gpsLon'),to_timestamp(cmd_num(p->>'gpsTime')),cmd_num(p->>'gpsSpeed')::int,cmd_num(p->>'carIgnition')::int,
+                    nullif(cmd_num(p->>'canTankValue'),0),nullif(cmd_num(p->>'canOdometer'),0),nullif(cmd_num(p->>'canEngineHours'),0),cmd_num(p->>'voltage'),now())
+                  on conflict(id) do update set lat=coalesce(excluded.lat,cmd_vehicles.lat),lon=coalesce(excluded.lon,cmd_vehicles.lon),gps_at=coalesce(excluded.gps_at,cmd_vehicles.gps_at),speed=excluded.speed,ign=excluded.ign,
+                    tank=coalesce(excluded.tank,cmd_vehicles.tank),odometer=coalesce(excluded.odometer,cmd_vehicles.odometer),engine_hours=coalesce(excluded.engine_hours,cmd_vehicles.engine_hours),voltage=excluded.voltage,updated_at=now();
+                update trucks set gps_lat=cmd_num(p->>'gpsLat'),gps_lon=cmd_num(p->>'gpsLon'),gps_at=to_timestamp(cmd_num(p->>'gpsTime')),gps_speed=cmd_num(p->>'gpsSpeed')::int,
+                  gps_ign=cmd_num(p->>'carIgnition')::int,tank=coalesce(nullif(cmd_num(p->>'canTankValue'),0),tank),odometer=coalesce(nullif(cmd_num(p->>'canOdometer'),0),odometer)
+                 where cmd_id=p->>'vehicleId';
+                n:=n+1; pn:=pn+1; gmax:=greatest(gmax,to_timestamp(cmd_num(p->>'gpsTime')));
+              end if;
+            exception when others then perr:=left(SQLERRM,250);
+            end;
           end loop;
+          update cmd_log set n=pn, gps_max=gmax where id=r.id;
+          if perr is not null then
+            insert into check_err as c(fn,msg,at,n) values('cmd_sync_pos',perr,now(),pn) on conflict on constraint check_err_pkey do update set msg=excluded.msg, at=now(), n=excluded.n;
+          else
+            insert into check_err as c(fn,msg,ok_at,n) values('cmd_sync_pos',null,now(),pn) on conflict on constraint check_err_pkey do update set msg=null, ok_at=now(), n=excluded.n;
+          end if;
         elsif r.kind='rides' then
           for p in select * from jsonb_array_elements(coalesce(j->'rides',j->'data','[]'::jsonb)) loop
             insert into rides(ride_id,vehicle_id,plate,driver,ride_type,start_at,stop_at,start_addr,stop_addr,lat_start,lon_start,lat_stop,lon_stop,distance,duration,avg_speed,max_speed,fuel_consumed,avg_cons,fuel_start,fuel_stop,odo_start,odo_stop,refuel_l,refuel_eur,note)
@@ -71,9 +90,13 @@ begin
             insert into cmd_log(id,kind,url) values(net.http_get(url:=regexp_replace(r.url,'page=\d+','page='||(cmd_num(j->>'page')::int+1)),headers:=jsonb_build_object('Authorization',a,'Accept','application/json')),'rides',regexp_replace(r.url,'page=\d+','page='||(cmd_num(j->>'page')::int+1)));
           end if;
         end if;
-      exception when others then null; end;
+      exception when others then
+        insert into check_err as c(fn,msg,at) values('cmd_sync_'||r.kind,left(SQLERRM,250),now()) on conflict on constraint check_err_pkey do update set msg=excluded.msg, at=now();
+      end;
     end if;
     update cmd_log set done=true, code=r.status_code where id=r.id;
+    -- nočné načítanie histórie (backfill): kód odpovede k dňu; pri chybe sa deň zopakuje (max 3×)
+    if r.kind='rides' then update cmd_log set code=coalesce(r.status_code,-1) where kind='backfill' and ref=r.id; end if;
   end loop;
   delete from cmd_log where at < now()-interval '3 days' and kind<>'backfill';
   if not exists(select 1 from cmd_log where kind='vehicles' and at>now()-interval '6 hours') then
@@ -86,13 +109,16 @@ begin
     insert into cmd_log(id,kind,url) select net.http_get(url:=u,headers:=jsonb_build_object('Authorization',a,'Accept','application/json')),'rides',u
       from (select base||'all-rides?datetimeStart='||s||'&datetimeEnd='||e||'&limit=1000&page=1' as u) q;
   end if;
-  -- jednorazovo história 60 dní (po dňoch, 6 dní na jeden beh)
-  for d in select g::date from generate_series(current_date-60,current_date-1,'1 day') g
-            where not exists(select 1 from cmd_log b where b.kind='backfill' and b.url=g::date::text) order by g desc limit 6 loop
+  -- história od 1. 7. 2026 (min. 60 dní) po dňoch (6 dní na jeden beh); deň bez kódu alebo s chybou sa po 20 min zopakuje (max 3×)
+  for d in select g::date from generate_series(least(current_date-60,date '2026-07-01'),current_date-1,'1 day') g
+            where not exists(select 1 from cmd_log b where b.kind='backfill' and b.url=g::date::text
+                             and (b.ref is null or b.code=200 or coalesce(b.n,0)>=3 or b.at>now()-interval '20 minutes')) order by g desc limit 6 loop
     s:=extract(epoch from d::timestamp at time zone 'Europe/Bratislava')::bigint; e:=s+86400;
-    insert into cmd_log(id,kind,url) select net.http_get(url:=u,headers:=jsonb_build_object('Authorization',a,'Accept','application/json')),'rides',u
-      from (select base||'all-rides?datetimeStart='||s||'&datetimeEnd='||e||'&limit=1000&page=1' as u) q;
-    insert into cmd_log(id,kind,url,done) values(-(extract(epoch from d)::bigint),'backfill',d::text,true) on conflict do nothing;
+    bu:=base||'all-rides?datetimeStart='||s||'&datetimeEnd='||e||'&limit=1000&page=1';
+    rq:=net.http_get(url:=bu,headers:=jsonb_build_object('Authorization',a,'Accept','application/json'));
+    insert into cmd_log(id,kind,url) values(rq,'rides',bu);
+    insert into cmd_log(id,kind,url,done,ref,n,at) values(-(extract(epoch from d)::bigint),'backfill',d::text,true,rq,1,now())
+      on conflict(id) do update set ref=excluded.ref, n=coalesce(cmd_log.n,0)+1, at=now(), code=null;
   end loop;
   begin perform yard_check(); exception when others then null; end;
   return 'ok, spracovaných polôh: '||n||', jázd v databáze: '||(select count(*) from rides);

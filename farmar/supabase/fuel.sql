@@ -6,6 +6,8 @@ drop policy if exists tlog_read on tank_log; create policy tlog_read on tank_log
 create table if not exists fuel_checked(ride_id text primary key, at timestamptz default now());
 alter table fuel_checked enable row level security;
 alter table fleet_events add column if not exists liters numeric;
+alter table fleet_events add column if not exists src_key text;
+create unique index if not exists fev_src on fleet_events(src_key);
 insert into fleet_cfg(key,value) values('fuel','{"drop":20,"win":90,"gap":30,"cool":180}') on conflict(key) do nothing;
 
 create or replace function public.fuel_check() returns int language plpgsql security definer set search_path=public, extensions, net as $$
@@ -46,9 +48,10 @@ begin
     exp:=r.fuel_start+r.refuel_l-coalesce(r.fuel_consumed,0);
     gap:=exp-r.fuel_stop;
     if gap>=greatest((c->>'gap')::numeric, r.refuel_l*0.08) then
-      insert into fleet_events(vehicle_id,plate,kind,driver,place,place_kind,liters,at)
-        values(r.vehicle_id,r.plate,'refuel_gap',r.driver,r.stop_addr,'fuel',round(gap),r.stop_at);
-      if t is not null then
+      insert into fleet_events(vehicle_id,plate,kind,driver,place,place_kind,liters,at,note,src_key)
+        values(r.vehicle_id,r.plate,'refuel_gap',r.driver,r.stop_addr,'fuel',round(gap),r.stop_at,'natankované '||round(r.refuel_l)||' l','gap:'||r.ride_id)
+        on conflict (src_key) do nothing;
+      if found and t is not null then
         perform net.http_post(url:='https://ntfy.sh/'||t, body:=jsonb_build_object('topic',t,'title','Tankovanie nesedí','message',
           coalesce(r.plate,'')||': natankovaných '||round(r.refuel_l)||' l, v nádrži pribudlo o ~'||round(gap)||' l menej'||coalesce(' · '||r.driver,'')||' · '||to_char(r.stop_at at time zone 'Europe/Bratislava','DD.MM. HH24:MI'),
           'tags',jsonb_build_array('fuelpump','warning'),'priority',4));
