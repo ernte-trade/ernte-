@@ -61,6 +61,11 @@ s pripojeným repozitárom `ernte-trade/ernte-`.
 - **Majiteľ:** Martin Vaľko (ERNTE spol. s r.o., VALKO s.r.o.). Komunikácia po slovensky, chce hotové a otestované veci, nasadené hneď.
 - **Pravidlo majiteľa (trvalé): všetkým farmárom vždy doplniť údaje podľa registra / FinStatu** – podľa IČO (`firmy.js` → `firmyFillAll`, raz denne
   automaticky + tlačidlo vo Farmároch); iba dopĺňať prázdne polia, nikdy neprepisovať; ukončené firmy hlásiť. Pri novom farmárovi a odfotení pečiatky hneď.
+- **Pravidlo majiteľa (trvalé): SÓJA = model ADM východ.** Výkupná cena sóje = CBOT sója dnes (€/t, `market_px`) + báza ADM východ (FCA farma),
+  bez +0,777 %. Báza: ručná (Automatický cenník), inak priemer posledných 3 ponúk ADM z východu (Sečovce/Parchovany) v „Konkurenčné ceny“
+  (DDP − doprava `admDop`, predvolene 10 €/t), inak 64. Západ (Hamburg) sa nepočíta. Zverejňuje iba databáza (`soja_adm_tick`, pg_cron `soja-adm`
+  každých 30 min); klient sóju nezverejňuje (žiadne preskakovanie cien). Ručná cena sóje sa neukladá.
+- **Konkurenčné ceny** (`konk.js`, kalk_store `pricelist/konk`): vložený text ponuky → rozpoznanie, porovnanie, báza voči burze. Mená firiem iba v DB.
 - **Príkaz majiteľa (trvalý):** pracovať na 100 %, bezchybne a rýchlo; nič nepoškodiť (model cenníka, nastavenia, údaje). Pred nasadením otestovať.
 
 ### Hotové (október 2026)

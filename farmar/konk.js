@@ -92,7 +92,7 @@ document.addEventListener("click",async e=>{const t=e.target.closest&&e.target.c
     t.disabled=true;const v=await kget();const L=((v&&v.items)||[]).concat(add).slice(-400);const ok=await kset({items:L,firms:(v&&v.firms)||K.firms||[]});t.disabled=false;
     if(!ok){toast("Uloženie zlyhalo – skús znova.",6000);return}K.items=L;K.prev=null;K.txt="";K.who="";K.d="";paint(true);
     const noBz=add.filter(x=>HK[x.com]&&x.b==null).length;toast(`✓ Uložené ${add.length} ${add.length===1?"cena":add.length<5?"ceny":"cien"} – porovnanie je nižšie.${noBz?" Pri "+noBz+" chýba burza z toho dňa (báza sa nepočíta).":""}`,7000);
-    if(add.some(x=>x.com==="soja"&&/adm/i.test(who))){try{await autoCennik.run(true);toast("🤖 Báza ADM pre sóju prepočítaná podľa novej ponuky.",6000)}catch(x){}}}},true);
+    if(add.some(x=>x.com==="soja"&&/adm/i.test(who))){try{await sb.rpc("soja_adm_run");await autoCennik.run(true);toast("🤖 Báza ADM pre sóju prepočítaná podľa novej ponuky.",6000)}catch(x){}}}},true);
 {const s=document.createElement("style");s.textContent=`.kkcard h2{margin:0 0 6px;font-size:1.05rem}.kkcard textarea{width:100%;box-sizing:border-box;margin:8px 0;min-height:110px;font:inherit}
 .kkf{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:8px}.kkf label{display:flex;flex-direction:column;gap:4px;min-width:0}
 .kkprev{margin:10px 0;padding:10px;border-radius:14px;background:rgba(182,255,59,.08);border:1px solid rgba(182,255,59,.3);display:grid;gap:6px}
