@@ -92,6 +92,8 @@ s pripojeným repozitárom `ernte-trade/ernte-`.
 - **Pravidlo majiteľa (trvalé): KDE PREDAŤ – NAJVYŠŠÍ ZISK** (`predaj.js`, `sell_buyers`, `sell_offers`, `sell_data`, iba majiteľ): ku každej zverejnenej nákupnej cene odporúčanie odberateľa
   s najvyšším ziskom = cena odberateľa (ponuky odberateľov posunuté s burzou, ponuky z Konkurenčných cien, skutočné predaje z vážnych lístkov) − doprava z regiónu (vzorec Kalkulačky) − nákup.
   Modely odberateľov a mená iba v DB. Nové ponuky odberateľov vkladať do `sell_offers` (formulár v Prehľade).
+- **BURZA = bot „Trhové ceny“** (`market_bot_tick`, pg_cron `burza-bot` každých 5 min, raw `market.json`): `market_px` sa plní z overených kurzov, kontrakt = najbližší končiaci najskôr o 20 dní
+  (ako rátajú odberatelia). Webové vyhľadávanie (`market_collect`) je iba záloha – nezapíše, ak má bot dáta < 48 h alebo ak sa líši o > 5 %. Rozdiel zdrojov > 3 % → push majiteľovi.
 - **Zámok cien** (`prices_lock`): ceny riadené modelom (sója, repka, kukurica, LO) z aplikácie (jwt) nejdú zmeniť – iba databázové funkcie (`ernte.allow_price`).
 - **Konkurenčné ceny** (`konk.js`, kalk_store `pricelist/konk`): vložený text ponuky → rozpoznanie, porovnanie, báza voči burze. Mená firiem iba v DB.
 - **Príkaz majiteľa (trvalý):** pracovať na 100 %, bezchybne a rýchlo; nič nepoškodiť (model cenníka, nastavenia, údaje). Pred nasadením otestovať.
