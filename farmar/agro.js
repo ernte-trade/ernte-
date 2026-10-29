@@ -95,7 +95,7 @@ function calc(m,c){const M=mFind(m.model),pub=M[4],est=M[5],cat=pub!=null?pub:es
     depHa:(T.dep+T.int+(Im?Im.dep+Im.int:0))/cap,empHa:empH/cap,svcHa:(T.ins+T.rep+(Im?Im.ins+Im.rep:0)+lube+ovh)/cap}}
 const nm=m=>esc(m.model)+(m.impl?" + "+esc(String(m.impl).split(" | ")[1]):"");
 // ===== MAJITEĽ / TÍM =====
-window.vAgro=function(){const OWN=ROLE==="owner",SEC=[["ord","📋","Objednávky","od farmárov · stav · termíny"],["srv","💶","Cenník služieb","čo vidia a objednávajú farmári"]];
+window.vAgro=function(){const OWN=ROLE==="owner"||(typeof can==="function"&&can("agro_calc")),SEC=[["ord","📋","Objednávky","od farmárov · stav · termíny"],["srv","💶","Cenník služieb","čo vidia a objednávajú farmári"]];
   if(OWN)SEC.push(["fleet","🛠️","Náš park a ponuka","kombajny · traktory · náradie · ceny pre farmárov"],["calc","🧮","Kalkulácia strojov","náklady · bod nula · marža · porovnanie"],["cat","📚","Katalóg strojov a náradia","82 strojov · "+IMP.length+" náradí · nafta · výkon"]);
   let h=`<div class="zt"><h2>🚜 Agro služby ${A.sec?`<button type="button" class="ztb" data-asec="">← späť</button>`:""}</h2>`;
   if(!A.sec){if(!A.orders)loadOrders();const nw=(A.orders||[]).filter(o=>o.status==="nova").length;
@@ -169,7 +169,7 @@ function srvCard(s,own){return `<div class="card agsv ${s.active?"on":"off"}"><d
   ${s.machine?`<div class="s">🚜 ${esc(s.machine)}</div>`:""}${s.descr?`<div class="s">${esc(s.descr)}</div>`:""}
   <div class="zsg"><div class="hl"><small>Cena bez DPH</small><b>${f2(s.price)} €/${UN[s.unit]||s.unit}</b></div><div><small>Nafta</small><b>${s.fuel_by_customer!==false?"tankuje zákazník":"v cene"}${s.fuel_lha?` · ~${f2(s.fuel_lha,1)} l/ha`:""}</b></div>${s.min_qty?`<div><small>Minimum</small><b>${f2(s.min_qty,0)} ${UN[s.unit]||s.unit}</b></div>`:""}</div>
   ${own?`<div class="btns"><button type="button" data-asedit="${esc(s.id)}">✏️ Upraviť</button><button type="button" data-astog="${esc(s.id)}">${s.active?"🙈 Skryť farmárom":"👁️ Zverejniť farmárom"}</button></div>`:""}</div>`}
-function srvHTML(){const S=A.srv,OWN=ROLE==="owner";if(!S){loadSrv();return `<div class="card"><div class="s">Načítavam cenník…</div></div>`}
+function srvHTML(){const S=A.srv,OWN=ROLE==="owner"||(typeof can==="function"&&can("agro_calc"));if(!S){loadSrv();return `<div class="card"><div class="s">Načítavam cenník…</div></div>`}
   if(S.err)return `<div class="card"><div class="s">${/agro_services/.test(S.err)?"Agro služby sa zapnú po aktualizácii databázy (pár minút).":esc(S.err)}</div></div>`;
   let h=`<div class="s">${OWN?"Zverejnené služby vidia farmári s cenou a môžu si ich objednať. Skryté vidíš iba ty. Cenu vieš prevziať z Kalkulácie strojov.":"Cenník služieb, ktorý vidia farmári."}</div>`;
   if(OWN&&A.edit==="new")h+=srvForm();else if(OWN)h+=`<div class="btns"><button type="button" class="pri" data-asedit="new">➕ Nová služba</button></div>`;
@@ -313,7 +313,7 @@ document.addEventListener("change",e=>{if(!A.fleet||A.fleet.err||ROLE!=="owner")
   if(t.dataset.afo!=null){A.fleet.off=A.fleet.off||{};if(t.checked)delete A.fleet.off[t.dataset.afo];else A.fleet.off[t.dataset.afo]=true;saveFleet();const O=document.getElementById("agOffers");if(O)O.innerHTML=offersHTML(A.fleet);return}
   if(t.dataset.afh!=null){const c=A.fleet.combines[+t.dataset.afh];c.hdr=c.hdr||[];if(t.checked){if(!c.hdr.includes(t.value))c.hdr.push(t.value)}else c.hdr=c.hdr.filter(x=>x!==t.value);saveFleet();renderStaff();return}
   if(t.dataset.afi!=null){const id=t.dataset.afi;A.fleet.impl=A.fleet.impl||[];if(t.checked){if(!A.fleet.impl.some(x=>x.id===id))A.fleet.impl.push({id,price:"",ha:1500,yrs:8})}else A.fleet.impl=A.fleet.impl.filter(x=>x.id!==id);saveFleet();renderStaff()}});
-document.addEventListener("click",e=>{const b=e.target.closest("[data-afpub]");if(b&&ROLE==="owner")publishOffers(b)});
+document.addEventListener("click",e=>{const b=e.target.closest("[data-afpub]");if(b&&(ROLE==="owner"||(typeof can==="function"&&can("agro_calc"))))publishOffers(b)});
 document.addEventListener("change",e=>{if(!A.fleet||ROLE!=="owner")return;const t=e.target;if(t.dataset.aft!=null){A.fleet.tractors[+t.dataset.aft].bare=t.checked;saveFleet();renderStaff();return}if(t.dataset.aftadd&&t.value){A.fleet.tractors.push({model:t.value,n:1,price:mFind(t.value)[3]*600,annual:1000,hold:6});saveFleet();renderStaff();return}});
 document.addEventListener("change",e=>{const k=e.target.dataset&&e.target.dataset.afb;if(!k||!A.fleet||ROLE!=="owner")return;A.fleet[k]=e.target.checked;saveFleet();renderStaff()});
 // --- udalosti (tím) ---

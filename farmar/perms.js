@@ -14,6 +14,7 @@ const PCAT=[
  ["calc","Kalkulačka nákupnej ceny ERNTE","Obchod","odberatelia, doprava, burza"],
  ["market","Burza a trh (MATIF, CBOT)","Obchod",""],
  ["agro","Agro služby – objednávky a cenník","Obchod","bez nákladov a marže"],
+ ["agro_calc","🔐 Agro služby celé – park strojov, kalkulácia (náklady, marža), katalóg, úprava cenníka","Obchod","iba pre poverených (Tomáš Štofa)"],
  ["danube","Danube Trade – požiadavky, služby a zmluvy Danube","Obchod","SK / HU"],
  ["trus_price","Kurací trus – ceny a podklady k faktúram","Obchod","bez zisku"],
  ["trans","Doprava – jazdy a objednávky odvozu","Vývoz",""],
@@ -24,6 +25,7 @@ const PCAT=[
  ["notes","Poznámky k vývozu a nedodanému tovaru","Vývoz",""],
  ["fleet","Flotila – prehľad a mapa","Flotila",""],
  ["fleet_all","Všetky flotily (EU, sklápače, služobné)","Flotila","inak iba flotila Región"],
+ ["fleet_trak","🚜 GPS traktorov – iba skupina Traktory (mapa, kade chodia)","Flotila","namiesto flotily Región; spolu s „Flotila – prehľad a mapa“"],
  ["drivers","Vodiči a vozidlá – kontrola jázd","Flotila","bez miezd"],
  ["alarms","Alarmy a register porušení","Flotila",""],
  ["diesel","Nafta – burza, tankovania, audit","Flotila",""],
@@ -36,6 +38,7 @@ const PCAT=[
  ["sklad","Sklad – vziať a pridať diely (bez cien)","Evidencia","strojníci"],
  ["ev_doch","Dochádzka – dni, dovolenka, PN, pole, víkendy, nadčasy","Evidencia","bez peňazí"],
  ["ev_mzdy","💶 Mzdy ERNTE – výplaty, odvody, výplatné pásky (mzdárka)","Evidencia","bez výsledku firmy a marže"],
+ ["ev_full","🔐 Evidencia celá – výnosy, výplaty, prehľad a výsledok, kontrola (ako majiteľ)","Evidencia","iba pre poverených (Tomáš Štofa)"],
  ["wx","Počasie","Ostatné",""],
  ["big","Veľké písmo a tlačidlá","Ostatné","lepšia čitateľnosť"]];
 const PLOCK=[["margin","Marža, zisk a predajné ceny odberateľom"],["payroll","Mzdy vodičov"],["costs","Pevné náklady firmy"],["ai","ERNTE AI Podpora"],["team","Tím a prístupy"]];
@@ -117,7 +120,7 @@ async function loadMe(){try{const r=await sb.from("staff").select("*").eq("email
 let MEAT=0;async function meRefresh(){if(typeof ROLE==="undefined"||!ROLE||ROLE==="owner"||!STATE.me||Date.now()-MEAT<60000)return;MEAT=Date.now();const old=JSON.stringify([STATE.me.perms,STATE.me.role]);await loadMe();
   if(JSON.stringify([STATE.me.perms,STATE.me.role])!==old&&typeof renderStaff==="function"){if(typeof TAB!=="undefined"&&typeof tabOK==="function"&&!tabOK(TAB)){try{TAB="home"}catch(e){}}renderStaff();if(typeof toast==="function")toast("Prístupy boli upravené.",3000)}}
 document.addEventListener("visibilitychange",()=>{if(!document.hidden)meRefresh()});setInterval(()=>{if(!document.hidden)meRefresh()},120000);
-const _ss=window.startStaff;window.startStaff=async function(){await loadMe();if(STATE.me&&STATE.me.must_change&&!window.ERNTE_VIEWAS)await pinModal();applyBig();if(ROLE!=="owner"&&!can("fleet_all")){try{FFLT="region"}catch(e){}}return _ss.apply(this,arguments)};
+const _ss=window.startStaff;window.startStaff=async function(){await loadMe();if(STATE.me&&STATE.me.must_change&&!window.ERNTE_VIEWAS)await pinModal();applyBig();if(ROLE!=="owner"&&!can("fleet_all")){try{FFLT=can("fleet_trak")?"traktory":"region"}catch(e){}}return _ss.apply(this,arguments)};
 const _sf=window.startFarmer;window.startFarmer=async function(){if(FARMER&&FARMER.must_change&&!window.ERNTE_VIEWAS)await pinModal();applyBig();return _sf.apply(this,arguments)};
 
 // ===== TÍM A PRÍSTUPY (iba majiteľ) =====

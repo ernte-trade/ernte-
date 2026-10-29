@@ -7,7 +7,7 @@ const f2=(x,d=2)=>typeof fmt==="function"?fmt(x,d):(+x).toFixed(d);
 const eur=x=>f2(x)+" €";
 const num=v=>{if(v==null||v==="")return null;const x=parseFloat(String(v).replace(/\s/g,"").replace(",","."));return Number.isFinite(x)?x:null};
 const iv=v=>v==null?"":String(v).replace(".",",");
-const OWN=()=>typeof ROLE!=="undefined"&&ROLE==="owner";
+const OWN=()=>typeof ROLE!=="undefined"&&(ROLE==="owner"||(!!ROLE&&typeof can==="function"&&can("ev_full")&&!(typeof FARMER!=="undefined"&&FARMER)));
 const CAN=k=>OWN()||(typeof can==="function"&&can(k));
 const tst=(t,ms)=>(typeof toast==="function"?toast:alert)(t,ms);
 const today=()=>new Date(Date.now()-new Date().getTimezoneOffset()*6e4).toISOString().slice(0,10);

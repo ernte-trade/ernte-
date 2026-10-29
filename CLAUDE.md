@@ -87,6 +87,8 @@ s pripojeným repozitárom `ernte-trade/ernte-`.
 - **Pravidlo majiteľa (trvalé): DANUBE ZMLUVA = vzor S-HU** (`dnzmluva.js`, `danube_contract_save`): pri pridaní zmluvy v Danube Trade sa vždy vytvorí dvojjazyčná zmluva SK | HU
   presne podľa vzoru S-HU-2026/1 (kupujúci Danube Commodities Kft., bez príloh GMP+ a ISCC, pri rozpore platí SK znenie). Cena = naša aktuálna nákupná cena u farmára
   (predvyplní sa, dá sa zmeniť), Príloha 1 = parametre podľa komodity, predávajúci z karty farmára. Číslo S/K/P/R/L/J-HU-rok/poradie.
+- **Pravidlo majiteľa (trvalé): TOMÁŠ ŠTOFA** – Evidencia celá ako majiteľ (`ev_full`, `ev_full()`), Agro služby celé – park, kalkulácia, katalóg, cenník (`agro_calc`, `agro_full()`),
+  GPS traktorov vo Flotile (`fleet_trak` → iba skupina Traktory). Tieto kľúče má iba on (+ majiteľ a Jana); nikomu inému nezapínať bez príkazu majiteľa.
 - **Zámok cien** (`prices_lock`): ceny riadené modelom (sója, repka, kukurica, LO) z aplikácie (jwt) nejdú zmeniť – iba databázové funkcie (`ernte.allow_price`).
 - **Konkurenčné ceny** (`konk.js`, kalk_store `pricelist/konk`): vložený text ponuky → rozpoznanie, porovnanie, báza voči burze. Mená firiem iba v DB.
 - **Príkaz majiteľa (trvalý):** pracovať na 100 %, bezchybne a rýchlo; nič nepoškodiť (model cenníka, nastavenia, údaje). Pred nasadením otestovať.
