@@ -16,7 +16,7 @@ jobs:
           B="https://www.apa.sk/api/files?url=http%3A%2F%2Ffiles%3A8081%2Ffiles%2Fpublic%2F"
           curl -sSL -A "Mozilla/5.0" -o o/prij2025.xlsx "${B}2026-04%2FAnnex%2520VIII_Prij%25C3%25ADmatelia%2520pomoci%2520z%2520EPZF%2520a%2520EPFRV_FY%25202025.xlsx" || true
           curl -sSL -A "Mozilla/5.0" -o o/prij2024.xlsx "${B}2025-08%2FAnnex%2520VIII_Prij%25C3%25ADmatelia%2520pomoci%2520z%2520EPZF%2520a%2520EPFRV_FY%25202024.xlsx" || true
-          Q='SELECT ?o ?oLabel ?ok ?okLabel ?kr ?krLabel ?c ?psc WHERE { ?o wdt:P17 wd:Q214; wdt:P31/wdt:P279* wd:Q15284; wdt:P625 ?c. OPTIONAL{?o wdt:P131 ?ok. ?ok wdt:P131 ?kr.} OPTIONAL{?o wdt:P281 ?psc} SERVICE wikibase:label { bd:serviceParam wikibase:language "sk,en". } }'
+          Q='SELECT ?o ?oLabel ?ok ?okLabel ?kr ?krLabel ?c ?psc ?lau WHERE { ?o wdt:P17 wd:Q214; wdt:P782 ?lau. OPTIONAL{?o wdt:P625 ?c} OPTIONAL{?o wdt:P131 ?ok. OPTIONAL{?ok wdt:P131 ?kr}} OPTIONAL{?o wdt:P281 ?psc} SERVICE wikibase:label { bd:serviceParam wikibase:language "sk,en". } }'
           curl -sS -G -A "ERNTE-bot/1.0 (report.valko@gmail.com)" -H "Accept: text/csv" --data-urlencode "query=$Q" https://query.wikidata.org/sparql -o o/obce.csv || true
           wc -l o/obce.csv >> o/ls.txt || true
           ls -la o > o/ls.txt; file o/* >> o/ls.txt || true
