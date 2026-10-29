@@ -30,7 +30,7 @@ if(navigator.serviceWorker)navigator.serviceWorker.addEventListener("message",e=
 
 // ---- História cien ----
 async function load(force){if(!CANH()||H.busy)return;if(!force&&H.rows&&Date.now()-H.at<60e3)return;H.busy=true;
-  try{const r=await sb.rpc("cennik_hist",{p_com:H.com||null,p_lim:50});if(r.error){H.err=/cennik_hist/.test(r.error.message)?"História sa pripravuje – databáza sa aktualizuje do pár minút.":r.error.message;H.rows=H.rows||[]}else{H.rows=r.data||[];H.err=""}H.at=Date.now()}
+  try{const r=await sb.rpc("cennik_hist",{p_com:H.com||null,p_lim:50});if(r.error){H.err=/cennik_hist/.test(r.error.message)?"História sa pripravuje – databáza sa aktualizuje do pár minút.":r.error.message;H.rows=H.rows||[]}else{const AJ=+window.PADJ||0;H.rows=(r.data||[]).map(h=>AJ?Object.assign({},h,{old_price:h.old_price==null?null:+h.old_price+AJ,new_price:h.new_price==null?null:+h.new_price+AJ}):h);H.err=""}H.at=Date.now()}
   catch(x){H.err="Históriu sa nepodarilo načítať.";H.rows=H.rows||[]}finally{H.busy=false}
   if(OWN()&&!H.cfg){try{const c=await sb.rpc("cennik_alert_cfg",{});if(!c.error)H.cfg=c.data}catch(x){}}
   paint()}

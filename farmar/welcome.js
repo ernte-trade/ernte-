@@ -161,6 +161,7 @@ function farmPx(el,flash){const kb=el.querySelector(".whkb"),bb=el.querySelector
   else kb.innerHTML=`<span class="whu">Cenník sa pripravuje</span>`;
   let st=el.querySelector(".wpst");if(!st){st=document.createElement("div");st.className="wpst";bb.after(st)}st.textContent=pxStamp()}
 async function pxRefresh(el,k){try{const r=await sb.from("prices").select("com,price,updated_at");if(r.error||!r.data)return;
+    {const AJ=+window.PADJ||0;if(AJ)r.data=r.data.map(x=>x.price==null?x:Object.assign({},x,{price:Math.round((+x.price+AJ)*100)/100}))}
     const cur=Object.fromEntries(pxList().map(p=>[p.com,+p.price]));const ch=new Set();
     r.data.filter(x=>x.price!=null).forEach(x=>{if(cur[x.com]!==+x.price)ch.add(x.com)});
     const stampOld=pxStamp();if(typeof STATE!=="undefined"){const M=Object.fromEntries((STATE.prices||[]).map(p=>[p.com,p]));r.data.forEach(x=>{if(M[x.com])Object.assign(M[x.com],x);else (STATE.prices=STATE.prices||[]).push({...x})})}
