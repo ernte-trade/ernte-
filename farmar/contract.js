@@ -7,8 +7,10 @@ const NAM={kukurica:"Kukurica",soja:"Sója",psenica_p:"Pšenica potravinárska",
 const USE={psenica_p:"potravinárske",jacmen_s:"sladovnícke",repka:"priemyselné",lo:"priemyselné",ho:"priemyselné"};
 const GMO={kukurica:1,soja:1,repka:1};
 // Príloha 1 – podľa vzoru zmluvy a parametrov ERNTE (Sója/Kukurica/Pšenica parametre); [vlhkosť, nečistoty, škodlivé, ostatné, čistota, zlomky]
-const Q={kukurica:[14,2,"0,1",1,98,3],soja:[12,2,"–","–",98,5],psenica_k:[13,2,"–","–",98,"–"],psenica_p:[14,2,"–","–",98,"–"]};
-const XTRA={soja:[["Bielkoviny v sušine (bez vody)","min. 38 %"],["Bielkoviny v pôvodnom stave","min. 33 %"],["Olej v sušine (bez vody)","min. 22 %"],["Olej v pôvodnom stave","min. 19 %"],["Status","udržateľná sója, Non-GMO"]],
+const Q={lo:[8,2,"–","–",98,"–"],kukurica:[14,2,"0,1",1,98,3],soja:[12,2,"–","–",98,5],psenica_k:[13,2,"–","–",98,"–"],psenica_p:[14,2,"–","–",98,"–"]};
+// slnečnica (LO) – parametre podľa STN 46 2300-6 a STN 46 2300-1, metódy STN EN ISO
+const XTRA={lo:[["Olejnatosť (obsah tuku)","min. 44,0 % – STN EN ISO 659"],["Vlhkosť","max. 8,0 % – STN EN ISO 665"],["Nečistoty","max. 2,0 % – STN EN ISO 658"],["Ostatné parametre","podľa STN 46 2300-6 a STN 46 2300-1"],["Zmyslové vlastnosti (vzhľad, pach, škodcovia)","podľa STN 46 1011-2 a STN 46 1011-3"],["Status","olejnatá slnečnica (LO), Non-GMO, na priemyselné spracovanie"]],
+  soja:[["Bielkoviny v sušine (bez vody)","min. 38 %"],["Bielkoviny v pôvodnom stave","min. 33 %"],["Olej v sušine (bez vody)","min. 22 %"],["Olej v pôvodnom stave","min. 19 %"],["Status","udržateľná sója, Non-GMO"]],
   kukurica:[["Status","Non-GMO, kŕmne účely"],["Semená slnečnice a inváznych burín","neprípustné"]],
   psenica_k:[["Bielkoviny","min. 13 %"],["Objemová hmotnosť","min. 79 kg/hl"]],psenica_p:[["Bielkoviny","min. 13 %"],["Objemová hmotnosť","min. 79 kg/hl"]]};
 const DEF_R={clean:2.5,dry:3.5,tol_pct:5};
