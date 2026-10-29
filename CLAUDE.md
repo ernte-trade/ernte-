@@ -132,7 +132,7 @@ s pripojeným repozitárom `ernte-trade/ernte-`.
   (29. 10.: workflow `ernte-push` 147 behov, posledný ✅ 21:36). Stále otvorený je „Audit Claude 9 (lístky)“ (#57) – dokončiť bezpečnostný audit.
 - Vetvy: 4 nezlúčené návrhy ERNTE AI z 25.–26. 10. (`ai-ulohy-*`, `ai-uprava-20261026`) sú prerobené v appke novšie a uložené
   v `archiv-ai-vetvy`. Claude ich nemôže zmazať (proxy nepovoľuje mazanie vetiev ani tagy) – majiteľ ich zmaže na GitHube → Branches.
-  Vetva #51 / issue „ERNTE upozornenia – technické“ sa nesmie mazať (spúšťa upozornenia do mobilu).
+  Issue #51 „ERNTE upozornenia – technické (nemazať)“ sa nesmie mazať (spúšťa upozornenia do mobilu).
 - Povolenie na fotky Dominika Klacika (CLAAS) a potvrdenie práv k reklame Bio-Fer NATUR (úvod trusu).
 - Odložené majiteľom („k tomu sa vrátime“): upratanie karty upozornení, vlastná doména (app.ernte.sk), verejná web stránka, aplikácia vs. web.
 - Pozdrav s menom pri kuracom truse (ponúknuté).
