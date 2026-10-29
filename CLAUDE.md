@@ -128,9 +128,11 @@ s pripojeným repozitárom `ernte-trade/ernte-`.
 - Prezentácie (Claude Slides): majiteľ, farmár, kurací trus, Jana, Galajda, Ličko, Tóth.
 
 ### Čaká / odložené
-- Databáza migrácie SPRACÚVA (Diagnostika → Automatické zmeny databázy, 28. 10. všetky ✅). Nefunguje ZÁPIS do GitHubu
-  (issues/komentáre): od ~09:56 28. 10. neodišlo žiadne upozornenie do mobilu a „Audit Claude 8/9“ neprišli. Príčinu ukáže
-  riadok „GitHub – zápis“ v Diagnostike (gh_diag) – majiteľ ju pošle tlačidlom 📋 Kopírovať. Potom dokončiť bezpečnostný audit.
+- Databáza migrácie SPRACÚVA (Diagnostika → Automatické zmeny databázy, 28. 10. všetky ✅). Zápis do GitHubu opäť funguje
+  (29. 10.: workflow `ernte-push` 147 behov, posledný ✅ 21:36). Stále otvorený je „Audit Claude 9 (lístky)“ (#57) – dokončiť bezpečnostný audit.
+- Vetvy: 4 nezlúčené návrhy ERNTE AI z 25.–26. 10. (`ai-ulohy-*`, `ai-uprava-20261026`) sú prerobené v appke novšie a uložené
+  v `archiv-ai-vetvy`. Claude ich nemôže zmazať (proxy nepovoľuje mazanie vetiev ani tagy) – majiteľ ich zmaže na GitHube → Branches.
+  Vetva #51 / issue „ERNTE upozornenia – technické“ sa nesmie mazať (spúšťa upozornenia do mobilu).
 - Povolenie na fotky Dominika Klacika (CLAAS) a potvrdenie práv k reklame Bio-Fer NATUR (úvod trusu).
 - Odložené majiteľom („k tomu sa vrátime“): upratanie karty upozornení, vlastná doména (app.ernte.sk), verejná web stránka, aplikácia vs. web.
 - Pozdrav s menom pri kuracom truse (ponúknuté).
