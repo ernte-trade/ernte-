@@ -2,6 +2,7 @@
 // Zamestnanci: zaznamenáva sa, ktorú časť aplikácie otvoria, ako dlho v nej sú a aké tlačidlá použijú (nikdy nie obsah, ktorý píšu).
 // Majiteľ: v Tíme karta „Aktivita tímu“ (dnes / 7 dní), Súhrn teraz; každú hodinu súhrn v ERNTE AI Podpore.
 (function(){
+document.addEventListener("click",e=>{const b=e.target.closest&&e.target.closest("[data-avedit]");if(!b||typeof teamEdit!=="function")return;e.preventDefault();e.stopPropagation();teamEdit(b.dataset.avedit)},true);
 const Q=[];let ctx=null,since=0,ME_E="",on=false,fT=null;
 const dev=()=>{const u=navigator.userAgent;const os=/iPhone|iPad/.test(u)?"iPhone":/Android/.test(u)?"Android":/Windows/.test(u)?"Windows":/Mac/.test(u)?"Mac":"iné";
   const b=/SamsungBrowser/.test(u)?"Samsung Internet":/EdgA?\//.test(u)?"Edge":/CriOS|Chrome\//.test(u)?"Chrome":/Firefox/.test(u)?"Firefox":/Safari/.test(u)?"Safari":"prehliadač";
@@ -49,7 +50,7 @@ function avHTML(){if(ROLE!=="owner")return "";const D=AV.data;if(D===null){avLoa
   if(!L.length)h+=`<div class="s">V tomto období nikto z tímu aplikáciu nepoužíval.</div>`;
   h+=L.map(([em,p])=>{const T=Object.entries(p.tabs).sort((a,b)=>b[1]-a[1]),mx=T.length?T[0][1]:1,op=AV.open===em,ago=Math.round((Date.now()-new Date(p.last))/60000);
     return `<div class="avp"><button type="button" class="avh" data-avopen="${esc(em)}"><span class="ds-av">${esc((typeof dsIni==="function"?dsIni(p.n):p.n.slice(0,2)))}</span><span><b>${esc(p.n)}</b><small>${ago<3?"🟢 práve teraz":ago<60?"pred "+ago+" min":"naposledy "+new Date(p.last).toLocaleString("sk-SK",{day:"numeric",month:"numeric",hour:"2-digit",minute:"2-digit"})} · ${[...p.dev].map(esc).join(", ")||"–"}</small></span><span class="avt"><b>${mm(p.sec)}</b><small>${p.act} akcií</small></span></button>
-     <div class="avbars">${T.slice(0,6).map(([w,s])=>`<div class="avbar"><span>${esc(LBL(w))}</span><i style="--w:${Math.max(4,s/mx*100)}%"></i><b>${mm(s)}</b></div>`).join("")||`<div class="s">Iba otvoril aplikáciu.</div>`}</div>
+     ${typeof teamEdit==="function"&&(STATE.staff||[]).some(x=>String(x.email).toLowerCase()===String(em).toLowerCase())?`<div class="btns avedit"><button type="button" data-avedit="${esc(em)}">✏️ Upraviť údaje a meno</button></div>`:""}<div class="avbars">${T.slice(0,6).map(([w,s])=>`<div class="avbar"><span>${esc(LBL(w))}</span><i style="--w:${Math.max(4,s/mx*100)}%"></i><b>${mm(s)}</b></div>`).join("")||`<div class="s">Iba otvoril aplikáciu.</div>`}</div>
      ${op?`<div class="avacts">${p.acts.map(a=>`<div><time>${new Date(a.at).toLocaleTimeString("sk-SK",{hour:"2-digit",minute:"2-digit"})}</time><span>${esc(a.what)}</span><small>${esc(LBL(String(a.detail||"").replace(/^@/,"")))}</small></div>`).join("")||`<div class="s">Žiadne akcie.</div>`}</div>`:p.acts.length?`<div class="s">Posledná akcia: ${esc(p.acts[0].what)} · ${esc(LBL(String(p.acts[0].detail||"").replace(/^@/,"")))} – ťukni na meno pre všetky</div>`:""}</div>`}).join("");
   h+=`<div class="btns"><button type="button" class="pri" data-avsum="1">🧾 Súhrn teraz do AI Podpory</button><button type="button" data-avref="1">↻ Obnoviť</button></div>
    <div class="s">Zaznamenáva sa iba to, ktorú časť aplikácie má človek otvorenú, ako dlho, a názvy tlačidiel, ktoré použil – nie obsah, ktorý píše. Zamestnanci sú o tom v aplikácii informovaní. Záznamy sa mažú po 180 dňoch.</div></div></details>`;
