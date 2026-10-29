@@ -70,6 +70,10 @@ s pripojeným repozitárom `ernte-trade/ernte-`.
   Zverejňuje iba databáza (`ia_tick`, pg_cron `interagros` každých 30 min, `ia_run` hneď po vložení ponuky); klient ich nezverejňuje, ručná cena sa neukladá.
 - **Kontrola automatických cien** (`price_guard`, `price_pending`, `price_watch`): skok > 25 €/t (`autoMaxJump`) sa nezverejní sám – push + potvrdenie v Cenníku
   (🛡️ Kontrola cien); 2× denne (pg_cron `cennik-kontrola`) kontrola čerstvosti: burza ≤ 3 dni, Interagros ≤ 10 dní, ADM východ ≤ 45 dní.
+- **Pravidlo majiteľa (trvalé): STRÁŽENIE NÁKUPOV** (`deal_watch`, `deal_watch_tick` každých 15 min, `dealwatch.js`, iba majiteľ): obchody s farmármi od 29. 10. 2026 08:46.
+  Trh (burza, inak konkurencia) klesne o ≥ 1,5 % / 5 €/t → „📉 KLESÁ“ priorita 5, opakuje sa každých 30 min, kým majiteľ nepotvrdí „Prečítal som“.
+  Stúpa → „📈 DRŽ, NEPREDÁVAJ“ s termínom (max 60 dní, 15 dní pred mesiacom burzového kontraktu); obrat o ½ zisku alebo koniec termínu → „PREDAJ“ (opakuje sa).
+  Končí zadaním predajnej ceny (deal_fin.sell_price) alebo zrušením obchodu.
 - **Konkurenčné ceny** (`konk.js`, kalk_store `pricelist/konk`): vložený text ponuky → rozpoznanie, porovnanie, báza voči burze. Mená firiem iba v DB.
 - **Príkaz majiteľa (trvalý):** pracovať na 100 %, bezchybne a rýchlo; nič nepoškodiť (model cenníka, nastavenia, údaje). Pred nasadením otestovať.
 
