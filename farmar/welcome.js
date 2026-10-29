@@ -370,7 +370,7 @@ html.wlon,html.wlon body{overflow:hidden}
 .wlc.por .wlb{grid-template-columns:minmax(0,1fr);justify-items:center;text-align:center;align-self:center;margin-left:auto!important;margin-right:auto!important;gap:8px}
 .wlc.por .wlb>img{width:44px;height:44px}.wlc.por .wlt{width:100%}.wlc.por .wlt>*{margin-left:auto;margin-right:auto}
 .wlc.por .wjk{text-align:left}.wlc.por .wla{justify-content:center;margin-left:0;margin-right:0}
-.wlc.por .wla>button{flex:1 1 0;min-width:0}`;document.head.appendChild(s)}
+.wlc.por .wla{flex-wrap:wrap}.wlc.por .wla>button[data-wlgo]{flex:1 0 auto;min-width:max-content;white-space:nowrap;overflow:visible}.wlc.por .wla>button.wmore{flex:1 1 140px;min-width:0;white-space:normal}`;document.head.appendChild(s)}
 css();
 let tries=0;const t=setInterval(()=>{tries++;const app=document.getElementById("app");
   if(kind()&&app&&app.children.length&&!document.querySelector(".pinmod")){clearInterval(t);setTimeout(()=>show(false),600)}
