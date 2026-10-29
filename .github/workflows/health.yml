@@ -22,7 +22,7 @@ jobs:
             echo "rest root: $(curl -s -o /dev/null -w '%{http_code} %{time_total}s' -H "apikey: $K" "$U/rest/v1/")"
             sleep 5
           done ) | tee out.txt
-          curl -s -X POST -H "apikey: $K" -H "Content-Type: application/json" -d '{}' "$U/rest/v1/rpc/cennik_probe" > probe.json || true
+          curl -s -X POST -H "apikey: $K" -H "Content-Type: application/json" -d '{}' "$U/rest/v1/rpc/ernte_probe2" > probe.json || true
           gpg --batch --yes --trust-model always --recipient-file .github/e2e/results.pub.asc -o probe.gpg -e probe.json && rm -f probe.json
           git config user.name bot; git config user.email bot@users.noreply.github.com
           git checkout --orphan health-results; git rm -rfq . >/dev/null; date -u > t.txt; git add out.txt t.txt probe.gpg; git commit -qm health; git push -fq origin health-results
