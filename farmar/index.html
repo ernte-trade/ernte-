@@ -1035,7 +1035,7 @@ function renderFarmer(){const F=FARMER,P=MK.map(m=>STATE.prices.find(x=>x.com===
   /* Novinky farmár nevidí */
   if(window.susCardHTML)h+=susCardHTML();
   if((!window.fcan||fcan("f_prices"))){h+=`<h2>Výkupné ceny · FCA farma, bez DPH</h2>`;
-  h+=P.length?`<div class="card">${P.map(p=>`<div class="prow">${comImg(p.com)}<div><div class="t">${esc(comName(p.com))}</div><div class="s">${esc(specLine(p.com))}</div></div><b class="num">${fmt(p.price)} €/t</b>
+  h+=P.length?`<div class="card">${P.map(p=>`<div class="prow">${comImg(p.com)}<div><div class="t">${esc(comName(p.com))}</div><div class="s">${esc(specLine(p.com))}</div></div><b class="num">${fmt(p.price)} €/t</b>${window.fwdLine?fwdLine(p.com):""}
       ${SELL===p.com||expired||(window.fcan&&!fcan("f_sell"))?"":`<button type="button" class="lime sell" data-sell="${esc(p.com)}">Predať</button>`}
       ${SELL===p.com?`<form class="f sub" id="fSell"><div class="w"><b>Predať ${esc(comName(p.com))} za ${fmt(p.price)} €/t</b></div><label>Koľko ton?<input name="tons" inputmode="decimal" required placeholder="napr. 100"></label><label>Odkedy môžeme odviezť?<input name="date" type="date" min="${today()}"></label><label class="w">Poznámka (nepovinné)<input name="note" placeholder="napr. vlhkosť, miesto skladu"></label><div class="w btns"><button class="pri" type="submit">Odoslať ERNTE</button><button type="button" data-sell="">Zrušiť</button></div></form>`:""}${window.bonusRow?bonusRow(p):""}</div>`).join("")}
       ${expired?`<div class="box w"><b>Cenník sa práve aktualizuje.</b> Nové ceny tu budú čoskoro – predaj je zatiaľ pozastavený. Zavolajte ERNTE.</div>`:""}<div class="s">${valid&&!expired?`Ceny platia do ${esc(dSK(valid))}. `:""}Ťuknite na <b>Predať</b>, napíšte tony a odošlite. ERNTE sa vám ozve.</div><div class="s" style="font-size:.66rem;opacity:.7">Ilustračné fotografie: Wikimedia Commons</div></div>`
@@ -2765,7 +2765,7 @@ function vPrice(){const P=STATE.prices,valid=((STATE.settings||{}).pricelist||{}
     if(dd<0){vc="r";vt="Platnosť uplynula "+dSK(valid)}else if(dd<7){vc="w";vt=dd===0?"Platí už len dnes":"Do konca platnosti "+dd+" "+(dd===1?"deň":dd<5?"dni":"dní")}else{vc="ok";vt="Platí ešte "+dd+" dní"}}
   return `<div class="card bzc"><div class="tdh"><b>📈 Burza pri cenách</b><small>${mAt?"aktualizované "+esc(new Date(mAt).toLocaleString("sk-SK",{day:"numeric",month:"numeric",hour:"2-digit",minute:"2-digit"})):"zatiaľ bez údajov"}</small></div><div class="s">MATIF (Euronext Paríž) repka, pšenica, kukurica; CBOT sója prepočítaná na €/t podľa kurzu EUR/USD${STATE.mkt&&STATE.mkt.eurusd?" ("+String(STATE.mkt.eurusd.price).replace(".",",")+")":""}. Najbližší kontrakt, automaticky v pracovné dni ráno a poobede. Farmári burzu nevidia.</div><div class="btns"><button type="button" data-mktref="1">↻ Obnoviť burzu</button></div></div>
   <form class="card f" id="fPrice"><div class="w s">Výkupné ceny FCA farma bez DPH. Prázdne = farmár komoditu nevidí. Po uložení ich hneď vidia všetci prihlásení farmári.</div>
-  <div class="w ds-ptiles">${MK.map(m=>{const p=P.find(x=>x.com===m[0]),has=p&&p.price!=null;return `<label class="ds-tile${has?"":" emp"}"><span class="pn">${esc(m[1])}</span><span class="pv"><input name="p_${m[0]}" inputmode="decimal" value="${has?String(p.price).replace(".",","):""}" placeholder="nezadané" aria-label="${esc(m[1])} €/t"><i>€/t</i></span>${burzaTile(m[0],has?p.price:null)}</label>`}).join("")}</div>
+  <div class="w ds-ptiles">${MK.map(m=>{const p=P.find(x=>x.com===m[0]),has=p&&p.price!=null;return `<label class="ds-tile${has?"":" emp"}"><span class="pn">${esc(m[1])}</span><span class="pv"><input name="p_${m[0]}" inputmode="decimal" value="${has?String(p.price).replace(".",","):""}" placeholder="nezadané" aria-label="${esc(m[1])} €/t"><i>€/t</i></span>${burzaTile(m[0],has?p.price:null)}${window.fwdLine?fwdLine(m[0]):""}</label>`}).join("")}</div>
   <label class="w ds-valid ${vc}">Platí do<input name="valid" type="date" value="${esc(valid)}"><small>${esc(vt)}</small></label><div class="w btns"><button class="pri" type="submit">Uložiť a zverejniť</button></div></form>`}
 function vDeals(){const F=STATE.farmers.filter(f=>f.active),pre=DEALF||{},OWN=ROLE==="owner";
   let h=`<form class="card f" id="fDeal"><div class="w t">Nový obchod</div>
@@ -2934,6 +2934,7 @@ document.addEventListener("click",e=>{const b=e.target.closest("[data-dfp]");if(
 <script src="autocennik.js?v=20261029-0840"></script>
 <script src="wxs.js?v=20261029-0735"></script>
 <script src="xround.js?v=20261029-0655"></script>
+<script src="fwd.js?v=20261029-0930"></script>
 <script src="dealwatch.js?v=20261029-0900"></script>
 <script src="konk.js?v=20261029-0850"></script>
 <script src="cennikalert.js?v=20261029-0700"></script>
