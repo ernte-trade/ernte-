@@ -16,17 +16,20 @@ function nextQ(){const w=who()||"staff",L=Q[w]||Q.staff,st=ld(),done=st.done||[]
 function btn(){if(!who()||document.getElementById("fbBtn"))return;css();const b=document.createElement("button");b.type="button";b.id="fbBtn";b.className="fbbtn";b.setAttribute("aria-label","Spätná väzba – čo by ste zmenili?");b.innerHTML=`💬<span class="fbtip" hidden></span>`;document.body.appendChild(b);b.onclick=()=>open()}
 function tip(){const st=ld(),b=document.getElementById("fbBtn");if(!b)return;if(st.last&&Date.now()-st.last<3*864e5)return;if(st.snooze&&Date.now()<st.snooze)return;
   const t=b.querySelector(".fbtip");const L=Q[who()]||Q.staff;t.textContent="Máte minútku? "+L[nextQ()];t.hidden=false;setTimeout(()=>{t.hidden=true},14000)}
-function open(){S.open=true;S.qi=nextQ();S.rate=0;paint()}
+function open(qOnly){S.open=true;S.qOnly=qOnly===true;S.fbOpen=false;S.qi=nextQ();S.rate=0;paint();if(!S.qOnly&&window.rsSeen)try{rsSeen()}catch(x){}}
 function close(){S.open=false;const m=document.getElementById("fbMod");if(m)m.remove()}
 function paint(){let m=document.getElementById("fbMod");if(!S.open){if(m)m.remove();return}if(!m){m=document.createElement("div");m.id="fbMod";m.className="fbmod";document.body.appendChild(m);m.addEventListener("click",ev=>{if(ev.target===m)close()})}
   const L=Q[who()]||Q.staff,q=L[S.qi],nm=isF()?FARMER.name:(typeof ME!=="undefined"&&ME&&(ME.staffName||ME.email))||"";
-  m.innerHTML=`<div class="fbbox" role="dialog" aria-modal="true" aria-label="Spätná väzba"><div class="fbhd"><b>💬 Pomôžte nám zlepšiť aplikáciu</b><button type="button" class="fbx" data-fbx aria-label="Zavrieť">✕</button></div>
+  const rs=!S.qOnly&&window.rsHTML?rsHTML():"";
+  m.innerHTML=`<div class="fbbox" role="dialog" aria-modal="true" aria-label="${rs?"Ranná správa a spätná väzba":"Spätná väzba"}"><div class="fbhd"><b>${rs?"💬 ERNTE":"💬 Pomôžte nám zlepšiť aplikáciu"}</b><button type="button" class="fbx" data-fbx aria-label="Zavrieť">✕</button></div>
+   ${rs?`<div class="fbchat">${rs}</div><details class="fbmore"${S.fbOpen?" open":""}><summary>💬 Máte nápad alebo pripomienku?</summary>`:""}
    <div class="fbchat"><div class="fbmsg them"><span class="fbav">ERNTE</span><p>Dobrý deň${nm?", "+e(String(nm).split(" ")[0]):""}! ${e(q)}</p></div></div>
    <form id="fbF" class="fbf"><textarea name="a" rows="3" required placeholder="Napíšte odpoveď alebo nápad…"></textarea>
     <div class="fbrate" role="radiogroup" aria-label="Celkové hodnotenie aplikácie">${[1,2,3,4,5].map(i=>`<button type="button" data-fbr="${i}" aria-pressed="${S.rate===i}" title="${i}/5">${["😞","🙁","😐","🙂","😍"][i-1]}</button>`).join("")}<small>celkovo aplikácia</small></div>
     <div class="btns"><button type="submit" class="lime"${S.busy?" disabled":""}>📤 Odoslať</button><button type="button" data-fbq>Iná otázka</button><button type="button" data-fbl>Neskôr</button></div></form>
-   <div class="s fbnote">Odpovede číta majiteľ ERNTE. Ďakujeme – každý nápad zvažujeme.</div></div>`;
-  setTimeout(()=>{const t=m.querySelector("textarea");try{t&&t.focus()}catch(x){}},80)}
+   <div class="s fbnote">Odpovede číta majiteľ ERNTE. Ďakujeme – každý nápad zvažujeme.</div>${rs?"</details>":""}</div>`;
+  if(rs){const d=m.querySelector(".fbmore");if(d)d.addEventListener("toggle",()=>{S.fbOpen=d.open})}
+  if(!rs||S.fbOpen)setTimeout(()=>{const t=m.querySelector("textarea");try{t&&t.focus({preventScroll:!!rs})}catch(x){}},80)}
 async function send(a){const w=who(),L=Q[w]||Q.staff,q=L[S.qi];S.busy=true;paint();
   const row={who:w,farmer_id:isF()?FARMER.id:null,email:typeof ME!=="undefined"&&ME?String(ME.email||"").toLowerCase():null,name:isF()?FARMER.name:(typeof ME!=="undefined"&&ME&&ME.staffName)||null,question:q,answer:a.slice(0,2000),rating:S.rate||null,screen:typeof TAB!=="undefined"&&isS()?TAB:w,dev:navigator.userAgent.slice(0,180)};
   let r=await sb.from("app_feedback").insert(row);
@@ -69,5 +72,5 @@ function wrap(n,fn){const o=window[n];if(typeof o!=="function"||o["__fb"+n])retu
 const t=setInterval(()=>{wrap("renderStaff",injectHome);if(who())btn()},500);setTimeout(()=>clearInterval(t),120000);
 // občasná otázka: po 90 s používania, najviac raz za 3 dni
 setTimeout(()=>{if(who()){btn();tip()}},90000);
-window.feedbackOpen=open;
+window.feedbackOpen=open;window.feedbackClose=close;window.feedbackRepaint=()=>{if(S.open){const t=document.querySelector("#fbF textarea"),v=t?t.value:"";paint();const n=document.querySelector("#fbF textarea");if(n&&v)n.value=v}};
 })();

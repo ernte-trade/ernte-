@@ -1098,6 +1098,7 @@ const fName=id=>{const f=STATE.farmers.find(x=>x.id===id);return f?f.name:"?"};
 // ===== NÁPOVEDA „Ako to funguje“ =====
 const HELP={
 home:{t:"Prehľad",i:"🏠",r:"Ranný prehľad firmy: čo je nové, čo čaká na teba, termíny, upozornenia a počasie.",s:[
+ ["☀️ Ranná správa v 💬","Každý deň ráno svieti na 💬 (vpravo dole) bodka. Vnútri: včerajšie nákupy a marža, čo čaká, dnešné jazdy, spokojnosť ľudí, zákazy jázd SK/HU a počasie. Pod tým hotová ranná správa pre každého vodiča s dnešnou jazdou – pošleš ju sám ťuknutím na SMS alebo WhatsApp. Farmári dostávajú v 💬 svoju správu: našu cenu so zmenou oproti včerajšku, počasie ako semafor (zber, postrek), svoje autá a zmeny obchodov."],
  ["🔔 Zvonček v každej sekcii","Hore v každej záložke je 🔔 s počtom. Ukáže iba to, čo patrí do tejto sekcie: „Na vybavenie“ zmizne samo, keď vec vybavíš (prijmeš, odpovieš, zamietneš), a upozornenia z mobilu zmiznú po prečítaní alebo keď v sekcii už nič nečaká. Prečítané platí na všetkých tvojich zariadeniach. Po otvorení sekcie sa jej upozornenia zmažú aj z lišty v telefóne a rovnaké upozornenie už nepípa znova."],
  ["Dlaždice","Každá dlaždica ukazuje jednu vec (nové požiadavky, odvozy, alarmy, sklad…). Ťukni a prejdeš rovno do detailu."],
  ["Upozornenia","Hore sú veci, ktoré treba vybaviť dnes – napríklad nepodpísané zmluvy, chýbajúce váženia alebo nezapísaná práca."],
@@ -2927,7 +2928,8 @@ document.addEventListener("click",e=>{const b=e.target.closest("[data-dfp]");if(
 <script src="formkeep.js?v=20261029-0130"></script>
 <script src="farmtiles.js?v=20261029-0130"></script>
 <script src="offers.js?v=20261029-0130"></script>
-<script src="feedback.js?v=20261029-0130"></script>
+<script src="feedback.js?v=20261029-0800"></script>
+<script src="ranna.js?v=20261029-0800"></script>
 <script src="cancel.js?v=20261029-0130"></script>
 <script src="autocennik.js?v=20261029-0630"></script>
 <script src="wxs.js?v=20261029-0735"></script>
