@@ -21,6 +21,9 @@ Platí pre Claude aj ERNTE AI pri každej novej sekcii, záložke, funkcii alebo
    obchod, výkup, zúčtovanie, zmluvy a kurací trus v štýle **ERNTE spol. s r.o.** Hlavička cez `brandHead("valko"|"ernte", nadpis, podnadpis)`
    a farby cez `brandCss(...)` (`farmar/brand.js`).
 
+8. **Názvy súborov (PDF a iné pre majiteľa)** – PRÍKAZ MAJITEĽA: v názve súboru namiesto podčiarkovníka `_` vždy normálna medzera
+   (napr. „Zmluva soja Danube SK HU.pdf“, nie „Zmluva_soja_Danube_SK-HU.pdf“).
+
 ## Kontrola vzhľadu – PRÍKAZ MAJITEĽA (trvalé, pri každej zmene aj novej funkcii)
 Pred nasadením otestovať v prehliadači (Playwright) každú dotknutú obrazovku pre **všetky prihlásenia** (majiteľ, obchodník, doprava,
 evidencia, mzdy, trus, farmár) na šírkach **344, 390, 412 px (mobil, Fold zatvorený) a 900 px (Fold otvorený)** a pozrieť snímky:
