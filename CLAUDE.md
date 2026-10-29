@@ -21,6 +21,15 @@ Platí pre Claude aj ERNTE AI pri každej novej sekcii, záložke, funkcii alebo
    obchod, výkup, zúčtovanie, zmluvy a kurací trus v štýle **ERNTE spol. s r.o.** Hlavička cez `brandHead("valko"|"ernte", nadpis, podnadpis)`
    a farby cez `brandCss(...)` (`farmar/brand.js`).
 
+## Kontrola vzhľadu – PRÍKAZ MAJITEĽA (trvalé, pri každej zmene aj novej funkcii)
+Pred nasadením otestovať v prehliadači (Playwright) každú dotknutú obrazovku pre **všetky prihlásenia** (majiteľ, obchodník, doprava,
+evidencia, mzdy, trus, farmár) na šírkach **344, 390, 412 px (mobil, Fold zatvorený) a 900 px (Fold otvorený)** a pozrieť snímky:
+- nič sa neprekrýva, nič nepretŕča doprava (stránka sa nesmie posúvať do strany), text v tlačidlách sa neoreže;
+- obsah dlaždíc a hlavičky na stred, dlaždice na celú šírku; nadpisy a popisy čitateľné (popis pod celým riadkom, nie stlačený);
+- okrúhle tlačidlá (✕, obálka, zvonček, ↻ …) presný kruh, nie vajce (`fit.css`, `xround.js`);
+- automatická kontrola: `.github/e2e/uiaudit.js` (prekrytia cez elementFromPoint, orezaný text, šírka stránky).
+Spoločné opravy rozloženia patria do `farmar/fit.css` (načítava sa posledný).
+
 ## Výkon (29. 10.)
 - Kto obaľuje `renderStaff` / `renderFarmer`, MUSÍ skopírovať značky z pôvodnej funkcie
   (`Object.keys(o).forEach(k=>{if(!(k in w))w[k]=o[k]})`) – inak sa moduly obaľovali donekonečna (stovky vrstiev, aplikácia sekala).
