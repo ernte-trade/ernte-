@@ -1,0 +1,23 @@
+name: ppa
+on:
+  repository_dispatch:
+    types: [ernte-ppa]
+permissions:
+  contents: write
+jobs:
+  p:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verejné údaje PPA (prijímatelia pomoci) – stiahnuť a zašifrovať
+        run: |
+          mkdir -p o
+          B="https://www.apa.sk/api/files?url=http%3A%2F%2Ffiles%3A8081%2Ffiles%2Fpublic%2F"
+          curl -sSL -A "Mozilla/5.0" -o o/prij2025.xlsx "${B}2026-04%2FAnnex%2520VIII_Prij%25C3%25ADmatelia%2520pomoci%2520z%2520EPZF%2520a%2520EPFRV_FY%25202025.xlsx" || true
+          curl -sSL -A "Mozilla/5.0" -o o/prij2024.xlsx "${B}2025-08%2FAnnex%2520VIII_Prij%25C3%25ADmatelia%2520pomoci%2520z%2520EPZF%2520a%2520EPFRV_FY%25202024.xlsx" || true
+          ls -la o > o/ls.txt; file o/* >> o/ls.txt || true
+          tar czf ppa.tgz o
+          gpg --batch --yes --trust-model always --recipient-file .github/e2e/results.pub.asc -o ppa.gpg -e ppa.tgz
+          git config user.name bot; git config user.email bot@users.noreply.github.com
+          git checkout --orphan ppa-results; git rm -rfq . >/dev/null; date -u > t.txt; git add t.txt ppa.gpg; git commit -qm ppa; git push -fq origin ppa-results
