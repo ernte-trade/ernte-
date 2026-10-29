@@ -98,6 +98,7 @@ function hud(k){return `<div class="whud"><div class="whtop"><span class="wlive"
 const SPK="ernte-spotify",SPDEF="playlist/1sri3NOK9SPtrmUq7ActiX";
 /* rádiá: najnovšie hity z playlistov rádií SK, RO, HU, PL, UA (playlisty sa aktualizujú samy, uložené aj v Spotify majiteľa) */
 const SPRAD=[["🇸🇰","Expres","playlist/1sri3NOK9SPtrmUq7ActiX"],["🇸🇰","Europa 2","playlist/22q1eYq2NsomZsTVu2Ss9k"],["🇸🇰","Hot Hits SK","playlist/37i9dQZF1DXdCrbrHtTRdI"],
+ ["🔥","Pop hity 2026","playlist/37i9dQZF1DXcOG8EeZQ0xe"],["💃","Dance Pop Hits","playlist/37i9dQZF1DWZQaaqNMbbXa"],["🆕","Nový Dance Pop","playlist/37i9dQZF1DWWOGXILUAh53"],["🎉","Pop & Dance 2026","playlist/06S64oWn7uGnfGrwjh5IWb"],["🎧","Dance 2026","playlist/6g40a9GjWBkX8ewR0vF9C2"],["🇸🇰","Top hity SK","playlist/1tgRtNS7QvxRUNrJHXdJvs"],
  ["🇷🇴","Kiss FM RO","playlist/2W19sWVoqO0StmimPMcZjI"],["🇷🇴","Hot Hits RO","playlist/37i9dQZF1DX9BPHmsKo7pf"],["🇭🇺","Rádió 1","playlist/45i3K85u5AopQboEqAKvOV"],["🇭🇺","Hot Hits HU","playlist/37i9dQZF1DXddoYHYnHJ9N"],
  ["🇵🇱","RMF FM","playlist/0yZYV1gwGmZjx1Of1TXbHN"],["🇵🇱","ESKA·ZET","playlist/3veBbD2WYsf803JjKKK2UM"],["🇺🇦","Хіт FM","playlist/0qsBS4nvAHvxe0YeDrXzvj"],["🇺🇦","Hot Hits UA","playlist/37i9dQZF1DX1V3tM4cuX0v"]];
 function spRef(){try{return localStorage.getItem(SPK)||SPDEF}catch(x){return SPDEF}}
