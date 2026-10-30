@@ -18,6 +18,7 @@ jobs:
           {
           NM="${{ github.event.client_payload.name || 'ABG Trebišov' }}"; NE=$(python3 -c "import urllib.parse,sys;print(urllib.parse.quote(sys.argv[1]))" "$NM")
           echo "== RPO fullName"; curl -s -m 20 -D - -H "$H" "https://api.statistics.sk/rpo/v1/search?fullName=$NE&onlyActive=true" | head -c 5000; echo
+          echo "== FUEL raw"; curl -s -m 20 -D - -o /dev/null -H "$H" "https://raw.githubusercontent.com/ernte-trade/ernte-/fuel-data/fuel.json" | grep -i "^HTTP\|access-control-allow-origin\|content-type"
           echo "== MX"; dig +short MX ernte.sk; dig +short TXT ernte.sk | head -5; dig +short autodiscover.ernte.sk; dig +short CNAME autoconfig.ernte.sk; dig +short A mail.ernte.sk; dig +short A smtp.ernte.sk
           echo "== LIVE zmeny"; curl -s -m 20 "https://ernte-trade.github.io/ernte-/farmar/zmeny.json?u=$RANDOM" | head -c 400; echo; curl -s -m 20 -o /dev/null -w "%{http_code}\n" "https://ernte-trade.github.io/ernte-/farmar/beta/verzia.js"
           echo "== RPO search"; curl -s -m 20 -D - -H "$H" "https://api.statistics.sk/rpo/v1/search?identifier=$ICO" | head -c 6000; echo
