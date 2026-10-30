@@ -1,0 +1,45 @@
+# ⛽ Nafta v krajinách MOL Group (Slovnaft SK, MOL HU, CZ, AT, SI, HR, RO, PL) – verejné údaje
+#   EU Weekly Oil Bulletin cez fuel-prices.eu (CC BY 4.0, „Source: fuel-prices.eu, European Commission Weekly Oil Bulletin“)
+#   + MOL Maďarsko z holtankoljak.hu (priemer staníc MOL), ak je dostupné. Výsledok: vetva fuel-data / fuel.json (číta ho úvod aplikácie).
+name: fuel
+on:
+  schedule:
+    - cron: "17 5,11,17 * * *"
+  workflow_dispatch:
+  repository_dispatch:
+    types: [ernte-fuel]
+permissions:
+  contents: write
+jobs:
+  f:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Stiahnuť ceny nafty
+        run: |
+          set +e
+          mkdir -p o && cd o
+          curl -s -m 30 -A "Mozilla/5.0 ERNTE" "https://www.fuel-prices.eu/charts/data.json?type=map&fuel=diesel" -o eu.json
+          curl -s -m 30 -A "Mozilla/5.0 ERNTE" "https://www.fuel-prices.eu/charts/data.json?type=line&fuel=diesel" -o eul.json
+          curl -s -m 30 -A "Mozilla/5.0" "https://holtankoljak.hu/" -o hu.html
+          python3 - <<'PY'
+          import json,re,datetime
+          out={"at":datetime.datetime.utcnow().isoformat()+"Z","src":"Source: fuel-prices.eu, European Commission Weekly Oil Bulletin; MOL HU: holtankoljak.hu","raw":{}}
+          for k in ("eu","eul"):
+            try: out["raw"][k]=json.load(open(k+".json"))
+            except Exception as e: out["raw"][k+"_err"]=str(e)[:200]
+          try:
+            h=open("hu.html",encoding="utf8",errors="ignore").read()
+            m=re.findall(r'MOL[^<]{0,80}?(\d{3})[,.]?(\d)?\s*Ft',h)
+            out["hu_mol_raw"]=m[:20]
+            d=re.search(r'[Gg]ázolaj[^0-9]{0,80}(\d{3})[,.]?(\d)?',h)
+            out["hu_diesel_raw"]=d.group(0)[:120] if d else None
+          except Exception as e: out["hu_err"]=str(e)[:200]
+          json.dump(out,open("fuel.json","w"),ensure_ascii=False)
+          print(json.dumps(out,ensure_ascii=False)[:3000])
+          PY
+          rm -f eu.json eul.json hu.html
+          git init -q; git checkout -q -b fuel-data
+          git config user.name bot; git config user.email bot@users.noreply.github.com
+          git add fuel.json; git commit -qm "nafta $(date -u +%F)"
+          git push -fq "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git" fuel-data
