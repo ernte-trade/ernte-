@@ -1,53 +1,98 @@
 [
  {
-  "q": "grain silos",
+  "q": "clear blue sky field summer incategory:Quality_images",
   "keys": [
    "batchcomplete",
-   "continue",
    "query"
   ],
-  "n": 40,
+  "n": 27,
   "lic": [
    [
     "CC BY-SA 4.0",
-    5472,
-    3648,
+    6000,
+    4000,
     "ent=original"
    ],
    [
     "CC BY-SA 4.0",
-    4608,
-    2592,
+    7952,
+    4974,
     "ent=original"
    ],
    [
     "CC BY-SA 4.0",
-    8000,
-    4986,
+    2650,
+    3975,
     "ent=original"
    ],
    [
     "CC BY-SA 4.0",
-    4608,
-    2592,
+    4432,
+    3448,
     "ent=original"
    ],
    [
     "CC BY-SA 4.0",
-    4608,
-    3456,
+    5978,
+    3968,
     "ent=original"
    ],
    [
     "CC BY-SA 4.0",
-    4608,
-    3456,
+    7517,
+    4967,
     "ent=original"
    ]
   ]
  },
  {
-  "q": "grain truck harvest",
+  "q": "overcast sky field incategory:Quality_images",
+  "keys": [
+   "batchcomplete",
+   "query"
+  ],
+  "n": 24,
+  "lic": [
+   [
+    "CC BY-SA 4.0",
+    5457,
+    3638,
+    "ent=original"
+   ],
+   [
+    "CC BY-SA 4.0",
+    4255,
+    2789,
+    "ent=original"
+   ],
+   [
+    "CC BY-SA 4.0",
+    5222,
+    3481,
+    "ent=original"
+   ],
+   [
+    "CC BY-SA 4.0",
+    1817,
+    2750,
+    "ent=original"
+   ],
+   [
+    "CC BY-SA 4.0",
+    6617,
+    3722,
+    "ent=original"
+   ],
+   [
+    "CC BY-SA 4.0",
+    6720,
+    3780,
+    "ent=original"
+   ]
+  ]
+ },
+ {
+  "q": "fog field morning incategory:Quality_images",
   "keys": [
    "batchcomplete",
    "continue",
@@ -55,6 +100,173 @@
   ],
   "n": 40,
   "lic": [
+   [
+    "CC BY 3.0",
+    3600,
+    2398,
+    "ent=original"
+   ],
+   [
+    "CC BY 3.0",
+    3600,
+    2568,
+    "ent=original"
+   ],
+   [
+    "CC BY 3.0",
+    3600,
+    2526,
+    "ent=original"
+   ],
+   [
+    "CC BY-SA 3.0",
+    7000,
+    2044,
+    "ent=original"
+   ],
+   [
+    "CC BY-SA 3.0",
+    2777,
+    1851,
+    "ent=original"
+   ],
+   [
+    "CC BY-SA 4.0",
+    4866,
+    3244,
+    "ent=original"
+   ]
+  ]
+ },
+ {
+  "q": "starry sky night landscape incategory:Quality_images",
+  "keys": [
+   "continue",
+   "query"
+  ],
+  "n": 1,
+  "lic": [
+   [
+    "CC BY 4.0",
+    5566,
+    3711,
+    "ent=original"
+   ]
+  ]
+ },
+ {
+  "q": "milky way night sky field",
+  "keys": [
+   "batchcomplete",
+   "continue",
+   "query"
+  ],
+  "n": 40,
+  "lic": [
+   [
+    "CC BY 4.0",
+    4000,
+    3631,
+    "ent=original"
+   ],
+   [
+    "Public domain",
+    13530,
+    4909,
+    "ent=original"
+   ],
+   [
+    "CC BY 2.0",
+    2912,
+    4078,
+    "ent=original"
+   ],
+   [
+    "CC BY 4.0",
+    15204,
+    4620,
+    "ent=original"
+   ],
+   [
+    "Public domain",
+    4083,
+    3655,
+    "ent=original"
+   ],
+   [
+    "CC0",
+    4928,
+    3264,
+    "ent=original"
+   ]
+  ]
+ },
+ {
+  "q": "cumulus clouds blue sky field incategory:Quality_images",
+  "keys": [
+   "batchcomplete",
+   "query"
+  ],
+  "n": 28,
+  "lic": [
+   [
+    "CC BY-SA 4.0",
+    3648,
+    4517,
+    "ent=original"
+   ],
+   [
+    "CC BY-SA 4.0",
+    5616,
+    3744,
+    "ent=original"
+   ],
+   [
+    "CC BY-SA 3.0",
+    12599,
+    6552,
+    "ent=original"
+   ],
+   [
+    "CC BY-SA 4.0",
+    3878,
+    2585,
+    "ent=original"
+   ],
+   [
+    "CC BY-SA 4.0",
+    4123,
+    2748,
+    "ent=original"
+   ],
+   [
+    "CC BY-SA 4.0",
+    4336,
+    2890,
+    "ent=original"
+   ]
+  ]
+ },
+ {
+  "q": "rain clouds over field incategory:Quality_images",
+  "keys": [
+   "batchcomplete",
+   "query"
+  ],
+  "n": 5,
+  "lic": [
+   [
+    "CC BY-SA 4.0",
+    5471,
+    3029,
+    "ent=original"
+   ],
+   [
+    "CC BY-SA 4.0",
+    5416,
+    3615,
+    "ent=original"
+   ],
    [
     "CC BY-SA 4.0",
     6720,
@@ -62,39 +274,21 @@
     "ent=original"
    ],
    [
-    "Public domain",
-    4928,
-    3264,
-    "ent=original"
-   ],
-   [
-    "CC BY 2.0 de",
-    2560,
-    1920,
+    "CC BY-SA 4.0",
+    6394,
+    4156,
     "ent=original"
    ],
    [
     "CC BY-SA 4.0",
-    4000,
-    2664,
-    "ent=original"
-   ],
-   [
-    "Public domain",
-    3264,
-    4743,
-    "ent=original"
-   ],
-   [
-    "Public domain",
-    1600,
-    1060,
+    6707,
+    3773,
     "ent=original"
    ]
   ]
  },
  {
-  "q": "wheat grains hands",
+  "q": "rain shower landscape",
   "keys": [
    "batchcomplete",
    "continue",
@@ -103,179 +297,132 @@
   "n": 40,
   "lic": [
    [
-    "No restrictions",
-    3184,
-    1600,
+    "Public domain",
+    6529,
+    4391,
     "ent=original"
    ],
    [
-    "No restrictions",
-    2822,
-    4485,
+    "Public domain",
+    700,
+    1144,
     "ent=original"
    ],
    [
-    "No restrictions",
-    1936,
-    1524,
+    "Public domain",
+    2314,
+    1656,
     "ent=original"
    ],
    [
-    "No restrictions",
-    2822,
-    4485,
-    "ent=original"
-   ],
-   [
-    "CC BY-SA 4.0",
-    2048,
-    1536,
+    "Public domain",
+    1197,
+    868,
     "ent=original"
    ],
    [
     "CC BY-SA 4.0",
-    3408,
-    5104,
+    5206,
+    3470,
+    "ent=original"
+   ],
+   [
+    "Public domain",
+    3192,
+    4800,
     "ent=original"
    ]
   ]
  },
  {
-  "q": "combine harvester sunset",
+  "q": "snowy field winter sky incategory:Quality_images",
   "keys": [
    "batchcomplete",
-   "query"
-  ],
-  "n": 10,
-  "lic": [
-   [
-    "CC BY 2.0",
-    1500,
-    1071,
-    "ent=original"
-   ],
-   [
-    "CC BY-SA 2.0",
-    3888,
-    2592,
-    "ent=original"
-   ],
-   [
-    "CC BY-SA 2.0",
-    3888,
-    2592,
-    "ent=original"
-   ],
-   [
-    "CC BY-SA 2.0",
-    3888,
-    2592,
-    "ent=original"
-   ],
-   [
-    "CC BY-SA 2.0",
-    640,
-    480,
-    "ent=original"
-   ],
-   [
-    "CC BY-SA 4.0",
-    7360,
-    4912,
-    "ent=original"
-   ]
-  ]
- },
- {
-  "q": "combine harvester wheat field",
-  "keys": [
-   "batchcomplete",
-   "continue",
-   "query"
-  ],
-  "n": 40,
-  "lic": [
-   [
-    "CC BY-SA 2.0",
-    640,
-    480,
-    "ent=original"
-   ],
-   [
-    "CC BY 4.0",
-    4123,
-    2655,
-    "ent=original"
-   ],
-   [
-    "CC BY-SA 2.0",
-    640,
-    425,
-    "ent=original"
-   ],
-   [
-    "CC BY-SA 3.0",
-    5144,
-    4761,
-    "ent=original"
-   ],
-   [
-    "CC BY-SA 2.0",
-    1280,
-    960,
-    "ent=original"
-   ],
-   [
-    "CC BY-SA 3.0",
-    4037,
-    2691,
-    "ent=original"
-   ]
-  ]
- },
- {
-  "q": "farmer handshake",
-  "keys": [
-   "batchcomplete",
-   "continue",
    "query"
   ],
   "n": 40,
   "lic": [
    [
     "CC BY-SA 4.0",
-    720,
-    480,
-    "ent=original"
-   ],
-   [
-    "Public domain",
-    4240,
-    2832,
-    "ent=original"
-   ],
-   [
-    "Public domain",
-    2832,
-    4240,
-    "ent=original"
-   ],
-   [
-    "Public domain",
-    2832,
-    4240,
-    "ent=original"
-   ],
-   [
-    "Public domain",
-    2832,
-    4240,
-    "ent=original"
-   ],
-   [
-    "Public domain",
+    7505,
     3000,
-    1968,
+    "ent=original"
+   ],
+   [
+    "CC BY-SA 4.0",
+    9519,
+    5000,
+    "ent=original"
+   ],
+   [
+    "CC BY-SA 4.0",
+    5068,
+    3427,
+    "ent=original"
+   ],
+   [
+    "CC BY-SA 4.0",
+    6720,
+    4480,
+    "ent=original"
+   ],
+   [
+    "CC BY-SA 4.0",
+    13304,
+    5000,
+    "ent=original"
+   ],
+   [
+    "CC BY-SA 4.0",
+    5354,
+    3569,
+    "ent=original"
+   ]
+  ]
+ },
+ {
+  "q": "thunderstorm lightning incategory:Quality_images",
+  "keys": [
+   "batchcomplete",
+   "continue",
+   "query"
+  ],
+  "n": 40,
+  "lic": [
+   [
+    "CC BY-SA 3.0",
+    2796,
+    1572,
+    "ent=original"
+   ],
+   [
+    "CC BY-SA 3.0",
+    4780,
+    2662,
+    "ent=original"
+   ],
+   [
+    "FAL",
+    3204,
+    2528,
+    "ent=original"
+   ],
+   [
+    "CC BY 3.0",
+    4288,
+    2566,
+    "ent=original"
+   ],
+   [
+    "CC BY-SA 4.0",
+    14772,
+    3750,
+    "ent=original"
+   ],
+   [
+    "CC BY-SA 4.0",
+    2469,
+    2898,
     "ent=original"
    ]
   ]
