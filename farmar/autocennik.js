@@ -164,9 +164,10 @@ async function run(force){if(!ED()||running)return;if(!force&&Date.now()-A.lastR
         if(!A.cfg.auto[com])continue;const a=C[com];if(!a||!a.ok||!(a.p>0))continue;tgt=a.p+ADJ(com);src="auto";pl=a.pl+(ADJ(com)?` ${ADJ(com)>0?"+":"−"} ${f0(Math.abs(ADJ(com)))} € úprava`:"")}
       const old=cur[com]??null;if(tgt==null||!isFinite(tgt))continue;
       if(old!=null&&Math.abs(tgt-old)<(+A.cfg.step||1))continue;
-      if(false&&src==="auto"){pend[com]={old,tgt,pl};continue}
+      if(src==="auto"&&old!=null&&tgt>old&&!A.allow[com]){pend[com]={old,tgt,pl};continue} /* zvýšenie zverejní iba Martin – ide na potvrdenie */
       ch.push({com,old,new:tgt,src,pl})}
     A.pend=pend;A.expired=exp;
+    for(const [com,x] of Object.entries(pend)){try{await sb.rpc("price_propose",{p_com:com,p_new:x.tgt,p_src:"automatický cenník · "+(x.pl||"model")})}catch(e){}}
     if(dirty&&!(await saveCfg()))A.cfg.mine=Object.assign({},A.cfg.mine);
     if(ch.length){const now=new Date().toISOString();
       const r=await sb.from("prices").upsert(ch.map(c=>({com:c.com,price:c.new,updated_at:now})));
@@ -209,7 +210,7 @@ function bannerHTML(){if(!OWN()||!A.cfg)return "";let h="";const U=unseen();
   if(U.length){const last={};U.forEach(x=>last[x.com]=Object.assign({},x,{old:last[x.com]?last[x.com].old:x.old}));const L=Object.values(last);
     h+=`<div class="acn-b" role="alert"><div class="acn-bh"><span aria-hidden="true">💶</span><b>Zmena v zverejnenom cenníku${L.length>1?" ("+L.length+")":""}</b></div><ul>${L.map(x=>`<li><b>${e(nm(x.com))}</b> ${x.old==null?"–":f0(x.old)} → <b>${x.new==null?"skryté":f0(x.new)+" €/t"}</b> <small>${x.new!=null&&x.old!=null?(x.new>x.old?"▲ +":"▼ −")+f0(Math.abs(x.new-x.old))+" · ":""}${srcL(x)} · ${hm(x.at)}</small></li>`).join("")}</ul>
     <div class="btns"><button type="button" class="pri" data-acn="seen">✓ Videl som</button>${typeof TAB!=="undefined"&&TAB!=="price"?`<button type="button" data-acn="open">Otvoriť cenník</button>`:""}</div></div>`}
-  const P=Object.entries(A.pend||{});if(P.length)h+=`<div class="acn-b warn" role="alert"><div class="acn-bh"><span aria-hidden="true">⚠️</span><b>Veľká zmena ceny čaká na tvoje potvrdenie</b></div><ul>${P.map(([c,x])=>`<li><b>${e(nm(c))}</b> ${f0(x.old)} → <b>${f0(x.tgt)} €/t</b> <small>${x.tgt>x.old?"▲":"▼"} ${f0(Math.abs(x.tgt-x.old))} €/t (${f0(Math.abs(x.tgt-x.old)/x.old*100)} %) · ${e(x.pl)}</small> <button type="button" data-acn="allow:${e(c)}">Zverejniť</button></li>`).join("")}</ul><div class="btns"><button type="button" class="pri" data-acn="allowall">✓ Zverejniť všetky</button></div><div class="s">Automatika zmenu nad ${f0(A.cfg.maxJump)} % sama nezverejní. Ak ju nechceš, prepíš cenu v cenníku (platí ako tvoja).</div></div>`;
+  const P=Object.entries(A.pend||{});if(P.length)h+=`<div class="acn-b warn" role="alert"><div class="acn-bh"><span aria-hidden="true">⚠️</span><b>📈 Zvýšenie ceny čaká na potvrdenie (zverejní iba Martin)</b></div><ul>${P.map(([c,x])=>`<li><b>${e(nm(c))}</b> ${f0(x.old)} → <b>${f0(x.tgt)} €/t</b> <small>${x.tgt>x.old?"▲":"▼"} ${f0(Math.abs(x.tgt-x.old))} €/t (${f0(Math.abs(x.tgt-x.old)/x.old*100)} %) · ${e(x.pl)}</small> <button type="button" data-acn="allow:${e(c)}">Zverejniť</button></li>`).join("")}</ul><div class="btns"><button type="button" class="pri" data-acn="allowall">✓ Zverejniť všetky</button></div><div class="s">Pokles ceny sa zverejní sám hneď, zvýšenie iba po tvojom potvrdení.</div></div>`;
   if((A.expired||[]).length)h+=`<div class="acn-b"><div class="acn-bh"><span aria-hidden="true">⏰</span><b>Tvoja cena vypršala – späť na automatickú</b></div><ul>${A.expired.map(x=>`<li><b>${e(nm(x.com))}</b> ${f0(x.price)} €/t platila do ${dk(x.till)}${A.cfg.auto[x.com]?"":" · komodita nemá automatickú cenu, cena zostala"}</li>`).join("")}</ul><div class="btns"><button type="button" data-acn="expok">OK</button></div></div>`;
   // pripomienka: zapíš svoje ceny (raz za X dní)
   const rd=+A.cfg.remindDays||0,lm=Date.parse(A.cfg.lastMineAt||A.cfg.since||"")||0,snz=+gs(SNZ)||0;

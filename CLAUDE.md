@@ -107,6 +107,8 @@ s pripojeným repozitárom `ernte-trade/ernte-`.
   prepočet zmlúv farmára (`buyer_realloc`); `buyer_import` ručné opravy po nahratí Excelu znova použije (neprepíše ich).
 - **Dokumenty / PDF** (`pdfview.js`, načítava sa hneď po supabase): každé `window.open("")` + `document.write` sa zobrazí v okne cez celú obrazovku
   (✕ Zavrieť / Späť, 🖨️ Tlačiť, ⬇️ Uložiť PDF cez html2pdf v rámci dokumentu, 📤 Poslať na mobile). Automatická tlač sa ignoruje (3 s). Nové PDF písať rovnako (window.open("")).
+- **Pravidlo majiteľa (trvalé, 30. 10.): POKLES CENY AUTOMATICKY, ZVÝŠENIE IBA MARTIN** (`price_guard`, `price_propose`, `price_main()`, trigger `prices_raise`):
+  zníženie našej nákupnej ceny sa zverejní hneď; zvýšenie (model aj ručne od iných) ide do `price_pending` + push a zverejní ho iba Martin (Cenník → 🛡️ Kontrola cien).
 - **± ÚPRAVA OD MODELU** (príkaz majiteľa 30. 10.): `kalk_store pricelist/adj` (samostatne, aby ho starší klient neprepísal) {komodita: ±€/t}; zverejnená cena = model + adj
   (klient `ADJ()` v `autocennik.js`, databáza v `soja_adm_tick` a `ia_tick` aj pre ceny na neskorší odber). Pšenica kŕmna = model − 5 €/t.
   Vždy zverejniť novú verziu všetkým zároveň (cenník zverejňuje aplikácia majiteľa – stará a nová verzia nesmú rátať inak).
