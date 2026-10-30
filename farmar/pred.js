@@ -325,6 +325,70 @@ document.addEventListener("click",async ev=>{const b=ev.target.closest&&ev.targe
 .prd-ai .row{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
 .prd-ait{line-height:1.55;margin-top:8px;padding:12px;border-radius:16px;background:rgba(167,139,250,.08);border:1px solid rgba(167,139,250,.25);overflow-wrap:anywhere}
 .prd-ait b{color:#c4b5fd}.prd-ait small{display:block;opacity:.6;margin-bottom:4px}.prd-ai .btns{justify-content:center;margin-top:10px}`;document.head.appendChild(st)}
+// ---------- 🃏 VÝKLAD KARIET PRE MARTINA – otázka na blízku budúcnosť, nové virtuálne zamiešanie pri každej otázke ----------
+const TK={deck:"tarot",sp:"3",hz:"dni",q:"",cards:null,anim:false,d:null,at:0,busy:false};
+const DECKS={tarot:["🃏 Tarot (78)",()=>TAROT.map(x=>x[0]),true],len:["🍀 Lenormand (36)",()=>LEN.map(x=>x[0]),false],cig:["🔮 Cigánske (32)",()=>CIG.map(x=>x[0]),false]};
+const SPREADS={"1":["1 karta – rýchla odpoveď",["Odpoveď"]],"3":["3 karty – blízka budúcnosť",["Teraz","Čo príde","Výsledok"]],
+  "5":["5 kariet – celý výklad",["Situácia","Prekážka","Rada","Čo príde","Výsledok"]]};
+const HZ={dni:"najbližšie dni",tyz:"najbližšie 2 týždne",mes:"do konca mesiaca"};
+const rnd=n=>{const a=new Uint32Array(1),lim=Math.floor(0x100000000/n)*n;let x;do{crypto.getRandomValues(a);x=a[0]}while(x>=lim);return x%n};
+function shuffle(arr){const a=arr.slice();for(let pass=0;pass<7;pass++){for(let i=a.length-1;i>0;i--){const j=rnd(i+1);[a[i],a[j]]=[a[j],a[i]]}
+  const cut=rnd(a.length);a.push(...a.splice(0,cut))}return a} // 7× premiešanie + sňatie, ako pri skutočných kartách
+function draw(){const D=DECKS[TK.deck],pos=SPREADS[TK.sp][1],deck=shuffle(D[1]());
+  return pos.map((p,i)=>({pos:p,n:deck[i],rv:D[2]?rnd(100)<30:false}))}
+async function tkLoad(){if(TK.busy)return;TK.busy=true;try{const r=await sb.rpc("tarot_ai_get");TK.d=r.error?{err:r.error.message}:r.data;TK.at=Date.now()}catch(x){}TK.busy=false;rr();
+  const c=TK.d&&TK.d.cur;if(c&&c.at&&!c.done)setTimeout(()=>{TK.at=0;tkLoad()},5000)}
+const cardFace=(c,i)=>`<div class="tk-c${c.rv?" rv":""}${Date.now()-(TK.fresh||0)<2500?" fl":""}" style="--d:${i*0.18}s"><i class="tk-back"></i><div class="tk-face"><small>${e(c.pos)}</small><b>${e(c.n)}</b>${c.rv?`<em>obrátená</em>`:""}</div></div>`;
+function tarotCard(){if(!TK.at&&!TK.busy)tkLoad();const cur=(TK.d&&TK.d.cur)||{},run=cur.at&&!cur.done,LG=(TK.d&&TK.d.log)||[],o=S.open.__tk!==false;
+  const md=t=>e(t).replace(/\*\*(.+?)\*\*/g,"<b>$1</b>").replace(/\n/g,"<br>");
+  const cards=TK.cards||(cur.p&&cur.p.karty?cur.p.karty.map(k=>({pos:k.pozicia,n:k.karta,rv:!!k.obratena})):null);
+  const opt=(o2,v)=>Object.entries(o2).map(([k,x])=>`<option value="${k}"${k===v?" selected":""}>${e(Array.isArray(x)?x[0]:x)}</option>`).join("");
+  return `<div class="card tk"><div class="row"><b>🃏 Výklad kariet – moja blízka budúcnosť</b><button type="button" class="copy" data-tktog>${o?"Skryť":"Zobraziť"}</button></div>
+   ${o?`<label class="tk-l">Tvoja otázka<textarea rows="2" maxlength="400" data-tkq placeholder="Napr. Vyjde obchod s repkou tento týždeň? · Čo ma čaká v najbližších dňoch?">${e(TK.q)}</textarea></label>
+   <div class="tk-sel"><label>Karty<select data-tkset="deck">${opt(DECKS,TK.deck)}</select></label><label>Rozklad<select data-tkset="sp">${opt(SPREADS,TK.sp)}</select></label><label>Na kedy<select data-tkset="hz">${opt(HZ,TK.hz)}</select></label></div>
+   <div class="btns"><button type="button" class="lime" data-tkgo ${run||TK.anim?"disabled":""}>${TK.anim?"🔀 Miešam karty…":run?"🔮 Vykladám…":"🔀 Zamiešať a vytiahnuť"}</button></div>
+   ${TK.anim?`<div class="tk-shuf" aria-label="Miešam karty">${"<i></i>".repeat(7)}</div>`:cards?`<div class="tk-row">${cards.map(cardFace).join("")}</div>`:""}
+   ${!TK.anim&&cur.p&&cur.p.otazka?`<div class="tk-qq">„${e(cur.p.otazka)}“ · ${e(cur.p.horizont||"")}</div>`:""}
+   ${!TK.anim&&cur.text&&!run?`<div class="tk-ait">${md(cur.text)}</div>`:""}${!TK.anim&&run?`<div class="s tk-wait">🔮 Karty hovoria… výklad príde do pár sekúnd.</div>`:""}
+   ${cur.err&&!run?`<div class="prd-w">⚠️ ${e(String(cur.err).slice(0,140))}</div>`:""}
+   ${LG.length>1?`<details class="tk-h"><summary>🗂 Predchádzajúce výklady (${LG.length-1})</summary>${LG.slice(1,15).map(x=>`<div class="tk-hi"><small>${e(new Date(x.at).toLocaleString("sk-SK",{day:"numeric",month:"numeric",hour:"2-digit",minute:"2-digit"}))} · ${e(((x.p&&x.p.karty)||[]).map(k=>k.karta+(k.obratena?" (obr.)":"")).join(", "))}</small><b>${e((x.p&&x.p.otazka)||"všeobecne")}</b><div>${md(x.text||"")}</div></div>`).join("")}</details>`:""}`:""}</div>`}
+document.addEventListener("input",ev=>{if(ev.target.matches&&ev.target.matches("[data-tkq]"))TK.q=ev.target.value},true);
+document.addEventListener("change",ev=>{const t=ev.target;if(t.dataset&&t.dataset.tkset){TK[t.dataset.tkset]=t.value;TK.cards=null}},true);
+document.addEventListener("click",async ev=>{const b=ev.target.closest&&ev.target.closest("[data-tkgo],[data-tktog]");if(!b||!OWN()||typeof TAB==="undefined"||TAB!=="pred")return;ev.preventDefault();ev.stopPropagation();touch();
+  if(b.dataset.tktog!==undefined){S.open.__tk=S.open.__tk===false;rr();return}
+  const q=(TK.q||"").trim();TK.anim=true;TK.cards=null;rr();
+  const C=draw();await new Promise(r=>setTimeout(r,1500));TK.anim=false;TK.cards=C;TK.fresh=Date.now();rr();
+  let mp=null;try{if(window.ASTRO){const m=ASTRO.moonPhase(new Date());mp=(m.waxing?"dorastajúci":"cúvajúci")+" Mesiac, "+Math.round(m.illum*100)+" %"}}catch(x){}
+  const p={otazka:q||"Čo ma čaká?",balicek:DECKS[TK.deck][0],rozklad:SPREADS[TK.sp][0],horizont:HZ[TK.hz],mesiac:mp,narodeny:(S.natal&&S.natal.date)||null,
+    karty:C.map(c=>({pozicia:c.pos,karta:c.n,obratena:c.rv}))};
+  const r=await sb.rpc("tarot_ai_now",{p});
+  if(r.error){tst("Výklad sa nepodaril: "+r.error.message,6000);return}
+  if(r.data==="chýba kľúč"){tst("Chýba kľúč ERNTE AI.",5000);return}
+  if(r.data==="beží"){tst("Predchádzajúci výklad ešte beží – chvíľu počkaj.",4000);return}
+  TK.d=Object.assign({},TK.d||{},{cur:{at:new Date().toISOString(),p}});rr();setTimeout(()=>{TK.at=0;tkLoad()},4000)},true);
+{const st=document.createElement("style");st.textContent=`.tk{border-color:rgba(251,191,36,.5)!important;box-shadow:0 0 0 1px rgba(251,191,36,.2),0 12px 34px -14px rgba(251,191,36,.5)}
+.tk .row{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
+.tk-l{display:grid;gap:4px;margin-top:10px;font-size:.85rem}.tk-l textarea{width:100%;box-sizing:border-box;font:500 1rem/1.4 system-ui;color:#fff;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.2);border-radius:12px;padding:10px}
+.tk-sel{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px;margin-top:8px}.tk-sel label{display:grid;gap:4px;font-size:.8rem;min-width:0}
+.tk-sel select{width:100%;min-height:44px;font:600 .9rem system-ui;color:#fff;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.2);border-radius:12px;padding:0 8px}
+.tk .btns{justify-content:center;margin-top:10px}
+.tk-row{display:flex;flex-wrap:wrap;justify-content:center;gap:10px;margin-top:14px;perspective:900px}
+.tk-c{position:relative;width:96px;height:150px;flex:0 0 auto;transform-style:preserve-3d}.tk-c.fl{animation:tkflip .7s ease-out both;animation-delay:var(--d)}
+.tk-back,.tk-face{position:absolute;inset:0;border-radius:12px;backface-visibility:hidden;-webkit-backface-visibility:hidden}
+.tk-back{background:repeating-linear-gradient(45deg,#3b2a6b 0 6px,#2a1d52 6px 12px);border:2px solid #fbbf24;transform:rotateY(180deg)}
+.tk-face{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;padding:8px;text-align:center;background:radial-gradient(120% 90% at 50% 0%,rgba(251,191,36,.28),transparent 60%),linear-gradient(170deg,#241c3d,#120e22);border:2px solid rgba(251,191,36,.75);box-shadow:0 0 18px rgba(251,191,36,.35)}
+.tk-face small{font-size:.66rem;opacity:.7;text-transform:uppercase;letter-spacing:.05em}.tk-face b{font-size:.92rem;line-height:1.2;color:#fde68a;overflow-wrap:anywhere}.tk-face em{font-style:normal;font-size:.68rem;color:#fca5a5}
+.tk-c.rv .tk-face b{transform:rotate(180deg)}
+@keyframes tkflip{from{transform:rotateY(180deg) translateY(-16px);opacity:0}to{transform:rotateY(0) translateY(0);opacity:1}}
+.tk-shuf{position:relative;height:150px;margin-top:14px}.tk-shuf i{position:absolute;left:50%;top:0;width:96px;height:150px;margin-left:-48px;border-radius:12px;background:repeating-linear-gradient(45deg,#3b2a6b 0 6px,#2a1d52 6px 12px);border:2px solid #fbbf24;box-shadow:0 6px 18px rgba(0,0,0,.5);animation:tkshuf .5s ease-in-out infinite alternate}
+.tk-shuf i:nth-child(2n){animation-direction:alternate-reverse}.tk-shuf i:nth-child(1){animation-delay:0s}.tk-shuf i:nth-child(2){animation-delay:.07s}.tk-shuf i:nth-child(3){animation-delay:.14s}.tk-shuf i:nth-child(4){animation-delay:.21s}.tk-shuf i:nth-child(5){animation-delay:.28s}.tk-shuf i:nth-child(6){animation-delay:.35s}.tk-shuf i:nth-child(7){animation-delay:.42s}
+@keyframes tkshuf{0%{transform:translateX(-60px) rotate(-12deg)}100%{transform:translateX(60px) rotate(12deg)}}
+@media (prefers-reduced-motion:reduce){.tk-c,.tk-shuf i{animation:none}}
+.tk-qq{text-align:center;font-style:italic;opacity:.8;margin-top:10px;overflow-wrap:anywhere}
+.tk-ait{line-height:1.55;margin-top:10px;padding:12px;border-radius:16px;background:rgba(251,191,36,.07);border:1px solid rgba(251,191,36,.25);overflow-wrap:anywhere}.tk-ait b{color:#fde68a}
+.tk-wait{text-align:center;margin-top:8px}
+.tk-h{margin-top:12px;border-top:1px solid rgba(255,255,255,.1);padding-top:8px}.tk-h summary{cursor:pointer;font-weight:700;min-height:40px;display:flex;align-items:center}
+.tk-hi{padding:8px 0;border-top:1px solid rgba(255,255,255,.07);display:grid;gap:3px;overflow-wrap:anywhere}.tk-hi small{opacity:.6}.tk-hi div{font-size:.9rem;opacity:.9}`;document.head.appendChild(st)}
 window.vPred=function(){if(!OWN())return "";
   if(!S.cfg){load(true);return `<div class="card"><div class="s">Načítavam…</div></div>`}
   if(!unlocked()||S.pinMode==="new")return pinView();
@@ -332,7 +396,7 @@ window.vPred=function(){if(!OWN())return "";
   const all=coms().map(evalCom),sel=S.sel;
   let h=`<div class="card prd-top"><div class="row"><b>🔮 Algomancia · AI veštenie obchodu</b><span class="btns"><button type="button" class="copy" data-prdref>↻</button><button type="button" class="copy" data-prdpin>Zmeniť PIN</button><button type="button" class="copy" data-prdlock>🔒 Zamknúť</button></span></div>
    <div class="s">Kde kúpiť, kam predať a kedy – z ponúk farmárov, tvojho cenníka, trhov (HU, SK, UA hranica), burzy, ponúk a zmlúv odberateľov a nákladov dopravy.${S.mj&&S.mj.updatedAt?` Trhy: ${e(new Date(S.mj.updatedAt).toLocaleDateString("sk-SK"))}.`:""}</div>${S.err?`<div class="prd-w">⚠️ ${e(S.err)}</div>`:""}</div>`;
-  h+=aiCard(all);
+  h+=aiCard(all)+tarotCard();
   h+=msg(all);
   h+=all.filter(r=>r.src.length||r.snk.some(s=>!s.ind)||r.trend.now!=null).map(comCard).join("")||`<div class="card"><div class="s">Zatiaľ chýbajú ceny.</div></div>`;
   h+=natalCard()+accCard()+quotes()+cfgCard()+review();
