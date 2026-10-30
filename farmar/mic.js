@@ -8,7 +8,7 @@ const T=(m,t)=>{if(typeof toast==="function")toast(m,t||7000)};
 const ANDR=/Android/i.test(navigator.userAgent),IOS=/iPhone|iPad|iPod/.test(navigator.userAgent)||(navigator.platform==="MacIntel"&&navigator.maxTouchPoints>1);
 const STD=()=>matchMedia("(display-mode: standalone)").matches||navigator.standalone===true;
 function howTo(){if(IOS)return "Na iPhone: Nastavenia → Safari → Mikrofón → Povoliť (alebo aA v adresnom riadku → Nastavenia webovej stránky → Mikrofón).";
-  if(ANDR&&STD())return "Na Samsungu: podrž ikonu ERNTE na ploche → ⓘ Informácie o aplikácii → Povolenia → Mikrofón → Povoliť. Ak tam nie je, otvor Chrome → ⋮ → Nastavenia → Nastavenia lokality → Mikrofón → ernte-trade.github.io → Povoliť.";
+  if(ANDR&&STD())return "Na Samsungu: podrž ikonu ERNTE na ploche → ⓘ Informácie o aplikácii → Povolenia → Mikrofón → Povoliť. Ak tam nie je, otvor Chrome → ⋮ → Nastavenia → Nastavenia lokality → Mikrofón → "+location.hostname+" → Povoliť.";
   if(ANDR)return "V prehliadači ťukni na 🔒 / ⓘ vedľa adresy → Povolenia → Mikrofón → Povoliť a skús znova.";
   return "V prehliadači klikni na 🔒 vedľa adresy → Mikrofón → Povoliť a skús znova."}
 window.micHow=howTo;

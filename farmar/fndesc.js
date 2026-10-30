@@ -50,6 +50,11 @@ const SECD={
  "agro:cat":"Katalóg prác a strojov, z ktorého sa skladá cenník."};
 // ---- nadpisy (farmár aj zamestnanci) ----
 const H2=[
+ ["🌐 Doména app.ernte.sk","Presný DNS záznam pre vlastnú adresu aplikácie (Kopírovať), stav overenia DNS a HTTPS certifikátu. Kontrola každých 15 min; po overení sa doména zapne sama a stará adresa sa presmeruje. Registrátor s API kľúčom vytvorí záznam sám."],
+ ["Registrátor domény ernte.sk","WebSupport / Active24: API kľúč sa uloží iba na serveri a aplikácia vytvorí DNS záznam sama. Forpsi / iný: hotový e-mail pre správcu domény."],
+ ["✉️ Žiadosť podpore Commandera o práva API","Pripravený e-mail od VALKO s.r.o. o sprístupnenie tankovaní, tachografu, zmlúv, stredísk a vyradených vozidiel. Po odoslaní aplikácia o 3 pracovné dni overí tankovania."],
+ ["🗄️ Archív obchodov","Archivované obchody – nezmazané, nerátajú sa do súčtov. ♻️ ich vráti späť."],
+ ["🧪 Testovacie obchody","Obchody farmárov s „TEST“ alebo 🧪 v názve – mimo súčtov, štatistík a upozornení."],
  ["🧭 Report tímu od ERNTE AI","Každý pracovný deň o 6:35 AI prejde aktivitu tímu (prihlásenia, sekcie, denník prác, vybavené požiadavky farmárov, pridelené prístupy) a karty farmárov. Napíše report a každému pošle povzbudivú bublinu so skóre výkonu 0–100. Vidí iba Martin."],
  ["🤝 Obchodné návrhy AI","Po, St, Pi ráno AI nájde firmy v Česku, Rakúsku, Maďarsku, Poľsku a na Ukrajine – komu predať (📦) a od koho nakúpiť (🛒) – a napíše e-mail. Prečítaš ho po slovensky, upravíš (AI preloží) a odošleš: odíde v jazyku krajiny v mene Martina Vaľka, konateľa, odpovede prídu na ernte@ernte.sk."],
  ["🔔 Notifikácie","Upozornenia do mobilu: témy ntfy (Kopírovať, QR kód na odber), stupne alarmov Flotily (VYSOKÝ hneď, STREDNÝ hodinový súhrn, NÍZKY ranný súhrn o 5:00), udalosti aplikácie, koho sledovať, tiché hodiny a testovacie upozornenie."],

@@ -14,6 +14,7 @@ on:
     types: [ernte-release, ernte-pages]
 permissions:
   contents: write
+  pages: write
 concurrency:
   group: ernte-pages
   cancel-in-progress: false
@@ -72,6 +73,17 @@ jobs:
             open(p,"w").write(json.dumps(z,ensure_ascii=False))
           PY
           touch /tmp/site/.nojekyll
+      - name: Vlastná doména app.ernte.sk (iba keď DNS už ukazuje na GitHub)
+        run: |
+          # bez DNS záznamu sa doména NEZAPÍNA – inak by GitHub presmeroval starú adresu na nefunkčnú
+          D=app.ernte.sk
+          C=$(dig +short "$D" CNAME @8.8.8.8 2>/dev/null | tr 'A-Z' 'a-z' || true)
+          A=$(dig +short "$D" A @8.8.8.8 2>/dev/null || true)
+          if echo "$C" | grep -qx 'ernte-trade\.github\.io\.\?' || echo "$A" | grep -qE '^185\.199\.(108|109|110|111)\.153$'; then
+            echo "$D" > /tmp/site/CNAME; echo "DNS $D OK → CNAME"
+          else
+            echo "DNS $D ešte neukazuje na GitHub ($C $A) – doména sa nezapína"
+          fi
       - name: Nahrať na gh-pages (iba pri zmene)
         run: |
           set -e
@@ -83,3 +95,15 @@ jobs:
           if git rev-parse -q --verify origin/gh-pages >/dev/null && [ -z "$(git diff --cached --name-only origin/gh-pages -- . ':(exclude)farmar/zmeny.json' ':(exclude)farmar/beta/zmeny.json')" ]; then echo "bez zmeny"; exit 0; fi
           git -c user.name=Claude -c user.email=noreply@anthropic.com commit -qm "Stránka: stará $(python3 -c 'import json;print(json.load(open("farmar/zmeny.json"))["stable"])') · nová $(python3 -c 'import json;print(json.load(open("farmar/zmeny.json"))["beta"])')" --author="ERNTE Trade <report.valko@gmail.com>"
           git push -q -f origin gh-pages
+      - name: Doména – nastavenie GitHub Pages a HTTPS (ak to token dovolí)
+        if: always()
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          [ -f /tmp/site/CNAME ] || exit 0
+          API=https://api.github.com/repos/${{ github.repository }}/pages
+          H=(-H "Authorization: Bearer $GH_TOKEN" -H "Accept: application/vnd.github+json" -H "X-GitHub-Api-Version: 2022-11-28")
+          curl -s "${H[@]}" "$API" | grep -E '"(cname|https_enforced|status)"' || true
+          curl -s -o /dev/null -w "cname %{http_code}\n" -X PUT "${H[@]}" "$API" -d '{"cname":"app.ernte.sk"}' || true
+          curl -s -o /dev/null -w "https %{http_code}\n" -X PUT "${H[@]}" "$API" -d '{"https_enforced":true}' || true

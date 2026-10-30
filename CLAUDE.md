@@ -127,6 +127,12 @@ s pripojeným repozitárom `ernte-trade/ernte-`.
   Agro-Somotor: všetky ceny FCA u farmára (`sell_buyers.parita='FCA'`), dopravu platia oni 9,4 €/t.
   **Odberateľ ≠ konkurencia** (príkaz majiteľa 30. 10.): ponuka odberateľa (napr. Agro-Somotor) = za koľko kúpi OD NÁS → položka `sell:true`, `dop` (Somotor: FCA cena, keď odvezieme my +9,4 €/t),
   `konk.buyers` {meno:{dop}}; vidí iba Martin; zapíše sa aj do `sell_offers` (`konk_sell_offer`, FCA + DAP) pre „Kde predať“. Nikdy ju nerátať ako konkurenčnú výkupnú cenu.
+- **STRÁŽ OBCHODOV** (30. 10., `obchody_straz.sql`, pg_cron `obchody-straz` → `obchody_straz_tick` = `deal_watch_tick` + `deal_guard_tick`, tabuľka `deal_alerts`): nad cenníkom (5), nadodávka > 10 % (4),
+  vlastná firma ERNTE/VALKO (4), obchádzanie zmluvy (5). Návrh nad cenníkom sa podpíše až po schválení majiteľom (`deal_price_guard`, `deal_price_approve`, tlačidlo v Obchodoch).
+  Archív obchodov (`deals.archived`, `deal_archive`); testovací farmári (TEST / 🧪, `is_test_name`, `deal_live`) mimo súčtov aj upozornení – klient `dealsSplit` (STATE.deals bez nich, `dealsTest`, `dealsArch`).
+- **DOMÉNA app.ernte.sk** (`domena.sql`, `domena.js`, pg_cron `domena`, ai_state `domain_app`): CNAME app → ernte-trade.github.io; zapína ju `pages.yml` (súbor CNAME) IBA keď DNS ukazuje na GitHub.
+  Registrátor: vault `ernte_dns_reg` (`domain_reg_set`, WebSupport/Active24 REST v2 HMAC). Supabase Auth redirect URL nejde nastaviť bez tokenu správy – prihlásenie kódom funguje.
+- **COMMANDER PODPORA** (`commander_podpora.sql`, `cmdreq.js`, ai_state `cmd_support`, pg_cron `commander-podpora`): e-mail o práva API, kontrola main:refuel po 3 prac. dňoch.
 - **Príkaz majiteľa (trvalý):** pracovať na 100 %, bezchybne a rýchlo; nič nepoškodiť (model cenníka, nastavenia, údaje). Pred nasadením otestovať.
 
 ### Hotové (október 2026)

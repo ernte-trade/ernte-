@@ -1101,7 +1101,10 @@ async function loadStaff(){const [f,p,s,d,r,aj]=await Promise.all([sb.from("farm
   ROLE&&ROLE!=="owner"?sb.rpc("my_price_adj",{p_email:(window.ERNTE_VIEWAS&&ERNTE_VIEWAS.email)||null}).then(x=>x,()=>({})):Promise.resolve({})]);
   try{const [tk,tr]=await Promise.all([sb.from("trucks").select("*").order("no"),sb.from("trips").select("*").order("day",{ascending:false}).limit(300)]);STATE.trucks=tk.data||[];STATE.trips=tr.data||[];STATE.noTrans=!!tk.error}catch(e){STATE.trucks=[];STATE.trips=[];STATE.noTrans=true}
   try{const own=ROLE==="owner",q=[sb.from("trip_route").select("*").limit(3000)];if(own)q.push(sb.from("trip_fin").select("*").limit(3000),sb.from("deal_fin").select("*").limit(3000));const X=await Promise.all(q),M=(r,k)=>Object.fromEntries(((r&&r.data)||[]).map(x=>[x[k],x]));STATE.troute=M(X[0],"trip_id");STATE.tfin=own?M(X[1],"trip_id"):{};STATE.dfin=own?M(X[2],"deal_id"):{}}catch(e){STATE.troute={};STATE.tfin={};STATE.dfin={}}
-  STATE.farmers=f.data||[];STATE.prices=p.data||[];STATE.settings=Object.fromEntries((s.data||[]).map(x=>[x.key,x.value]));STATE.deals=d.data||[];STATE.reqs=r.data||[];padjSet(aj)}
+  STATE.farmers=f.data||[];STATE.prices=p.data||[];STATE.settings=Object.fromEntries((s.data||[]).map(x=>[x.key,x.value]));dealsSplit(d.data||[]);STATE.reqs=r.data||[];padjSet(aj)}
+// archivované obchody a obchody testovacích farmárov (TEST / 🧪) sa nerátajú do súčtov ani štatistík
+const isTestName=n=>/(^|[^\p{L}])test([^\p{L}]|$)/iu.test(String(n||""))||String(n||"").includes("🧪");
+function dealsSplit(A){const T=new Set((STATE.farmers||[]).filter(f=>isTestName(f.name)).map(f=>f.id));STATE.dealsAll=A;STATE.dealsArch=A.filter(x=>x.archived);STATE.dealsTest=A.filter(x=>!x.archived&&T.has(x.farmer_id));STATE.deals=A.filter(x=>!x.archived&&!T.has(x.farmer_id))}
 // cena pre obchodníka s úpravou (napr. Ceperko −5 €/t, Prešovský kraj – vyššia doprava): všetky zobrazené nákupné ceny = zverejnené + úprava
 function padjSet(aj){const d=aj&&!aj.error&&aj.data||{};window.PADJ=ROLE!=="owner"&&Number.isFinite(+d.adj)?+d.adj:0;window.PADJN=d.note||"";if(!PADJ)return;const A=v=>v==null||v===""?v:Math.round((+v+PADJ)*100)/100;
   STATE.prices=STATE.prices.map(x=>x.price==null?x:Object.assign({},x,{price:A(x.price)}));const F=STATE.settings.prices_fwd;if(F&&F.c){const c={};for(const k in F.c)c[k]=(F.c[k]||[]).map(x=>Object.assign({},x,{price:A(x.price)}));STATE.settings.prices_fwd=Object.assign({},F,{c})}}
@@ -1785,8 +1788,8 @@ function fleetPay(F,FM,curMon){if(STATE.payCurMon!==curMon||STATE.payCur==null){
 const FNAV=[["dash","🏠","Prehľad"],["fuel","⛽","Nafta"],["alarm","🚨","Alarmy"],["money","💶","Peniaze"],["drv","👤","Vodiči"],["veh","🚛","Vozidlá"],["map","🗺️","Mapa"]];
 // staré odkazy → nové miesto
 const FOLD={perf:["money"],loss:["money"],find:["map","find"],moves:["map","moves"],places:["map","places"],yard:["fuel","yard"],cams:["fuel","cams"],cmd:["set","cmd"],firm:["set","firm"],diag:["set","diag"],notif:["set","notif"],notifikacie:["set","notif"],diagnostika:["set","diag"],
-  prehlad:["dash"],nafta:["fuel"],alarmy:["alarm"],peniaze:["money"],vodici:["drv"],vozidla:["veh"],mapa:["map"],nastavenia:["set"],pohyby:["map","moves"],miesta:["map","places"],kamery:["fuel","cams"],commander:["set","cmd"]};
-const FSUB={fuel:[["main","⛽ Nafta"],["yard","🛢️ Nádrž dvor"],["cams","📹 Kamery dvor"]],map:[["map","🗺️ Mapa"],["moves","🔁 Pohyby"],["places","📍 Miesta"],["find","🔍 Hľadať"]],set:[["main","⚙️ Nastavenia"],["notif","🔔 Notifikácie"],["diag","🩺 Diagnostika"],["cmd","📡 Commander"],["firm","🏢 Firma VALKO"]]};
+  prehlad:["dash"],nafta:["fuel"],alarmy:["alarm"],peniaze:["money"],vodici:["drv"],vozidla:["veh"],mapa:["map"],nastavenia:["set"],pohyby:["map","moves"],miesta:["map","places"],kamery:["fuel","cams"],commander:["set","cmd"],dom:["set","dom"],domena:["set","dom"]};
+const FSUB={fuel:[["main","⛽ Nafta"],["yard","🛢️ Nádrž dvor"],["cams","📹 Kamery dvor"]],map:[["map","🗺️ Mapa"],["moves","🔁 Pohyby"],["places","📍 Miesta"],["find","🔍 Hľadať"]],set:[["main","⚙️ Nastavenia"],["notif","🔔 Notifikácie"],["diag","🩺 Diagnostika"],["cmd","📡 Commander"],["dom","🌐 Doména"],["firm","🏢 Firma VALKO"]]};
 const fsub=k=>{const s=(STATE.fsub||{})[k],L=FSUB[k]&&window.subOK?FSUB[k].filter(x=>subOK(k,x[0])):FSUB[k];return L&&L.length?(L.some(x=>x[0]===s)?s:L[0][0]):""};
 function fsecGo(k,sub){k=String(k||"dash");const o=FOLD[k];let s=k,u=sub;if(o){s=o[0];u=u||o[1]}if(s!=="set"&&!FNAV.some(n=>n[0]===s))s="dash";STATE.fsec=s;
   if(u){STATE.fsub=STATE.fsub||{};STATE.fsub[s]=u}
@@ -2235,7 +2238,7 @@ function vFleet(){const F0=STATE.fleet;if(!F0)return `<div class="card"><div cla
   else if(sec==="drv")o+=(S.drv||"")+vDrvIssues(F,AX);
   else if(sec==="veh")o+=S.veh||"";
   else if(sec==="map"){o+=fswHTML("map");const s2=fsub("map");o+=s2==="moves"?(S.moves||""):s2==="places"?PLH:s2==="find"?(S.find||""):(S.map||`<div class="card"><div class="s">Žiadne autá s polohou.</div></div>`)}
-  else if(sec==="set"){o+=fswHTML("set");const s2=fsub("set");o+=s2==="cmd"?vCmd(F0):s2==="firm"?vFirm():s2==="notif"?(window.vNotif?vNotif():""):s2==="diag"?(window.vDiag?vDiag():(OWNx?`<div class="aidiag"></div>`:"")):(S.set||"")}
+  else if(sec==="set"){o+=fswHTML("set");const s2=fsub("set");o+=s2==="cmd"?vCmd(F0):s2==="firm"?vFirm():s2==="notif"?(window.vNotif?vNotif():""):s2==="dom"?(window.vDom?vDom():""):s2==="diag"?((window.vDomCard?vDomCard():"")+(window.vDiag?vDiag():(OWNx?`<div class="aidiag"></div>`:""))):(S.set||"")}
   else o+=S[sec]||"";
   return o}
 // ================= COMMANDER: všetko, čo z neho ťaháme =================
@@ -2326,6 +2329,7 @@ function vCmd(F){const C=F.cmd||{},O=C.ov;let h=`<h2>📡 Commander – čo z ne
   if(C.drivers&&C.drivers.length){const tk=d=>(d.keys||[]).some(k=>+k.type===2),norm=x=>String(x||"").toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g,"").split(/\s+/).filter(Boolean).sort().join(" ");
     const act=new Set((F.rides||[]).map(r=>norm(r.driver)));
     h+=`<details class="card dcw"><summary><b>👤 Vodiči v Commanderi</b><small>${C.drivers.length} · ${C.drivers.filter(tk).length} s kartou tachografu</small></summary><div class="dct"><div class="dcr c3 hd"><span>Vodič</span><span>os. číslo</span><span>karta</span></div>${C.drivers.map(d=>{const nm=[d.surname,d.name].filter(Boolean).join(" ");return `<div class="dcr c3"><span>${esc(nm||"?")}${act.has(norm(nm))?"":` <small class="s">· v období nejazdil</small>`}${d.cost_center?`<small class="s"> · ${esc(d.cost_center)}</small>`:""}</span><span>${esc(d.personal_number||"–")}</span><span class="${tk(d)?"":"dm"}">${tk(d)?"✓ tacho":(d.keys||[]).length?"čip":"žiadna"}</span></div>`}).join("")}</div></details>`}
+  if(window.cmdReqHTML)h+=cmdReqHTML();
   h+=`<details class="card dcw"><summary><b>ℹ️ Čo Commander API nedáva</b></summary><div class="s">Časy jazdy a odpočinku vodičov (DDD súbory z tachografu – treba ich stiahnuť z karty/tachografu), poplachy a geozóny z Commandera, návesy, servis a STK, presné mýto (faktúra eMýto). Body z Commandera sa zatiaľ len ukladajú (${n0(O.body)}); prejazdy bodmi sú pri každej jazde.</div></details>`;
   return h}
 async function loadStaffCfg(){STATE.staffcfg={};try{const r=await sb.from("staff_cfg").select("key,value");for(const x of r.data||[])STATE.staffcfg[x.key]=x.value}catch(e){}renderStaff()}
@@ -2787,12 +2791,30 @@ function vDeals(){const F=STATE.farmers.filter(f=>f.active),pre=DEALF||{},OWN=RO
    <label>Termín plnenia<input name="term" value="${esc(pre.term||"")}" placeholder="napr. 30. 11. 2026"></label>
    <label class="w">Poznámka – 👁️ vidí aj farmár (interné veci sem nepíš)<input name="note" value="${esc(pre.note||"")}"></label>
    <div class="w btns"><button class="pri" type="submit">Uložiť obchod</button>${DEALF?`<button type="button" data-clrdeal>Zrušiť</button>`:""}</div></form>`;
-  h+=STATE.deals.map(d=>{const df=OWN?(STATE.dfin||{})[d.id]:null,sell=df&&df.sell_price!=null?+df.sell_price:null,m=sell!=null?sell-(+d.price):null;
+  const dCard=(d,ro)=>{const df=OWN?(STATE.dfin||{})[d.id]:null,sell=df&&df.sell_price!=null?+df.sell_price:null,m=sell!=null?sell-(+d.price):null;
     return `<div class="card"><div class="ds-hd"><span class="ds-ic" aria-hidden="true">🤝</span><span class="ds-ttl"><b>${esc(fName(d.farmer_id))}</b><small>${esc(d.no)}${d.term?" · termín "+esc(d.term):""}</small></span>${pill(DST[d.status]||[d.status])}</div>
     <div class="ds-chips">${dsChip("Plodina",esc(comName(d.com)))}${dsChip("Množstvo",fmt(d.tons)+" t")}${dsChip("Odvezené",fmt(d.delivered_t)+" t")}${dsChip("Nákup",fmt(d.price)+" €/t")}${OWN?dsChip("Predaj",sell!=null?fmt(sell)+" €/t":"nezadané",sell!=null?"":"na",1)+dsChip("Marža €/t",m!=null?dsSg2(m):"–",m==null?"na":m>=0?"pos":"neg",1)+dsChip("Marža spolu",m!=null?dsSg(m*(+d.tons))+" €":"–",m==null?"na":m>=0?"pos":"neg",1):""}</div>
-    <div class="btns"><button type="button" data-cpdf="${esc(d.id)}">📄 Kúpna zmluva PDF</button></div>
-    <form class="f sub" data-dedit="${esc(d.id)}"><label>Stav<select name="status">${Object.keys(DST).map(k=>`<option value="${k}"${d.status===k?" selected":""}>${esc(DST[k][0])}</option>`).join("")}</select></label><label>Odvezené t<input name="delivered_t" inputmode="decimal" value="${String(d.delivered_t??0).replace(".",",")}"></label>${OWN?`<label class="w">Predajná cena €/t (vidíš iba ty)<input name="sell" inputmode="decimal" placeholder="nezadané" value="${sell!=null?String(sell).replace(".",","):""}"></label>`:""}<div class="w btns"><button type="submit">Uložiť zmenu</button></div></form></div>`}).join("");
+    ${dealOver(d)}<div class="btns"><button type="button" data-cpdf="${esc(d.id)}">📄 Kúpna zmluva PDF</button>${OWN?`<button type="button" data-darch="${esc(d.id)}" data-on="${d.archived?0:1}">${d.archived?"♻️ Obnoviť z archívu":"🗄️ Archivovať"}</button>`:""}</div>
+    ${ro?"":`<form class="f sub" data-dedit="${esc(d.id)}"><label>Stav<select name="status">${Object.keys(DST).map(k=>`<option value="${k}"${d.status===k?" selected":""}>${esc(DST[k][0])}</option>`).join("")}</select></label><label>Odvezené t<input name="delivered_t" inputmode="decimal" value="${String(d.delivered_t??0).replace(".",",")}"></label>${OWN?`<label class="w">Predajná cena €/t (vidíš iba ty)<input name="sell" inputmode="decimal" placeholder="nezadané" value="${sell!=null?String(sell).replace(".",","):""}"></label>`:""}<div class="w btns"><button type="submit">Uložiť zmenu</button></div></form>`}</div>`};
+  h+=STATE.deals.map(d=>dCard(d)).join("");
+  const DT=STATE.dealsTest||[],DA=STATE.dealsArch||[];
+  if(DT.length)h+=`<details class="card dcw"><summary><b>🧪 Testovacie obchody</b><small>${DT.length} · mimo súčtov, štatistík a upozornení</small></summary>${DT.map(d=>dCard(d)).join("")}</details>`;
+  if(DA.length&&OWN)h+=`<details class="card dcw"><summary><b>🗄️ Archív obchodov</b><small>${DA.length} · nezmazané, mimo súčtov</small></summary>${DA.map(d=>dCard(d,1)).join("")}</details>`;
   return h}
+// cena zmluvy nad zverejneným cenníkom → návrh sa podpíše až po schválení majiteľom (databáza deal_price_guard)
+function dealOver(d){if(!["navrh","podpisany"].includes(d.status)||d.archived)return "";const p=(STATE.prices||[]).find(x=>x.com===d.com);if(!p||p.price==null)return "";
+  const c=+p.price-(window.PADJ||0),dif=+d.price-c;if(!(dif>0.004))return "";const ok=d.price_ok_at&&+d.price_ok_price>=+d.price;
+  const t=`Cena zmluvy ${fmt(d.price)} €/t je nad cenníkom (${fmt(c)} €/t) o <b>+${fmt(dif)} €/t</b> · spolu +${fmt(dif*(+d.tons||0))} €`;
+  if(ok)return `<div class="box"><div>✅ ${t}<br><small>Schválené majiteľom${d.price_ok_by?" ("+esc(d.price_ok_by)+")":""}.</small></div></div>`;
+  if(d.status!=="navrh")return ROLE==="owner"?`<div class="box w"><div>⚠️ ${t}</div></div>`:"";
+  return ROLE==="owner"?`<div class="box w"><div>⚠️ ${t}. Podpis zmluvy čaká na tvoje schválenie.</div></div><div class="btns"><button type="button" class="lime" data-dpok="${esc(d.id)}">✓ Schváliť cenu nad cenníkom</button></div>`
+    :`<div class="box w"><div>⏳ ${t}. Zmluvu možno podpísať až po schválení ceny majiteľom.</div></div>`}
+document.addEventListener("click",async e=>{const b=e.target.closest&&e.target.closest("[data-dpok],[data-darch]");if(!b||ROLE!=="owner")return;e.preventDefault();
+  if(b.dataset.dpok){const d=(STATE.dealsAll||STATE.deals).find(x=>x.id===b.dataset.dpok);if(!confirm(`Schváliť cenu ${d?fmt(d.price):""} €/t nad cenníkom pre ${d?d.no:"obchod"}?\n\nPotom ho môže podpísať farmár aj obchodník.`))return;
+    busy(b,true);const r=await sb.rpc("deal_price_approve",{p_deal:b.dataset.dpok});busy(b,false);if(r.error){toast("Nepodarilo sa: "+r.error.message,6000);return}toast("✓ Cena schválená – zmluvu možno podpísať.",5000)}
+  else{const on=b.dataset.on==="1";if(on&&!confirm("Archivovať obchod? Nezmaže sa – iba sa presunie do 🗄️ Archívu a prestane sa rátať do súčtov."))return;
+    busy(b,true);const r=await sb.rpc("deal_archive",{p_deal:b.dataset.darch,p_on:on});busy(b,false);if(r.error){toast("Nepodarilo sa: "+r.error.message,6000);return}toast(on?"🗄️ Obchod archivovaný.":"♻️ Obchod obnovený.",4000)}
+  await loadStaff();renderStaff()},true);
 function vFarm(){const q=FQ.toLowerCase().trim(),qd=q.replace(/\s/g,""),L=STATE.farmers.filter(f=>!q||[f.name,f.email,f.addr,f.phone].join(" ").toLowerCase().includes(q)||(qd&&String(f.ico||"").replace(/\s/g,"").includes(qd)));const E=EDITF==="new"?{}:STATE.farmers.find(f=>f.id===EDITF);
   let h=`<div class="card"><div class="btns"><button type="button" class="pri" data-fedit="new">+ Pridať farmára</button></div><label class="ds-search">Rýchle hľadanie<input id="fq" value="${esc(FQ)}" placeholder="meno, obec alebo IČO" autocomplete="off"></label>
    <div class="s">${q?`Nájdené: <b>${L.length}</b> z ${STATE.farmers.length}`:`${STATE.farmers.length} farmárov`} ${ROLE==="owner"||typeof can!=="function"||can("farm_login")?" · „Vytvoriť prihlásenie“ vygeneruje farmárovi heslo a pripraví pozvánku – pošleš ju cez WhatsApp alebo SMS.":""}</div></div>`;
@@ -2899,13 +2921,13 @@ document.addEventListener("input",e=>{if(e.target.id==="dfq"){const h=e.target.f
 document.addEventListener("click",e=>{const b=e.target.closest("[data-dfp]");if(!b)return;const fm=b.closest("form"),f=(STATE.farmers||[]).find(x=>x.id===b.dataset.dfp);if(!fm||!f)return;fm.elements.farmer.value=f.id;document.getElementById("dfq").value=String(f.name).trim();document.getElementById("dfl").innerHTML=`<div class="s">✓ Vybraný: <b>${esc(String(f.name).trim())}</b></div>`});
 </script>
 <script src="ai.js?v=20261029-0010"></script>
-<script src="perms.js?v=20261030-1600"></script>
+<script src="perms.js?v=20261030-1700"></script>
 <script src="bonus.js?v=20261028-0110"></script>
 <script src="fterms.js?v=20261028-1130"></script>
 <script src="hub.js?v=20261028-2150"></script>
 <script src="brand.js?v=20261027-1620"></script>
 <script src="settle.js?v=20261030-1000"></script>
-<script src="mic.js?v=20261028-2230"></script>
+<script src="mic.js?v=20261030-1700"></script>
 <script src="qd.js?v=20261030-0940"></script>
 <script src="firmy.js?v=20261028-1745"></script>
 <script src="regname.js?v=20261030-1250"></script>
@@ -2937,7 +2959,7 @@ document.addEventListener("click",e=>{const b=e.target.closest("[data-dfp]");if(
 <script src="dnzmluva.js?v=20261030-1010"></script>
 <script src="danube.js?v=20261029-1240"></script>
 <script src="installapp.js?v=20261028-0900"></script>
-<script src="fndesc.js?v=20261030-1600"></script>
+<script src="fndesc.js?v=20261030-1700"></script>
 <script src="sign.js?v=20261030-0930"></script>
 <script src="outbox.js?v=20261029-0130"></script>
 <script src="invitecard.js?v=20261029-2100"></script>
@@ -2956,6 +2978,8 @@ document.addEventListener("click",e=>{const b=e.target.closest("[data-dfp]");if(
 <script src="navfix.js?v=20261029-2040"></script>
 <script src="fwd.js?v=20261029-0930"></script>
 <script src="dealwatch.js?v=20261029-0900"></script>
+<script src="domena.js?v=20261030-1700"></script>
+<script src="cmdreq.js?v=20261030-1700"></script>
 <script src="konk.js?v=20261030-1255"></script>
 <script src="cennikalert.js?v=20261029-0950"></script>
 <script src="dropalert.js?v=20261029-0940"></script>
