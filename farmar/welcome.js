@@ -93,7 +93,36 @@ const KT={ja:["Vyvezené","Jazdy · 7 dní"],ceo:["Vyvezené","Jazdy · 7 dní"]
   obchod:["Vyvezené","Požiadavky"],evid:["Tento mesiac",""],mzdy:["Tento mesiac",""],farmar:["Výkupné ceny",""],trus:["Požiadavky",""]};
 function hud(k){return `<div class="whud"><div class="whtop"><span class="wlive"><i></i>LIVE</span><span class="wclk">--:--<small>:--</small></span></div>
   <div class="whrow"><div class="whc whwx"><small>Počasie</small><div class="whv"><span class="wxi">…</span><b class="wxt">--°</b></div><div class="wxs">načítavam</div><svg class="wspk" viewBox="0 0 120 34" preserveAspectRatio="none"></svg></div>
-  <div class="whc whk"><small>${E((KT[k]||KT.tim)[0])}</small><div class="whkb"></div><small class="whk2">${E((KT[k]||KT.tim)[1])}</small><div class="whbars"></div></div></div>${k==="ja"||k==="ceo"||k==="obchod"&&(can_("price_view")||can_("price_edit"))?`<div class="whc whpr"><small>Naše nákupné ceny · €/t</small><div class="whpl"></div></div>`:""}${k==="obchod"?obPanel():spotOK(k)?(radioOff()?radioOnHTML():spot()):""}</div>`}
+  <div class="whc whk"><small>${E((KT[k]||KT.tim)[0])}</small><div class="whkb"></div><small class="whk2">${E((KT[k]||KT.tim)[1])}</small><div class="whbars"></div></div></div>${k==="ja"||k==="ceo"||k==="obchod"&&(can_("price_view")||can_("price_edit"))?`<div class="whc whpr"><small>Naše nákupné ceny · €/t</small><div class="whpl"></div></div>`:""}${k==="obchod"?obPanel():GRK(k)?`<div class="whc whgr"><div class="wgrh"><small>📈 Vývoj našich nákupných cien</small><span class="wgrv"></span></div><div class="wgrc"></div><div class="wgrs"></div></div>`:spotOK(k)?(radioOff()?radioOnHTML():spot()):""}</div>`}
+/* 📈 graf so žiariacou čiarou na skle (príkaz majiteľa 30. 10.) – majiteľ: naše nákupné ceny z histórie cenníka; Spotify je nižšie na čiernom pozadí */
+const GRK=k=>k==="ja"||k==="ceo";
+const GRC={repka:"#facc15",soja:"#a3e635",kukurica:"#fb923c",psenica_p:"#fde68a",psenica_k:"#f5d0a9",jacmen_k:"#93c5fd",jacmen_s:"#c4b5fd",lo:"#fbbf24",ho:"#f472b6",cirok:"#fca5a5"};
+const GR={d:null,c:null,t:0,user:false};
+async function grLoad(){try{const since=new Date(Date.now()-90*864e5).toISOString();
+    const r=await sb.from("cennik_historia").select("at,com,new_price,old_price").gte("at",since).not("com","is",null).order("at",{ascending:true}).limit(2000);
+    const H=r.error?[]:(r.data||[]),now=Date.now(),S={};
+    for(const p of pxList()){const L=H.filter(h=>h.com===p.com&&h.new_price!=null);const pts=[];const t0=now-90*864e5;
+      const first=L[0];pts.push([t0,+(first?(first.old_price!=null?first.old_price:first.new_price):p.price)]);
+      for(const h of L)pts.push([Date.parse(h.at),+h.new_price]);pts.push([now,+p.price]);S[p.com]=pts.filter(x=>isFinite(x[1])&&x[1]>0)}
+    GR.d=S}catch(x){GR.d={}}}
+function grDraw(hd){const box=hd.querySelector(".wgrc"),ch=hd.querySelector(".wgrs"),vv=hd.querySelector(".wgrv");if(!box||!GR.d)return;
+  const C=Object.keys(GR.d).filter(c=>GR.d[c].length>1);if(!C.length){box.innerHTML=`<span class="whu">História cien sa zbiera…</span>`;return}
+  if(!GR.c||!C.includes(GR.c))GR.c=C[0];const P=GR.d[GR.c],col=GRC[GR.c]||"#b6ff3b";
+  const W=320,Hh=92,x0=P[0][0],x1=P[P.length-1][0],vs=P.map(p=>p[1]),mn=Math.min(...vs),mx=Math.max(...vs),pad=(mx-mn)*0.18||6;
+  const X=t=>((t-x0)/Math.max(1,x1-x0))*W,Y=v=>Hh-6-((v-(mn-pad))/((mx+pad)-(mn-pad)))*(Hh-14);
+  let d="";P.forEach((p,i)=>{const x=X(p[0]).toFixed(1),y=Y(p[1]).toFixed(1);if(!i)d=`M${x},${y}`;else d+=` H${x} V${y}`});
+  const last=P[P.length-1],a=`${d} L${W},${Hh} L0,${Hh} Z`,diff=last[1]-P[0][1];
+  box.innerHTML=`<svg viewBox="0 0 ${W} ${Hh}" preserveAspectRatio="none" class="wgsvg" aria-label="Vývoj ceny ${E(nmC(GR.c))} za 90 dní">
+    <defs><linearGradient id="wgA" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${col}" stop-opacity=".45"/><stop offset="1" stop-color="${col}" stop-opacity="0"/></linearGradient>
+    <filter id="wgG" filterUnits="userSpaceOnUse" x="-20" y="-20" width="${W+40}" height="${Hh+40}"><feGaussianBlur stdDeviation="3.2" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter></defs>
+    <path d="${a}" fill="url(#wgA)"/><path d="${d}" fill="none" stroke="${col}" stroke-width="2.6" stroke-linejoin="round" vector-effect="non-scaling-stroke" filter="url(#wgG)" class="wgln"/>
+    <circle cx="${X(last[0]).toFixed(1)}" cy="${Y(last[1]).toFixed(1)}" r="4" fill="${col}" filter="url(#wgG)" class="wgdot"/></svg>
+    <span class="wgmx">max ${Math.round(mx)}</span><span class="wgmn">min ${Math.round(mn)}</span><span class="wgax">pred 90 dňami</span><span class="wgnw">dnes</span>`;
+  if(vv)vv.innerHTML=`<b style="color:${col}">${E(nmC(GR.c))} ${Math.round(last[1]).toLocaleString("sk-SK")} €/t</b><em class="${diff>0?"wup":diff<0?"wdn":""}">${diff>0?"▲ +":diff<0?"▼ ":"± "}${Math.round(diff)} za 90 dní</em>`;
+  if(ch)ch.innerHTML=C.map(c=>`<button type="button" data-wgc="${c}" class="${c===GR.c?"on":""}" style="--gc:${GRC[c]||"#b6ff3b"}">${E(nmC(c))}</button>`).join("")}
+async function grLive(hd,k){if(!GRK(k)||!hd.querySelector(".whgr"))return 0;await grLoad();grDraw(hd);
+  hd.addEventListener("click",e=>{const b=e.target.closest&&e.target.closest("[data-wgc]");if(!b)return;e.preventDefault();e.stopPropagation();GR.user=true;GR.c=b.dataset.wgc;grDraw(hd)});
+  return setInterval(()=>{if(document.hidden||GR.user||!hd.isConnected)return;const C=Object.keys(GR.d||{}).filter(c=>GR.d[c].length>1);if(C.length<2)return;GR.c=C[(C.indexOf(GR.c)+1)%C.length];grDraw(hd)},7000)}
 /* 🎵 Spotify – Martin, Jana, Galajda, Ličko, Tóth, Tomáš Štofa, Tomáš Vaľko. Vlastný playlist: „Zmeniť“ → vlož odkaz zo Spotify (Zdieľať → Kopírovať odkaz). Uloží sa v tomto zariadení. */
 const SPK="ernte-spotify",SPDEF="playlist/1sri3NOK9SPtrmUq7ActiX";
 /* rádiá: najnovšie hity z playlistov rádií SK, RO, HU, PL, UA (playlisty sa aktualizujú samy, uložené aj v Spotify majiteľa) */
@@ -206,7 +235,7 @@ async function show(force){const k=kind();if(!k||document.querySelector(".wlc"))
   const POR=()=>innerWidth<1100||innerHeight<640;const por=POR();if(por)el.classList.add("por");
   const rz=()=>{if(!el.isConnected){removeEventListener("resize",rz);return}el.classList.toggle("por",POR())};addEventListener("resize",rz);
   el.innerHTML=`${scene(k,ph,por)}<div class="wlb"><img src="icon-192.png" alt=""><div class="wlt"><small>${E(tag)}</small><b>${g}</b><p>${E(sub)}</p>${joke?`<p class="wjk">💡 <b>Vedeli ste?</b> <span>${E(joke)}</span></p>`:""}<ul class="wlf"></ul>
-   <div class="wla"><button type="button" class="lime" data-wlgo>Poďme na to →</button><button type="button" class="wmore" data-wljoke>💡 Ďalšia zaujímavosť</button></div></div></div>
+   <div class="wla"><button type="button" class="lime" data-wlgo>Poďme na to →</button><button type="button" class="wmore" data-wljoke>💡 Ďalšia zaujímavosť</button></div></div></div>${GRK(k)&&spotOK(k)?`<div class="wlsp">${radioOff()?radioOnHTML():spot()}</div>`:""}
    <button type="button" class="wlx" data-wlx aria-label="Zavrieť a pokračovať">✕</button><div class="wltap">${new Date().toLocaleDateString("sk-SK",{weekday:"long",day:"numeric",month:"long"})}</div>`;
   document.body.appendChild(el);
   const nextJoke=ev=>{if(ev){ev.preventDefault();ev.stopPropagation()}const now=Date.now();if(nextJoke.t&&now-nextJoke.t<500)return;nextJoke.t=now;
@@ -217,7 +246,7 @@ async function show(force){const k=kind();if(!k||document.querySelector(".wlc"))
   const jb=el.querySelector("[data-wljoke]");if(jb){jb.addEventListener("click",nextJoke);jb.addEventListener("touchend",nextJoke,{passive:false})}
   const go=ev=>{if(ev){ev.preventDefault();ev.stopPropagation()}if(el._gone)return;el._gone=1;try{window.opushAuto&&opushAuto(true)}catch(x){}close(el);goHome()};
   const gb=el.querySelector("[data-wlgo]");if(gb){gb.addEventListener("click",go);gb.addEventListener("touchend",go,{passive:false});gb.addEventListener("pointerup",e=>{if(e.pointerType!=="mouse")go(e)})}document.documentElement.classList.add("wlon");requestAnimationFrame(()=>el.classList.add("in"));
-  const hd=el.querySelector(".whud");let ck=0;if(hd){ck=clock(hd);el._ck=ck;wx(hd);try{kpis(k,hd)}catch(x){}el._px=pxLive(hd,k)}
+  const hd=el.querySelector(".whud");let ck=0;if(hd){ck=clock(hd);el._ck=ck;wx(hd);try{kpis(k,hd)}catch(x){}el._px=pxLive(hd,k);grLive(hd,k).then(t=>{el._gr=t},()=>{})}
   const fill=async()=>{const f=await facts(k);const ul=el.querySelector(".wlf");if(ul)ul.innerHTML=f.map(x=>`<li>${x}</li>`).join("")};
   /* údaje sa po otvorení ešte načítavajú – keď prídu, čísla a ceny sa doplnia (najviac 20 s) */
   const ready=()=>{const S=typeof STATE!=="undefined"?STATE:{};return (S.prices&&S.prices.length)||(S.deals&&S.deals.length)};
@@ -249,7 +278,7 @@ let AC=null;function honk(chick){try{AC=AC||new (window.AudioContext||window.web
   if(chick){tone(700,0,.12,"triangle");tone(900,.16,.3,"triangle")}else{tone(392,0,.22);tone(330,.26,.5)}}catch(x){}}
 function confetti(el,x,y){const em=["🌾","🌾","🌻","✨","🟡"];for(let i=0;i<12;i++){const d=document.createElement("span");d.className="wcf";d.textContent=em[i%em.length];d.style.left=x+"px";d.style.top=y+"px";
   d.style.setProperty("--dx",(Math.random()*240-120)+"px");d.style.setProperty("--dy",(-80-Math.random()*160)+"px");el.appendChild(d);setTimeout(()=>d.remove(),1100)}}
-function close(el){if(el._ck)clearInterval(el._ck);if(el._px)clearInterval(el._px);pxSave();el.classList.remove("in");el.classList.add("out");document.documentElement.classList.remove("wlon");setTimeout(()=>el.remove(),380)}
+function close(el){if(el._gr)clearInterval(el._gr);if(el._ck)clearInterval(el._ck);if(el._px)clearInterval(el._px);pxSave();el.classList.remove("in");el.classList.add("out");document.documentElement.classList.remove("wlon");setTimeout(()=>el.remove(),380)}
 window.ernteWelcome=()=>show(true);
 /* poistka: „Poďme na to“ vždy zavrie úvod, aj keby sa niečo pri zobrazení pokazilo */
 const fsGo=ev=>{const b=ev.target&&ev.target.closest&&ev.target.closest("[data-wlgo]");if(!b)return;const w=b.closest(".wlc");if(!w||w._gone)return;ev.preventDefault();ev.stopPropagation();w._gone=1;try{window.opushAuto&&opushAuto(true)}catch(x){}close(w);goHome()};
@@ -374,7 +403,16 @@ html.wlon,html.wlon body{overflow:hidden}
 .wpst{margin-top:6px;font:500 .6rem/1.3 "Geist Mono",ui-monospace,monospace;color:#c9d1e3;opacity:.85;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .wpc b sup,.whu sup{font:700 .58rem/1 "Geist Mono",ui-monospace,monospace;margin-left:3px;vertical-align:super}.wup{color:#b6ff3b}.wdn{color:#fda4af}
 .wfl{animation:wflash 1.6s ease}@keyframes wflash{0%,30%{background:rgba(182,255,59,.35);border-radius:8px}100%{background:transparent}}
-.whpr{animation-delay:.55s!important}.whpl{display:grid;grid-template-columns:repeat(auto-fill,minmax(96px,1fr));gap:6px 10px;margin-top:6px}
+.whpr{animation-delay:.55s!important}.whgr{animation-delay:.6s!important;overflow:hidden}.wgrh{display:flex;justify-content:space-between;align-items:baseline;gap:8px;flex-wrap:wrap}.wgrv{display:flex;gap:8px;align-items:baseline;font-size:.92rem}.wgrv b{font-weight:800;text-shadow:0 0 12px currentColor}.wgrv em{font-style:normal;font-size:.74rem;opacity:.9}
+.wgrc{position:relative;height:96px;margin:8px 0 4px}.wgsvg{width:100%;height:100%;overflow:visible;display:block}.wgln{animation:wgfade 1.2s ease-out both}@keyframes wgfade{from{opacity:0}to{opacity:1}}
+.wgdot{animation:wgpulse 1.6s ease-in-out infinite}@keyframes wgpulse{0%,100%{opacity:1}50%{opacity:.35}}
+.wgrc span{position:absolute;font:600 .58rem "Geist Mono",ui-monospace,monospace;opacity:.7;letter-spacing:.04em}.wgmx{top:-2px;left:0}.wgmn{bottom:0;left:0}.wgax{bottom:-14px;left:0}.wgnw{bottom:-14px;right:0}
+.wgrs{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;margin-top:14px;padding-bottom:2px}.wgrs::-webkit-scrollbar{display:none}
+.wgrs button{flex:0 0 auto;min-height:32px;padding:4px 11px;border-radius:999px;font:600 .74rem "Geist",system-ui,sans-serif;color:#e8eefc;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.22)}
+.wgrs button.on{color:#0b1020;background:var(--gc);border-color:transparent;box-shadow:0 0 14px var(--gc)}
+.wlsp{position:relative;margin:0 auto calc(18px + env(safe-area-inset-bottom,0px));width:min(560px,calc(100% - 28px))}.wlsp .whc{background:#05070d;border-color:rgba(255,255,255,.12);-webkit-backdrop-filter:none;backdrop-filter:none;animation:none!important;opacity:1!important;transform:none!important}
+.wlc.por .wlsp{width:min(640px,calc(100% - 28px))}
+.whpl{display:grid;grid-template-columns:repeat(auto-fill,minmax(96px,1fr));gap:6px 10px;margin-top:6px}
 .wpc{position:relative;display:flex;justify-content:space-between;align-items:baseline;gap:6px;padding-bottom:5px;min-width:0}
 .wpc em{font-style:normal;font-size:.72rem;color:#dbe3f3;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .wpc b{font:700 .95rem/1 "Geist Mono",ui-monospace,monospace;font-variant-numeric:tabular-nums;color:#fff}
