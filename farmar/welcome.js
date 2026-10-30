@@ -122,7 +122,7 @@ async function fuelLive(hd,k){const box=hd.querySelector(".wfuel");if(!GRK(k)||!
   if(hs.length>1)ser.push({pts:hs.map(p=>[T(p[0]),+p[1]]),col:"#7dd3fc",area:true});if(hh.length>1)ser.push({pts:hh.map(p=>[T(p[0]),+p[1]]),col:"#f472b6"});
   box.querySelector(".wfc").innerHTML=ser.length?lineSvg("wf",ser,320,86)+`<span class="wgax">${hs.length?Math.round(hs.length)+" týždňov":""}</span><span class="wflg"><i style="--c:#7dd3fc"></i>SK <i style="--c:#f472b6"></i>HU</span>`:"";
   box.querySelector(".wfl").innerHTML=R.sort((a,b)=>a.p-b.p).map(x=>`<div class="wfr${x.c==="SK"||x.c==="HU"?" wfme":""}"><span>${FCN[x.c]}</span><i style="--w:${Math.max(12,(x.p-mn*.97)/(mx-mn*.97)*100)}%"></i><b>${x.p.toFixed(3).replace(".",",")}</b><em class="wfs">${E(x.src)}${x.mol?" ⛽":""}</em></div>`).join("");
-  const sr=box.querySelector(".wfsrc");if(sr)sr.innerHTML=`Nafta s DPH, €/l · <a href="https://www.fuel-prices.eu/charts/" target="_blank" rel="noopener">fuel-prices.eu</a>, EK Weekly Oil Bulletin (CC BY 4.0)${F&&F.at?" · "+new Date(F.at).toLocaleString("sk-SK",{day:"numeric",month:"numeric",hour:"2-digit",minute:"2-digit"}):""}`}
+  const sr=box.querySelector(".wfsrc");if(sr)sr.innerHTML=`Nafta s DPH, €/l · <a href="https://www.fuel-prices.eu/charts/" target="_blank" rel="noopener">fuel-prices.eu</a>, EK Weekly Oil Bulletin (CC BY 4.0) · stanice © <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a>${F&&F.at?" · "+new Date(F.at).toLocaleString("sk-SK",{day:"numeric",month:"numeric",hour:"2-digit",minute:"2-digit"}):""}`}
 function dealsLive(hd,k){const box=hd.querySelector(".wdeal");if(!GRK(k)||!box)return;const D=((typeof STATE!=="undefined"&&STATE.deals)||[]).filter(d=>!/zrus/.test(String(d.status||"")));
   const wk=t=>{const d=new Date(t);d.setHours(12,0,0,0);d.setDate(d.getDate()-((d.getDay()+6)%7));return d.toLocaleDateString("sv-SE")};const N=12,B=[];
   for(let i=N-1;i>=0;i--){const k0=wk(Date.now()-i*7*864e5);B.push({k:k0,t:Date.parse(k0+"T12:00:00"),tons:0,eur:0,n:0})}
@@ -490,13 +490,28 @@ let tries=0;const t=setInterval(()=>{tries++;const app=document.getElementById("
   if(kind()&&app&&app.children.length&&!document.querySelector(".pinmod")){clearInterval(t);setTimeout(()=>show(false),600)}
   if(tries>120)clearInterval(t)},500);
 })();
-// 📍 najbližšia čerpacia stanica od aktuálnej polohy (príkaz majiteľa 30. 10.) – Google Maps hľadá okolo GPS polohy telefónu
-(function(){let G=null;const url=c=>c?`https://www.google.com/maps/search/%C4%8Derpacia+stanica/@${c.lat.toFixed(5)},${c.lng.toFixed(5)},14z`:"https://www.google.com/maps/search/?api=1&query=%C4%8Derpacia%20stanica";
-const fresh=()=>G&&Date.now()-G.at<6e5;
-const geo=(cb,ms)=>{try{navigator.geolocation.getCurrentPosition(p=>{G={lat:p.coords.latitude,lng:p.coords.longitude,at:Date.now()};cb(G)},()=>cb(null),{enableHighAccuracy:false,timeout:ms||8000,maximumAge:3e5})}catch(x){cb(null)}};
+// 📍 najbližšia čerpacia stanica → hneď navigácia v Google Maps (príkaz majiteľa 30. 10.)
+// poloha telefónu (GPS) → najbližšia stanica z OpenStreetMap (Overpass API, © prispievatelia OpenStreetMap, ODbL) → Google Maps navigácia (dir_action=navigate)
+(function(){let G=null;const fresh=()=>G&&Date.now()-G.at<3e5;
+const geo=(cb,ms)=>{try{navigator.geolocation.getCurrentPosition(p=>{G={lat:p.coords.latitude,lng:p.coords.longitude,at:Date.now()};cb(G)},()=>cb(null),{enableHighAccuracy:true,timeout:ms||10000,maximumAge:12e4})}catch(x){cb(null)}};
 try{navigator.permissions&&navigator.permissions.query({name:"geolocation"}).then(r=>{if(r.state==="granted")geo(()=>{},15000)}).catch(()=>{})}catch(x){}
-const go=u=>{let w=null;try{w=window.open(u,"_blank","noopener")}catch(x){}if(!w)location.href=u};
-document.addEventListener("click",e=>{const a=e.target.closest&&e.target.closest("[data-wfnear]");if(!a)return;
-  if(fresh()){a.href=url(G);return} // otvorí sa hneď s polohou
-  if(!navigator.geolocation)return;e.preventDefault();e.stopPropagation();const t=a.textContent;a.textContent="📍 Zisťujem polohu…";
-  geo(c=>{a.textContent=t;const u=url(c);a.href=u;go(u)})},true)})();
+const km=(a,b)=>{const R=6371,r=Math.PI/180,dl=(b.lat-a.lat)*r,dn=(b.lng-a.lng)*r,x=Math.sin(dl/2)**2+Math.cos(a.lat*r)*Math.cos(b.lat*r)*Math.sin(dn/2)**2;return 2*R*Math.asin(Math.sqrt(x))};
+const OVP=["https://overpass-api.de/api/interpreter","https://overpass.private.coffee/api/interpreter"];
+async function nearest(c,brand){for(const rad of [8000,30000]){const f=brand?`["amenity"="fuel"][~"^(brand|name|operator)$"~"${brand}",i]`:`["amenity"="fuel"]`;
+    const q=`[out:json][timeout:12];nwr${f}(around:${rad},${c.lat.toFixed(5)},${c.lng.toFixed(5)});out center 60;`;
+    for(const u of OVP){try{const ctl=new AbortController(),tm=setTimeout(()=>ctl.abort(),7000);const r=await fetch(u+"?data="+encodeURIComponent(q),{signal:ctl.signal});clearTimeout(tm);if(!r.ok)continue;
+        const j=await r.json();const L=(j.elements||[]).map(e=>({lat:e.lat??(e.center&&e.center.lat),lng:e.lon??(e.center&&e.center.lon),n:(e.tags&&(e.tags.brand||e.tags.name||e.tags.operator))||"Čerpacia stanica"})).filter(x=>x.lat!=null);
+        if(L.length){L.forEach(x=>x.d=km(c,x));L.sort((a,b)=>a.d-b.d);return L[0]}break}catch(x){}}}
+  return null}
+const navUrl=(s,o)=>`https://www.google.com/maps/dir/?api=1${o?`&origin=${o.lat.toFixed(6)},${o.lng.toFixed(6)}`:""}&destination=${s.lat.toFixed(6)},${s.lng.toFixed(6)}&travelmode=driving&dir_action=navigate`;
+// záloha: Google Maps navigácia priamo na „Slovnaft“/„MOL“/„čerpacia stanica“ – Google vyberie miesto najbližšie k polohe
+const navQ=(q,o)=>`https://www.google.com/maps/dir/?api=1${o?`&origin=${o.lat.toFixed(6)},${o.lng.toFixed(6)}`:""}&destination=${encodeURIComponent(q)}&travelmode=driving&dir_action=navigate`;
+const searchUrl=(q,c)=>c?`https://www.google.com/maps/search/${encodeURIComponent(q)}/@${c.lat.toFixed(5)},${c.lng.toFixed(5)},13z`:`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(q)}`;
+const go=u=>{try{location.href=u}catch(x){window.open(u,"_blank","noopener")}};
+document.addEventListener("click",async e=>{const a=e.target.closest&&e.target.closest("[data-wfnear],.wfnav a.wfbtn");if(!a)return;e.preventDefault();e.stopPropagation();
+  const brand=a.dataset.wfnear!==undefined?"":/MOL/.test(a.textContent)?"MOL":"Slovnaft",lbl=brand||"čerpacia stanica";if(a.dataset.busy)return;a.dataset.busy="1";const t=a.textContent;
+  try{a.textContent="📍 Zisťujem polohu…";const c=fresh()?G:await new Promise(r=>{if(!navigator.geolocation)return r(null);geo(r)});
+    if(!c){a.textContent=t;if(typeof toast==="function")toast("Zapni polohu (GPS) pre aplikáciu – otváram mapu.",5000);go(searchUrl(lbl+" čerpacia stanica"));return}
+    a.textContent="⛽ Hľadám najbližšiu…";const s=await nearest(c,brand);a.textContent=t;
+    if(s){if(typeof toast==="function")toast(`🧭 ${s.n} · ${s.d.toFixed(1).replace(".",",")} km – spúšťam navigáciu`,4000);go(navUrl(s,c))}else go(navQ(brand?brand+" čerpacia stanica":"čerpacia stanica",c))}
+  catch(x){a.textContent=t;go(navQ(lbl+" čerpacia stanica",G))}finally{delete a.dataset.busy}},true)})();
