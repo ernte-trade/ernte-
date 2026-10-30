@@ -93,11 +93,11 @@ const DEF={on:true,auto:null,mine:{},mineDays:7,remindDays:7,step:1,maxJump:0,la
 async function kget(path,id){try{const r=await sb.from("kalk_store").select("data,updated_at").eq("path",path).eq("id",id).maybeSingle();return r.error?undefined:(r.data?r.data.data:null)}catch(x){return undefined}}
 async function kset(path,id,data){try{const r=await sb.from("kalk_store").upsert({path,id,data},{onConflict:"path,id"});return !r.error}catch(x){return false}}
 async function loadAll(force){if(!force&&Date.now()-A.loadedAt<4*60e3&&A.cfg)return;
-  const [mf,ml,px,mg,cfg,log,vsk,konk]=await Promise.all([
+  const [mf,ml,px,mg,cfg,log,vsk,konk,adj]=await Promise.all([
     fetch("market.json",{cache:"no-store"}).then(r=>r.ok?r.json():null).catch(()=>null),
     kget("market","latest"),
     sb.from("market_px").select("*").then(r=>r.error?null:r.data).catch(()=>null),
-    kget("config","margins"),kget("pricelist","auto"),kget("pricelist","log"),kget("pricelist","vsk"),kget("pricelist","konk")]);
+    kget("config","margins"),kget("pricelist","auto"),kget("pricelist","log"),kget("pricelist","vsk"),kget("pricelist","konk"),kget("pricelist","adj")]);A.adj=(adj&&typeof adj==="object")?adj:{};
   const t=v=>v&&v.updatedAt?Date.parse(v.updatedAt):0;A.mk=t(ml)>t(mf)?ml:(mf||ml||null);
   A.px=px?Object.fromEntries(px.map(x=>[x.sym,x])):null;A.mg=mg||null;
   A.cfg=Object.assign({},DEF,cfg||{});A.cfg.mine=A.cfg.mine||{};
@@ -131,7 +131,7 @@ function dap(pl,c,dop){if(!A.mk)return null;const mc=C2M[c],lim=Date.now()-60*86
   return {dap:m,farm,src:"farmári v regióne "+(pl.buyer==="bunge"?"(HU)":"(SK+HU)")+" + doprava",mk:RR.map(r=>r.market.replace(/^(Maďarsko|Slovensko) – /,"$1 ")).join(", "),date:dmax,bz,reg:true}}
 function margin(){const c=A.cfg&&A.cfg.marginOwn;if(Number.isFinite(+c)&&c!==""&&c!=null)return +c;const r=A.mg&&+A.mg.rec;return Number.isFinite(r)?r:20}
 /* ± úprava od modelu (majiteľ): zverejnená cena = model + ADJ; pri sóji a Interagros ju pripočíta databáza */
-function ADJ(c){const v=A.cfg&&A.cfg.adj?+A.cfg.adj[c]:0;return Number.isFinite(v)?v:0}
+function ADJ(c){const v=A.adj?+A.adj[c]:0;return Number.isFinite(v)?v:0}
 function calc(){const out={},M=margin();
   for(const pl of PLANTS){const {dop}=route(pl.id);
     for(const c of pl.cs){const com=C2M[c];let E=dap(pl,c,dop);const bzr=burza(pl,com),bzp=bzr&&Number.isFinite(+bzr.price)?+bzr.price:null;
@@ -284,7 +284,7 @@ document.addEventListener("change",async ev=>{const t=ev.target;if(!t||!A.cfg)re
   if(t.matches("[data-acnauto]")){const c=t.dataset.acnauto;A.cfg.auto[c]=t.checked;await saveCfg();if(t.checked)await run(true);else rerender();return}
   if(t.matches("[data-acnadj]")&&OWN()){const c=t.dataset.acnadj,raw=String(t.value||"").trim().replace(/\s/g,"").replace("−","-"),v=raw===""?0:(typeof num==="function"?num(raw):parseFloat(raw.replace(",",".")));
     if(!Number.isFinite(v)||Math.abs(v)>150){if(typeof toast==="function")toast("Zadaj úpravu od modelu, napr. -5 alebo 3 (€/t).",5000);return}
-    A.cfg.adj=Object.assign({},A.cfg.adj||{});if(v)A.cfg.adj[c]=v;else delete A.cfg.adj[c];await saveCfg();
+    A.adj=Object.assign({},A.adj||{});if(v)A.adj[c]=v;else delete A.adj[c];if(!(await kset("pricelist","adj",A.adj))){if(typeof toast==="function")toast("Úpravu sa nepodarilo uložiť.",5000);return}
     try{if(c==="soja")await sb.rpc("soja_adm_run");else if(["repka","kukurica","lo"].includes(c))await sb.rpc("ia_run")}catch(x){}
     if(typeof toast==="function")toast(v?`✓ ${nm(c)}: model ${v>0?"+":"−"} ${f0(Math.abs(v))} €/t – zverejní sa hneď.`:`✓ ${nm(c)}: presne podľa modelu.`,5000);await run(true);return}
   if(t.matches("[data-acnmeth]")&&OWN()){A.cfg.method=A.cfg.method||{};A.cfg.method[t.dataset.acnmeth]=t.value;await saveCfg();await run(true);return}
