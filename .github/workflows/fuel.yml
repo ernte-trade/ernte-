@@ -19,26 +19,35 @@ jobs:
         run: |
           set +e
           mkdir -p o && cd o
-          curl -s -m 30 -A "Mozilla/5.0 ERNTE" "https://www.fuel-prices.eu/charts/data.json?type=map&fuel=diesel" -o eu.json
-          curl -s -m 30 -A "Mozilla/5.0 ERNTE" "https://www.fuel-prices.eu/charts/data.json?type=line&fuel=diesel" -o eul.json
-          curl -s -m 30 -A "Mozilla/5.0" "https://holtankoljak.hu/" -o hu.html
+          B="https://www.fuel-prices.eu"
+          curl -s -m 30 -A "Mozilla/5.0 ERNTE" "$B/charts/data.json?type=map&fuel=diesel" -o eu.json
+          curl -s -m 30 -A "Mozilla/5.0 ERNTE" "$B/live/api.php?action=summary" -o live.json
+          for c in SK HU CZ AT SI HR RO PL; do
+            curl -s -m 30 -A "Mozilla/5.0 ERNTE" "$B/lang/api/country-history.php?cc=$c" -o h_$c.json
+            curl -s -m 30 -A "Mozilla/5.0 ERNTE" "$B/live/api.php?action=brands&country=$c&fuel=diesel" -o b_$c.json
+          done
           python3 - <<'PY'
-          import json,re,datetime
-          out={"at":datetime.datetime.utcnow().isoformat()+"Z","src":"Source: fuel-prices.eu, European Commission Weekly Oil Bulletin; MOL HU: holtankoljak.hu","raw":{}}
-          for k in ("eu","eul"):
-            try: out["raw"][k]=json.load(open(k+".json"))
-            except Exception as e: out["raw"][k+"_err"]=str(e)[:200]
-          try:
-            h=open("hu.html",encoding="utf8",errors="ignore").read()
-            m=re.findall(r'MOL[^<]{0,80}?(\d{3})[,.]?(\d)?\s*Ft',h)
-            out["hu_mol_raw"]=m[:20]
-            d=re.search(r'[Gg]ázolaj[^0-9]{0,80}(\d{3})[,.]?(\d)?',h)
-            out["hu_diesel_raw"]=d.group(0)[:120] if d else None
-          except Exception as e: out["hu_err"]=str(e)[:200]
+          import json,datetime
+          C=["SK","HU","CZ","AT","SI","HR","RO","PL"]
+          def L(f):
+            try: return json.load(open(f))
+            except Exception: return None
+          out={"at":datetime.datetime.utcnow().isoformat()+"Z","credit":"Source: fuel-prices.eu, European Commission Weekly Oil Bulletin (CC BY 4.0)","c":{}}
+          eu=L("eu.json") or {}
+          for r in eu.get("rows",[]):
+            if r.get("country_code") in C: out["c"].setdefault(r["country_code"],{})["w"]={"p":float(r["price"]),"d":r.get("date")}
+          lv=L("live.json");out["live_raw"]=json.dumps(lv)[:1500] if lv else None
+          for c in C:
+            h=L(f"h_{c}.json")
+            if isinstance(h,dict) and h.get("labels"):
+              pts=[[d,float(v)] for d,v in zip(h["labels"],h.get("diesel",[])) if v not in (0,"0",None)]
+              out["c"].setdefault(c,{})["h"]=pts[-30:]
+            b=L(f"b_{c}.json")
+            if b is not None: out["c"].setdefault(c,{})["b_raw"]=json.dumps(b,ensure_ascii=False)[:1200]
           json.dump(out,open("fuel.json","w"),ensure_ascii=False)
-          print(json.dumps(out,ensure_ascii=False)[:3000])
+          print(json.dumps(out,ensure_ascii=False)[:4000])
           PY
-          rm -f eu.json eul.json hu.html
+          rm -f *.json.tmp eu.json live.json h_*.json b_*.json
           git init -q; git checkout -q -b fuel-data
           git config user.name bot; git config user.email bot@users.noreply.github.com
           git add fuel.json; git commit -qm "nafta $(date -u +%F)"
