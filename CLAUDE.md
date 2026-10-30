@@ -99,6 +99,8 @@ s pripojeným repozitárom `ernte-trade/ernte-`.
 - **PÔDA Z PPA** (`ppa.js`, tabuľka `ppa_farms`, iba majiteľ, záložka Farmári): verejné údaje PPA – užívané plochy 2025 (13 549 užívateľov, orná/TTP, lokality)
   + prijímatelia dotácií FY2024/2025 (sídlo, sumy) + obce z Wikidata (okres, PSČ, súradnice; km vzdušne od Zbudze). Párovanie s farmármi podľa mena (`ppaKey`).
   IČO a sídlo podľa mena z RPO (`fullName`, CORS OK). Telefóny/e-maily verejne nie sú. Nové dáta: workflow `ppa.yml` → vetva `ppa-results` (zašifrované).
+- **Oprava lístka odberateľa** (`odb.js`, `buyer_ticket_edit`, stĺpce `deliveries.fix/edited_at/edit_log`): hľadanie lístka / zákazníka vo všetkých obdobiach, ✏️ úprava,
+  prepočet zmlúv farmára (`buyer_realloc`); `buyer_import` ručné opravy po nahratí Excelu znova použije (neprepíše ich).
 - **Zámok cien** (`prices_lock`): ceny riadené modelom (sója, repka, kukurica, LO) z aplikácie (jwt) nejdú zmeniť – iba databázové funkcie (`ernte.allow_price`).
 - **Konkurenčné ceny** (`konk.js`, kalk_store `pricelist/konk`): vložený text ponuky → rozpoznanie, porovnanie, báza voči burze. Mená firiem iba v DB.
 - **Príkaz majiteľa (trvalý):** pracovať na 100 %, bezchybne a rýchlo; nič nepoškodiť (model cenníka, nastavenia, údaje). Pred nasadením otestovať.
