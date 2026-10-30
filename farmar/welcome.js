@@ -377,9 +377,9 @@ html.wlon,html.wlon body{overflow:hidden}
 .wboost{animation-duration:3s!important}
 
 .wimg{overflow:hidden}.wimg::after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,rgba(5,8,22,.55) 0%,rgba(5,8,22,.05) 38%,rgba(5,8,22,.05) 62%,rgba(5,8,22,.6) 100%);pointer-events:none}
-.wimg::before{content:"";position:absolute;inset:-4%;background:inherit;animation:wkb 18s ease-in-out infinite alternate}
+.wimg::before{content:"";position:absolute;inset:-4%;background:inherit;animation:wkb 18s ease-in-out 2 alternate}
 .wgrid{position:absolute;inset:0;z-index:1;background-image:linear-gradient(rgba(182,255,59,.09) 1px,transparent 1px),linear-gradient(90deg,rgba(182,255,59,.09) 1px,transparent 1px);background-size:38px 38px;-webkit-mask-image:radial-gradient(ellipse at 50% 35%,#000 0%,transparent 72%);mask-image:radial-gradient(ellipse at 50% 35%,#000 0%,transparent 72%)}
-.wscan{position:absolute;left:0;right:0;top:0;height:90px;z-index:1;background:linear-gradient(180deg,transparent,rgba(182,255,59,.07) 80%,rgba(182,255,59,.45) 100%);animation:wscan 5.5s cubic-bezier(.45,0,.55,1) infinite;pointer-events:none}
+.wscan{position:absolute;left:0;right:0;top:0;height:90px;z-index:1;background:linear-gradient(180deg,transparent,rgba(182,255,59,.07) 80%,rgba(182,255,59,.45) 100%);animation:wscan 5.5s cubic-bezier(.45,0,.55,1) 3;pointer-events:none}
 @keyframes wscan{0%{transform:translateY(-100%);opacity:0}15%{opacity:1}85%{opacity:1}100%{transform:translateY(100vh);opacity:0}}
 .wcrn{position:absolute;inset:calc(10px + env(safe-area-inset-top,0px)) 10px 10px;z-index:1;pointer-events:none;background:linear-gradient(#b6ff3b,#b6ff3b) 0 0/18px 2px,linear-gradient(#b6ff3b,#b6ff3b) 0 0/2px 18px,linear-gradient(#b6ff3b,#b6ff3b) 100% 0/18px 2px,linear-gradient(#b6ff3b,#b6ff3b) 100% 0/2px 18px,linear-gradient(#b6ff3b,#b6ff3b) 0 100%/18px 2px,linear-gradient(#b6ff3b,#b6ff3b) 0 100%/2px 18px,linear-gradient(#b6ff3b,#b6ff3b) 100% 100%/18px 2px,linear-gradient(#b6ff3b,#b6ff3b) 100% 100%/2px 18px;background-repeat:no-repeat;opacity:.75}
 .wcred{position:absolute;right:12px;bottom:6px;z-index:3;font-size:.62rem;color:rgba(255,255,255,.75);text-decoration:none;text-shadow:0 1px 3px rgba(0,0,0,.8);max-width:70%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -387,14 +387,14 @@ html.wlon,html.wlon body{overflow:hidden}
 .whud{position:absolute;z-index:2;left:14px;right:14px;top:calc(42px + env(safe-area-inset-top,0px));display:flex;flex-direction:column;gap:8px;font-family:"Geist",system-ui,sans-serif;color:#f1f5ff}
 .whtop{display:flex;align-items:center;justify-content:space-between}
 .wlive{display:inline-flex;align-items:center;gap:6px;padding:4px 10px;border-radius:999px;font:700 .66rem/1 "Geist Mono",ui-monospace,monospace;letter-spacing:.14em;background:rgba(5,8,22,.55);border:1px solid rgba(182,255,59,.35);color:#b6ff3b;-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px)}
-.wlive i{width:7px;height:7px;border-radius:50%;background:#b6ff3b;box-shadow:0 0 0 0 rgba(182,255,59,.7);animation:wpulse 1.6s infinite}
+.wlive i{width:7px;height:7px;border-radius:50%;background:#b6ff3b;box-shadow:0 0 0 0 rgba(182,255,59,.7);animation:wpulse 1.6s 4}
 @keyframes wpulse{0%{box-shadow:0 0 0 0 rgba(182,255,59,.7)}70%{box-shadow:0 0 0 9px rgba(182,255,59,0)}100%{box-shadow:0 0 0 0 rgba(182,255,59,0)}}
 .wclk{font:700 1.5rem/1 "Geist Mono",ui-monospace,monospace;letter-spacing:-.02em;text-shadow:0 2px 12px rgba(0,0,0,.6);font-variant-numeric:tabular-nums}.wclk small{font-size:.6em;opacity:.65}
 .whrow{display:grid;grid-template-columns:1fr 1fr;gap:8px}
 .whc{position:relative;min-width:0;padding:10px 12px;border-radius:18px;background:linear-gradient(145deg,rgba(10,16,34,.42),rgba(10,16,34,.18));border:1px solid rgba(255,255,255,.22);-webkit-backdrop-filter:blur(7px) saturate(150%);backdrop-filter:blur(7px) saturate(150%);box-shadow:0 10px 30px rgba(0,0,0,.35),inset 0 1px 0 rgba(255,255,255,.25);cursor:pointer;opacity:0;transform:translateY(12px) scale(.97);animation:whin .6s cubic-bezier(.2,.8,.2,1) .25s forwards;overflow:hidden}
 .whc+.whc{animation-delay:.4s}
 @keyframes whin{to{opacity:1;transform:none}}
-.whc::before{content:"";position:absolute;inset:0;background:linear-gradient(115deg,transparent 30%,rgba(255,255,255,.18) 50%,transparent 70%);transform:translateX(-120%);animation:wshine 6s ease-in-out 1.2s infinite;pointer-events:none}
+.whc::before{content:"";position:absolute;inset:0;background:linear-gradient(115deg,transparent 30%,rgba(255,255,255,.18) 50%,transparent 70%);transform:translateX(-120%);animation:wshine 6s ease-in-out 1.2s 2;pointer-events:none}
 @keyframes wshine{0%,70%{transform:translateX(-120%)}100%{transform:translateX(120%)}}
 .whc.wtap{animation:wtapk .45s cubic-bezier(.2,.8,.2,1);opacity:1}@keyframes wtapk{0%{transform:scale(.94)}100%{transform:none}}
 .whc small{display:block;font:600 .6rem/1.2 "Geist Mono",ui-monospace,monospace;letter-spacing:.12em;text-transform:uppercase;color:#b6ff3b;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -447,9 +447,9 @@ html.wlon,html.wlon body{overflow:hidden}
 .wfl{animation:wflash 1.6s ease}@keyframes wflash{0%,30%{background:rgba(182,255,59,.35);border-radius:8px}100%{background:transparent}}
 .whpr{animation-delay:.55s!important}.whgr{animation-delay:.6s!important;overflow:hidden}.wdia{overflow:hidden;background:linear-gradient(135deg,rgba(255,255,255,.16),rgba(186,230,253,.06) 40%,rgba(244,114,182,.08) 70%,rgba(255,255,255,.12))!important;border:1px solid transparent!important;
  background-clip:padding-box;box-shadow:0 0 0 1px rgba(255,255,255,.35) inset,0 0 26px rgba(125,211,252,.35),0 0 46px rgba(167,139,250,.22),0 14px 40px rgba(0,0,0,.35)!important;-webkit-backdrop-filter:blur(10px) saturate(180%) brightness(1.08)!important;backdrop-filter:blur(10px) saturate(180%) brightness(1.08)!important}
-.wdia::before{content:"";position:absolute;inset:-1px;border-radius:inherit;padding:1.5px;background:conic-gradient(from var(--wa,0deg),#7dd3fc,#f0abfc,#fde68a,#a7f3d0,#c4b5fd,#7dd3fc);-webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);-webkit-mask-composite:xor;mask-composite:exclude;animation:wdspin 6s linear infinite;pointer-events:none;opacity:.9}
+.wdia::before{content:"";position:absolute;inset:-1px;border-radius:inherit;padding:1.5px;background:conic-gradient(from var(--wa,0deg),#7dd3fc,#f0abfc,#fde68a,#a7f3d0,#c4b5fd,#7dd3fc);-webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);-webkit-mask-composite:xor;mask-composite:exclude;animation:wdspin 6s linear 2;pointer-events:none;opacity:.9}
 @property --wa{syntax:"<angle>";initial-value:0deg;inherits:false}@keyframes wdspin{to{--wa:360deg}}
-.wdsh{position:absolute;inset:0;pointer-events:none;background:linear-gradient(115deg,transparent 30%,rgba(255,255,255,.28) 46%,rgba(255,255,255,.05) 52%,transparent 60%);transform:translateX(-120%);animation:wdshine 5.5s ease-in-out infinite}
+.wdsh{position:absolute;inset:0;pointer-events:none;background:linear-gradient(115deg,transparent 30%,rgba(255,255,255,.28) 46%,rgba(255,255,255,.05) 52%,transparent 60%);transform:translateX(-120%);animation:wdshine 5.5s ease-in-out 3}
 @keyframes wdshine{0%,55%{transform:translateX(-120%)}80%,100%{transform:translateX(120%)}}
 .wdia .wgrh small{color:#e0f2fe!important;text-shadow:0 0 10px rgba(125,211,252,.8)}
 .wfv,.wdv{display:flex;gap:8px;align-items:baseline}.wfv b,.wdv b{font-weight:800;font-size:1rem;color:#fff;text-shadow:0 0 14px rgba(125,211,252,.9)}.wfv em,.wdv em{font-style:normal;font-size:.72rem;opacity:.85}
