@@ -27,7 +27,7 @@ jobs:
             curl -s -m 30 -A "Mozilla/5.0 ERNTE" "$B/live/api.php?action=brands&country=$c&fuel=diesel" -o b_$c.json
           done
           python3 - <<'PY'
-          import json,datetime
+          import json,datetime,re
           C=["SK","HU","CZ","AT","SI","HR","RO","PL"]
           def L(f):
             try: return json.load(open(f))
@@ -43,7 +43,20 @@ jobs:
               pts=[[d,float(v)] for d,v in zip(h["labels"],h.get("diesel",[])) if v not in (0,"0",None)]
               out["c"].setdefault(c,{})["h"]=pts[-30:]
             b=L(f"b_{c}.json")
-            if b is not None: out["c"].setdefault(c,{})["b_raw"]=json.dumps(b,ensure_ascii=False)[:1200]
+            try:
+              br=(b or {}).get("data",{}).get("brands",[]) or []
+              m=[x for x in br if re.search(r"\b(MOL|Slovnaft|INA|Tifon)\b",str(x.get("brand_name","")),re.I)]
+              if m:
+                n=sum(int(x.get("station_count") or 0) for x in m) or 1
+                avg=sum(float(x["price_avg"])*int(x.get("station_count") or 1) for x in m)/n
+                out["c"].setdefault(c,{})["mol"]={"p":round(avg,3),"n":n,"b":", ".join(sorted(set(x["brand_name"] for x in m))),"min":min(float(x["price_min"]) for x in m),"max":max(float(x["price_max"]) for x in m)}
+            except Exception as e: out["c"].setdefault(c,{})["mol_err"]=str(e)[:120]
+          try:
+            for r in (lv or {}).get("data",{}).get("countries",[]):
+              cc=r.get("country_code");dz=(r.get("fuels") or {}).get("diesel")
+              if cc in C and dz and dz.get("avg"): out["c"].setdefault(cc,{})["live"]={"p":dz["avg"],"min":dz.get("min"),"n":dz.get("stations"),"d":r.get("last_fetched_iso")}
+          except Exception as e: out["live_err"]=str(e)[:120]
+          out.pop("live_raw",None)
           json.dump(out,open("fuel.json","w"),ensure_ascii=False)
           print(json.dumps(out,ensure_ascii=False)[:4000])
           PY
