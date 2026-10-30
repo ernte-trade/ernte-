@@ -114,7 +114,9 @@ window.dnZmluvaHTML=build;
 // logo sa vloží priamo do dokumentu (okno zo šablóny nenačíta obrázky zo servera spoľahlivo)
 let LOGO=null;const logo=async()=>{if(LOGO)return LOGO;try{const b=await (await fetch(abs("img/danube.png"))).blob();LOGO=await new Promise(r=>{const f=new FileReader();f.onload=()=>r(f.result);f.onerror=()=>r(null);f.readAsDataURL(b)})}catch(x){}return LOGO};
 logo();
-window.dnZmluvaPrint=function(no,d,cfg){const w=window.open("","_blank");if(!w){(typeof toast==="function"?toast:alert)("Povoľte vyskakovacie okná. / Engedélyezze a felugró ablakokat.");return}
+window.dnZmluvaPrint=function(no,d,cfg){{const F=(d&&d.farmer)||{};window.__pvMail={prof:"danube",to:F.email||"",subj:`Adásvételi szerződés / Kúpna zmluva ${no} – Danube Commodities Kft.`,
+    body:`Dobrý deň / Jó napot,\n\nv prílohe posielam kúpnu zmluvu ${no} na podpis.\nCsatolva küldöm a(z) ${no} számú adásvételi szerződést aláírásra.\n\nĎakujem / Köszönöm\nDanube Commodities Kft.`}}
+  const w=window.open("","_blank");if(!w){(typeof toast==="function"?toast:alert)("Povoľte vyskakovacie okná. / Engedélyezze a felugró ablakokat.");return}
   const go=()=>{let h=build(no,d,cfg);if(LOGO)h=h.split(abs("img/danube.png")).join(LOGO);w.document.open();w.document.write(h);w.document.close()};
   if(LOGO)go();else{w.document.write("<p style='font:16px Arial;padding:20px'>Pripravujem zmluvu… / Szerződés készítése…</p>");logo().then(go)}};
 // cena = naša aktuálna nákupná cena u farmára (zverejnená v aplikácii) pre komoditu
