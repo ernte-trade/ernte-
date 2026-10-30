@@ -101,6 +101,8 @@ s pripojeným repozitárom `ernte-trade/ernte-`.
   IČO a sídlo podľa mena z RPO (`fullName`, CORS OK). Telefóny/e-maily verejne nie sú. Nové dáta: workflow `ppa.yml` → vetva `ppa-results` (zašifrované).
 - **Oprava lístka odberateľa** (`odb.js`, `buyer_ticket_edit`, stĺpce `deliveries.fix/edited_at/edit_log`): hľadanie lístka / zákazníka vo všetkých obdobiach, ✏️ úprava,
   prepočet zmlúv farmára (`buyer_realloc`); `buyer_import` ručné opravy po nahratí Excelu znova použije (neprepíše ich).
+- **Dokumenty / PDF** (`pdfview.js`, načítava sa hneď po supabase): každé `window.open("")` + `document.write` sa zobrazí v okne cez celú obrazovku
+  (✕ Zavrieť / Späť, 🖨️ Tlačiť, ⬇️ Uložiť PDF cez html2pdf v rámci dokumentu, 📤 Poslať na mobile). Automatická tlač sa ignoruje (3 s). Nové PDF písať rovnako (window.open("")).
 - **Zámok cien** (`prices_lock`): ceny riadené modelom (sója, repka, kukurica, LO) z aplikácie (jwt) nejdú zmeniť – iba databázové funkcie (`ernte.allow_price`).
 - **Konkurenčné ceny** (`konk.js`, kalk_store `pricelist/konk`): vložený text ponuky → rozpoznanie, porovnanie, báza voči burze. Mená firiem iba v DB.
 - **Príkaz majiteľa (trvalý):** pracovať na 100 %, bezchybne a rýchlo; nič nepoškodiť (model cenníka, nastavenia, údaje). Pred nasadením otestovať.
