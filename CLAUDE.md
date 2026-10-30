@@ -169,7 +169,7 @@ s pripojeným repozitárom `ernte-trade/ernte-`.
 - Vetvy: 4 nezlúčené návrhy ERNTE AI z 25.–26. 10. (`ai-ulohy-*`, `ai-uprava-20261026`) sú prerobené v appke novšie a uložené
   v `archiv-ai-vetvy`. Majiteľ ich ponecháva (29. 10.: „nejdem do toho“) – neškodia, appku neovplyvňujú; znova to neponúkať.
   Issue #51 „ERNTE upozornenia – technické (nemazať)“ sa nesmie mazať (spúšťa upozornenia do mobilu).
-- Povolenie na fotky Dominika Klacika (CLAAS) a potvrdenie práv k reklame Bio-Fer NATUR (úvod trusu).
+- Fotka Dominika Klacika (CLAAS Xerion) je od 30. 10. na úvode Martina (`img/ja-uvod-claas.jpg`, na príkaz majiteľa, s menom autora); písomné povolenie autora a potvrdenie práv k reklame Bio-Fer NATUR (úvod trusu) zatiaľ nemáme.
 - Odložené majiteľom („k tomu sa vrátime“): upratanie karty upozornení, vlastná doména (app.ernte.sk), verejná web stránka, aplikácia vs. web.
 - Pozdrav s menom pri kuracom truse (ponúknuté).
 - Staršie: KROS, údaje firiem Agro-Somotor / Danube.
