@@ -7,7 +7,23 @@ const E=s=>String(s==null?"":s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;","
 const R=n=>n==null||!isFinite(n)?"–":Math.round(n);
 const W={d:null,a:null,at:0,key:"",busy:null};
 const loc=()=>{try{return WXLOC}catch(x){return {name:"Michalovce",lat:48.755,lon:21.915}}};
-const ICO=(c,day=true)=>c===0?(day?"☀️":"🌙"):c<=2?(day?"🌤️":"☁️"):c===3?"☁️":c<=48?"🌫️":c<=57?"🌦️":c<=67?"🌧️":c<=77?"🌨️":c<=82?"🌧️":c<=86?"🌨️":"⛈️";
+// 💎 živé žiariace ikony počasia (SVG s animáciou) namiesto emoji – príkaz majiteľa 30. 10.: všetko sklo, diamant, live
+function wxIcon(c,day=true,big){const cl=`<path class="wi-cl" d="M19 47h27a10.5 10.5 0 0 0 1-21 15 15 0 0 0-28.6-3.4A12 12 0 0 0 19 47z"/>`;
+  const sun=(x,y,s)=>`<g transform="translate(${x} ${y}) scale(${s})"><g class="wi-rays">${[0,45,90,135,180,225,270,315].map(a=>`<line x1="32" y1="9" x2="32" y2="3" transform="rotate(${a} 32 32)"/>`).join("")}</g><circle class="wi-sun" cx="32" cy="32" r="12"/></g>`;
+  const moon=(x,y,s)=>`<g transform="translate(${x} ${y}) scale(${s})"><path class="wi-moon" d="M40 12a20 20 0 1 0 12 30A16 16 0 0 1 40 12z"/><circle class="wi-st" cx="18" cy="14" r="1.6"/><circle class="wi-st s2" cx="52" cy="20" r="1.2"/></g>`;
+  const drops=(n,cls)=>Array.from({length:n},(_,i)=>`<line class="${cls}" style="animation-delay:${(i*.27).toFixed(2)}s" x1="${22+i*9}" y1="50" x2="${19+i*9}" y2="57"/>`).join("");
+  const flakes=n=>Array.from({length:n},(_,i)=>`<circle class="wi-sn" style="animation-delay:${(i*.45).toFixed(2)}s" cx="${22+i*9}" cy="52" r="2"/>`).join("");
+  let g;if(c===0)g=day?sun(0,0,1):moon(0,0,1);
+  else if(c<=2)g=(day?sun(-8,-8,.78):moon(-6,-8,.7))+`<g class="wi-dr">${cl}</g>`;
+  else if(c===3)g=`<g class="wi-dr">${cl}</g><g class="wi-dr d2" transform="translate(-9 -9) scale(.7)" opacity=".55">${cl}</g>`;
+  else if(c<=48)g=`<g class="wi-dr" transform="translate(0 -6)">${cl}</g><g class="wi-fog"><line x1="12" y1="50" x2="52" y2="50"/><line class="f2" x1="16" y1="56" x2="48" y2="56"/></g>`;
+  else if(c<=57)g=`<g class="wi-dr" transform="translate(0 -6)">${cl}</g>${drops(3,"wi-dz")}`;
+  else if(c<=67||(c>=80&&c<=82))g=`<g class="wi-dr" transform="translate(0 -6)">${cl}</g>${drops(4,"wi-rn")}`;
+  else if(c<=77||c<=86)g=`<g class="wi-dr" transform="translate(0 -6)">${cl}</g>${flakes(4)}`;
+  else g=`<g class="wi-dr dk" transform="translate(0 -6)">${cl}</g><path class="wi-bolt" d="M33 40l-7 12h7l-3 10 11-15h-7l4-7z"/>${drops(2,"wi-rn")}`;
+  return `<svg class="wxi-s${big?" big":""}" viewBox="0 0 64 64" aria-hidden="true">${g}</svg>`}
+window.wxIcon=wxIcon;
+const ICO=(c,day=true)=>wxIcon(c,day);
 const TXT=c=>c===0?"Jasno":c<=2?"Polojasno":c===3?"Oblačno":c<=48?"Hmla":c<=57?"Mrholenie":c<=67?"Dážď":c<=77?"Sneženie":c<=82?"Prehánky":c<=86?"Snehové prehánky":"Búrka";
 async function load(force){const L=loc(),k=L.lat+","+L.lon;if(!force&&W.d&&W.key===k&&Date.now()-W.at<15*60e3)return;if(W.busy)return W.busy;
   W.busy=(async()=>{try{const q=`latitude=${L.lat}&longitude=${L.lon}&timezone=Europe%2FBratislava`;
@@ -67,8 +83,8 @@ function html(){const L=loc(),D=W.d;
   const PL=[["Stromový",Math.max(A.alder_pollen||0,A.birch_pollen||0),[1,10,50]],["Tráva",A.grass_pollen,[1,10,50]],["Ambróziový",Math.max(A.ragweed_pollen||0,A.mugwort_pollen||0),[1,10,50]]];
   const plv=v=>v==null?0:v<1?0:v<10?1:v<50?2:3;
   return `<div class="wsx ${day?"day":"night"}">
-  <div class="wshero"><div class="wsstars"></div><button type="button" class="wsloc" data-wxpick>📍 ${E(L.name)}${L.sub?` <small>${E(L.sub)}</small>`:""}</button>
-   <div class="wsbig">${R(C.temperature_2m)}<sup>°</sup></div><div class="wscond">${ICO(C.weather_code,day)} ${E(TXT(C.weather_code))}</div>
+  <div class="wshero"><div class="wsstars"></div><i class="wsshine"></i><div class="wsbigi">${wxIcon(C.weather_code,day,true)}</div><button type="button" class="wsloc" data-wxpick>📍 ${E(L.name)}${L.sub?` <small>${E(L.sub)}</small>`:""}</button>
+   <div class="wsbig">${R(C.temperature_2m)}<sup>°</sup></div><div class="wscond">${E(TXT(C.weather_code))}</div>
    <div class="wsmm">↑ ${R(mx)}° / ↓ ${R(mn)}°<br>Pocitová teplota ${R(C.apparent_temperature)}°</div></div>
   <div class="wsgrid">
    <div class="wscard wsc-h"><div class="wssum">${E(TXT(Dl.weather_code[it]))}. Max ${R(mx)} °C, min ${R(mn)} °C${(Dl.precipitation_probability_max[it]??0)>=30?` · zrážky ${Dl.precipitation_probability_max[it]} %`:""}</div>
@@ -141,5 +157,39 @@ setInterval(()=>{if(!document.hidden&&document.querySelector(".wsx")&&Date.now()
 .wswn{display:flex;gap:10px;align-items:center;padding:6px 0}.wswn span{font-size:1.4rem}.wswn b{display:block}.wswn small{opacity:.8}.wswn.r b{color:#fca5a5}.wswn.w b{color:#fde68a}
 .wssrc{text-align:center;font-size:.72rem;opacity:.7}
 html[data-theme=light] .wscard{background:linear-gradient(180deg,#1e3a8a,#172554);color:#eef3ff}
+
+/* 💎 SKLO · DIAMANT · LIVE (príkaz majiteľa 30. 10.) */
+@property --wsa{syntax:"<angle>";initial-value:0deg;inherits:false}
+@keyframes wsspin{to{--wsa:360deg}}@keyframes wsaur{0%{background-position:0% 50%}50%{background-position:100% 50%}100%{background-position:0% 50%}}
+@keyframes wsshine{0%,55%{transform:translateX(-130%)}85%,100%{transform:translateX(130%)}}
+.wsx{position:relative;padding:10px;border-radius:30px;background:radial-gradient(90% 60% at 10% 0%,rgba(56,189,248,.28),transparent 60%),radial-gradient(80% 60% at 100% 30%,rgba(167,139,250,.26),transparent 60%),radial-gradient(90% 70% at 50% 100%,rgba(244,114,182,.16),transparent 60%),#070b18}
+.wshero{background:linear-gradient(120deg,#0b1f5c,#4338ca,#0ea5e9,#7c3aed,#0b1f5c)!important;background-size:320% 320%!important;animation:wsaur 18s ease-in-out infinite;
+ border:1px solid transparent;box-shadow:0 0 0 1px rgba(255,255,255,.35) inset,0 0 30px rgba(125,211,252,.45),0 0 60px rgba(167,139,250,.28),0 18px 40px rgba(0,0,0,.45)}
+.wsx.day .wshero{background:linear-gradient(120deg,#0284c7,#38bdf8,#f59e0b,#22d3ee,#6366f1,#0284c7)!important;background-size:320% 320%!important}
+.wsx.night .wshero::after,.wsx.day .wshero::after{content:"";position:absolute;inset:0;left:0;right:0;bottom:0;height:auto;border-radius:inherit;padding:1.5px;opacity:1;
+ background:conic-gradient(from var(--wsa,0deg),#7dd3fc,#f0abfc,#fde68a,#a7f3d0,#c4b5fd,#7dd3fc);-webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);-webkit-mask-composite:xor;mask-composite:exclude;animation:wsspin 7s linear infinite;pointer-events:none;z-index:2}
+.wshero::before{content:"";position:absolute;inset:0;background:linear-gradient(135deg,rgba(255,255,255,.22),rgba(255,255,255,.04) 45%,rgba(255,255,255,.12));-webkit-backdrop-filter:blur(2px);backdrop-filter:blur(2px);pointer-events:none}
+.wsshine{position:absolute;inset:0;pointer-events:none;background:linear-gradient(115deg,transparent 30%,rgba(255,255,255,.32) 46%,rgba(255,255,255,.06) 52%,transparent 60%);transform:translateX(-130%);animation:wsshine 6s ease-in-out infinite}
+.wsbigi{position:absolute!important;top:52px;right:12px;width:118px;height:118px}.wsbig,.wscond{text-shadow:0 0 18px rgba(255,255,255,.55),0 2px 10px rgba(0,0,0,.35)}
+.wscard{position:relative;overflow:hidden;background:linear-gradient(135deg,rgba(255,255,255,.13),rgba(186,230,253,.05) 40%,rgba(244,114,182,.06) 70%,rgba(255,255,255,.10)),rgba(10,16,38,.72)!important;
+ border:1px solid transparent!important;box-shadow:0 0 0 1px rgba(255,255,255,.22) inset,0 0 22px rgba(125,211,252,.22),0 0 36px rgba(167,139,250,.14),0 12px 30px rgba(0,0,0,.35);-webkit-backdrop-filter:blur(12px) saturate(170%);backdrop-filter:blur(12px) saturate(170%);color:#f1f5ff!important}
+.wscard::before{content:"";position:absolute;inset:0;border-radius:inherit;padding:1px;background:conic-gradient(from var(--wsa,0deg),rgba(125,211,252,.9),rgba(240,171,252,.8),rgba(253,230,138,.8),rgba(167,243,208,.8),rgba(196,181,253,.9),rgba(125,211,252,.9));-webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);-webkit-mask-composite:xor;mask-composite:exclude;animation:wsspin 9s linear infinite;pointer-events:none}
+.wscard::after{content:"";position:absolute;inset:0;pointer-events:none;background:linear-gradient(115deg,transparent 35%,rgba(255,255,255,.14) 48%,transparent 60%);transform:translateX(-130%);animation:wsshine 9s ease-in-out infinite}
+.wscard>*{position:relative;z-index:1}.wslbl{color:#e0f2fe;text-shadow:0 0 10px rgba(125,211,252,.7)}
+html[data-theme=light] .wscard{background:linear-gradient(135deg,rgba(255,255,255,.13),rgba(186,230,253,.05) 40%,rgba(255,255,255,.10)),rgba(10,16,38,.78)!important}
+.wxi-s{display:inline-block;width:1.9em;height:1.9em;vertical-align:middle;overflow:visible}.wxi-s.big{width:100%;height:100%}.wsh span,.wsd>span{display:grid;place-items:center}
+.wxi-s .wi-sun{fill:#fcd34d;filter:drop-shadow(0 0 5px rgba(253,224,71,.95))}.wxi-s .wi-rays{stroke:#fde68a;stroke-width:3.4;stroke-linecap:round;transform-origin:32px 32px;animation:wispin 14s linear infinite;filter:drop-shadow(0 0 4px rgba(253,224,71,.9))}
+.wxi-s .wi-moon{fill:#e0e7ff;filter:drop-shadow(0 0 6px rgba(199,210,254,.95))}.wxi-s .wi-st{fill:#fff;animation:witw 2.6s ease-in-out infinite}.wxi-s .wi-st.s2{animation-delay:1.2s}
+.wxi-s .wi-cl{fill:#f1f5f9;filter:drop-shadow(0 0 5px rgba(255,255,255,.75))}.wxi-s .dk .wi-cl{fill:#94a3b8;filter:drop-shadow(0 0 6px rgba(167,139,250,.8))}
+.wxi-s .wi-dr{animation:widr 6s ease-in-out infinite}.wxi-s .wi-dr.d2{animation-duration:8s}
+.wxi-s .wi-rn,.wxi-s .wi-dz{stroke:#7dd3fc;stroke-width:3;stroke-linecap:round;filter:drop-shadow(0 0 3px #38bdf8);animation:wirain 1.1s linear infinite}.wxi-s .wi-dz{stroke-width:2;animation-duration:1.6s}
+.wxi-s .wi-sn{fill:#fff;filter:drop-shadow(0 0 3px #e0f2fe);animation:wisnow 2.4s linear infinite}
+.wxi-s .wi-fog line{stroke:#e2e8f0;stroke-width:3;stroke-linecap:round;opacity:.85;animation:wifog 4s ease-in-out infinite}.wxi-s .wi-fog .f2{animation-delay:2s}
+.wxi-s .wi-bolt{fill:#fde047;filter:drop-shadow(0 0 6px #facc15);animation:wibolt 3s steps(1) infinite}
+@keyframes wispin{to{transform:rotate(360deg)}}@keyframes witw{0%,100%{opacity:.2}50%{opacity:1}}@keyframes widr{0%,100%{transform:translateX(-1.5px)}50%{transform:translateX(1.5px)}}
+@keyframes wirain{0%{transform:translateY(-5px);opacity:0}30%{opacity:1}100%{transform:translateY(5px);opacity:0}}@keyframes wisnow{0%{transform:translateY(-4px);opacity:0}30%{opacity:1}100%{transform:translateY(7px);opacity:0}}
+@keyframes wifog{0%,100%{transform:translateX(-3px)}50%{transform:translateX(3px)}}@keyframes wibolt{0%,8%,14%,100%{opacity:1}5%,11%{opacity:.15}}
+@media (prefers-reduced-motion:reduce){.wxi-s *,.wshero,.wshero::after,.wscard::before,.wscard::after,.wsshine{animation:none!important}}
+.whwx .wxi .wxi-s{width:1.6em;height:1.6em}
 @media (max-width:380px){.wsd{grid-template-columns:minmax(52px,1fr) 46px 26px minmax(30px,1fr) auto;gap:6px}.wsbig{font-size:4.4rem}}`;document.head.appendChild(s)}
 })();
