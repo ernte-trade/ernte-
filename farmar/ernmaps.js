@@ -18,7 +18,7 @@ const S={cat:"fuel",me:null,wid:null,map:null,meM:null,acc:null,st:[],stL:null,d
 async function needLeaflet(){if(window.L)return;if(typeof needL==="function")return needL();await new Promise((ok,no)=>{const s=document.createElement("script");s.src=window.LEAFLET_SRC||"leaflet.js";s.onload=ok;s.onerror=no;document.head.appendChild(s)})}
 function ui(){let o=document.getElementById("emap");if(o)return o;o=document.createElement("div");o.id="emap";o.innerHTML=`
   <div class="emh"><b>🗺️ ERNTE Maps</b><span class="emgps">📡 hľadám GPS…</span><button type="button" class="emx" data-emx aria-label="Zavrieť mapu">✕</button></div>
-  <div class="emm"><div id="emMap"></div><div class="emhud" hidden><div><b class="emspd">0</b><small>km/h</small></div><div><b class="emrem">–</b><small>zostáva</small></div><div><b class="emeta">–</b><small>príchod</small></div></div></div>
+  <div class="emm"><div id="emMap"></div><div class="emnbt" hidden><button type="button" class="emnb stop" data-emstop2 aria-label="Ukončiť navigáciu">■</button><button type="button" class="emnb" data-emcar aria-label="Do auta – Apple CarPlay / Android Auto">🚗</button><button type="button" class="emnb" data-emmute aria-label="Hlas zap/vyp">🔊</button></div><div class="emcar" hidden></div><div class="emhud" hidden><div><b class="emspd">0</b><small>km/h</small></div><div><b class="emrem">–</b><small>zostáva</small></div><div><b class="emeta">–</b><small>príchod</small></div></div></div>
   <div class="emnav" hidden><div class="emarrow">⬆️</div><div class="emtxt"><b class="emins">—</b><small class="emsub"></small></div></div>
   <div class="emcats"><button type="button" data-emplan class="emplb">🧭 Trasa · 🚛 cena</button>${CAT.map(c=>`<button type="button" data-emcat="${c[0]}" class="${c[0]==="fuel"?"on":""}">${c[1]} ${c[2]}</button>`).join("")}</div>
   <div class="emp"><div class="emst"></div><div class="emlist"></div>
@@ -89,13 +89,13 @@ function stepTxt(st){if(st.txt)return st.txt;const m=st.maneuver||{},mod=MOD[m.m
   switch(m.type){case "depart":return `Vyrazte${n}`;case "arrive":return "Ste v cieli"+(S.dest?" – "+S.dest.n:"");case "roundabout":case "rotary":return `Na kruhovom objazde ${m.exit?m.exit+". výjazd":"pokračujte"}${n}`;
     case "merge":return `Pripojte sa ${mod}${n}`;case "on ramp":return `Odbočte na nájazd ${mod}${n}`;case "off ramp":return `Zíďte ${mod}${n}`;case "fork":return `Na rozdvojení ${mod}${n}`;
     case "end of road":return `Na konci cesty ${mod}${n}`;case "continue":case "new name":return `Pokračujte ${mod||"rovno"}${n}`;default:return `Odbočte ${mod}${n}`}}
-function say(t){try{if(!("speechSynthesis" in window)||t===S.lastSay)return;S.lastSay=t;const u=new SpeechSynthesisUtterance(t);u.lang="sk-SK";speechSynthesis.cancel();speechSynthesis.speak(u)}catch(x){}}
+function say(t){try{if(S.mute||!("speechSynthesis" in window)||t===S.lastSay)return;S.lastSay=t;const u=new SpeechSynthesisUtterance(t);u.lang="sk-SK";speechSynthesis.cancel();speechSynthesis.speak(u)}catch(x){}}
 function distToRoute(c){if(!S.route)return 0;let best=1e9;const P=S.route.geometry.coordinates;for(let i=0;i<P.length;i+=Math.max(1,Math.floor(P.length/400))){const d=km(c,{lat:P[i][1],lng:P[i][0]});if(d<best)best=d}return best}
 // 🎥 LIVE navigácia: mapa ide s tebou, otáča sa v smere jazdy (hore = smer) a je naklonená ako v 3D
 function liveBearing(c){const p=S.me;let b=null;if(c.hd!=null&&!isNaN(c.hd)&&(c.sp||0)>1.5)b=c.hd;
   else if(p&&km(p,c)>0.008){const y=Math.sin((c.lng-p.lng)*Math.PI/180)*Math.cos(c.lat*Math.PI/180),x=Math.cos(p.lat*Math.PI/180)*Math.sin(c.lat*Math.PI/180)-Math.sin(p.lat*Math.PI/180)*Math.cos(c.lat*Math.PI/180)*Math.cos((c.lng-p.lng)*Math.PI/180);b=(Math.atan2(y,x)*180/Math.PI+360)%360}
   if(b==null)return;let d=b-((S.brg||0)%360+360)%360;if(d>180)d-=360;if(d<-180)d+=360;S.brg=(S.brg||0)+d;S.spd=c.sp}
-function liveView(on){const m=document.getElementById("emMap"),h=$(".emhud");if(!m)return;m.classList.toggle("navmap",on);if(h)h.hidden=!on;
+function liveView(on){const m=document.getElementById("emMap"),h=$(".emhud"),nb=$(".emnbt");if(!m)return;m.classList.toggle("navmap",on);if(h)h.hidden=!on;if(nb)nb.hidden=!on;
   if(!on){m.style.removeProperty("--rot");const i=document.querySelector("#emap .emme i");if(i)i.style.transform=""}
   setTimeout(()=>{try{S.map.invalidateSize(false);if(on&&S.me)S.map.setView([S.me.lat,S.me.lng],17,{animate:false})}catch(x){}},50)}
 function liveTick(){const c=S.me,m=document.getElementById("emMap");if(!c||!m||!m.classList.contains("navmap"))return;
@@ -112,8 +112,29 @@ function navTick(force){const c=S.me,st=S.steps;if(!S.nav||!c||!st.length)return
   if(force||dn<0.2)say((dn<0.2?"":"O "+fd(dn)+", ")+txt);
   if(nx.maneuver.type==="arrive"&&dn<0.03){say("Ste v cieli.");stopNav();status("🏁 Ste v cieli.");return}
     if(distToRoute(c)>0.08&&Date.now()-S.rr>15000){S.rr=Date.now();say("Prepočítavam trasu");if(S.mode==="plan"&&S.replan)S.replan();else{const i=S.st.indexOf(S.dest);if(i>=0)route(i)}}}
-function startNav(){if(!S.route)return;S.nav=true;S.follow=true;S.si=0;$(".emnav").hidden=false;$("[data-emgo]").hidden=true;$("[data-emstop]").hidden=false;document.getElementById("emap").classList.add("navon");liveView(true);navTick(true)}
-function stopNav(){S.nav=false;try{speechSynthesis.cancel()}catch(x){}const n=$(".emnav");if(n)n.hidden=true;const g=$("[data-emgo]");if(g)g.hidden=!S.route;const st=$("[data-emstop]");if(st)st.hidden=true;const o=document.getElementById("emap");if(o&&o.classList.contains("navon")){o.classList.remove("navon");liveView(false)}}
+// 📺 navigácia na celú obrazovku (Android / PC – Fullscreen API; iPhone: v nainštalovanej aplikácii je celá obrazovka sama)
+function fsOn(){try{const d=document.documentElement;if(!document.fullscreenElement&&d.requestFullscreen){d.requestFullscreen({navigationUI:"hide"}).then(()=>{S.fs=true;try{screen.orientation&&screen.orientation.lock&&screen.orientation.lock("any").catch(()=>{})}catch(x){}}).catch(()=>{})}
+  else if(d.webkitRequestFullscreen&&!document.webkitFullscreenElement){d.webkitRequestFullscreen();S.fs=true}}catch(x){}setTimeout(()=>{try{S.map.invalidateSize(false)}catch(x){}},400)}
+function fsOff(){try{if(S.fs){S.fs=false;if(document.fullscreenElement&&document.exitFullscreen)document.exitFullscreen().catch(()=>{});else if(document.webkitFullscreenElement&&document.webkitExitFullscreen)document.webkitExitFullscreen()}}catch(x){}setTimeout(()=>{try{S.map.invalidateSize(false)}catch(x){}},400)}
+// 🚗 Do auta: Apple CarPlay a Android Auto zobrazia iba schválené navigačné aplikácie (Google Maps, Apple Mapy, Waze).
+// Našu trasu (aj kamiónovú) pošleme do Google Máp cez body na trase, aby išli presne po nej; Apple Mapy a Waze dostanú cieľ.
+function carLinks(){const R=S.route,d=S.dest;if(!R||!d)return null;const me=S.me,pts=(R.geometry&&R.geometry.coordinates)||[];
+  const wp=[];if(pts.length>4){const n=Math.min(8,Math.floor(pts.length/20));for(let i=1;i<=n;i++){const p=pts[Math.floor(pts.length*i/(n+1))];wp.push(p[1].toFixed(5)+","+p[0].toFixed(5))}}
+  const md=(typeof cfg==="function"&&S.mode==="plan")?cfg().mode:"auto",tm=md==="pedestrian"?"walking":"driving",o=me?`&origin=${me.lat.toFixed(6)},${me.lng.toFixed(6)}`:"";
+  return {g:`https://www.google.com/maps/dir/?api=1${o}&destination=${d.lat.toFixed(6)},${d.lng.toFixed(6)}${wp.length&&md!=="pedestrian"?"&waypoints="+encodeURIComponent(wp.join("|")):""}&travelmode=${tm}&dir_action=navigate`,
+    a:`https://maps.apple.com/?${me?`saddr=${me.lat.toFixed(6)},${me.lng.toFixed(6)}&`:""}daddr=${d.lat.toFixed(6)},${d.lng.toFixed(6)}&dirflg=${md==="pedestrian"?"w":"d"}`,
+    w:`https://waze.com/ul?ll=${d.lat.toFixed(6)},${d.lng.toFixed(6)}&navigate=yes`,wp:wp.length,truck:md==="truck"}}
+function carPanel(){const c=$(".emcar");if(!c)return;if(!c.hidden){c.hidden=true;return}const L0=carLinks();if(!L0){c.hidden=true;return}
+  c.innerHTML=`<b>🚗 Do auta · Apple CarPlay / Android Auto</b><small>Pripoj telefón k autu (kábel / bezdrôtovo) a vyber mapu – trasa sa ukáže na displeji auta.</small>
+   <a class="emca g" href="${L0.g}" target="_blank" rel="noopener">🗺️ Google Mapy${L0.wp?` · po našej ${L0.truck?"kamiónovej ":""}trase`:""}</a>
+   <a class="emca a" href="${L0.a}" target="_blank" rel="noopener">🍎 Apple Mapy · iba cieľ</a><a class="emca w" href="${L0.w}" target="_blank" rel="noopener">🚙 Waze · iba cieľ</a>
+   <small>${L0.truck?"Kamión: Google Mapy idú cez body našej kamiónovej trasy (mýto a obmedzenia ostávajú podľa ERNTE Maps). Apple Mapy a Waze kamiónovú trasu nepoznajú.":"Mapy v aute prepočítavajú trasu samy aj s dopravou."}</small>`;c.hidden=false}
+document.addEventListener("click",e=>{const t=e.target.closest&&e.target.closest("[data-emstop2],[data-emcar],[data-emmute]");if(!t||!t.closest("#emap"))return;e.preventDefault();e.stopPropagation();
+  if(t.dataset.emstop2!==undefined)return stopNav();if(t.dataset.emcar!==undefined)return carPanel();
+  if(t.dataset.emmute!==undefined){S.mute=!S.mute;t.textContent=S.mute?"🔇":"🔊";try{if(S.mute)speechSynthesis.cancel()}catch(x){}}},true);
+document.addEventListener("fullscreenchange",()=>{if(!document.fullscreenElement)S.fs=false;setTimeout(()=>{try{S.map&&S.map.invalidateSize(false)}catch(x){}},300)});
+function startNav(){if(!S.route)return;fsOn();S.nav=true;S.follow=true;S.si=0;$(".emnav").hidden=false;$("[data-emgo]").hidden=true;$("[data-emstop]").hidden=false;document.getElementById("emap").classList.add("navon");liveView(true);navTick(true)}
+function stopNav(){S.nav=false;fsOff();{const c=$(".emcar");if(c)c.hidden=true}try{speechSynthesis.cancel()}catch(x){}const n=$(".emnav");if(n)n.hidden=true;const g=$("[data-emgo]");if(g)g.hidden=!S.route;const st=$("[data-emstop]");if(st)st.hidden=true;const o=document.getElementById("emap");if(o&&o.classList.contains("navon")){o.classList.remove("navon");liveView(false)}}
 async function acquireWake(){try{if(navigator.wakeLock&&!S.wl)S.wl=await navigator.wakeLock.request("screen")}catch(x){}}
 function releaseWake(){try{if(S.wl){S.wl.release();S.wl=null}}catch(x){}}
 document.addEventListener("click",e=>{const t=e.target.closest&&e.target.closest("[data-emx],[data-emgo],[data-emstop],[data-emcenter],[data-emi],[data-emretry],[data-emcat]");if(!t)return;e.preventDefault();e.stopPropagation();
@@ -255,6 +276,15 @@ function hdrBtn(){const app=document.getElementById("app");if(!app)return;const 
 #emap.navon .emme i{width:0;height:0;border-radius:0;background:none;border:none;box-shadow:none;border-left:14px solid transparent;border-right:14px solid transparent;border-bottom:30px solid #38bdf8;filter:drop-shadow(0 0 10px rgba(56,189,248,.95)) drop-shadow(0 0 2px #fff);margin:-6px 0 0 -3px;transition:transform .9s linear}
 #emap.navon .emme{animation:none}
 .emhud{position:absolute;left:10px;right:10px;bottom:10px;z-index:1000;display:grid;grid-template-columns:repeat(3,1fr);gap:6px;padding:8px;border-radius:18px;background:rgba(5,7,13,.86);border:1px solid rgba(56,189,248,.5);box-shadow:0 0 22px rgba(56,189,248,.35);text-align:center}
+#emap.navon .emh,#emap.navon .emp,#emap.navon .emcats{display:none!important}
+#emap.navon .emnav{top:calc(10px + env(safe-area-inset-top))}
+.emnbt{position:absolute;right:10px;bottom:calc(92px + env(safe-area-inset-bottom));z-index:1001;display:grid;gap:10px}.emnbt[hidden]{display:none}
+.emnb{width:56px;height:56px;min-width:56px;border-radius:50%!important;padding:0!important;display:grid;place-items:center;font-size:1.4rem;background:rgba(5,7,13,.86)!important;border:1px solid rgba(56,189,248,.6)!important;color:#fff!important;box-shadow:0 0 16px rgba(56,189,248,.45)}
+.emnb.stop{border-color:rgba(248,113,113,.8)!important;box-shadow:0 0 16px rgba(248,113,113,.5);color:#fca5a5!important}
+.emcar{position:absolute;left:10px;right:76px;bottom:calc(92px + env(safe-area-inset-bottom));z-index:1001;display:grid;gap:8px;padding:12px;border-radius:18px;background:rgba(5,7,13,.94);border:1px solid rgba(56,189,248,.55);box-shadow:0 0 22px rgba(56,189,248,.35)}.emcar[hidden]{display:none}
+.emcar small{opacity:.75;font-size:.74rem;line-height:1.35}.emca{display:flex;align-items:center;justify-content:center;min-height:48px;border-radius:999px;font-weight:800;text-decoration:none;color:#fff!important;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.25);text-align:center;padding:4px 10px}
+.emca.g{background:linear-gradient(135deg,#22c55e,#22d3ee)!important;color:#05210f!important;border:0}
+#emap.navon .emhud{bottom:calc(10px + env(safe-area-inset-bottom))}
 .emhud div{display:grid;gap:0}.emhud b{font-size:1.35rem;line-height:1.1}.emhud small{opacity:.7;font-size:.7rem}.emhud[hidden]{display:none}
 
 .emcats{display:flex;gap:6px;overflow-x:auto;padding:8px 10px;background:#0b1020;scrollbar-width:none}.emcats::-webkit-scrollbar{display:none}
