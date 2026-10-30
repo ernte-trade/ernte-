@@ -46,7 +46,9 @@ function bzAt(com,d){const k=HK[com];if(!k)return null;const A=st();const H=((A.
   if(d>=today()&&H.length){const l=H[H.length-1];return {v:+l[k],d:l.d}}return null}
 // ---- údaje ----
 const K={items:null,busy:false,prev:null,txt:"",d:"",who:"",open:false,err:"",buyers:{},sell:null,dop:""};
-const OWNR=()=>typeof ROLE!=="undefined"&&ROLE==="owner"&&!(typeof FARMER!=="undefined"&&FARMER);
+// PRÍKAZ MAJITEĽA (30. 10.): Konkurenčné ceny a možnosti predaja vidí iba Martin (MAIN_OK); 🛡️ Kontrola cien ostáva ako doteraz
+const MAIN=()=>typeof window.MAIN_OK==="function"&&window.MAIN_OK()&&!window.ERNTE_VIEWAS;
+const OWNR=()=>MAIN();
 const bKey=w=>fold(w).replace(/[^a-z0-9]+/g," ").trim();
 function buyerOfW(w){const k=bKey(w);if(!k)return null;for(const n in (K.buyers||{})){const b=bKey(n);if(b&&(k===b||k.includes(b)||b.includes(k)))return Object.assign({name:n},K.buyers[n])}return null}
 const isSell=x=>!!(x&&(x.sell||buyerOfW(x.who)));
@@ -56,7 +58,7 @@ const FIRMS0=["ADM Sečovce","ADM Hamburg","Interagros","Agro-podnik (Tajba)","P
 function firms(){const S=new Set(FIRMS0.concat(K.firms||[]));for(const x of (K.items||[]))if(x.who)S.add(x.who);return [...S].slice(0,40)}
 async function load(){if(K.busy)return;K.busy=true;let v=await kget();K.busy=false;if(v===undefined){K.err="Konkurenčné ceny sa nepodarilo načítať.";K.items=K.items||[];paint();return}
   if(!v||!Array.isArray(v.items))v={items:[]};
-  K.firms=Array.isArray(v.firms)?v.firms:[];K.buyers=(v.buyers&&typeof v.buyers==="object")?v.buyers:{};K.items=v.items;try{const [pp,pw]=await Promise.all([sb.rpc("price_pending",{}),sb.rpc("price_watch_get")]);K.pend=pp.error?null:pp.data;K.watch=pw.error?null:pw.data}catch(x){}K.err="";paint()}
+  K.firms=Array.isArray(v.firms)?v.firms:[];K.buyers=(v.buyers&&typeof v.buyers==="object")?v.buyers:{};K.items=v.items;try{const [pp,pw]=await Promise.all([sb.rpc("price_pending",{}),sb.rpc("price_watch_get")]);K.pend=pp.error?null:pp.data;K.watch=pw.error?null:pw.data}catch(x){}K.err="";paint();if(!MAIN())paintGuard()}
 // ---- vzhľad ----
 function ourPrice(c){const p=((typeof STATE!=="undefined"&&STATE.prices)||[]).find(x=>x.com===c);return p&&p.price!=null?+p.price:null}
 function offerHTML(L){const o=L[0];const rows=L.map(x=>{const our=ourPrice(x.com),df=our!=null?our-x.price:null;
@@ -89,15 +91,15 @@ function guardHTML(){const P=K.pend&&typeof K.pend==="object"?Object.entries(K.p
   if(!P.length&&!W.length)return `<div class="card kkg ok" id="kkGuard"><b>🛡️ Kontrola cien</b><div class="s">Automatické ceny sú v poriadku${K.watch&&K.watch.at?" · kontrola "+new Date(K.watch.at).toLocaleString("sk-SK",{day:"numeric",month:"numeric",hour:"2-digit",minute:"2-digit"}):""}. Pokles ceny sa zverejní sám hneď. Zvýšenie sa nezverejní samo – príde sem na potvrdenie (zverejniť ho môže iba Martin).</div></div>`;
   return `<div class="card kkg" id="kkGuard"><b>🛡️ Kontrola cien</b>${P.map(([c,x])=>`<div class="kkp"><div><b>${E(nm(c))}: ${f0(x.old)} → ${f0(x.new)} €/t</b><small>${E(x.src||"")} · čaká od ${new Date(x.at).toLocaleString("sk-SK",{day:"numeric",month:"numeric",hour:"2-digit",minute:"2-digit"})}</small></div><div class="btns"><button type="button" class="lime" data-ppok="${E(c)}">✓ Zverejniť ${f0(x.new)}</button><button type="button" data-ppno="${E(c)}">✕ Nechať ${f0(x.old)}</button></div></div>`).join("")}
    ${W.map(t=>`<div class="kkw">⚠️ ${E(t)}</div>`).join("")}</div>`}
-function paintGuard(){const old=document.getElementById("kkGuard"),kk=document.getElementById("kkCard");if(!kk)return;const d=document.createElement("div");d.innerHTML=guardHTML();if(old)old.replaceWith(d.firstElementChild);else{const ac=document.querySelector(".acn-card");(ac||kk).before(d.firstElementChild)}}
+function paintGuard(){const old=document.getElementById("kkGuard"),kk=document.getElementById("kkCard")||document.querySelector(".acn-card")||document.getElementById("fPrice");if(!kk)return;const d=document.createElement("div");d.innerHTML=guardHTML();if(old)old.replaceWith(d.firstElementChild);else{const ac=document.querySelector(".acn-card");(ac||kk).before(d.firstElementChild)}}
 document.addEventListener("click",async e=>{const b=e.target.closest&&e.target.closest("[data-ppok],[data-ppno]");if(!b||!OK())return;e.preventDefault();const c=b.dataset.ppok||b.dataset.ppno,ok=!!b.dataset.ppok;
   if(ok&&!confirm(`Zverejniť novú cenu ${nm(c)}? Hneď ju uvidia farmári.`))return;b.disabled=true;const r=await sb.rpc("price_pending",{p_com:c,p_apply:ok});b.disabled=false;
   if(r.error){toast("Nepodarilo sa: "+r.error.message,6000);return}K.pend=r.data;paintGuard();toast(ok?"✓ Cena zverejnená.":"Cena ostáva – zmena zamietnutá.",5000);if(ok&&typeof loadStaff==="function"){await loadStaff();try{renderStaff()}catch(x){}}},true);
-function paint(force){if(typeof TAB==="undefined"||TAB!=="price"||!OK())return;const app=document.getElementById("app");if(!app)return;
+function paint(force){if(typeof TAB==="undefined"||TAB!=="price"||!OK()||!MAIN())return;const app=document.getElementById("app");if(!app)return;
   const old=document.getElementById("kkCard");if(old){const ae=document.activeElement;if(!force&&old.contains(ae)&&ae&&/INPUT|TEXTAREA|SELECT/.test(ae.tagName)&&ae.type!=="checkbox")return;const d=document.createElement("div");d.innerHTML=html();old.replaceWith(d.firstElementChild);return}
   const anchor=document.getElementById("chHist")||document.getElementById("fPrice");if(!anchor)return;const d=document.createElement("div");d.innerHTML=html();
   if(anchor.id==="chHist")anchor.before(d.firstElementChild);else anchor.after(d.firstElementChild)}
-function inject(){if(typeof TAB==="undefined"||TAB!=="price"||!OK())return;if(!document.getElementById("kkCard")){paint();if(K.items===null)load()}if(!document.getElementById("kkGuard")&&K.items!==null)paintGuard()}
+function inject(){if(typeof TAB==="undefined"||TAB!=="price"||!OK())return;if(!MAIN()){const o=document.getElementById("kkCard");if(o)o.remove();if(K.items===null&&!K.busy)load();else if(!document.getElementById("kkGuard")&&K.items!==null)paintGuard();return}if(!document.getElementById("kkCard")){paint();if(K.items===null)load()}if(!document.getElementById("kkGuard")&&K.items!==null)paintGuard()}
 document.addEventListener("input",e=>{const t=e.target;if(!t)return;if(t.id==="kkTxt")K.txt=t.value;else if(t.id==="kkW")K.who=t.value;else if(t.id==="kkD")K.d=t.value;else if(t.id==="kkDop")K.dop=t.value});
 document.addEventListener("change",e=>{if(e.target&&e.target.id==="kkD")K.d=e.target.value;if(e.target&&e.target.id==="kkSell"){K.sell=e.target.checked;paint(true)}if(e.target&&e.target.id==="kkW"){K.who=e.target.value;if(K.sell===null)paint(true)}});
 document.addEventListener("click",async e=>{const t=e.target.closest&&e.target.closest("[data-kkparse],[data-kksave],[data-kkcancel],[data-kkdel],[data-kkmore]");if(!t||!OK())return;e.preventDefault();

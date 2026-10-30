@@ -4,7 +4,8 @@
 // Mená odberateľov, modely a ponuky sú iba v databáze (sell_buyers, sell_offers – vidí iba majiteľ).
 (function(){
 const E=s=>String(s==null?"":s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
-const OWN=()=>typeof ROLE!=="undefined"&&ROLE==="owner"&&!(typeof FARMER!=="undefined"&&FARMER)&&!window.ERNTE_VIEWAS;
+// PRÍKAZ MAJITEĽA (30. 10.): možnosti predaja (Kde predať, pri cenách) vidí iba Martin (MAIN_OK)
+const OWN=()=>typeof ROLE!=="undefined"&&ROLE==="owner"&&!(typeof FARMER!=="undefined"&&FARMER)&&!window.ERNTE_VIEWAS&&typeof window.MAIN_OK==="function"&&window.MAIN_OK();
 const f0=n=>n==null||!isFinite(n)?"–":Math.round(n).toLocaleString("sk-SK");
 const sg=n=>(n>=0?"+":"−")+f0(Math.abs(n));
 const dk=d=>/^\d{4}-\d\d-\d\d/.test(d||"")?(+d.slice(8,10))+". "+(+d.slice(5,7))+".":"";

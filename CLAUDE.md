@@ -123,8 +123,10 @@ s pripojeným repozitárom `ernte-trade/ernte-`.
   Odkazy `#nastav-email`, `#nastav-email-danube`, `#nastav-email-valko`; majiteľom (Martin, Jana) sa po prihlásení ponúkne nastavenie chýbajúcich schránok (`pvAsk`).
 - **Zámok cien** (`prices_lock`): ceny riadené modelom (sója, repka, kukurica, LO) z aplikácie (jwt) nejdú zmeniť – iba databázové funkcie (`ernte.allow_price`).
 - **Konkurenčné ceny** (`konk.js`, kalk_store `pricelist/konk`): vložený text ponuky → rozpoznanie, porovnanie, báza voči burze. Mená firiem iba v DB.
+  **PRÍKAZ MAJITEĽA (30. 10.): Konkurenčné ceny a všetky možnosti predaja (Kde predať, pri cenách v Cenníku, 🏆 odporúča ekonomika) vidí IBA Martin** (`MAIN_OK()`), nie Jana ani obchodníci; 🛡️ Kontrola cien ostáva ako doteraz.
+  Agro-Somotor: všetky ceny FCA u farmára (`sell_buyers.parita='FCA'`), dopravu platia oni 9,4 €/t.
   **Odberateľ ≠ konkurencia** (príkaz majiteľa 30. 10.): ponuka odberateľa (napr. Agro-Somotor) = za koľko kúpi OD NÁS → položka `sell:true`, `dop` (Somotor: FCA cena, keď odvezieme my +9,4 €/t),
-  `konk.buyers` {meno:{dop}}; vidí iba majiteľ; zapíše sa aj do `sell_offers` (`konk_sell_offer`, FCA + DAP) pre „Kde predať“. Nikdy ju nerátať ako konkurenčnú výkupnú cenu.
+  `konk.buyers` {meno:{dop}}; vidí iba Martin; zapíše sa aj do `sell_offers` (`konk_sell_offer`, FCA + DAP) pre „Kde predať“. Nikdy ju nerátať ako konkurenčnú výkupnú cenu.
 - **Príkaz majiteľa (trvalý):** pracovať na 100 %, bezchybne a rýchlo; nič nepoškodiť (model cenníka, nastavenia, údaje). Pred nasadením otestovať.
 
 ### Hotové (október 2026)
