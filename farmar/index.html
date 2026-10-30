@@ -823,7 +823,7 @@ var q=JSON.parse(sessionStorage.getItem("ernte-prefill")||"null");if(q&&Date.now
 <script src="config.js"></script>
 <script src="vendor/supabase-2.45.4.js"></script>
 <script src="pdfview.js?v=20261030-1000"></script>
-<script src="verzia.js?v=20261030-0745" defer></script>
+<script src="verzia.js?v=20261030-1000" defer></script>
 <script>
 "use strict";
 const MK=[["repka","Repka"],["lo","LO slnečnica"],["ho","HO slnečnica"],["soja","Sója"],["psenica_p","Pšenica potravinárska"],["psenica_k","Pšenica kŕmna"],["jacmen_k","Jačmeň kŕmny"],["jacmen_s","Jačmeň sladovnícky"],["kukurica","Kukurica"],["cirok","Cirok"]];
@@ -2884,7 +2884,7 @@ if("serviceWorker" in navigator&&location.protocol==="https:"&&!/\/beta\//.test(
   function tile(){if(document.getElementById("updTile"))return;const b=document.createElement("button");b.id="updTile";b.type="button";b.textContent="💎 Nová verzia aplikácie – ťuknite pre obnovenie";
     b.style.cssText="position:fixed;left:50%;transform:translateX(-50%);top:calc(env(safe-area-inset-top) + 10px);z-index:10050;max-width:92vw;padding:12px 18px;border:0;border-radius:18px;font:800 .95rem system-ui;color:#fff;background:linear-gradient(135deg,#ff3d9a,#7c5cff 50%,#22d3ee);box-shadow:0 0 0 2px rgba(255,255,255,.6),0 0 30px rgba(255,61,154,.6)";
     b.onclick=()=>location.reload();document.body.appendChild(b)}
-  async function chk(fromVis){if(!cur)return;try{const t=await (await fetch("index.html?u="+Date.now(),{cache:"no-store"})).text(),n=sig(t);if(n&&n!==cur){pend=true;if(fromVis&&!busyUI())location.reload();else tile()}}catch(e){}}
+  async function chk(fromVis){if(!cur)return;try{const t=await (await fetch("index.html?u="+Date.now(),{cache:"no-store"})).text(),n=sig(t);if(n&&n!==cur){pend=true;if(fromVis&&!busyUI())location.reload()}}catch(e){}} /* bez ružového pásu – nová verzia sa načíta sama pri návrate do aplikácie (príkaz majiteľa 30. 10.) */
   setTimeout(()=>chk(false),8000);setInterval(()=>{if(!document.hidden)chk(false)},120e3);
   document.addEventListener("visibilitychange",()=>{if(!document.hidden)chk(true)})})();
 if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",()=>boot());else boot();

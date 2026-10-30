@@ -7,6 +7,8 @@ const BETA=/\/beta\//.test(location.pathname);
 const E=s=>String(s==null?"":s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const PREVIEW=()=>!!(window.ERNTE_VIEWAS||window.ERNTE_TEST)||/[?&](viewas|test)=/.test(location.search);
 const MAIN=()=>typeof window.MAIN_OK==="function"&&window.MAIN_OK()&&!PREVIEW();
+/* PRÍKAZ MAJITEĽA (30. 10.): Martin a Jana sú vždy v najnovšej verzii, bez ponuky prepínania */
+const NEWEST=()=>!PREVIEW()&&typeof ROLE!=="undefined"&&ROLE==="owner"&&!(typeof FARMER!=="undefined"&&FARMER)&&typeof ME!=="undefined"&&!!ME&&(MAIN()||/^jana\.valkova@/i.test(String(ME.email||"")));
 const KEY="ernte-verzia";
 const pref=()=>{try{return localStorage.getItem(KEY)||""}catch(x){return ""}};
 const setPref=v=>{try{localStorage.setItem(KEY,v)}catch(x){}};
@@ -24,7 +26,7 @@ function sheet(){const z=Z||{n:0,list:[]},L=z.list||[];
    <div class="btns vrbt">${BETA?`<button type="button" data-vrgo="stara">↩️ Prepnúť na starú</button>`:`<button type="button" class="pri" data-vrgo="nova">🆕 Prepnúť na novú</button>`}
     ${BETA&&!z.same&&L.length?`<button type="button" class="lime" data-vrrel="1"${busy?" disabled":""}>✅ Zverejniť novú verziu všetkým</button>`:""}</div>
    <div class="s">Údaje (ceny, obchody, zúčtovanie) sú v oboch verziách rovnaké a živé – mení sa iba vzhľad a funkcie aplikácie.</div></div></div>`}
-function paint(){const app=document.getElementById("app");if(!app)return;const row=app.querySelector(":scope > .hrow");
+function paint(){const app=document.getElementById("app");if(!app)return;{const o=document.querySelector(".vrb");if(o)o.remove()}return;const row=app.querySelector(":scope > .hrow");
   const old=document.querySelector(".vrb");
   if(!MAIN()||!row){if(old)old.remove();return}
   const nb=btn();if(old&&old.parentNode===row){if(old.outerHTML!==nb)old.outerHTML=nb}else{if(old)old.remove();const bell=row.querySelector(".nbb");if(bell)bell.insertAdjacentHTML("afterend",nb);else row.insertAdjacentHTML("afterbegin",nb)}}
@@ -43,8 +45,8 @@ document.addEventListener("keydown",e=>{if(open&&e.key==="Escape")hide()});
 // kto nie je majiteľ, v novej verzii nemá čo robiť → stará; majiteľ s voľbou „nová“ sa pri otvorení starej presunie do novej
 let tries=0;const chk=setInterval(()=>{tries++;if(tries>60){clearInterval(chk);return}
   const isF=typeof FARMER!=="undefined"&&!!FARMER;if(!isF&&(typeof ROLE==="undefined"||!ROLE||typeof ME==="undefined"||!ME))return;clearInterval(chk);if(PREVIEW())return;
-  if(BETA&&!MAIN()){location.replace("../"+(location.hash||""));return}
-  if(!BETA&&MAIN()&&pref()==="nova"){location.replace("beta/"+(location.hash||""));return}
+  if(BETA&&!NEWEST()){location.replace("../"+(location.hash||""));return}
+  if(!BETA&&NEWEST()){location.replace("beta/"+(location.hash||""));return}
   if(MAIN())zm()},500);
 {const s=document.createElement("style");s.textContent=`.vrb{position:relative;overflow:visible!important;min-width:44px;min-height:44px;padding:0 12px;border-radius:999px;display:inline-flex;align-items:center;justify-content:center;gap:4px;font-size:1.05rem;margin-left:6px}
 .vrb b{position:absolute;top:-4px;right:-4px;min-width:18px;height:18px;padding:0 4px;border-radius:9px;background:#a3e635;color:#0b1020;font:800 .7rem/18px system-ui}

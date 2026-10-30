@@ -52,6 +52,8 @@ Spoločné opravy rozloženia patria do `farmar/fit.css` (načítava sa posledn�
   `farmar/beta/` = nová verzia (main) iba pre majiteľa (Martin, ERNTE spol.) – prepína tlačidlo 🧪 pri zvončeku (`verzia.js`).
   Novú verziu všetkým zverejní iba majiteľ (✅ v 🧪 → `app_release` → dispatch `ernte-release` → `farmar/STABLE` = main).
   Nikomu inému novú verziu neponúkať. Databáza (migrácie) platí hneď pre obe verzie – meniť ju spätne kompatibilne.
+  **Zmena 30. 10. (príkaz majiteľa):** Martin aj Jana sú VŽDY v novej verzii automaticky (`NEWEST()` vo `verzia.js`), tlačidlo 🧪 a ponuka prepínania sa nezobrazujú.
+  Ružový pás „Nová verzia“ sa neukazuje nikomu – nová verzia sa načíta sama pri návrate do aplikácie. Zverejnenie všetkým: dispatch `ernte-release` (na príkaz majiteľa).
 - **`?v=` je povinné** pri každom zmenenom skripte / štýle.
 - **Service worker meniť iba po teste na serveri s gzip kompresiou** (ako GitHub Pages). 28. 10. ukladanie súborov do telefónu
   (cache-first) s kopírovanými hlavičkami (Content-Encoding/Length) rozbilo aplikáciu všetkým – vrátené na overený network-first.
