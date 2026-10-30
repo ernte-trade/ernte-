@@ -53,12 +53,13 @@ function options(com,buy){const out=[],B=D.B||[];
     push(b,site&&site.n,site,del,p,x.d,"ponuka (Konkurenčné ceny)",{bz,term:/odber\s*[0-9]/i.test(x.term||"")?x.term:""})}
   // 3) skutočné predaje z vážnych lístkov (Zúčtovanie odberateľa)
   const last={};for(const t of D.T){if(t.k!==com||!(+t.s>0))continue;const bn=t.b||"Odberateľ";if(!last[bn]||String(t.d)>String(last[bn].d))last[bn]=t}
-  for(const bn in last){const t=last[bn],b=buyerOf(bn)||{id:"t:"+bn,name:bn,sites:[]},site=(b.sites||[])[0]||null;push(b,site&&site.n,site,"DAP",+t.s,t.d,"skutočný predaj (vážne lístky)",{})}
+  for(const bn in last){const t=last[bn],b=buyerOf(bn)||{id:"t:"+bn,name:bn,sites:[]},site=(b.sites||[])[0]||null,fca=String(b.parita||"").toUpperCase()==="FCA";push(b,fca?"FCA farma":site&&site.n,fca?{n:"FCA farma"}:site,fca?"FCA":"DAP",+t.s,t.d,"skutočný predaj (vážne lístky)",{})}
   return out.filter(o=>o.age<=Math.max(MAXAGE,o.src.startsWith("skutočný")?45:MAXAGE)).sort((a,b)=>(b.profit??-1e9)-(a.profit??-1e9))}
 // všetci odberatelia, ktorí komoditu vykupujú (sell_buyers.coms) – aj bez platnej ponuky: miesto + naša doprava (vzorec Kalkulačky)
 const MARGIN=()=>{try{return +(window.__sellcapM??10)}catch(x){return 10}};
 function allOpts(com,buy){const O=options(com,buy),have=new Set(O.map(o=>o.b.id+"|"+(o.siteName||"")));const out=O.slice();
   for(const b of (D.B||[])){if(!(b.coms||[]).includes(com))continue;const S=(b.sites||[]).length?b.sites:[null];
+    if(String(b.parita||"").toUpperCase()==="FCA"){if(!O.some(o=>o.b.id===b.id&&o.del==="FCA"))out.push({b,siteName:"FCA farma",del:"FCA",price:null,d:null,src:"bez ponuky",dop:0,net:null,profit:null,need:Math.ceil(buy+MARGIN()),age:0,none:true});continue}
     for(const st of S){const k=b.id+"|"+(st?st.n:"");if(have.has(k)||(!st&&O.some(o=>o.b.id===b.id)))continue;if(st&&O.some(o=>o.b.id===b.id&&!o.siteName))continue;
       const d0=st?dop(st):null;out.push({b,siteName:st?st.n:"",del:"DAP",price:null,d:null,src:"bez ponuky",dop:d0,net:null,profit:null,need:d0!=null?Math.ceil(buy+d0+MARGIN()):null,age:0,none:true})}}
   return out}
@@ -68,7 +69,7 @@ window.sellTileHTML=function(com,buy){if(!OWN()||buy==null||!(+buy>0))return "";
   const L=allOpts(com,+buy);if(!L.length)return `<span class="stl"><small>Kde predať: žiadny odberateľ nemá túto komoditu</small></span>`;
   const Y=L.filter(o=>!o.none&&o.net!=null),N=L.filter(o=>o.none);
   return `<span class="stl">${Y.map((o,i)=>`<small class="${o.profit>=0?"ps":"ng"}${i===0?(o.profit>=0?" sbest":" sworst"):""}">${i===0?(o.profit>=0?`<i>🏆 odporúča ekonomika</i>`:`<i class="neg">⚠️ všetko v mínuse – najmenšia strata</i>`):""}<b>${sg(o.profit)}</b> ${E(o.b.name)}${o.siteName?" "+E(o.siteName):""} · ${E(o.del)} ${f0(o.price)}${o.dop?` − dopr. ${f0(o.dop)}`:""} = ${f0(o.net)}</small>`).join("")||`<small>Žiadna platná ponuka odberateľa</small>`}
-    ${N.length?`<details class="stnd"><summary>+ ${N.length} bez ponuky (koľko musia dať)</summary>${N.map(o=>`<small class="stn">${E(o.b.name)}${o.siteName?" "+E(o.siteName):""}${o.dop!=null?` · dopr. ${f0(o.dop)} € → treba ≥ ${f0(o.need)}`:""}</small>`).join("")}</details>`:""}</span>`};
+    ${N.length?`<details class="stnd"><summary>+ ${N.length} bez ponuky (koľko musia dať)</summary>${N.map(o=>`<small class="stn">${E(o.b.name)}${o.siteName?" "+E(o.siteName):""}${o.del==="FCA"?` · FCA → treba ≥ ${f0(o.need)}`:o.dop!=null?` · dopr. ${f0(o.dop)} € → treba ≥ ${f0(o.need)}`:""}</small>`).join("")}</details>`:""}</span>`};
 function missing(com,opts){const have=new Set(opts.map(o=>o.b.id));return (D.B||[]).filter(b=>(b.coms||[]).includes(com)&&!have.has(b.id))}
 // PRÍKAZ MAJITEĽA (30. 10.): nákupná cena nikdy nad najlepší predaj po našej doprave − marža (predvolene 10 €/t)
 // strop = najlepší MODEL / ponuka odberateľa (posúvaná s burzou), NIE posledné lístky (príkaz majiteľa); ukladá sa do kalk_store pricelist/sellcap; databáza (soja_adm_tick, ia_tick, price_propose) zverejní najviac strop
@@ -103,7 +104,7 @@ window.sellRecHTML=function(){if(!OWN())return "";if(!D.B){if(!D.busy)load();ret
   for(const p of P){const buy=+p.price,O=options(p.com,buy),best=O.find(o=>o.profit!=null),M=missing(p.com,O);
     h+=`<details class="scom"${best?"":" open"}><summary><span class="sn">${E(nm(p.com))}<small>nákup ${f0(buy)} €/t</small></span>${best?`<span class="sb ${best.profit>=0?"ps":"ng"}">${E(best.b.name)}${best.siteName?" "+E(best.siteName):""}<b>${sg(best.profit)} €/t</b></span>`:`<span class="sb">bez ponuky</span>`}</summary>
      ${O.length?O.map(row).join(""):`<div class="s">Zatiaľ žiadna platná ponuka.</div>`}
-     ${(()=>{const N=allOpts(p.com,buy).filter(o=>o.none);return N.length?`<div class="smiss"><b>Bez platnej ponuky</b> (vykupujú ${E(nm(p.com))}):${N.map(o=>`<div>${E(o.b.name)}${o.siteName?" · "+E(o.siteName):""}${o.dop!=null?` – naša doprava ${f0(o.dop)} €/t, aby sme zarobili ${MARGIN()} €/t, musia dať aspoň <b>${f0(o.need)} €/t</b> DAP`:""}</div>`).join("")}</div>`:""})()}</details>`}
+     ${(()=>{const N=allOpts(p.com,buy).filter(o=>o.none);return N.length?`<div class="smiss"><b>Bez platnej ponuky</b> (vykupujú ${E(nm(p.com))}):${N.map(o=>`<div>${E(o.b.name)}${o.siteName?" · "+E(o.siteName):""}${o.del==="FCA"?` – FCA u farmára (dopravu platia oni), aby sme zarobili ${MARGIN()} €/t, musia dať aspoň <b>${f0(o.need)} €/t</b> FCA`:o.dop!=null?` – naša doprava ${f0(o.dop)} €/t, aby sme zarobili ${MARGIN()} €/t, musia dať aspoň <b>${f0(o.need)} €/t</b> DAP`:""}</div>`).join("")}</div>`:""})()}</details>`}
   h+=`<details class="smod"><summary>📚 Modely odberateľov – podľa čoho rátajú</summary><div class="s">Ťuknutím na komoditu nastavíš, čo odberateľ vykupuje (zelené = vykupuje).</div>${(D.B||[]).map(b=>`<div class="srow"><b>${E(b.name)}</b>${(b.sites||[]).length?` <small>· ${(b.sites||[]).map(s=>E(s.n)+" ~"+f0(dop(s))+" €/t doprava").join(" · ")}</small>`:""}<small>${E(b.model||"")}</small>
      <span class="scoms">${(typeof MK!=="undefined"?MK:[]).map(m=>`<button type="button" class="scm${(b.coms||[]).includes(m[0])?" on":""}" data-scom="${E(b.id)}|${m[0]}">${E(m[1])}</button>`).join("")}</span></div>`).join("")}</details>`;
   h+=D.form?formHTML():`<div class="btns"><button type="button" class="lime" data-sform="1">➕ Vložiť ponuku odberateľa</button><button type="button" data-sref>↻ Prepočítať</button></div>`;
