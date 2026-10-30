@@ -107,6 +107,9 @@ s pripojeným repozitárom `ernte-trade/ernte-`.
   prepočet zmlúv farmára (`buyer_realloc`); `buyer_import` ručné opravy po nahratí Excelu znova použije (neprepíše ich).
 - **Dokumenty / PDF** (`pdfview.js`, načítava sa hneď po supabase): každé `window.open("")` + `document.write` sa zobrazí v okne cez celú obrazovku
   (✕ Zavrieť / Späť, 🖨️ Tlačiť, ⬇️ Uložiť PDF cez html2pdf v rámci dokumentu, 📤 Poslať na mobile). Automatická tlač sa ignoruje (3 s). Nové PDF písať rovnako (window.open("")).
+- **± ÚPRAVA OD MODELU** (príkaz majiteľa 30. 10.): `kalk_store pricelist/auto` → `adj` {komodita: ±€/t}; zverejnená cena = model + adj
+  (klient `ADJ()` v `autocennik.js`, databáza v `soja_adm_tick` a `ia_tick` aj pre ceny na neskorší odber). Pšenica kŕmna = model − 5 €/t.
+  Vždy zverejniť novú verziu všetkým zároveň (cenník zverejňuje aplikácia majiteľa – stará a nová verzia nesmú rátať inak).
 - **Zámok cien** (`prices_lock`): ceny riadené modelom (sója, repka, kukurica, LO) z aplikácie (jwt) nejdú zmeniť – iba databázové funkcie (`ernte.allow_price`).
 - **Konkurenčné ceny** (`konk.js`, kalk_store `pricelist/konk`): vložený text ponuky → rozpoznanie, porovnanie, báza voči burze. Mená firiem iba v DB.
 - **Príkaz majiteľa (trvalý):** pracovať na 100 %, bezchybne a rýchlo; nič nepoškodiť (model cenníka, nastavenia, údaje). Pred nasadením otestovať.
