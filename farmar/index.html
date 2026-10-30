@@ -823,6 +823,7 @@ var q=JSON.parse(sessionStorage.getItem("ernte-prefill")||"null");if(q&&Date.now
 <script src="config.js"></script>
 <script src="vendor/supabase-2.45.4.js"></script>
 <script src="pdfview.js?v=20261030-0700"></script>
+<script src="verzia.js?v=20261030-0745" defer></script>
 <script>
 "use strict";
 const MK=[["repka","Repka"],["lo","LO slnečnica"],["ho","HO slnečnica"],["soja","Sója"],["psenica_p","Pšenica potravinárska"],["psenica_k","Pšenica kŕmna"],["jacmen_k","Jačmeň kŕmny"],["jacmen_s","Jačmeň sladovnícky"],["kukurica","Kukurica"],["cirok","Cirok"]];
@@ -2875,7 +2876,7 @@ document.addEventListener("submit",async e=>{if(!ROLE)return;const f=e.target,fd
     if(r.error){toast(r.error.code==="23505"?"Tento e-mail už má iný farmár.":"Chyba: "+r.error.message,5000);return}EDITF=null;await loadStaff();renderStaff();toast("Farmár uložený.");return}
 });
 
-if("serviceWorker" in navigator&&location.protocol==="https:")navigator.serviceWorker.register("sw.js").catch(()=>{});
+if("serviceWorker" in navigator&&location.protocol==="https:"&&!/\/beta\//.test(location.pathname))navigator.serviceWorker.register("sw.js").catch(()=>{});
 // automatická aktualizácia: keď vyjde nová verzia aplikácie, po návrate do aplikácie sa sama obnoví; počas práce ukáže dlaždicu „Obnoviť“
 (function(){const sig=t=>[...String(t).matchAll(/<script src="([^"]+\?v=[^"]+)"/g)].map(m=>m[1]).sort().join("|");
   const cur=[...document.scripts].map(x=>x.getAttribute("src")||"").filter(x=>/\?v=/.test(x)).sort().join("|");let pend=false;

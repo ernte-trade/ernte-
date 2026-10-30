@@ -47,7 +47,11 @@ Spoločné opravy rozloženia patria do `farmar/fit.css` (načítava sa posledn�
 
 ## Nasadenie
 - Zvýšiť `CACHE` v `farmar/sw.js` a `?v=` pri zmenených skriptoch v `farmar/index.html`.
-- Push do `main` aj `gh-pages`.
+- **PRÍKAZ MAJITEĽA (30. 10.): STARÁ / NOVÁ VERZIA.** Push iba do `main` – na `gh-pages` už NEPUSHOVAŤ ručne. Stránku stavia workflow
+  `pages.yml` (pri každom pushe + každých 30 min): `farmar/` = stará verzia (commit v `farmar/STABLE`) pre tím, farmárov a všetkých,
+  `farmar/beta/` = nová verzia (main) iba pre majiteľa (Martin, ERNTE spol.) – prepína tlačidlo 🧪 pri zvončeku (`verzia.js`).
+  Novú verziu všetkým zverejní iba majiteľ (✅ v 🧪 → `app_release` → dispatch `ernte-release` → `farmar/STABLE` = main).
+  Nikomu inému novú verziu neponúkať. Databáza (migrácie) platí hneď pre obe verzie – meniť ju spätne kompatibilne.
 - **`?v=` je povinné** pri každom zmenenom skripte / štýle.
 - **Service worker meniť iba po teste na serveri s gzip kompresiou** (ako GitHub Pages). 28. 10. ukladanie súborov do telefónu
   (cache-first) s kopírovanými hlavičkami (Content-Encoding/Length) rozbilo aplikáciu všetkým – vrátené na overený network-first.
