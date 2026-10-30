@@ -45,30 +45,42 @@ function bzAt(com,d){const k=HK[com];if(!k)return null;const A=st();const H=((A.
   const x=H.filter(h=>h.d<=d).pop();if(x&&(Date.parse(d)-Date.parse(x.d))/864e5<=4)return {v:+x[k],d:x.d};
   if(d>=today()&&H.length){const l=H[H.length-1];return {v:+l[k],d:l.d}}return null}
 // ---- údaje ----
-const K={items:null,busy:false,prev:null,txt:"",d:"",who:"",open:false,err:""};
+const K={items:null,busy:false,prev:null,txt:"",d:"",who:"",open:false,err:"",buyers:{},sell:null,dop:""};
+const OWNR=()=>typeof ROLE!=="undefined"&&ROLE==="owner"&&!(typeof FARMER!=="undefined"&&FARMER);
+const bKey=w=>fold(w).replace(/[^a-z0-9]+/g," ").trim();
+function buyerOfW(w){const k=bKey(w);if(!k)return null;for(const n in (K.buyers||{})){const b=bKey(n);if(b&&(k===b||k.includes(b)||b.includes(k)))return Object.assign({name:n},K.buyers[n])}return null}
+const isSell=x=>!!(x&&(x.sell||buyerOfW(x.who)));
 async function kget(){try{const r=await sb.from("kalk_store").select("data").eq("path","pricelist").eq("id","konk").maybeSingle();return r.error?undefined:(r.data?r.data.data:null)}catch(x){return undefined}}
-async function kset(data){try{const r=await sb.from("kalk_store").upsert({path:"pricelist",id:"konk",data},{onConflict:"path,id"});return !r.error}catch(x){return false}}
+async function kset(data){try{const cur=await kget();if(cur&&typeof cur==="object")data=Object.assign({},cur,data);const r=await sb.from("kalk_store").upsert({path:"pricelist",id:"konk",data},{onConflict:"path,id"});return !r.error}catch(x){return false}}
 const FIRMS0=["ADM Sečovce","ADM Hamburg","Interagros","Agro-podnik (Tajba)","Poľsko"];
 function firms(){const S=new Set(FIRMS0.concat(K.firms||[]));for(const x of (K.items||[]))if(x.who)S.add(x.who);return [...S].slice(0,40)}
 async function load(){if(K.busy)return;K.busy=true;let v=await kget();K.busy=false;if(v===undefined){K.err="Konkurenčné ceny sa nepodarilo načítať.";K.items=K.items||[];paint();return}
   if(!v||!Array.isArray(v.items))v={items:[]};
-  K.firms=Array.isArray(v.firms)?v.firms:[];K.items=v.items;try{const [pp,pw]=await Promise.all([sb.rpc("price_pending",{}),sb.rpc("price_watch_get")]);K.pend=pp.error?null:pp.data;K.watch=pw.error?null:pw.data}catch(x){}K.err="";paint()}
+  K.firms=Array.isArray(v.firms)?v.firms:[];K.buyers=(v.buyers&&typeof v.buyers==="object")?v.buyers:{};K.items=v.items;try{const [pp,pw]=await Promise.all([sb.rpc("price_pending",{}),sb.rpc("price_watch_get")]);K.pend=pp.error?null:pp.data;K.watch=pw.error?null:pw.data}catch(x){}K.err="";paint()}
 // ---- vzhľad ----
 function ourPrice(c){const p=((typeof STATE!=="undefined"&&STATE.prices)||[]).find(x=>x.com===c);return p&&p.price!=null?+p.price:null}
 function offerHTML(L){const o=L[0];const rows=L.map(x=>{const our=ourPrice(x.com),df=our!=null?our-x.price:null;
     return `<div class="kkr"><div class="kkc"><b>${E(nm(x.com))}</b><small>${E(x.term||"")}</small></div><div class="kkv"><b>${f0(x.price)} €/t</b>${x.b!=null?`<small>${E(BZN[x.com]||"burza")} ${f0(x.bz)} ${x.b>=0?"+":"−"} ${f0(Math.abs(x.b))}</small>`:""}</div>
      <div class="kko ${df==null?"":df>=0?"up":"dn"}"><small>my</small><b>${our!=null?f0(our):"–"}</b>${df!=null?`<small>${df>=0?"+":"−"}${f0(Math.abs(df))}</small>`:""}</div></div>`}).join("");
   return `<div class="kko-card"><div class="kkh"><b>${E(o.who||"Konkurencia")}</b><small>${E(dk(o.d))}${o.del?" · "+E(o.del):""}${o.place?" "+E(o.place):""}</small><button type="button" class="kkdel" data-kkdel="${E(o.oid||o.id)}" aria-label="Zmazať ponuku">✕</button></div>${rows}</div>`}
+function sellHTML(L){const o=L[0],bo=buyerOfW(o.who)||{},dp=+(o.dop!=null?o.dop:bo.dop)||0;
+  const rows=L.map(x=>{const our=ourPrice(x.com),fca=+x.price,dap=fca+dp,pf=our!=null?fca-our:null;
+    return `<div class="kkr"><div class="kkc"><b>${E(nm(x.com))}</b><small>${E(x.term||"")}</small></div><div class="kkv"><b>${f0(fca)} €/t</b><small>FCA – odvezú si</small>${dp?`<small>s našou dopravou <b>${f2(dap)}</b> (+${f2(dp)})</small>`:""}</div>
+     <div class="kko ${pf==null?"":pf>=0?"up":"dn"}"><small>nákup my</small><b>${our!=null?f0(our):"–"}</b>${pf!=null?`<small>zisk ${pf>=0?"+":"−"}${f0(Math.abs(pf))}</small>`:""}</div></div>`}).join("");
+  return `<div class="kko-card kksell"><div class="kkh"><b>💰 ${E(o.who||"Odberateľ")} – kupuje od nás</b><small>${E(dk(o.d))}</small><button type="button" class="kkdel" data-kkdel="${E(o.oid||o.id)}" aria-label="Zmazať ponuku">✕</button></div>${rows}</div>`}
 function html(){let h=`<div class="card kkcard" id="kkCard"><h2>🏷️ Konkurenčné ceny</h2>
   <div class="s">Vlož text ponuky (e-mail, SMS, WhatsApp) – aplikácia rozpozná plodiny, ceny a termíny a porovná ich s našimi výkupnými cenami. Pri sóji, repke, pšenici a kukurici vypočíta ich bázu oproti burze. Ponuky <b>ADM na sóju</b> hneď spresnia automatický cenník (sója = CBOT + báza ADM).</div>
   <textarea id="kkTxt" rows="5" placeholder="Sem vlož skopírovaný text ponuky…">${E(K.txt)}</textarea>
   <div class="kkf"><label>Dátum ponuky<input type="date" id="kkD" value="${E(K.d||today())}"></label><label>Firma / trh<input id="kkW" list="kkFirms" value="${E(K.who)}" placeholder="vyber alebo napíš"></label><datalist id="kkFirms">${firms().map(f=>`<option value="${E(f)}">`).join("")}</datalist></div>
+  ${OWNR()?(()=>{const bo=buyerOfW(K.who),on=K.sell===null?!!bo:K.sell;return `<label class="kksl"><input type="checkbox" id="kkSell"${on?" checked":""}> <span>💰 <b>Odberateľ – predávame im</b> (ich cena = za koľko kúpia od nás, nie konkurencia)</span></label>${on?`<label class="kksd">Keď odvezieme my, doplatia za dopravu €/t<input id="kkDop" inputmode="decimal" value="${E(K.dop!==""?K.dop:(bo&&bo.dop!=null?String(bo.dop).replace(".",","):""))}" placeholder="napr. 9,4"></label>`:""}`})():""}
   <div class="btns"><button type="button" class="pri" data-kkparse="1">🔎 Rozpoznať ceny</button></div>`;
   if(K.prev){h+=K.prev.rows.length?`<div class="kkprev"><b>Rozpoznané (${K.prev.rows.length}) – skontroluj a ulož:</b>${K.prev.rows.map((r,i)=>`<label class="kkpr"><input type="checkbox" data-kkp="${i}" checked> <span><b>${E(nm(r.com))}</b> ${f0(r.price)} €/t ${E(r.del)} ${E(r.term)}</span></label>`).join("")}
     <div class="btns"><button type="button" class="lime" data-kksave="1">💾 Uložiť a porovnať</button><button type="button" data-kkcancel="1">Zrušiť</button></div></div>`:`<div class="s">⚠️ V texte som nenašiel plodinu s cenou (napr. „Sója 480 € fca“). Skús vložiť celý text ponuky.</div>`}
   if(K.err)h+=`<div class="s">${E(K.err)}</div>`;
   const I=K.items;if(I===null)h+=`<div class="s">Načítavam…</div>`;
-  else if(I.length){const G={};for(const x of I)(G[x.oid||x.id]=G[x.oid||x.id]||[]).push(x);
+  else if(I.length){const G={},GS={};for(const x of I)if(isSell(x)){if(OWNR())(GS[x.oid||x.id]=GS[x.oid||x.id]||[]).push(x)}else(G[x.oid||x.id]=G[x.oid||x.id]||[]).push(x);
+    const OS=Object.values(GS).sort((a,b)=>String(b[0].d).localeCompare(String(a[0].d)));
+    if(OS.length)h+=`<div class="kksh">💰 Odberatelia – za koľko predáme <small>(nie je to konkurencia; vidí iba majiteľ)</small></div><div class="kkl">${OS.slice(0,K.open?30:2).map(sellHTML).join("")}</div><div class="kksh">🏷️ Konkurencia – výkup od farmárov</div>`;
     const O=Object.values(G).sort((a,b)=>String(b[0].d).localeCompare(String(a[0].d)));
     h+=`<div class="kkl">${O.slice(0,K.open?50:4).map(offerHTML).join("")}</div>${O.length>4?`<button type="button" class="kkmore" data-kkmore="1">${K.open?"Menej":"Všetky ponuky ("+O.length+")"}</button>`:""}
     <div class="s">„my“ = naša zverejnená výkupná cena FCA farma; ▲/▼ rozdiel oproti ich cene. Pozor na paritu (DDP = dovezené k nim, FCA = na farme).</div>`}
@@ -86,8 +98,8 @@ function paint(force){if(typeof TAB==="undefined"||TAB!=="price"||!OK())return;c
   const anchor=document.getElementById("chHist")||document.getElementById("fPrice");if(!anchor)return;const d=document.createElement("div");d.innerHTML=html();
   if(anchor.id==="chHist")anchor.before(d.firstElementChild);else anchor.after(d.firstElementChild)}
 function inject(){if(typeof TAB==="undefined"||TAB!=="price"||!OK())return;if(!document.getElementById("kkCard")){paint();if(K.items===null)load()}if(!document.getElementById("kkGuard")&&K.items!==null)paintGuard()}
-document.addEventListener("input",e=>{const t=e.target;if(!t)return;if(t.id==="kkTxt")K.txt=t.value;else if(t.id==="kkW")K.who=t.value;else if(t.id==="kkD")K.d=t.value});
-document.addEventListener("change",e=>{if(e.target&&e.target.id==="kkD")K.d=e.target.value});
+document.addEventListener("input",e=>{const t=e.target;if(!t)return;if(t.id==="kkTxt")K.txt=t.value;else if(t.id==="kkW")K.who=t.value;else if(t.id==="kkD")K.d=t.value;else if(t.id==="kkDop")K.dop=t.value});
+document.addEventListener("change",e=>{if(e.target&&e.target.id==="kkD")K.d=e.target.value;if(e.target&&e.target.id==="kkSell"){K.sell=e.target.checked;paint(true)}if(e.target&&e.target.id==="kkW"){K.who=e.target.value;if(K.sell===null)paint(true)}});
 document.addEventListener("click",async e=>{const t=e.target.closest&&e.target.closest("[data-kkparse],[data-kksave],[data-kkcancel],[data-kkdel],[data-kkmore]");if(!t||!OK())return;e.preventDefault();
   if(t.dataset.kkparse){const p=parse(K.txt);if(p.d&&!K.d)K.d=p.d;if(p.d)K.d=p.d;if(p.who&&!K.who)K.who=p.who;K.prev=p;paint(true);return}
   if(t.dataset.kkcancel){K.prev=null;paint(true);return}
@@ -96,9 +108,13 @@ document.addEventListener("click",async e=>{const t=e.target.closest&&e.target.c
     if(await kset({items:L,firms:(v&&v.firms)||K.firms||[]})){K.items=L;paint(true);try{autoCennik.run(true)}catch(x){}}else toast("Zmazanie zlyhalo.",5000);return}
   if(t.dataset.kksave){const P=K.prev;if(!P)return;const sel=[...document.querySelectorAll("[data-kkp]")].filter(x=>x.checked).map(x=>P.rows[+x.dataset.kkp]);if(!sel.length){toast("Vyber aspoň jednu cenu.");return}
     const d=K.d||P.d||today(),who=(K.who||P.who||"Konkurencia").trim(),oid="k"+Date.now().toString(36),at=new Date().toISOString();
-    const add=sel.map((r,i)=>{const bz=bzAt(r.com,d);return {id:oid+"-"+i,oid,at,d,who,place:r.place,del:r.del,com:r.com,price:r.price,term:r.term,bz:bz?bz.v:null,bzn:bz?(BZN[r.com]||"")+" "+dk(bz.d):"",b:bz?Math.round((r.price-bz.v)*100)/100:null}});
-    t.disabled=true;const v=await kget();const L=((v&&v.items)||[]).concat(add).slice(-400);const ok=await kset({items:L,firms:(v&&v.firms)||K.firms||[]});t.disabled=false;
-    if(!ok){toast("Uloženie zlyhalo – skús znova.",6000);return}K.items=L;try{if(window.autoCennik&&autoCennik.state)autoCennik.state.konk={items:L}}catch(x){}K.prev=null;K.txt="";K.who="";K.d="";paint(true);
+    const SELL=OWNR()&&(K.sell===null?!!buyerOfW(who):K.sell),DOP=SELL?(+String(K.dop!==""?K.dop:((buyerOfW(who)||{}).dop??"")).replace(",",".")||0):0;
+    if(SELL&&who==="Konkurencia"){toast("Zadaj názov odberateľa (Firma / trh).",5000);return}
+    const add=sel.map((r,i)=>{const bz=bzAt(r.com,d);const o={id:oid+"-"+i,oid,at,d,who,place:r.place,del:SELL?"FCA":r.del,com:r.com,price:r.price,term:r.term,bz:bz?bz.v:null,bzn:bz?(BZN[r.com]||"")+" "+dk(bz.d):"",b:bz?Math.round((r.price-bz.v)*100)/100:null};if(SELL){o.sell=true;o.dop=DOP}return o});
+    t.disabled=true;const v=await kget();const L=((v&&v.items)||[]).concat(add).slice(-400);const nb=Object.assign({},(v&&v.buyers)||K.buyers||{});if(SELL){const ex=buyerOfW(who);nb[ex?ex.name:who]={dop:DOP}}
+    const ok=await kset({items:L,firms:(v&&v.firms)||K.firms||[],buyers:nb});t.disabled=false;
+    if(!ok){toast("Uloženie zlyhalo – skús znova.",6000);return}K.items=L;try{if(window.autoCennik&&autoCennik.state)autoCennik.state.konk={items:L}}catch(x){}K.buyers=nb;K.prev=null;K.txt="";K.who="";K.d="";K.sell=null;K.dop="";paint(true);
+    if(SELL){try{const r=await sb.rpc("konk_sell_offer",{p_who:who,p_rows:add.map(x=>({com:x.com,price:x.price,term:x.term})),p_dop:DOP,p_d:d});if(r.error)throw r.error;toast("💰 Uložené ako ponuka odberateľa – započíta sa do „Kde predať“ (FCA aj s našou dopravou).",7000)}catch(x){toast("Do „Kde predať“ sa nepodarilo zapísať: "+(x.message||x),7000)}}
     const noBz=add.filter(x=>HK[x.com]&&x.b==null).length;toast(`✓ Uložené ${add.length} ${add.length===1?"cena":add.length<5?"ceny":"cien"} – porovnanie je nižšie.${noBz?" Pri "+noBz+" chýba burza z toho dňa (báza sa nepočíta).":""}`,7000);
     if(/interagros/i.test(who)){try{await sb.rpc("ia_run");await autoCennik.run(true);toast("🤖 Repka, kukurica a LO slnečnica prepočítané: Interagros − 10 €.",6000)}catch(x){}}
     if(add.some(x=>x.com==="soja"&&/adm/i.test(who))){try{await sb.rpc("soja_adm_run");await autoCennik.run(true);toast("🤖 Báza ADM pre sóju prepočítaná podľa novej ponuky.",6000)}catch(x){}}}},true);
@@ -109,6 +125,7 @@ document.addEventListener("click",async e=>{const t=e.target.closest&&e.target.c
 .kkl{display:grid;gap:10px;margin-top:10px}.kko-card{padding:10px;border-radius:14px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.1);display:grid;gap:6px}
 .kkh{display:flex;flex-wrap:wrap;align-items:center;gap:4px 10px}.kkh b{flex:1 1 auto;min-width:0;overflow-wrap:anywhere}.kkh small{opacity:.75}
 .kkdel{min-height:32px!important;min-width:32px;padding:0 8px!important;border-radius:50%!important;margin-left:auto}
+.kksh{margin:12px 0 0;font-weight:800}.kksh small{font-weight:500;opacity:.7}.kksell{border-color:rgba(74,222,128,.4)!important;background:rgba(74,222,128,.06)!important}.kksl{display:flex!important;flex-direction:row!important;gap:8px;align-items:flex-start;margin:8px 0}.kksl input{width:20px;min-height:20px;flex-shrink:0}.kksd{display:flex;flex-direction:column;gap:4px;margin:0 0 8px}
 .kkr{display:grid;grid-template-columns:minmax(0,1.4fr) minmax(0,1fr) minmax(0,.8fr);gap:8px;align-items:center;padding:6px 0;border-top:1px solid rgba(255,255,255,.07)}
 .kkc,.kkv,.kko{display:flex;flex-direction:column;min-width:0}.kkc small,.kkv small,.kko small{font-size:.74rem;opacity:.75;overflow-wrap:anywhere}.kkv{text-align:right}.kko{text-align:right}
 .kko.up b,.kko.up small:last-child{color:#4ade80}.kko.dn b,.kko.dn small:last-child{color:#f87171}.kkmore{margin-top:8px}.kkg{border-color:rgba(250,204,21,.5)!important}.kkg.ok{border-color:rgba(74,222,128,.35)!important}.kkg>b{display:block;margin-bottom:6px}.kkp{display:grid;gap:6px;padding:8px 0;border-top:1px solid rgba(255,255,255,.08)}.kkp small{display:block;opacity:.75;overflow-wrap:anywhere}.kkw{padding:6px 0;color:#fde68a;overflow-wrap:anywhere}`;document.head.appendChild(s)}
