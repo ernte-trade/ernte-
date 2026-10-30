@@ -46,19 +46,31 @@ function drawMe(){const c=S.me;if(!c||!S.map)return;const ll=[c.lat,c.lng];
   if(!S.meM){S.meM=L.marker(ll,{icon:L.divIcon({className:"emme",html:"<i></i>",iconSize:[22,22]}),zIndexOffset:1000}).addTo(S.map);S.acc=L.circle(ll,{radius:c.acc,color:"#38bdf8",weight:1,fillOpacity:.08}).addTo(S.map)}
   else{S.meM.setLatLng(ll);S.acc.setLatLng(ll).setRadius(c.acc)}
   if(S.follow)S.map.panTo(ll,{animate:true})}
-async function overpass(c,rad){const C=CAT.find(x=>x[0]===S.cat)||CAT[0],A=`(around:${rad},${c.lat.toFixed(5)},${c.lng.toFixed(5)})`;
-  const q=`[out:json][timeout:15];(${C[3].map(f=>`nwr${f}${A};`).join("")});out center 80;`;
-  for(const u of OVP){try{const ctl=new AbortController(),tm=setTimeout(()=>ctl.abort(),12000);const r=await fetch(u,{method:"POST",body:"data="+encodeURIComponent(q),headers:{"Content-Type":"application/x-www-form-urlencoded"},signal:ctl.signal});clearTimeout(tm);
-      if(!r.ok)continue;const j=await r.json();return (j.elements||[]).map(e=>({lat:e.lat??(e.center&&e.center.lat),lng:e.lon??(e.center&&e.center.lon),t:e.tags||{}})).filter(x=>x.lat!=null)}catch(x){}}
-  throw new Error("Overpass")}
+// Overpass býva preťažený (502 / bez odpovede) → naraz všetky zrkadlá + Nominatim (OSM vyhľadávanie, spoľahlivé); vyhrá prvý s výsledkom
+const NOM={fuel:[["amenity","fuel"]],food:[["amenity","restaurant"],["amenity","fast_food"]],cafe:[["amenity","cafe"]],truck:[["q","truck stop"],["amenity","parking"]],
+  hotel:[["q","hotel"],["q","penzión"]],shop:[["q","supermarket"]],repair:[["q","car repair"],["q","pneuservis"]],wash:[["amenity","car_wash"]],atm:[["amenity","atm"]],
+  health:[["amenity","pharmacy"]],wc:[["amenity","toilets"]]};
+function tmo(ms){const c=new AbortController();setTimeout(()=>c.abort(),ms);return c.signal}
+async function ovpOne(u,q){const r=await fetch(u,{method:"POST",body:"data="+encodeURIComponent(q),headers:{"Content-Type":"application/x-www-form-urlencoded"},signal:tmo(15000)});
+  if(!r.ok)throw new Error(r.status);const j=await r.json();const L=(j.elements||[]).map(e=>({lat:e.lat??(e.center&&e.center.lat),lng:e.lon??(e.center&&e.center.lon),t:e.tags||{}})).filter(x=>x.lat!=null);
+  if(!L.length)throw new Error("0");return L}
+async function overpass(c,rad){const C=catOf(),A=`(around:${rad},${c.lat.toFixed(5)},${c.lng.toFixed(5)})`;
+  const q=`[out:json][timeout:15];(${C[3].map(f=>`nwr${f}${A};`).join("")});out center 80;`;return Promise.any(OVP.map(u=>ovpOne(u,q)))}
+async function nominatim(c,rad){const dl=rad/111320,dg=rad/(111320*Math.cos(c.lat*Math.PI/180)),vb=[c.lng-dg,c.lat+dl,c.lng+dg,c.lat-dl].map(x=>x.toFixed(5)).join(",");
+  const out=[],seen=new Set();for(const [k,v] of (NOM[S.cat]||NOM.fuel)){try{
+    const r=await fetch(`https://nominatim.openstreetmap.org/search?${k}=${encodeURIComponent(v)}&format=jsonv2&addressdetails=1&extratags=1&limit=40&bounded=1&viewbox=${vb}&accept-language=sk`,{signal:tmo(12000)});
+    if(!r.ok)continue;for(const e of await r.json()){if(seen.has(e.osm_id))continue;seen.add(e.osm_id);const ad=e.address||{},x=e.extratags||{};
+      out.push({lat:+e.lat,lng:+e.lon,t:{name:e.name||x.brand||"",brand:x.brand,operator:x.operator,"addr:street":[ad.road,ad.house_number].filter(Boolean).join(" "),"addr:city":ad.village||ad.town||ad.city||""}})}}catch(x){}}
+  if(!out.length)throw new Error("0");return out}
 const catOf=()=>CAT.find(x=>x[0]===S.cat)||CAT[0];
 async function findStations(){const c=S.me;if(!c)return;const C=catOf();status(`${C[1]} Hľadám: ${C[2].toLowerCase()} okolo teba…`);let L0=[];
   document.querySelectorAll("#emap [data-emcat]").forEach(b=>b.classList.toggle("on",b.dataset.emcat===S.cat));S.dest=null;S.route=null;S.rL.forEach(l=>l.remove());S.rL=[];stopNav();
-  try{for(const rad of [5000,15000,40000]){L0=await overpass(c,rad);if(L0.length)break}}catch(x){status("Zoznam staníc sa teraz nepodarilo načítať. <button type='button' data-emretry>↻ Skúsiť znova</button>");return}
+  for(const rad of [8000,25000,50000]){try{L0=await Promise.any([overpass(c,rad),nominatim(c,rad)])}catch(x){L0=[]}if(L0.length)break;status(`${C[1]} Hľadám ďalej (${Math.round(rad/1000)} km+)…`)}
+  if(!L0.length){status(`${C[1]} Nič sa nenašlo do 50 km alebo mapové služby neodpovedajú. <button type='button' data-emretry>↻ Skúsiť znova</button>`);if(S.stL)S.stL.remove();S.st=[];list();return}
   S.st=L0.map(s=>({...s,n:s.t.name||s.t.brand||s.t.operator||C[2].replace(/e$|y$/,""),a:[s.t["addr:street"],s.t["addr:city"]].filter(Boolean).join(", "),d:km(c,s)})).sort((a,b)=>a.d-b.d).slice(0,12);
   if(S.stL)S.stL.remove();S.stL=L.layerGroup().addTo(S.map);
   S.st.forEach((s,i)=>L.marker([s.lat,s.lng],{icon:L.divIcon({className:"emfuel"+(i===0?" near":""),html:C[1],iconSize:[30,30]})}).on("click",()=>route(i)).addTo(S.stL));
-  if(!S.st.length){status(`${C[1]} V okolí 40 km sa nič nenašlo.`);list();return}
+  if(!S.st.length){status(`${C[1]} V okolí sa nič nenašlo.`);list();return}
   status(`${C[1]} Najbližšie: <b>${E(S.st[0].n)}</b> · ${fd(S.st[0].d)} vzdušne`);list();route(0)}
 function list(){const e=$(".emlist");if(!e)return;e.innerHTML=S.st.slice(0,6).map((s,i)=>`<button type="button" class="emli${S.dest===s?" on":""}" data-emi="${i}"><b>${i===0?"🏁 ":""}${E(s.n)}</b><small>${fd(s.d)} vzdušne${s.a?" · "+E(s.a):""}</small></button>`).join("")}
 async function route(i){const s=S.st[i],c=S.me;if(!s||!c)return;S.dest=s;list();status(`🛣️ Počítam trasu k <b>${E(s.n)}</b>…`);
@@ -98,9 +110,10 @@ document.addEventListener("click",e=>{const t=e.target.closest&&e.target.closest
   if(t.dataset.emcenter!==undefined){S.follow=true;if(S.me)S.map.setView([S.me.lat,S.me.lng],16);return}
   if(t.dataset.emretry!==undefined)return findStations();if(t.dataset.emcat!==undefined){S.cat=t.dataset.emcat;return S.me?findStations():null}if(t.dataset.emi!==undefined)return route(+t.dataset.emi)},true);
 document.addEventListener("visibilitychange",()=>{if(!document.hidden&&document.getElementById("emap")?.classList.contains("on"))acquireWake()});
-window.ernteMaps={open,close};
-// 🗺️ tlačidlo v hornej lište aplikácie (celý tím, nie farmári)
-function hdrBtn(){const app=document.getElementById("app");if(!app)return;const row=app.querySelector(":scope > .hrow");const ok=typeof ROLE!=="undefined"&&ROLE&&!(typeof FARMER!=="undefined"&&FARMER);
+const OK=()=>typeof window.MAIN_OK==="function"&&window.MAIN_OK()&&!window.ERNTE_VIEWAS; // príkaz majiteľa 30. 10.: ERNTE Maps iba Martin
+window.ernteMaps={open:c=>OK()?open(c):null,close,ok:OK};
+// 🗺️ tlačidlo v hornej lište aplikácie (iba Martin)
+function hdrBtn(){const app=document.getElementById("app");if(!app)return;const row=app.querySelector(":scope > .hrow");const ok=OK();
   let b=document.querySelector(".emhb");if(!ok||!row){if(b)b.remove();return}if(b&&b.parentNode===row)return;if(b)b.remove();
   b=document.createElement("button");b.type="button";b.className="emhb";b.setAttribute("aria-label","ERNTE Maps – navigácia, čerpacie stanice, reštaurácie");b.title="ERNTE Maps";b.textContent="🗺️";b.onclick=()=>open();
   const bell=row.querySelector(".nbb");if(bell)bell.insertAdjacentElement("beforebegin",b);else row.prepend(b)}

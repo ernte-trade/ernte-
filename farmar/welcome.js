@@ -98,7 +98,7 @@ function hud(k){return `<div class="whud"><div class="whtop"><span class="wlive"
 function wfit(el){try{const im=el.querySelector(".wimg"),hd=el.querySelector(".whud");if(!im||!hd||el.classList.contains("por"))return;const need=hd.offsetTop+hd.offsetHeight+48;im.style.minHeight=need>innerHeight?need+"px":""}catch(x){}}
 /* 💎 diamantové dlaždice (príkaz majiteľa 30. 10.) – iba Martin a Jana: ⛽ nafta MOL Group + navigácia, 🤝 graf obchodov */
 const DIA=k=>GRK(k)?`<div class="whc wdia wfuel"><i class="wdsh"></i><div class="wgrh"><small>⛽ Nafta · Slovnaft / MOL Group</small><span class="wfv"></span></div><div class="wfc"></div><div class="wfl"></div>
-  <div class="wfnav"><a class="wfbtn wfnear" data-wfnear target="_blank" rel="noopener" href="https://www.google.com/maps/search/?api=1&query=%C4%8Derpacia%20stanica">🗺️ ERNTE Maps · najbližšia čerpacia stanica</a></div><div class="wfsrc"></div></div>
+  <div class="wfnav"><a class="wfbtn wfnear" data-wfnear target="_blank" rel="noopener" href="https://www.google.com/maps/search/?api=1&query=%C4%8Derpacia%20stanica">${window.ernteMaps&&ernteMaps.ok()?"🗺️ ERNTE Maps · najbližšia čerpacia stanica":"⛽ Navigovať na najbližšiu čerpaciu stanicu"}</a></div><div class="wfsrc"></div></div>
   <div class="whc wdia wdeal"><i class="wdsh"></i><div class="wgrh"><small>🤝 Obchody · nákup od farmárov</small><span class="wdv"></span></div><div class="wdc"></div><div class="wdk"></div></div>`:"";
 const FCN={SK:"🇸🇰 Slovensko",HU:"🇭🇺 Maďarsko",CZ:"🇨🇿 Česko",AT:"🇦🇹 Rakúsko",SI:"🇸🇮 Slovinsko",HR:"🇭🇷 Chorvátsko",RO:"🇷🇴 Rumunsko",PL:"🇵🇱 Poľsko"};
 const glowDefs=(id,col)=>`<defs><linearGradient id="${id}A" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${col}" stop-opacity=".42"/><stop offset="1" stop-color="${col}" stop-opacity="0"/></linearGradient><filter id="${id}G" filterUnits="userSpaceOnUse" x="-20" y="-20" width="400" height="160"><feGaussianBlur stdDeviation="3" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter></defs>`;
@@ -512,7 +512,7 @@ const navQ=(q,o)=>`https://www.google.com/maps/dir/?api=1${o?`&origin=${o.lat.to
 const searchUrl=(q,c)=>c?`https://www.google.com/maps/search/${encodeURIComponent(q)}/@${c.lat.toFixed(5)},${c.lng.toFixed(5)},13z`:`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(q)}`;
 const go=u=>{try{location.href=u}catch(x){window.open(u,"_blank","noopener")}};
 document.addEventListener("click",async e=>{const a=e.target.closest&&e.target.closest("[data-wfnear],.wfnav a.wfbtn");if(!a)return;e.preventDefault();e.stopPropagation();
-  if(window.ernteMaps){ernteMaps.open("fuel");return} // 🗺️ vlastná navigácia ERNTE Maps
+  if(window.ernteMaps&&ernteMaps.ok()){ernteMaps.open("fuel");return} // 🗺️ vlastná navigácia ERNTE Maps
   const brand=a.dataset.wfnear!==undefined?"":/MOL/.test(a.textContent)?"MOL":"Slovnaft",lbl=brand||"čerpacia stanica";if(a.dataset.busy)return;a.dataset.busy="1";const t=a.textContent;
   try{a.textContent="📍 Zisťujem polohu…";const c=fresh()?G:await new Promise(r=>{if(!navigator.geolocation)return r(null);geo(r)});
     if(!c){a.textContent=t;if(typeof toast==="function")toast("Nemám presnú GPS polohu – zapni polohu (GPS) v telefóne a povoľ ju aplikácii, potom ťukni znova.",7000);return}
