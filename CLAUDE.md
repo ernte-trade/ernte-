@@ -112,6 +112,8 @@ s pripojeným repozitárom `ernte-trade/ernte-`.
 - **± ÚPRAVA OD MODELU** (príkaz majiteľa 30. 10.): `kalk_store pricelist/adj` (samostatne, aby ho starší klient neprepísal) {komodita: ±€/t}; zverejnená cena = model + adj
   (klient `ADJ()` v `autocennik.js`, databáza v `soja_adm_tick` a `ia_tick` aj pre ceny na neskorší odber). Pšenica kŕmna = model − 5 €/t.
   Vždy zverejniť novú verziu všetkým zároveň (cenník zverejňuje aplikácia majiteľa – stará a nová verzia nesmú rátať inak).
+- **E-MAIL Z APLIKÁCIE** (`mail_send` → dispatch `ernte-mail` → `.github/workflows/mail.yml` + `.github/mail/send.mjs`, nodemailer; `mail_job_take`/`mail_job_done`):
+  zmluva v PDF farmárovi priamo z okna dokumentu (📧 Odoslať, adresa z karty farmára). Prístup k schránke (SMTP) zadá iba Martin v aplikácii → vault `ernte_smtp`.
 - **Zámok cien** (`prices_lock`): ceny riadené modelom (sója, repka, kukurica, LO) z aplikácie (jwt) nejdú zmeniť – iba databázové funkcie (`ernte.allow_price`).
 - **Konkurenčné ceny** (`konk.js`, kalk_store `pricelist/konk`): vložený text ponuky → rozpoznanie, porovnanie, báza voči burze. Mená firiem iba v DB.
 - **Príkaz majiteľa (trvalý):** pracovať na 100 %, bezchybne a rýchlo; nič nepoškodiť (model cenníka, nastavenia, údaje). Pred nasadením otestovať.

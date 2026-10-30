@@ -20,7 +20,7 @@ function arm(){if(!V)return;let d;try{d=V.iw.document}catch(x){return}
 function open(){if(V)close(true);const M=window.__pvMail||null;window.__pvMail=null;
   const ov=document.createElement("div");ov.id="pdfv";ov.setAttribute("role","dialog");ov.setAttribute("aria-modal","true");
   ov.innerHTML=`<div class="pvbar"><button type="button" class="pvx" data-pv="x" aria-label="Zavrieť">✕</button><b class="pvt">Dokument</b>
-    <div class="pvb"><button type="button" data-pv="print">🖨️ Tlačiť</button>${M?`<button type="button" data-pv="mail" class="pvpri">📧 Poslať na ${esc(M.to)}</button>`:""}<button type="button" data-pv="pdf"${M?"":' class="pvpri"'}>⬇️ Uložiť PDF</button>${MOB&&navigator.canShare?`<button type="button" data-pv="share">📤 Poslať</button>`:""}</div></div>
+    <div class="pvb"><button type="button" data-pv="print">🖨️ Tlačiť</button>${M?`<button type="button" data-pv="mail" class="pvpri">📧 Odoslať</button>`:""}<button type="button" data-pv="pdf"${M?"":' class="pvpri"'}>⬇️ Uložiť PDF</button>${MOB&&navigator.canShare?`<button type="button" data-pv="share">📤 Poslať</button>`:""}</div></div>
     <iframe class="pvf" title="Dokument"></iframe><div class="pvbusy" hidden>Pripravujem PDF…</div>`;
   document.body.appendChild(ov);document.documentElement.classList.add("pvon");
   const fr=ov.querySelector("iframe");const iw=fr.contentWindow;
@@ -57,7 +57,37 @@ function doPrint(){if(!V)return;
   // mobil: tlač z rámu v telefóne nefunguje spoľahlivo → hotové PDF (Zdieľať → Tlačiť, alebo otvoriť a vytlačiť)
   (async()=>{try{const f=await makeFile();if(!(await share(f))){dl(f);tmsg("✓ PDF uložené – otvor ho a daj Tlačiť.",6000)}}catch(e){try{(V.orig||V.iw.print).call(V.iw)}catch(x){tmsg("Tlač sa nepodarila: "+(e&&e.message||e),7000)}}})()}
 document.addEventListener("click",e=>{const b=e.target.closest&&e.target.closest("#pdfv [data-pv]");if(!b||!V)return;e.preventDefault();const k=b.dataset.pv;
-  if(k==="x")close();else if(k==="print")doPrint();else if(k==="pdf")savePdf();else if(k==="share")sendPdf();else if(k==="mail")mailPdf()});
+  if(k==="x")close();else if(k==="print")doPrint();else if(k==="pdf")savePdf();else if(k==="share")sendPdf();else if(k==="mail")mailBox();else if(k==="msend")mailDirect();else if(k==="mcfg")mailCfgSave();else if(k==="mx"){const b=document.getElementById("pvMail");if(b)b.remove()}else if(k==="mold"){const b=document.getElementById("pvMail");if(b)b.remove();mailPdf()}});
+// 📧 odoslanie priamo z aplikácie (schránka ERNTE cez databázu → GitHub Actions); bez nastavenia → zdieľanie / pošta
+let MR=null;
+async function mailReady(){try{const r=await sb.rpc("mail_ready");MR=r.error?{ok:false}:r.data||{ok:false}}catch(x){MR={ok:false}}return MR}
+async function mailBox(){const M=V&&V.M;if(!M)return;const old=document.getElementById("pvMail");if(old)old.remove();await mailReady();
+  const d=document.createElement("div");d.id="pvMail";d.className="pvmail";
+  if(!MR.ok&&MR.main){d.innerHTML=`<div class="pvmb"><b>📧 Nastav odosielanie e-mailov (raz)</b><div class="pvs">Zadaj prístup k schránke, z ktorej sa budú posielať zmluvy. Heslo sa uloží iba do trezoru databázy. Pri Gmaile použi <b>heslo aplikácie</b> (Google účet → Zabezpečenie → Heslá aplikácií).</div>
+    <label>Schránka<select id="pvmPre"><option value="smtp.gmail.com|465">Gmail</option><option value="smtp.websupport.sk|465">Websupport (@ernte.sk)</option><option value="smtp.office365.com|587">Microsoft 365 / Outlook</option><option value="smtp.seznam.cz|465">Seznam</option><option value="|465">Iný server…</option></select></label>
+    <label>SMTP server<input id="pvmHost" value="smtp.gmail.com" autocapitalize="off"></label><label>Port<input id="pvmPort" value="465" inputmode="numeric"></label>
+    <label>E-mail (prihlasovacie meno)<input id="pvmUser" type="email" autocapitalize="off" placeholder="ernte@ernte.sk"></label><label>Heslo / heslo aplikácie<input id="pvmPass" type="password" autocomplete="new-password"></label>
+    <label>Meno odosielateľa<input id="pvmName" value="ERNTE spol. s r.o."></label>
+    <div class="pvbt"><button type="button" class="pvpri" data-pv="mcfg">💾 Uložiť a odoslať</button><button type="button" data-pv="mold">Poslať cez telefón</button><button type="button" data-pv="mx">Zrušiť</button></div></div>`;
+    V.ov.appendChild(d);const pre=d.querySelector("#pvmPre");pre.onchange=()=>{const [h,p]=pre.value.split("|");d.querySelector("#pvmHost").value=h;d.querySelector("#pvmPort").value=p};return}
+  if(!MR.ok){mailPdf();return}
+  d.innerHTML=`<div class="pvmb"><b>📧 Odoslať e-mailom</b><label>Komu<input id="pvmTo" type="email" autocapitalize="off" value="${esc(M.to||"")}" placeholder="e-mail farmára"></label>
+   <label>Predmet<input id="pvmSubj" value="${esc(M.subj||"")}"></label><label>Text<textarea id="pvmBody" rows="5">${esc(M.body||"")}</textarea></label>
+   <div class="pvs">Odošle sa zo schránky ${esc(MR.from||"ERNTE")} s PDF v prílohe.</div>
+   <div class="pvbt"><button type="button" class="pvpri" data-pv="msend">📤 Odoslať</button><button type="button" data-pv="mx">Zrušiť</button></div></div>`;
+  V.ov.appendChild(d)}
+async function mailCfgSave(){const g=i=>(document.getElementById(i)||{}).value||"";const r=await sb.rpc("mail_cfg_set",{p:{host:g("pvmHost"),port:g("pvmPort"),user:g("pvmUser"),pass:g("pvmPass"),from:g("pvmUser"),name:g("pvmName")}});
+  if(r.error){tmsg("Nepodarilo sa: "+r.error.message,7000);return}tmsg("✓ Odosielanie e-mailov nastavené.",4000);mailBox()}
+async function mailDirect(){const M=V&&V.M;const to=((document.getElementById("pvmTo")||{}).value||"").trim(),subj=(document.getElementById("pvmSubj")||{}).value||M.subj,body=(document.getElementById("pvmBody")||{}).value||M.body;
+  if(!/^[^@\s]+@[^@\s]+\.[a-z]{2,}$/i.test(to)){tmsg("Zadaj e-mail farmára.",5000);return}
+  const b=document.querySelector('#pvMail [data-pv=msend]');if(b){b.disabled=true;b.textContent="Pripravujem PDF…"}
+  try{const f=await makeFile();const b64=await new Promise((ok,no)=>{const r=new FileReader();r.onload=()=>ok(String(r.result).split(",")[1]);r.onerror=no;r.readAsDataURL(f)});
+    if(b)b.textContent="Odosielam…";const r=await sb.rpc("mail_send",{p_to:to,p_subject:subj,p_body:body,p_att_name:f.name,p_att_b64:b64,p_deal:M.deal||null});if(r.error)throw r.error;
+    const id=r.data;const box=document.getElementById("pvMail");if(box)box.remove();tmsg("📤 Odosiela sa na "+to+"…",6000);
+    for(let i=0;i<30;i++){await new Promise(z=>setTimeout(z,4000));const s=await sb.rpc("mail_status",{p_id:id});const st=s.data&&s.data.status;
+      if(st==="odoslany"){tmsg("✅ Zmluva odoslaná na "+to,8000);return}if(st==="chyba"){tmsg("⚠️ E-mail sa neodoslal: "+((s.data&&s.data.err)||"chyba schránky")+" – skontroluj nastavenie (Martin).",10000);return}}
+    tmsg("E-mail sa ešte odosiela – výsledok uvidíš o chvíľu.",6000)}
+  catch(e){tmsg("Nepodarilo sa: "+(e&&e.message||e),8000);if(b){b.disabled=false;b.textContent="📤 Odoslať"}}}
 // e-mail s PDF: na mobile zdieľanie (Gmail / Mail – adresa a text sú pripravené, adresa sa skopíruje), inak stiahnutie + e-mailový program
 async function mailPdf(){const M=V&&V.M;if(!M)return;try{const f=await makeFile();try{await navigator.clipboard.writeText(M.to)}catch(x){}
   if(navigator.canShare&&navigator.canShare({files:[f]})){try{await navigator.share({files:[f],title:M.subj,text:"Pre: "+M.to+"\n\n"+M.body});tmsg("✓ Zmluva odoslaná na zdieľanie. Adresa "+M.to+" je skopírovaná – vlož ju do príjemcu.",8000);return}catch(e){if(e&&e.name==="AbortError")return}}
@@ -72,10 +102,16 @@ window.pdfViewOpen=open;window.pdfViewClose=close;
 #pdfv .pvbar{display:flex;flex-wrap:wrap;align-items:center;gap:8px;padding:calc(8px + env(safe-area-inset-top)) 10px 8px;background:#0f172a;border-bottom:1px solid rgba(255,255,255,.12);color:#fff}
 #pdfv .pvx{width:44px;height:44px;min-width:44px;aspect-ratio:1;border-radius:50%!important;padding:0!important;display:grid;place-items:center;font-size:1.2rem;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.25);color:#fff;flex:0 0 44px}
 #pdfv .pvt{flex:1 1 120px;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:.95rem}
-#pdfv .pvb{display:flex;gap:6px;flex:1 1 100%;flex-wrap:wrap}#pdfv .pvb button{flex:1 1 0;min-width:0;min-height:42px;padding:6px 8px;border-radius:12px;font-weight:700;font-size:.88rem;white-space:nowrap;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.22);color:#fff}
+#pdfv .pvb{display:flex;gap:6px;flex:1 1 100%;flex-wrap:wrap}#pdfv .pvb button{flex:1 1 0;min-width:0;overflow:hidden;text-overflow:ellipsis;min-height:42px;padding:6px 8px;border-radius:12px;font-weight:700;font-size:.88rem;white-space:nowrap;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.22);color:#fff}
 #pdfv .pvb .pvpri{background:linear-gradient(135deg,#22d3ee,#a3e635);color:#0b1020;border:0}
 #pdfv .pvf{flex:1 1 auto;width:100%;border:0;background:#e5e7eb}
+#pdfv .pvmail{position:absolute;inset:0;z-index:5;background:rgba(2,6,23,.6);display:flex;align-items:flex-end;justify-content:center;padding:10px}
+#pdfv .pvmb{width:100%;max-width:520px;max-height:90vh;overflow:auto;display:grid;gap:8px;background:#0f172a;color:#fff;border:1px solid rgba(255,255,255,.18);border-radius:20px;padding:16px}
+#pdfv .pvmb label{display:grid;gap:4px;font-size:.85rem}#pdfv .pvmb input,#pdfv .pvmb select,#pdfv .pvmb textarea{width:100%;box-sizing:border-box;min-height:44px;font-size:16px;border-radius:12px;padding:8px 10px}
+#pdfv .pvs{font-size:.8rem;opacity:.8}#pdfv .pvbt{display:flex;flex-wrap:wrap;gap:8px}#pdfv .pvbt button{flex:1 1 140px;min-height:46px;border-radius:12px;font-weight:700}
+#pdfv .pvbt .pvpri{background:linear-gradient(135deg,#22d3ee,#a3e635);color:#0b1020;border:0}@media(min-width:700px){#pdfv .pvmail{align-items:center}}
 #pdfv .pvbusy{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);padding:14px 20px;border-radius:14px;background:rgba(15,23,42,.92);color:#fff;font-weight:700}
+@media(max-width:380px){#pdfv .pvb button{white-space:normal;line-height:1.15;font-size:.82rem;padding:4px 6px}}
 @media(min-width:700px){#pdfv .pvb{flex:0 1 auto}#pdfv .pvb button{flex:0 0 auto;padding:6px 14px}}
 html.pvon,html.pvon body{overflow:hidden!important}
 @media print{html.pvon body>*:not(#pdfv){display:none!important}}`;document.head.appendChild(s)}

@@ -1,0 +1,27 @@
+# E-maily z aplikácie ERNTE (zmluva v PDF farmárovi…). Spúšťa ich databáza (mail_send → repository_dispatch ernte-mail s náhodným ID).
+# Obsah aj prístup k schránke si skript vyzdvihne jednorazovo z databázy (mail_job_take). Nič sa nevypisuje do logu.
+name: ernte-mail
+on:
+  repository_dispatch:
+    types: [ernte-mail]
+permissions:
+  contents: read
+jobs:
+  send:
+    runs-on: ubuntu-latest
+    timeout-minutes: 4
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            .github/mail
+            farmar/config.js
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: npm i --no-save --silent nodemailer@6.9.16 || (sleep 5 && npm i --no-save --silent nodemailer@6.9.16)
+        working-directory: .github/mail
+      - run: node send.mjs
+        working-directory: .github/mail
+        env:
+          JOB_ID: ${{ github.event.client_payload.id }}

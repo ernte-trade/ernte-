@@ -129,6 +129,9 @@ function html(d,F,R,ST,FS){const S=(typeof SPEC!=="undefined"&&SPEC[d.com])||[14
   <div class="pb"><button onclick="print()" style="font-size:15px;padding:10px 18px">🖨️ Tlačiť / uložiť ako PDF</button></div></body></html>`}
 async function open(id){const d=(STATE.deals||[]).find(x=>x.id===id);if(!d){toast("Zmluva sa nenašla.");return}
   const F=(typeof FARMER!=="undefined"&&FARMER)?FARMER:((STATE.farmers||[]).find(f=>f.id===d.farmer_id)||{name:""});
+  if(!(typeof FARMER!=="undefined"&&FARMER)){const me=(typeof ME!=="undefined"&&ME&&ME.staffName)||"ERNTE",cn=typeof comName==="function"?comName(d.com):d.com;
+    window.__pvMail=window.__pvMail||{to:F.email||"",deal:d.id,subj:`Kúpna zmluva ${d.no||""} – ERNTE spol. s r.o.`,
+      body:`Dobrý deň,\n\nv prílohe Vám posielam kúpnu zmluvu ${d.no||""}: ${String(cn).toLowerCase()} ${d.tons} t za ${d.price} €/t${d.term?", vývoz "+d.term:""}.\nProsím o podpis a vrátenie. Zmluvu môžete podpísať aj v aplikácii ERNTE (Podpísať teraz).\n\nĎakujem\n${me} · ERNTE spol. s r.o.\n\n👉 ERNTE Trade & Logistic: ${typeof APP_URL!=="undefined"?APP_URL:location.href.split("#")[0]}`}}
   const w=window.open("","_blank");if(!w){toast("Povoľ vyskakovacie okná pre zmluvu.");return}w.document.write("<p style='font:16px sans-serif;padding:20px'>Pripravujem zmluvu…</p>");
   const R=await rules();const okI=v=>typeof v==="string"&&/^data:image\/(png|jpeg);base64,[A-Za-z0-9+/=]+$/.test(v)?v:null;let ST=null,FS=null;
   try{const r=await sb.rpc("contract_sigs",{p_deal:d.id});if(!r.error&&r.data){ST=okI(r.data.ernte);if(okI(r.data.farmer))FS={img:okI(r.data.farmer),name:r.data.name,at:r.data.signed_at}}

@@ -148,7 +148,7 @@ document.addEventListener("click",async ev=>{const t=ev.target;if(!t.closest||!O
 function mailContract(){const D=Q.done;if(!D)return;let to=String(D.email||Q.F.email||"").trim();
   if(!to){to=String(prompt("E-mail farmára:","")||"").trim();if(!to)return;D.email=to}
   const c=COMS.find(x=>x[0]===D.com),me=(typeof ME!=="undefined"&&ME&&ME.staffName)||"ERNTE";
-  window.__pvMail={to,subj:`Kúpna zmluva ${D.no} – ERNTE spol. s r.o.`,body:`Dobrý deň,\n\nv prílohe Vám posielam kúpnu zmluvu ${D.no}: ${c?c[2].toLowerCase():D.com} ${D.tons} t za ${D.price} €/t${D.term?", vývoz "+D.term:""}.\nProsím o podpis a vrátenie. Zmluvu môžete podpísať aj v aplikácii ERNTE (Podpísať teraz).\n\nĎakujem\n${me} · ERNTE spol. s r.o.\n\n👉 ERNTE Trade & Logistic: ${typeof APP_URL!=="undefined"?APP_URL:location.href.split("#")[0]}`};
+  window.__pvMail={to,deal:D.deal_id,subj:`Kúpna zmluva ${D.no} – ERNTE spol. s r.o.`,body:`Dobrý deň,\n\nv prílohe Vám posielam kúpnu zmluvu ${D.no}: ${c?c[2].toLowerCase():D.com} ${D.tons} t za ${D.price} €/t${D.term?", vývoz "+D.term:""}.\nProsím o podpis a vrátenie. Zmluvu môžete podpísať aj v aplikácii ERNTE (Podpísať teraz).\n\nĎakujem\n${me} · ERNTE spol. s r.o.\n\n👉 ERNTE Trade & Logistic: ${typeof APP_URL!=="undefined"?APP_URL:location.href.split("#")[0]}`};
   if(window.contractPdf)contractPdf(D.deal_id)}
 document.addEventListener("change",async ev=>{const t=ev.target;if(!t||!t.dataset||!t.dataset.qdfoto||!OK())return;const f=t.files&&t.files[0];if(!f)return;grab();
   try{const img=await shrink(f,1600,.82),th=await shrink(f,240,.6);scan(t.dataset.qdfoto,img,null,th)}catch(x){tst(x.message||String(x),6000)}});
