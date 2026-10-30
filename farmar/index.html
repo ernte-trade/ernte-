@@ -1011,7 +1011,7 @@ function wxCard(){if(!WXD)return `<div class="card"><div class="s">Načítavam p
 document.addEventListener("click",e=>{if(!e.target.closest("[data-wxloc]"))return;if(!navigator.geolocation){toast("Poloha nie je dostupná.");return}
   toast("Zisťujem polohu…");navigator.geolocation.getCurrentPosition(async p=>{WXLOC={name:"Moja poloha",lat:+p.coords.latitude.toFixed(3),lon:+p.coords.longitude.toFixed(3)};try{localStorage.setItem("ernte-wxloc",JSON.stringify(WXLOC))}catch(x){}await loadWx(true);rerender()},()=>toast("Polohu sa nepodarilo zistiť – povoľte ju v nastaveniach."),{timeout:10000})});
 function mountR(){const b=document.getElementById("radarBox");if(b)mountRadar(b);initMaps()}
-/* Predikcia, Test a prepínač používateľov: iba Martin Vaľko a ERNTE spol. (nikto iný, ani CEO) */
+/* Algomancia (predtým Predikcia), Test a prepínač používateľov: iba Martin Vaľko a ERNTE spol. (nikto iný, ani CEO) */
 const MAIN_EM=["ernte@ernte.sk","report.valko@gmail.com"];
 function MAIN_OK(){return typeof ROLE!=="undefined"&&ROLE==="owner"&&!FARMER&&!window.ERNTE_TEST&&!window.ERNTE_VIEWAS&&typeof ME!=="undefined"&&!!ME&&MAIN_EM.includes(String(ME.email||"").toLowerCase())&&!(STATE.me&&STATE.me.hlavny===false)}
 window.MAIN_OK=MAIN_OK;
@@ -1190,7 +1190,8 @@ test:{t:"Test",i:"🧪",r:"Iba pre teba – pozri aplikáciu očami iných.",s:[
 wx:{t:"Počasie",i:"🌦️",r:"Počasie a radar zrážok pre Michalovce a okolie.",s:[
  ["Čo ukazuje","Teraz, každú hodinu a 7 dní dopredu; radar zrážok s animáciou posledných 2 hodín."],
  ["Na čo","Plánovanie žatvy, odvozov a nakládky – to isté vidia aj farmári."]]},
-pred:{t:"Predikcia obchodu",i:"🔮",r:"Kde kúpiť, kam predať a kedy – iba pre majiteľa, zamknuté PIN-om.",s:[
+pred:{t:"Algomancia · AI veštenie obchodu",i:"🔮",r:"Digitálna veštba: kde kúpiť, kam predať a kedy – čísla, burza, vesmír a AI. Iba pre majiteľa, zamknuté PIN-om.",s:[
+ ["🤖 AI veštba","Tlačidlo hore: AI (Claude) prečíta všetky čísla (ponuky, cenník, burza, odberatelia, doprava) aj dnešnú oblohu a karty a vynesie veštbu na každú komoditu: kúpiť / držať / predať, za koľko a kedy. Veštba je zložená z čísel – vesmír ju iba dofarbí."],
  ["PIN","Pri prvom otvorení si nastavíš PIN (4–8 číslic). Po 15 minútach nečinnosti alebo pri prechode na inú záložku sa sekcia zamkne. Po 5 zlých pokusoch treba počkať 5 minút. Zabudnutý PIN zrušíš heslom k účtu."],
  ["Správa na dnes","Hore sú najlepšie kombinácie nákup → predaj: od koho kúpiť, komu predať, doprava podľa vzdialenosti a marža €/t aj spolu."],
  ["Zdroje a odberatelia","Nákup: ponuky farmárov (s GPS), tvoj výkupný cenník, trhy pri hranici (Čop, Záhony, Batyovo). Predaj: ponuky odberateľov, ktoré zapíšeš, a zmluvy s odberateľmi. Burza mínus báza je iba orientačne."],
@@ -1463,9 +1464,9 @@ document.addEventListener("click",e=>{const th=e.target.closest("[data-dstheme]"
   const op=e.target.closest("[data-tedop]");if(op){STATE.tOpen=STATE.tOpen===op.dataset.tedop?null:op.dataset.tedop;renderStaff()}});
 function renderStaff(){const nNew=STATE.reqs.filter(r=>r.status==="nova").length;
   let tabs=[["home","Prehľad"],["req",`Požiadavky${nNew?` <span class="cnt">${nNew}</span>`:""}`],["price","Cenník"],["trans",`Doprava${(STATE.reqs||[]).filter(r=>r.kind==="transport"&&(r.status==="nova"||r.status==="v_spracovani")).length?` <span class="cnt">${STATE.reqs.filter(r=>r.kind==="transport"&&(r.status==="nova"||r.status==="v_spracovani")).length}</span>`:""}`],["deals","Obchody"],["farm","Farmári"],["wx","Počasie"]];
-  if(typeof tabOK==="function"){tabs.splice(4,0,["fleet","Flotila"]);tabs.splice(6,0,["calc","Kalkulačka"]);tabs.splice(6,0,["zuct","Zúčtovanie"]);tabs.splice(7,0,["agro","Agro služby"]);tabs.splice(8,0,["trus",`Kurací trus${window.trusNew&&trusNew()?` <span class="cnt">${trusNew()}</span>`:""}`]);tabs.splice(9,0,["evid","Evidencia"]);tabs.splice(4,0,["danube","Danube Trade"]);tabs.push(["nov",`Novinky${window.novCnt&&novCnt()?` <span class="cnt">${novCnt()}</span>`:""}`]);if(ROLE==="owner"&&STATE.me&&STATE.me.hlavny!==false)tabs.push(["pred","Predikcia"]);if(ROLE==="owner")tabs.push(["team","Tím"]);tabs=tabs.filter(t=>tabOK(t[0]));if(ROLE!=="owner"&&typeof can==="function"&&can("agro_calc")){const PO=["home","agro","evid","fleet"];tabs.sort((a,b)=>{const i=PO.indexOf(a[0]),j=PO.indexOf(b[0]);return (i<0?99:i)-(j<0?99:j)})}if(!tabs.length)tabs=[["wx","Počasie"]]}
+  if(typeof tabOK==="function"){tabs.splice(4,0,["fleet","Flotila"]);tabs.splice(6,0,["calc","Kalkulačka"]);tabs.splice(6,0,["zuct","Zúčtovanie"]);tabs.splice(7,0,["agro","Agro služby"]);tabs.splice(8,0,["trus",`Kurací trus${window.trusNew&&trusNew()?` <span class="cnt">${trusNew()}</span>`:""}`]);tabs.splice(9,0,["evid","Evidencia"]);tabs.splice(4,0,["danube","Danube Trade"]);tabs.push(["nov",`Novinky${window.novCnt&&novCnt()?` <span class="cnt">${novCnt()}</span>`:""}`]);if(ROLE==="owner"&&STATE.me&&STATE.me.hlavny!==false)tabs.push(["pred","Algomancia"]);if(ROLE==="owner")tabs.push(["team","Tím"]);tabs=tabs.filter(t=>tabOK(t[0]));if(ROLE!=="owner"&&typeof can==="function"&&can("agro_calc")){const PO=["home","agro","evid","fleet"];tabs.sort((a,b)=>{const i=PO.indexOf(a[0]),j=PO.indexOf(b[0]);return (i<0?99:i)-(j<0?99:j)})}if(!tabs.length)tabs=[["wx","Počasie"]]}
   else{if(ROLE==="owner"||ROLE==="dispatch")tabs.splice(3,0,["fleet","Flotila"]);
-  if(ROLE==="owner")tabs.push(["pred","Predikcia"]);
+  if(ROLE==="owner")tabs.push(["pred","Algomancia"]);
   if(ROLE==="owner")tabs.push(["team","Tím"]);
   if(ROLE==="dispatch")tabs=tabs.filter(t=>["req","trans","fleet","wx"].includes(t[0]));
   if(ROLE==="invoice")tabs=tabs.filter(t=>t[0]!=="fleet")}
@@ -2921,7 +2922,7 @@ document.addEventListener("input",e=>{if(e.target.id==="dfq"){const h=e.target.f
 document.addEventListener("click",e=>{const b=e.target.closest("[data-dfp]");if(!b)return;const fm=b.closest("form"),f=(STATE.farmers||[]).find(x=>x.id===b.dataset.dfp);if(!fm||!f)return;fm.elements.farmer.value=f.id;document.getElementById("dfq").value=String(f.name).trim();document.getElementById("dfl").innerHTML=`<div class="s">✓ Vybraný: <b>${esc(String(f.name).trim())}</b></div>`});
 </script>
 <script src="ai.js?v=20261029-0010"></script>
-<script src="perms.js?v=20261030-1700"></script>
+<script src="perms.js?v=20261030-2355"></script>
 <script src="bonus.js?v=20261028-0110"></script>
 <script src="fterms.js?v=20261028-1130"></script>
 <script src="hub.js?v=20261028-2150"></script>
@@ -2954,13 +2955,13 @@ document.addEventListener("click",e=>{const b=e.target.closest("[data-dfp]");if(
 <script src="praca.js?v=20261029-2210"></script>
 <script src="opush.js?v=20261028-2400"></script>
 <script src="predaj.js?v=20261030-1255"></script>
-<script src="owhome.js?v=20261030-2340"></script>
+<script src="owhome.js?v=20261030-2355"></script>
 <script src="nbell.js?v=20261028-1130"></script>
 <script src="novinky.js?v=20261027-0845"></script>
 <script src="dnzmluva.js?v=20261030-1010"></script>
 <script src="danube.js?v=20261029-1240"></script>
 <script src="installapp.js?v=20261028-0900"></script>
-<script src="fndesc.js?v=20261030-1700"></script>
+<script src="fndesc.js?v=20261030-2355"></script>
 <script src="sign.js?v=20261030-0930"></script>
 <script src="outbox.js?v=20261029-0130"></script>
 <script src="invitecard.js?v=20261029-2100"></script>
@@ -2991,7 +2992,7 @@ document.addEventListener("click",e=>{const b=e.target.closest("[data-dfp]");if(
 <script src="guard.js?v=20261028-0050"></script>
 <script src="scrollkeep.js?v=20261028-0100"></script>
 <script src="astro.js?v=20261027-2030"></script>
-<script src="pred.js?v=20261029-2330"></script>
+<script src="pred.js?v=20261030-2355"></script>
 <script src="farmact.js?v=20261029-0130"></script>
 </body>
 </html>

@@ -1,4 +1,5 @@
-// ===== 🔮 PREDIKCIA OBCHODU – iba majiteľ, zamknuté PIN-om =====
+// ===== 🔮 ALGOMANCIA · AI VEŠTENIE OBCHODU (predtým Predikcia) – iba majiteľ, zamknuté PIN-om =====
+// 🤖 AI veštba: algo_ai_now(p_ctx) → Claude prečíta čísla + oblohu + karty a vynesie verdikt na každú komoditu (algo_ai_get).
 // Vyhodnocuje nákup a predaj komodít z čísel: ponuky farmárov, výkupný cenník, fyzické trhy (market.json),
 // burza (market_px + termíny v market.json), ponuky odberateľov a zmluvy s odberateľmi, doprava podľa vzdialenosti.
 // Odporúčania sa ukladajú a neskôr porovnávajú s vývojom burzy (prehodnotenie).
@@ -141,7 +142,7 @@ async function logRecs(){const d=today();if(S.log.some(l=>l.d===d))return;const 
   for(const c of coms()){const R=evalCom(c),b=R.best;if(!b&&R.trend.now==null)continue;
     add.push({d,c,buy:b?b.a.price:null,sell:b?b.b.price:null,net:b?Math.round(b.net):null,from:b?b.a.name:null,to:b?b.b.name:null,bz:R.trend.now,hold:R.timing?R.timing.hold:null,dir:(()=>{try{const M=mix(R);return{num:+M.nd.toFixed(2),cards:+M.cz.cards.toFixed(2),moon:M.cz.moon,tr:+M.cz.tr.toFixed(2),cos:+M.cz.cos.toFixed(2),k:+M.k.toFixed(2),w:M.w}}catch(x){return null}})()})}
   if(!add.length)return;S.log=[...S.log,...add].slice(-600);try{await stSet("pred_log",S.log)}catch(x){}}
-async function novinka(){if(S.nov)return;try{const r=await sb.from("app_novinky").insert({d:today(),titul:"🔮 Predikcia obchodu",kde:"záložka Predikcia (iba majiteľ, PIN)",kto:"majiteľ",aud:["owner"],
+async function novinka(){if(S.nov)return;try{const r=await sb.from("app_novinky").insert({d:today(),titul:"🔮 Predikcia obchodu",kde:"záložka Algomancia (iba majiteľ, PIN)",kto:"majiteľ",aud:["owner"],
   popis:"Kde kúpiť a kam predať komodity, marža po doprave, časovanie podľa burzy, prehodnotenie minulých odporúčaní. Zamknuté PIN-om."});
   if(!r.error||/duplicate|unique/i.test(r.error.message||"")){S.nov={at:new Date().toISOString()};await stSet("pred_nov",S.nov)}}catch(x){}}
 
@@ -283,18 +284,55 @@ function review(){const T=today(),old=S.log.filter(l=>dAgo(l.d)>=7&&l.bz!=null);
   return `<div class="card"><b>🔁 Prehodnotenie minulých odporúčaní</b><div class="s">Porovnanie s burzou o 7 a viac dní neskôr. Pomáha upraviť skladovanie a bázu v nastaveniach.</div>${L}</div>`}
 
 function pinView(){const f=fails(),wait=f.n>=5&&Date.now()-f.t<5*6e4?Math.ceil((5*6e4-(Date.now()-f.t))/6e4):0,setup=!S.pin||S.pinMode==="new";
-  return `<div class="card prd-pin"><b>🔒 Predikcia obchodu</b><div class="s">${setup?"Nastav si PIN (4–8 číslic). Sekciu vidíš iba ty ako majiteľ a otvoríš ju len s PIN-om.":"Zadaj PIN. Po 15 minútach nečinnosti sa sekcia znova zamkne."}</div>
+  return `<div class="card prd-pin"><b>🔒 Algomancia · AI veštenie obchodu</b><div class="s">${setup?"Nastav si PIN (4–8 číslic). Sekciu vidíš iba ty ako majiteľ a otvoríš ju len s PIN-om.":"Zadaj PIN. Po 15 minútach nečinnosti sa sekcia znova zamkne."}</div>
    ${wait?`<div class="prd-w">Priveľa nesprávnych pokusov. Skús o ${wait} min.</div>`:`<form class="f" id="fPrdPin"><label class="w">PIN<input name="pin" type="password" inputmode="numeric" pattern="[0-9]*" autocomplete="off" maxlength="8" required autofocus></label>
    ${setup?`<label class="w">PIN znova<input name="pin2" type="password" inputmode="numeric" pattern="[0-9]*" autocomplete="off" maxlength="8" required></label>`:""}
    ${S.pinErr?`<div class="w prd-w">${e(S.pinErr)}</div>`:""}<div class="w btns"><button class="pri" type="submit">${setup?"Uložiť PIN":"Odomknúť"}</button>${!setup?`<button type="button" data-prdforgot>Zabudol som PIN</button>`:""}</div></form>`}</div>`}
 
+// ---------- 🤖 AI VEŠTBA (algomancia) – Claude prečíta čísla + oblohu + karty a vynesie verdikt ----------
+const AI={d:null,at:0,busy:false};
+const nmC=c=>typeof comName==="function"?comName(c):c;
+const r0=n=>n==null||!isFinite(n)?null:Math.round(n*100)/100;
+function aiCtx(all){const s=window.ASTRO?sky():null;
+  const K=all.filter(R=>R.best||R.trend.now!=null||R.pos).map(R=>{const M=mix(R),z=M.cz,b=R.best;
+    return {komodita:nmC(R.c),nasa_cena:R.P?r0(+R.P.price):null,burza_teraz:r0(R.trend.now),zmena_7d:r0(R.trend.d7),zmena_30d:r0(R.trend.d30),
+      terminy:R.timing?{od:R.timing.a.t+" "+r0(R.timing.a.p),do:R.timing.b.t+" "+r0(R.timing.b.p),mesiacov:R.timing.mo,sklad_eur_t:r0(R.timing.cost),zisk_drzania_eur_t:r0(R.timing.gain)}:null,
+      najlepsi_obchod:b?{kupit_od:b.a.name,za:r0(b.a.price),ton:b.a.tons,predat:b.b.name,za_predaj:r0(b.b.price),doprava:r0(b.t),cisty_eur_t:r0(b.net),spolu_eur:r0(b.tot)}:null,
+      dalsie:R.pairs.filter(p=>!p.b.ind).slice(1,4).map(p=>({od:p.a.name,komu:p.b.name,cisty_eur_t:r0(p.net)})),
+      historia:R.hist?{ton:r0(R.hist.t),marza_eur_t:r0(R.hist.m)}:null,
+      otvorene_nakupy:R.pos?{ton:r0(R.pos.t),priemer_nakup:r0(R.pos.avg),najlepsi_predaj_po_doprave:R.pos.sale?r0(R.pos.sale.n):null,drz:R.pos.hold,predaj:R.pos.sell}:null,
+      upozornenia:R.warn,verdikt_cisla:M.vn,verdikt_s_vesmirom:M.vk,
+      karty:{tarot:z.draw.t,lenormand:z.draw.l,cigan:z.draw.c,smer_kariet:r0(z.cards)}}});
+  return {dnes:today(),vaha_vesmiru_pct:+S.cfg.w||0,
+    obloha:s?{mesiac:s.mp?(s.mp.waxing?"dorastá":"cúva")+" "+Math.round((s.mp.illum||s.mp.f||0)*100)+" %":null,
+      spatne:Object.keys(s.R||{}).filter(k=>s.R[k]).map(k=>PN[k]||k),tranzity_skore:r0(transits().score)}:null,komodity:K}}
+async function aiLoad(){if(AI.busy)return;AI.busy=true;try{const r=await sb.rpc("algo_ai_get");AI.d=r.error?{err:r.error.message}:r.data;AI.at=Date.now()}catch(x){}AI.busy=false;
+  rr();if(AI.d&&AI.d.at&&!AI.d.done)setTimeout(()=>{AI.at=0;aiLoad()},8000)}
+function aiCard(all){if(!AI.at&&!AI.busy)aiLoad();const A=AI.d||{},run=A.at&&!A.done,o=S.open.__ai!==false;
+  const md=t=>e(t).replace(/\*\*(.+?)\*\*/g,"<b>$1</b>").replace(/\n/g,"<br>");
+  return `<div class="card prd-ai"><div class="row"><b>🤖 AI veštba dňa</b>${A.text?`<button type="button" class="copy" data-prdaitog>${o?"Skryť":"Zobraziť"}</button>`:""}</div>
+   ${A.text&&o?`<div class="prd-ait"><small>${e(String(A.done||A.at||"").slice(0,10).split("-").reverse().join(". "))}</small>${md(A.text)}</div>`:""}
+   ${A.err&&!A.text?`<div class="prd-w">⚠️ ${e(String(A.err).slice(0,160))}</div>`:""}
+   ${!A.text&&!run?`<div class="s">AI prečíta všetky čísla (ponuky, cenník, burzu, odberateľov, dopravu, otvorené nákupy) aj dnešnú oblohu a karty a vynesie veštbu na každú komoditu.</div>`:""}
+   <div class="btns"><button type="button" class="lime" data-prdai ${run?"disabled":""}>${run?"🔮 Veštím… (do minúty)":A.text?"🔮 Nová veštba":"🔮 Vyveštiť obchod"}</button></div></div>`}
+document.addEventListener("click",async ev=>{const b=ev.target.closest&&ev.target.closest("[data-prdai],[data-prdaitog]");if(!b||!OWN()||typeof TAB==="undefined"||TAB!=="pred")return;ev.preventDefault();ev.stopPropagation();touch();
+  if(b.dataset.prdaitog!==undefined){S.open.__ai=S.open.__ai===false;rr();return}
+  b.disabled=true;let ctx;try{ctx=aiCtx(coms().map(evalCom))}catch(x){ctx={chyba:String(x.message||x)}}
+  const r=await sb.rpc("algo_ai_now",{p_ctx:ctx});if(r.error){b.disabled=false;tst("Nepodarilo sa: "+r.error.message,6000);return}
+  if(r.data==="chýba kľúč"){tst("Chýba kľúč ERNTE AI.",5000);b.disabled=false;return}
+  AI.d={at:new Date().toISOString()};rr();setTimeout(()=>{AI.at=0;aiLoad()},7000)},true);
+{const st=document.createElement("style");st.textContent=`.prd-ai{border-color:rgba(167,139,250,.55)!important;box-shadow:0 0 0 1px rgba(167,139,250,.25),0 12px 34px -14px rgba(167,139,250,.6)}
+.prd-ai .row{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
+.prd-ait{line-height:1.55;margin-top:8px;padding:12px;border-radius:16px;background:rgba(167,139,250,.08);border:1px solid rgba(167,139,250,.25);overflow-wrap:anywhere}
+.prd-ait b{color:#c4b5fd}.prd-ait small{display:block;opacity:.6;margin-bottom:4px}.prd-ai .btns{justify-content:center;margin-top:10px}`;document.head.appendChild(st)}
 window.vPred=function(){if(!OWN())return "";
   if(!S.cfg){load(true);return `<div class="card"><div class="s">Načítavam…</div></div>`}
   if(!unlocked()||S.pinMode==="new")return pinView();
   touch();if(!S.at&&!S.busy){load(true);return `<div class="card"><div class="s">Počítam…</div></div>`}
   const all=coms().map(evalCom),sel=S.sel;
-  let h=`<div class="card prd-top"><div class="row"><b>🔮 Predikcia obchodu</b><span class="btns"><button type="button" class="copy" data-prdref>↻</button><button type="button" class="copy" data-prdpin>Zmeniť PIN</button><button type="button" class="copy" data-prdlock>🔒 Zamknúť</button></span></div>
+  let h=`<div class="card prd-top"><div class="row"><b>🔮 Algomancia · AI veštenie obchodu</b><span class="btns"><button type="button" class="copy" data-prdref>↻</button><button type="button" class="copy" data-prdpin>Zmeniť PIN</button><button type="button" class="copy" data-prdlock>🔒 Zamknúť</button></span></div>
    <div class="s">Kde kúpiť, kam predať a kedy – z ponúk farmárov, tvojho cenníka, trhov (HU, SK, UA hranica), burzy, ponúk a zmlúv odberateľov a nákladov dopravy.${S.mj&&S.mj.updatedAt?` Trhy: ${e(new Date(S.mj.updatedAt).toLocaleDateString("sk-SK"))}.`:""}</div>${S.err?`<div class="prd-w">⚠️ ${e(S.err)}</div>`:""}</div>`;
+  h+=aiCard(all);
   h+=msg(all);
   h+=all.filter(r=>r.src.length||r.snk.some(s=>!s.ind)||r.trend.now!=null).map(comCard).join("")||`<div class="card"><div class="s">Zatiaľ chýbajú ceny.</div></div>`;
   h+=natalCard()+accCard()+quotes()+cfgCard()+review();

@@ -80,7 +80,7 @@ function profitHTML(){const X=window.HUBX,R=X&&X.H.risk,L=[];
     L.push(tile({i:"📉",l:"Ak burza klesne o 10 €",v:(risk?"−":"")+F(risk,0)+"<small> €</small>",s:"riziko otvorenej pozície",go:"#hs-risk",c:risk?"w":""}))}
   if(MAIN()&&window.ziskOpen)L.push(tile({i:"🔍",l:"Kde zarábame a strácame",v:"→",s:"komodity · odberatelia · farmári · úniky",go:"#zisk",c:"acc"}));
   if(window.vZuct)L.push(tile({i:"🧾",l:"Zúčtovanie",v:"→",s:"lístky · faktúry · PDF",go:"zuct"}));
-  if(MAIN()&&STATE.me&&STATE.me.hlavny!==false)L.push(tile({i:"🔮",l:"Predikcia",v:"→",s:"kedy predať · trend",go:"pred",c:"acc"}));
+  if(MAIN()&&STATE.me&&STATE.me.hlavny!==false)L.push(tile({i:"🔮",l:"Algomancia",v:"→",s:"AI veštba · kedy predať",go:"pred",c:"acc"}));
   return `<div class="owg">${L.join("")}</div>`}
 
 // ---- 5. komodity, služby, evidencia, burza ----
