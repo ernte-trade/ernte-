@@ -50,6 +50,8 @@ const SECD={
  "agro:cat":"Katalóg prác a strojov, z ktorého sa skladá cenník."};
 // ---- nadpisy (farmár aj zamestnanci) ----
 const H2=[
+ ["🧭 Report tímu od ERNTE AI","Každý pracovný deň o 6:35 AI prejde aktivitu tímu (prihlásenia, sekcie, denník prác, vybavené požiadavky farmárov, pridelené prístupy) a karty farmárov. Napíše report a každému pošle povzbudivú bublinu so skóre výkonu 0–100. Vidí iba Martin."],
+ ["🤝 Obchodné návrhy AI","Po, St, Pi ráno AI nájde firmy v Česku, Rakúsku, Maďarsku, Poľsku a na Ukrajine – komu predať (📦) a od koho nakúpiť (🛒) – a napíše e-mail. Prečítaš ho po slovensky, upravíš (AI preloží) a odošleš: odíde v jazyku krajiny v mene Martina Vaľka, konateľa, odpovede prídu na ernte@ernte.sk."],
  ["🔔 Notifikácie","Upozornenia do mobilu: témy ntfy (Kopírovať, QR kód na odber), stupne alarmov Flotily (VYSOKÝ hneď, STREDNÝ hodinový súhrn, NÍZKY ranný súhrn o 5:00), udalosti aplikácie, koho sledovať, tiché hodiny a testovacie upozornenie."],
  ["🔔 Upozornenia do mobilu","Koľko upozornení odišlo za 24 h, posledných 20 odoslaní s HTTP kódom (200 = doručené na server ntfy / GitHub) a chyby."],
  ["🤖 Stav úloh AI","Posledných 30 úloh z Podpory: nová → odoslaná → hotová (dátum nasadenia) alebo chyba. Filter podľa stavu. Úloha odoslaná viac ako 2 h = upozornenie do mobilu."],

@@ -17,7 +17,7 @@ try {
   const port = +s.port || 465;
   const tr = nodemailer.createTransport({ host: s.host, port, secure: port === 465, auth: { user: s.user, pass: s.pass } });
   const att = job.att ? [{ filename: job.att_name || "Dokument.pdf", content: Buffer.from(String(job.att).replace(/^data:[^,]+,/, ""), "base64"), contentType: "application/pdf" }] : [];
-  await tr.sendMail({ from: { name: s.name || "ERNTE spol. s r.o.", address: s.from || s.user }, replyTo: s.from || s.user, to: job.to, subject: job.subject || "ERNTE", text: job.body || "", attachments: att });
+  await tr.sendMail({ from: { name: job.from_name || s.name || "ERNTE spol. s r.o.", address: s.from || s.user }, replyTo: job.reply_to || s.from || s.user, to: job.to, subject: job.subject || "ERNTE", text: job.body || "", attachments: att });
   await rpc("mail_job_done", { p_id: id, p_ok: true, p_err: null });
   console.log("odoslané");
 } catch (e) {

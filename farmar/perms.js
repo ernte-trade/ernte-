@@ -16,6 +16,7 @@ const PCAT=[
  ["agro","Agro služby – objednávky a cenník","Obchod","bez nákladov a marže"],
  ["agro_calc","🔐 Agro služby celé – park strojov, kalkulácia (náklady, marža), katalóg, úprava cenníka","Obchod","iba pre poverených (Tomáš Štofa)"],
  ["danube","Danube Trade – požiadavky, služby a zmluvy Danube","Obchod","SK / HU"],
+ ["leads","🤝 Obchodné návrhy AI – firmy v susedných štátoch, e-maily v mene konateľa","Obchod","čítať po slovensky, odoslať v jazyku krajiny"],
  ["trus_price","Kurací trus – ceny a podklady k faktúram","Obchod","bez zisku"],
  ["trans","Doprava – jazdy a objednávky odvozu","Vývoz",""],
  ["trus","Kurací trus – vývozy, autá, váženie","Vývoz","bez cien"],
