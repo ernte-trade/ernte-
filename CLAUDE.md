@@ -162,7 +162,8 @@ s pripojeným repozitárom `ernte-trade/ernte-`.
   a 🤝 graf obchodov (12 týždňov); Spotify nižšie na čiernom pozadí; na širokej obrazovke sa fotka roztiahne a posúva (`wfit`).
 - **🗺️ ERNTE Maps** (30. 10., `ernmaps.js`; PRÍKAZ MAJITEĽA: IBA MARTIN – `ernteMaps.ok()` = MAIN_OK, tlačidlo 🗺️ v hornej lište + dlaždica ⛽ na úvode; Jana má na úvode starú navigáciu Google; hľadanie = Promise.any(Overpass zrkadlá, Nominatim) – Overpass býva 502): vlastná GPS navigácia v aplikácii – presná poloha (≤ 1 km, inak čaká),
   miesta z OpenStreetMap/Overpass (⛽ ČS, 🍽️ reštaurácie, ☕, 🅿️ kamióny, 🏨, 🛒, 🔧, 🚿, 🏧, 💊, 🚻), trasa OSRM so žiariacou čiarou, navigácia krok za krokom po slovensky s hlasom,
-  prepočet pri zídení z trasy, Google Maps ako záloha. Leaflet: globálne `img,svg{max-width:100%}` → v `fit.css` výnimka pre `.leaflet-container svg`.
+  prepočet pri zídení z trasy, Google Maps ako záloha.
+  **🚛 Trasa a cena** (30. 10.): odkiaľ → kam (Photon/Nominatim), kamiónová trasa Valhalla `valhalla1.openstreetmap.de` (truck 40 t, 5 náprav, pokyny sk-SK; záloha OSRM), `trace_attributes` → km podľa krajiny a triedy cesty → mýto (m = diaľnica+rýchlostná, p = I. trieda; SK/HU/AT ako Kalkulačka, CZ/PL/DE orientačne, ⚙️ localStorage `ernte-plan-cfg`), nafta market.json SK/HU netL, ostatné = 1,60 − 0,32 × ref. nafta €/km, prázdny návrat, marža → návrh ceny; navigácia po kamiónovej trase. Leaflet: globálne `img,svg{max-width:100%}` → v `fit.css` výnimka pre `.leaflet-container svg`.
 - Vtipy na úvode: ~100 vlastných vo východniarskom nárečí (`KE` vo `welcome.js`), bez opakovania na zariadení.
 - Kontroly bez prístupu k sieti z Claude: workflowy `health.yml` (dostupnosť) a `icotest.yml` (registre) zapisujú výsledok do vetiev
   `health-results` / `ico-results`.
