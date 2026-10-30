@@ -63,10 +63,10 @@ let MR=null;
 async function mailReady(){try{const r=await sb.rpc("mail_ready");MR=r.error?{ok:false}:r.data||{ok:false}}catch(x){MR={ok:false}}return MR}
 async function mailBox(){const M=V&&V.M;if(!M)return;const old=document.getElementById("pvMail");if(old)old.remove();await mailReady();
   const d=document.createElement("div");d.id="pvMail";d.className="pvmail";
-  if(!MR.ok&&MR.main){d.innerHTML=`<div class="pvmb"><b>📧 Nastav odosielanie e-mailov (raz)</b><div class="pvs">Zadaj prístup k schránke, z ktorej sa budú posielať zmluvy. Heslo sa uloží iba do trezoru databázy. Pri Gmaile použi <b>heslo aplikácie</b> (Google účet → Zabezpečenie → Heslá aplikácií).</div>
-    <label>Schránka<select id="pvmPre"><option value="smtp.gmail.com|465">Gmail</option><option value="smtp.websupport.sk|465">Websupport (@ernte.sk)</option><option value="smtp.office365.com|587">Microsoft 365 / Outlook</option><option value="smtp.seznam.cz|465">Seznam</option><option value="|465">Iný server…</option></select></label>
-    <label>SMTP server<input id="pvmHost" value="smtp.gmail.com" autocapitalize="off"></label><label>Port<input id="pvmPort" value="465" inputmode="numeric"></label>
-    <label>E-mail (prihlasovacie meno)<input id="pvmUser" type="email" autocapitalize="off" placeholder="ernte@ernte.sk"></label><label>Heslo / heslo aplikácie<input id="pvmPass" type="password" autocomplete="new-password"></label>
+  if(!MR.ok&&MR.main){d.innerHTML=`<div class="pvmb"><b>📧 Nastav odosielanie e-mailov (raz)</b><div class="pvs">Zadaj prístup k schránke, z ktorej sa budú posielať zmluvy. Heslo sa uloží iba do trezoru databázy. Pri schránke @ernte.sk (Microsoft 365) zadaj heslo k schránke; ak má zapnuté dvojstupňové overenie, použi <b>heslo aplikácie</b>.</div>
+    <label>Schránka<select id="pvmPre"><option value="smtp.office365.com|587">Microsoft 365 (@ernte.sk)</option><option value="smtp.gmail.com|465">Gmail</option><option value="smtp.websupport.sk|465">Websupport</option><option value="smtp.seznam.cz|465">Seznam</option><option value="|465">Iný server…</option></select></label>
+    <label>SMTP server<input id="pvmHost" value="smtp.office365.com" autocapitalize="off"></label><label>Port<input id="pvmPort" value="587" inputmode="numeric"></label>
+    <label>E-mail (prihlasovacie meno)<input id="pvmUser" type="email" autocapitalize="off" placeholder="jana.valkova@ernte.sk" value="jana.valkova@ernte.sk"></label><label>Heslo / heslo aplikácie<input id="pvmPass" type="password" autocomplete="new-password"></label>
     <label>Meno odosielateľa<input id="pvmName" value="ERNTE spol. s r.o."></label>
     <div class="pvbt"><button type="button" class="pvpri" data-pv="mcfg">💾 Uložiť a odoslať</button><button type="button" data-pv="mold">Poslať cez telefón</button><button type="button" data-pv="mx">Zrušiť</button></div></div>`;
     V.ov.appendChild(d);const pre=d.querySelector("#pvmPre");pre.onchange=()=>{const [h,p]=pre.value.split("|");d.querySelector("#pvmHost").value=h;d.querySelector("#pvmPort").value=p};return}
@@ -97,6 +97,22 @@ async function mailPdf(){const M=V&&V.M;if(!M)return;try{const f=await makeFile(
 window.open=function(url,target,feat){const u=url==null?"":String(url);
   if(u===""&&(!target||target==="_blank")){try{return open()}catch(x){}}
   return origOpen(url,target,feat)};
+// priamy odkaz na nastavenie odosielania: …/farmar/#nastav-email (iba Martin)
+try{if(/^#nastav-?e?mail/i.test(location.hash))sessionStorage.setItem("ernte-mailsetup","1")}catch(x){}
+async function setupLink(){let f=false;try{f=/^#nastav-?e?mail/i.test(location.hash)||sessionStorage.getItem("ernte-mailsetup")==="1";sessionStorage.removeItem("ernte-mailsetup")}catch(x){}if(!f)return;if(document.getElementById("pvSetup"))return;let n=0;
+  while(n++<60&&!(typeof window.MAIN_OK==="function"&&window.MAIN_OK()))await new Promise(r=>setTimeout(r,500));
+  if(!(typeof window.MAIN_OK==="function"&&window.MAIN_OK())){tmsg("Odosielanie e-mailov nastavuje iba Martin – prihlás sa ako Martin.",7000);return}
+  await mailReady();const o=document.createElement("div");o.id="pvSetup";
+  o.innerHTML=`<div class="pvmb"><b>📧 Odosielanie zmlúv a zúčtovaní e-mailom</b><div class="pvs">Odosielať sa bude zo schránky <b>jana.valkova@ernte.sk</b> (Microsoft 365). Zadaj heslo k tejto schránke – uloží sa iba do trezoru databázy, nikam inam.${MR&&MR.ok?`<br>✅ Teraz nastavené: ${esc(MR.user||MR.from||"")}`:""}</div>
+    <label>SMTP server<input id="pvmHost" value="${esc(MR&&MR.host||"smtp.office365.com")}" autocapitalize="off"></label><label>Port<input id="pvmPort" value="587" inputmode="numeric"></label>
+    <label>E-mail (prihlasovacie meno)<input id="pvmUser" type="email" autocapitalize="off" value="jana.valkova@ernte.sk"></label><label>Heslo k schránke<input id="pvmPass" type="password" autocomplete="new-password"></label>
+    <label>Meno odosielateľa<input id="pvmName" value="ERNTE spol. s r.o."></label>
+    <div class="pvbt"><button type="button" class="pvpri" id="pvsSave">💾 Uložiť</button><button type="button" id="pvsX">Zavrieť</button></div></div>`;
+  document.body.appendChild(o);const close=()=>{o.remove();try{history.replaceState(null,"",location.pathname+location.search)}catch(x){}};
+  o.querySelector("#pvsX").onclick=close;o.querySelector("#pvsSave").onclick=async()=>{const g=i=>o.querySelector(i).value;if(!g("#pvmPass")){tmsg("Zadaj heslo k schránke.",5000);return}
+    const r=await sb.rpc("mail_cfg_set",{p:{host:g("#pvmHost"),port:g("#pvmPort"),user:g("#pvmUser"),pass:g("#pvmPass"),from:g("#pvmUser"),name:g("#pvmName")}});
+    if(r.error){tmsg("Nepodarilo sa: "+r.error.message,8000);return}tmsg("✅ Uložené – zmluvy a zúčtovania sa budú posielať z "+g("#pvmUser"),8000);close()}}
+window.addEventListener("hashchange",setupLink);setTimeout(setupLink,1500);
 window.pdfViewOpen=open;window.pdfViewClose=close;
 {const s=document.createElement("style");s.textContent=`#pdfv{position:fixed;inset:0;overflow:hidden;z-index:2147483000;display:flex;flex-direction:column;background:#0b1020}
 #pdfv .pvbar{display:flex;flex-wrap:wrap;align-items:center;gap:8px;padding:calc(8px + env(safe-area-inset-top)) 10px 8px;background:#0f172a;border-bottom:1px solid rgba(255,255,255,.12);color:#fff}
@@ -106,10 +122,11 @@ window.pdfViewOpen=open;window.pdfViewClose=close;
 #pdfv .pvb .pvpri{background:linear-gradient(135deg,#22d3ee,#a3e635);color:#0b1020;border:0}
 #pdfv .pvf{flex:1 1 auto;width:100%;border:0;background:#e5e7eb}
 #pdfv .pvmail{position:absolute;inset:0;z-index:5;background:rgba(2,6,23,.6);display:flex;align-items:flex-end;justify-content:center;padding:10px}
-#pdfv .pvmb{width:100%;max-width:520px;max-height:90vh;overflow:auto;display:grid;gap:8px;background:#0f172a;color:#fff;border:1px solid rgba(255,255,255,.18);border-radius:20px;padding:16px}
-#pdfv .pvmb label{display:grid;gap:4px;font-size:.85rem}#pdfv .pvmb input,#pdfv .pvmb select,#pdfv .pvmb textarea{width:100%;box-sizing:border-box;min-height:44px;font-size:16px;border-radius:12px;padding:8px 10px}
-#pdfv .pvs{font-size:.8rem;opacity:.8}#pdfv .pvbt{display:flex;flex-wrap:wrap;gap:8px}#pdfv .pvbt button{flex:1 1 140px;min-height:46px;border-radius:12px;font-weight:700}
-#pdfv .pvbt .pvpri{background:linear-gradient(135deg,#22d3ee,#a3e635);color:#0b1020;border:0}@media(min-width:700px){#pdfv .pvmail{align-items:center}}
+#pvSetup{position:fixed;inset:0;z-index:2147483001;background:rgba(2,6,23,.7);display:flex;align-items:flex-end;justify-content:center;padding:10px}
+:is(#pdfv,#pvSetup) .pvmb{width:100%;max-width:520px;max-height:90vh;overflow:auto;display:grid;gap:8px;background:#0f172a;color:#fff;border:1px solid rgba(255,255,255,.18);border-radius:20px;padding:16px}
+:is(#pdfv,#pvSetup) .pvmb label{display:grid;gap:4px;font-size:.85rem}:is(#pdfv,#pvSetup) .pvmb :is(input,select,textarea){width:100%;box-sizing:border-box;min-height:44px;font-size:16px;border-radius:12px;padding:8px 10px}
+:is(#pdfv,#pvSetup) .pvs{font-size:.8rem;opacity:.8}:is(#pdfv,#pvSetup) .pvbt{display:flex;flex-wrap:wrap;gap:8px}:is(#pdfv,#pvSetup) .pvbt button{flex:1 1 140px;min-height:46px;border-radius:12px;font-weight:700}
+:is(#pdfv,#pvSetup) .pvbt .pvpri{background:linear-gradient(135deg,#22d3ee,#a3e635);color:#0b1020;border:0}@media(min-width:700px){#pvSetup,#pdfv .pvmail{align-items:center}}
 #pdfv .pvbusy{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);padding:14px 20px;border-radius:14px;background:rgba(15,23,42,.92);color:#fff;font-weight:700}
 @media(max-width:380px){#pdfv .pvb button{white-space:normal;line-height:1.15;font-size:.82rem;padding:4px 6px}}
 @media(min-width:700px){#pdfv .pvb{flex:0 1 auto}#pdfv .pvb button{flex:0 0 auto;padding:6px 14px}}
