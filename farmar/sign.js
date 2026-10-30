@@ -23,7 +23,8 @@ html[data-theme=light] .sgbox{background:#fff;color:#0f172a;border-color:rgba(15
 .sgpadw::after{content:"";position:absolute;left:18px;right:18px;bottom:42px;border-bottom:1px solid #cbd5e1;pointer-events:none}
 .sgclr{position:absolute;right:8px;top:8px;min-height:34px!important;padding:0 12px!important;font-size:.8rem!important;background:#f1f5f9!important;color:#0f172a!important}
 .sgchk{display:flex;gap:10px;align-items:flex-start;font-size:.92rem}.sgchk input{width:24px;height:24px;flex:none;accent-color:#b6ff3b}
-.sgnote{font-size:.8rem;opacity:.75}.sgmsg{white-space:pre-wrap;padding:12px;border-radius:12px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.14);font-size:.9rem}`;document.head.appendChild(st)}
+.sgnote{font-size:.8rem;opacity:.75}.sgos{display:grid;gap:8px}.sgcam{display:flex!important;align-items:center;justify-content:center;min-height:54px;border-radius:16px;font-weight:800;cursor:pointer;background:linear-gradient(90deg,#34d399,#22d3ee)!important;color:#05210f!important}
+.sgprev{display:flex;align-items:center;gap:10px}.sgprev img{max-height:120px;max-width:70%;border-radius:10px;background:#fff;border:1px solid rgba(255,255,255,.2)}.sgmsg{white-space:pre-wrap;padding:12px;border-radius:12px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.14);font-size:.9rem}`;document.head.appendChild(st)}
 const telOf=p=>String(p||"").replace(/\D/g,"").replace(/^00/,"").replace(/^0/,"421");
 const needSign=d=>{const s=SF[d.id];return d.status!=="zruseny"&&!(s&&s.signed_at)&&(d.status==="navrh"||!!(s&&s.requested_at))};
 
@@ -92,6 +93,46 @@ document.addEventListener("click",async ev=>{const g=s=>ev.target.closest&&ev.ta
     document.body.appendChild(m);window._sgTxt=txt;return}
   if(g("[data-sgcopy]")){try{await navigator.clipboard.writeText(window._sgTxt||"");tm("Skopírované ✓")}catch(y){}return}
 });
+// ---------- NA MIESTE U OBCHODNÍKA: odfotená pečiatka farmára a/alebo podpis prstom farmára (pečiatka ERNTE sa pridá sama) ----------
+let OS={stamp:null};
+function openOnsite(id){const d=(STATE.deals||[]).find(x=>x.id===id);if(!d)return;closePad();OS={stamp:null,id};
+  const f=(STATE.farmers||[]).find(y=>y.id===d.farmer_id)||{};
+  const m=document.createElement("div");m.className="sgmod";m.id="sgMod";m.setAttribute("role","dialog");m.setAttribute("aria-modal","true");
+  m.innerHTML=`<div class="sgbox"><div class="sghd"><b>✍️ Podpis na mieste · ${e(d.no)}</b><button type="button" class="sgx" data-sgclose aria-label="Zavrieť">✕</button></div>
+   <div class="sgsum"><span>${e(f.name||"")}</span><span>${e(typeof comName==="function"?comName(d.com):d.com)}</span><span>${typeof fmt==="function"?fmt(d.tons):d.tons} t</span>${d.price!=null?`<span>${typeof fmt==="function"?fmt(d.price):d.price} €/t</span>`:""}</div>
+   <button type="button" class="sgread" data-cpdf="${e(d.id)}">📄 Ukázať farmárovi celú zmluvu</button>
+   <div class="sgos"><label class="btn sgcam">📷 Odfotiť pečiatku farmára<input type="file" accept="image/*" capture="environment" id="sgStamp" hidden></label><div id="sgStampPrev" class="sgprev"></div></div>
+   <label class="sgl">Meno a priezvisko podpisujúceho (farmár)<input id="sgName" autocomplete="off" value="${e(f.contact||f.name||"")}"></label>
+   <div class="sgpadw"><canvas id="sgPad" aria-label="Pole na podpis prstom farmára"></canvas><span class="sghint">Podpis prstom farmára sem</span><button type="button" class="sgclr" data-sgclr>Vymazať</button></div>
+   <label class="sgchk"><input type="checkbox" id="sgOk"><span>Farmár si zmluvu prečítal a súhlasí s ňou.</span></label>
+   <div class="btns"><button type="button" class="pri" data-sgonsave="${e(d.id)}">✅ Uložiť – zmluva podpísaná</button><button type="button" data-sgclose>Zrušiť</button></div>
+   <div class="sgnote">Stačí pečiatka alebo podpis (najlepšie oboje). V PDF zmluvy budú na mieste podpisu farmára; pečiatka a podpis ERNTE sa doplnia automaticky.</div></div>`;
+  document.body.appendChild(m);document.documentElement.classList.add("sgopen");setupPad(document.getElementById("sgPad"))}
+function imgOf(file){return new Promise((ok,no)=>{const u=URL.createObjectURL(file),i=new Image();i.onload=()=>{ok(i);setTimeout(()=>URL.revokeObjectURL(u),1000)};i.onerror=no;i.src=u})}
+async function composeOnsite(){const sig=padPng();if(!OS.stamp&&!sig)return null;
+  const S=OS.stamp,G=sig?await new Promise(r=>{const i=new Image();i.onload=()=>r(i);i.src=sig}):null;
+  if(S&&!G){const k=Math.min(1,700/Math.max(S.width,S.height)),c=document.createElement("canvas");c.width=Math.round(S.width*k);c.height=Math.round(S.height*k);const x=c.getContext("2d");x.fillStyle="#fff";x.fillRect(0,0,c.width,c.height);x.drawImage(S,0,0,c.width,c.height);return c.toDataURL("image/jpeg",.82)}
+  if(G&&!S)return sig;
+  const H=260,ks=H/S.height,ws=Math.round(S.width*ks),kg=Math.min(1,(H*.8)/G.height),wg=Math.round(G.width*kg),hg=Math.round(G.height*kg);
+  const c=document.createElement("canvas");c.width=Math.min(1400,ws+Math.round(wg*.6));c.height=H;const x=c.getContext("2d");x.fillStyle="#fff";x.fillRect(0,0,c.width,c.height);
+  x.drawImage(S,0,0,ws,H);x.drawImage(G,Math.max(0,c.width-wg),Math.round((H-hg)/2),wg,hg);return c.toDataURL("image/jpeg",.85)}
+document.addEventListener("change",async ev=>{const t=ev.target;if(!t||t.id!=="sgStamp")return;const f=t.files&&t.files[0];if(!f)return;
+  try{OS.stamp=await imgOf(f);const p=document.getElementById("sgStampPrev");if(p)p.innerHTML=`<img src="${URL.createObjectURL(f)}" alt="Pečiatka farmára"><button type="button" data-sgstx>✕ Odstrániť</button>`}catch(x){tm("Fotka sa nenačítala – skús znova.",5000)}});
+document.addEventListener("click",async ev=>{const g=s=>ev.target.closest&&ev.target.closest(s);let x;
+  if(x=g("[data-sgonsite]")){ev.preventDefault();openOnsite(x.dataset.sgonsite);return}
+  if(g("[data-sgstx]")){OS.stamp=null;const p=document.getElementById("sgStampPrev");if(p)p.innerHTML="";return}
+  if(x=g("[data-sgonsave]")){const id=x.dataset.sgonsave,d=(STATE.deals||[]).find(y=>y.id===id);const nm=(document.getElementById("sgName").value||"").trim();
+    if(!document.getElementById("sgOk").checked){tm("Potvrď, že farmár si zmluvu prečítal.");return}
+    const sig=padPng();if(!OS.stamp&&!sig){tm("Odfoť pečiatku farmára alebo nech sa podpíše prstom.");return}
+    if(sig&&nm.length<3){tm("Napíš meno a priezvisko toho, kto podpisuje.");return}
+    if(typeof busy==="function")busy(x,true);let img=null;try{img=await composeOnsite()}catch(y){}
+    if(!img){if(typeof busy==="function")busy(x,false);tm("Podpis / pečiatku sa nepodarilo pripraviť.");return}
+    const r=await sb.rpc("deal_sign_onsite",{p_deal:id,p_img:img,p_name:nm||((STATE.farmers||[]).find(y=>y.id===(d&&d.farmer_id))||{}).name||"",p_kind:OS.stamp&&sig?"pečiatka a podpis":OS.stamp?"pečiatka":"podpis",p_ua:navigator.userAgent.slice(0,300),p_hash:d?await docHash(d):null});
+    if(typeof busy==="function")busy(x,false);
+    if(r.error){tm(/deal_sign_onsite/.test(r.error.message)?"Podpis na mieste sa zapne po aktualizácii (pár minút).":r.error.message,7000);return}
+    closePad();SS=null;tm("✅ Zmluva podpísaná – v PDF je pečiatka/podpis farmára aj pečiatka ERNTE.",7000);
+    if(typeof loadStaff==="function"){await loadStaff();if(typeof renderStaff==="function")renderStaff()}if(window.contractPdf&&confirm("Otvoriť podpísanú zmluvu (PDF)?"))contractPdf(id);return}});
+window.signOnsite=openOnsite;
 async function loadSS(){if(SSload)return;SSload=true;try{const r=await sb.rpc("deal_signs_staff");SS={};if(!r.error&&Array.isArray(r.data))for(const x of r.data)SS[x.deal_id]=x}catch(x){SS={}}SSload=false;if(typeof TAB!=="undefined"&&TAB==="deals"&&typeof renderStaff==="function")renderStaff()}
 if(typeof window.renderStaff==="function"){const _rs=window.renderStaff;window.renderStaff=function(){const r=_rs.apply(this,arguments);try{decorS()}catch(x){}return r};Object.keys(_rs).forEach(k=>{try{if(!(k in window.renderStaff))window.renderStaff[k]=_rs[k]}catch(x){}})}
 function decorS(){if(typeof TAB==="undefined"||TAB!=="deals"||typeof FARMER!=="undefined"&&FARMER)return;if(SS===null){loadSS();return}
@@ -99,5 +140,6 @@ function decorS(){if(typeof TAB==="undefined"||TAB!=="deals"||typeof FARMER!=="u
     if(bt.querySelector(".sgst"))continue;const sp=document.createElement("span");sp.className="pill sgst";
     if(s&&s.signed_at){sp.textContent=`✅ Farmár podpísal ${dd(s.signed_at)}${s.name?" · "+s.name:""}`;bt.appendChild(sp)}
     else if(d.status!=="zruseny"){if(s&&s.requested_at){sp.className="pill w sgst";sp.textContent="⏳ čaká na podpis od "+dd(s.requested_at);bt.appendChild(sp)}
-      const q=document.createElement("button");q.type="button";q.dataset.sgreq=d.id;q.textContent=s&&s.requested_at?"🔔 Pripomenúť podpis":"✍️ Požiadať o podpis";bt.appendChild(q)}}}
+      const q=document.createElement("button");q.type="button";q.dataset.sgreq=d.id;q.textContent=s&&s.requested_at?"🔔 Pripomenúť podpis":"✍️ Požiadať o podpis";bt.appendChild(q);
+      const o=document.createElement("button");o.type="button";o.className="pri";o.dataset.sgonsite=d.id;o.textContent="🖊️ Podpis na mieste (pečiatka / prst)";bt.appendChild(o)}}}
 })();
