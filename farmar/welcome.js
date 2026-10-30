@@ -106,7 +106,7 @@ function spParse(u){const m=String(u||"").match(/open\.spotify\.com\/(?:intl-[a-
 /* komu Spotify: celý tím ERNTE/VALKO (každý zamestnanec v aplikácii); farmári a partnerské firmy trusu nie */
 const SPWHO=[["jana"],["galajda"],["licko"],["toth"],["tomas","stofa"],["tomas","valko"]];
 /* štýl tlačidiel rádia */
-{const st=document.createElement("style");st.textContent=".wspx{all:unset;cursor:pointer;margin-left:6px;padding:1px 7px;border-radius:9px;font-size:.68rem;border:1px solid rgba(255,255,255,.3);opacity:.85}.whoff{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap}.wspon{min-height:38px;padding:0 12px;border-radius:12px}";document.head.appendChild(st)}
+{const st=document.createElement("style");st.textContent=".wspx{display:block;width:100%;margin-top:8px;min-height:40px;padding:0 12px!important;border-radius:12px!important;font-size:.85rem;font-weight:700}.whoff{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap}.wspon{min-height:38px;padding:0 12px;border-radius:12px}";document.head.appendChild(st)}
 /* 📻 rádio sa dá vypnúť natrvalo (návrh obchodníkov – slabší telefón); na slabom telefóne je predvolene vypnuté */
 const RADK="ernte-radio";function radioOff(){let v="";try{v=localStorage.getItem(RADK)||""}catch(x){}if(v)return v==="off";return !!(navigator.deviceMemory&&navigator.deviceMemory<=3)}
 function radioSet(on){try{localStorage.setItem(RADK,on?"on":"off")}catch(x){}}
@@ -114,9 +114,9 @@ function radioOnHTML(){return `<div class="whc whsp whoff"><small>🎵 Rádio je
 function spotOK(k){if(k==="ja")return true;if(typeof FARMER!=="undefined"&&FARMER)return false;if(window.ERNTE_KIND!=="trus"&&typeof ROLE!=="undefined"&&ROLE)return true;/* celý tím (zamestnanci); farmári a partneri trusu nie */
   const raw=((typeof ME!=="undefined"&&ME&&(ME.staffName||""))+" "+(typeof ME!=="undefined"&&ME&&ME.email||"")).toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"");
   const T=raw.split(/[^a-z0-9]+/);return SPWHO.some(ws=>ws.every(w=>T.includes(w)))}
-function spot(){const r=spRef(),cur=SPRAD.find(x=>x[2]===r);return `<div class="whc whsp"><div class="wsph"><div class="wspt"><small>🎵 Rádio · Spotify <button type="button" class="wspx" data-radoff="1" title="Vypnúť rádio natrvalo">✕ vypnúť</button></small><b>${cur?`<i>${cur[0]}</i> <span>${E(cur[1])}</span>`:"<span>Môj playlist</span>"}</b></div><span><a class="wspo" href="https://open.spotify.com/${r}" target="_blank" rel="noopener">Spotify ↗</a><button type="button" class="wspc" data-spchg>Zmeniť</button></span></div>
+function spot(){const r=spRef(),cur=SPRAD.find(x=>x[2]===r);return `<div class="whc whsp"><div class="wsph"><div class="wspt"><small>🎵 Rádio · Spotify</small><b>${cur?`<i>${cur[0]}</i> <span>${E(cur[1])}</span>`:"<span>Môj playlist</span>"}</b></div><span><a class="wspo" href="https://open.spotify.com/${r}" target="_blank" rel="noopener">Spotify ↗</a><button type="button" class="wspc" data-spchg>Zmeniť</button></span></div>
   <div class="wspr" role="group" aria-label="Rádiá">${SPRAD.map(x=>`<button type="button" class="wsprb" data-sprad="${x[2]}" aria-pressed="${x[2]===r}">${x[0]} ${E(x[1])}</button>`).join("")}</div>
-  <div class="wspw wslot"></div><div class="wspn">▶ Hrá ďalej aj počas práce v aplikácii – dole sa zbalí do 🎵.</div></div>`}
+  <div class="wspw wslot"></div><div class="wspn">▶ Hrá ďalej aj počas práce v aplikácii – dole sa zbalí do 🎵.</div><button type="button" class="wspx" data-radoff="1">✕ Vypnúť rádio (ak spomaľuje telefón)</button></div>`}
 /* prehrávač žije mimo úvodu (spdock.js) – tu ho iba prilepíme do panelu, aby hudba pri zatvorení úvodu nestíchla */
 function spHook(el){const s=el&&el.querySelector(".whsp .wslot");if(!s||!window.spDock)return;const r=spRef(),cur=SPRAD.find(x=>x[2]===r);try{spDock.play(r,cur?cur[0]+" "+cur[1]:"Môj playlist");spDock.attach(s)}catch(x){}}
 const WXI=c=>c===0?"☀️":c<=2?"🌤️":c===3?"☁️":c<=48?"🌫️":c<=67?"🌧️":c<=77?"🌨️":c<=82?"🌦️":c<=86?"🌨️":"⛈️";
