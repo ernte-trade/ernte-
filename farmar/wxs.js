@@ -22,8 +22,14 @@ function wxIcon(c,day=true,big){const cl=`<path class="wi-cl" d="M19 47h27a10.5 
   else if(c<=77||c<=86)g=`<g class="wi-dr" transform="translate(0 -6)">${cl}</g>${flakes(4)}`;
   else g=`<g class="wi-dr dk" transform="translate(0 -6)">${cl}</g><path class="wi-bolt" d="M33 40l-7 12h7l-3 10 11-15h-7l4-7z"/>${drops(2,"wi-rn")}`;
   return `<svg class="wxi-s${big?" big":""}" viewBox="0 0 64 64" aria-hidden="true">${g}</svg>`}
-window.wxIcon=wxIcon;
-const ICO=(c,day=true)=>wxIcon(c,day);
+// 📸 SKUTOČNÉ FOTKY OBLOHY (príkaz majiteľa 31. 10.: „reálne live foto z oblohy aj ikony reálne“) – Wikimedia Commons, voľné licencie, autor uvedený
+const WXK=(c,day=true)=>c===0?(day?"clear":"night"):c<=2?(day?"partly":"night"):c===3?"cloudy":c<=48?"fog":c<=67||(c>=80&&c<=82)?"rain":c<=77||c<=86?"snow":"storm";
+const WXP={clear:["Roman Eisele","CC BY-SA 4.0"],night:["Santa Monica Mountains NRA (NPS)","verejná doména"],partly:["Tadeáš Bednarz","CC BY-SA 4.0"],cloudy:["Dietmar Rabich","CC BY-SA 4.0"],
+  fog:["Dietmar Rabich","CC BY-SA 4.0"],rain:["Michal Klajban","CC BY-SA 4.0"],snow:["Dietmar Rabich","CC BY-SA 4.0"],storm:["Mathias Krumbholz","CC BY-SA 3.0"],video:["Mihael Grmek","CC BY-SA 3.0"]};
+const WXB=document.currentScript&&document.currentScript.src?new URL("img/wx/",document.currentScript.src).href:"img/wx/";
+function wxPhoto(c,day=true,big){const k=WXK(c,day);return `<span class="wxi-p${big?" big":""} k-${k}" style="background-image:url('${WXB}${k}-i.jpg')" aria-hidden="true"></span>`}
+window.wxIcon=(c,day,big)=>wxPhoto(c,day,big);window.wxKey=WXK;window.wxSvg=wxIcon;
+const ICO=(c,day=true)=>wxPhoto(c,day);
 const TXT=c=>c===0?"Jasno":c<=2?"Polojasno":c===3?"Oblačno":c<=48?"Hmla":c<=57?"Mrholenie":c<=67?"Dážď":c<=77?"Sneženie":c<=82?"Prehánky":c<=86?"Snehové prehánky":"Búrka";
 async function load(force){const L=loc(),k=L.lat+","+L.lon;if(!force&&W.d&&W.key===k&&Date.now()-W.at<15*60e3)return;if(W.busy)return W.busy;
   W.busy=(async()=>{try{const q=`latitude=${L.lat}&longitude=${L.lon}&timezone=Europe%2FBratislava`;
@@ -60,6 +66,19 @@ function gauge(p){const mn=960,mx=1060,f=Math.max(0,Math.min(1,(p-mn)/(mx-mn))),
 function sunArc(rise,set){const now=Date.now(),r=Date.parse(rise),s=Date.parse(set);let f=(now-r)/(s-r);const up=f>=0&&f<=1;f=Math.max(0,Math.min(1,f));
   const x=10+f*180,y=70-Math.sin(f*Math.PI)*52;
   return `<svg viewBox="0 0 200 90" class="wssun" aria-hidden="true"><line x1="0" y1="70" x2="200" y2="70" class="hz"/><path d="M10 70 Q100 -34 190 70" class="arc"/>${up?`<circle cx="${x}" cy="${y}" r="9" class="sun"/>`:""}</svg>`}
+function heroBg(c,day){const k=WXK(c,day),vid=day&&(k==="partly"||k==="cloudy");
+  return `<div class="wsbg" style="background-image:url('${WXB}${k}.jpg')"></div>${vid?`<video class="wsvid" autoplay muted loop playsinline preload="auto" poster="${WXB}${k}.jpg" aria-hidden="true"><source src="${WXB}clouds.mp4" type="video/mp4"></video>`:""}<div class="wsfx fx-${k}${day?"":" nt"}"></div><div class="wsdim"></div>`}
+function heroCredit(c,day){const k=WXK(c,day),vid=day&&(k==="partly"||k==="cloudy"),a=WXP[vid?"video":k];return `<small class="wscr">${vid?"Video":"Foto"}: ${E(a[0])} · ${E(a[1])} · Wikimedia Commons</small>`}
+// 🛰️ satelit NASA GIBS (verejná doména) – snímka dnes po 13:00 UTC, inak včera
+function mountSat(){const el=document.getElementById("wsSat");if(!el||el.dataset.ok||typeof needL!=="function")return;el.dataset.ok="1";const L0=loc();
+  needL().then(()=>{const now=new Date(),d=new Date(now.getTime()-(now.getUTCHours()>=13?0:864e5)).toISOString().slice(0,10);
+    const m=L.map(el,{zoomControl:false,attributionControl:false,scrollWheelZoom:false}).setView([L0.lat,L0.lon],7);
+    const lay=day=>L.tileLayer(`https://gibs.earthdata.nasa.gov/wmts/epsg3857/best/VIIRS_NOAA20_CorrectedReflectance_TrueColor/default/${day}/GoogleMapsCompatible_Level9/{z}/{y}/{x}.jpg`,{maxNativeZoom:9,maxZoom:12,minZoom:4});
+    let sat=lay(d).addTo(m),fell=false;sat.on("tileerror",()=>{if(fell)return;fell=true;m.removeLayer(sat);sat=lay(new Date(Date.now()-2*864e5).toISOString().slice(0,10)).addTo(m)});
+    L.tileLayer("https://gibs.earthdata.nasa.gov/wmts/epsg3857/best/Reference_Labels_15m/default/default/GoogleMapsCompatible_Level13/{z}/{y}/{x}.png",{maxNativeZoom:9,maxZoom:12,opacity:.9}).addTo(m);
+    L.marker([L0.lat,L0.lon],{icon:L.divIcon({className:"",html:`<div class="lpin mv"><i></i><span>${E(L0.name||"")}</span></div>`,iconSize:[0,0]})}).addTo(m);
+    const t=el.parentNode.querySelector(".wssatt small");if(t)t.textContent=`Skutočná satelitná snímka ${d.split("-").reverse().join(". ")} (NASA VIIRS) – oblaky a krajina nad tebou. Zdroj: NASA EOSDIS GIBS / Worldview.`;
+    setTimeout(()=>m.invalidateSize(),200)}).catch(()=>{})}
 function html(){const L=loc(),D=W.d;
   if(!D)return `<div class="wsx"><div class="card"><div class="s">Načítavam počasie…</div></div></div>`;
   if(D.err)return `<div class="wsx"><div class="card"><div class="row"><span class="t">📍 ${E(L.name)}</span><button type="button" class="out" data-wxpick>📍 Zmeniť miesto</button></div><div class="s">Počasie sa nepodarilo načítať. Skús ↻.</div></div></div>`;
@@ -83,9 +102,10 @@ function html(){const L=loc(),D=W.d;
   const PL=[["Stromový",Math.max(A.alder_pollen||0,A.birch_pollen||0),[1,10,50]],["Tráva",A.grass_pollen,[1,10,50]],["Ambróziový",Math.max(A.ragweed_pollen||0,A.mugwort_pollen||0),[1,10,50]]];
   const plv=v=>v==null?0:v<1?0:v<10?1:v<50?2:3;
   return `<div class="wsx ${day?"day":"night"}">
-  <div class="wshero"><div class="wsstars"></div><i class="wsshine"></i><div class="wsbigi">${wxIcon(C.weather_code,day,true)}</div><button type="button" class="wsloc" data-wxpick>📍 ${E(L.name)}${L.sub?` <small>${E(L.sub)}</small>`:""}</button>
+  <div class="wshero k-${WXK(C.weather_code,day)}">${heroBg(C.weather_code,day)}<i class="wsshine"></i><button type="button" class="wsloc" data-wxpick>📍 ${E(L.name)}${L.sub?` <small>${E(L.sub)}</small>`:""}</button>
    <div class="wsbig">${R(C.temperature_2m)}<sup>°</sup></div><div class="wscond">${E(TXT(C.weather_code))}</div>
-   <div class="wsmm">↑ ${R(mx)}° / ↓ ${R(mn)}°<br>Pocitová teplota ${R(C.apparent_temperature)}°</div></div>
+   <div class="wsmm">↑ ${R(mx)}° / ↓ ${R(mn)}°<br>Pocitová teplota ${R(C.apparent_temperature)}°</div>${heroCredit(C.weather_code,day)}</div>
+   <div class="wscard wsc-sat"><small class="wslbl">🛰️ Pohľad z vesmíru · satelit NASA</small><div class="wssat" id="wsSat"></div><div class="wssatt"><small>Skutočná satelitná snímka (VIIRS) – oblaky nad tebou, aktualizácia raz denne. NASA EOSDIS GIBS / Worldview.</small></div></div>
   <div class="wsgrid">
    <div class="wscard wsc-h"><div class="wssum">${E(TXT(Dl.weather_code[it]))}. Max ${R(mx)} °C, min ${R(mn)} °C${(Dl.precipitation_probability_max[it]??0)>=30?` · zrážky ${Dl.precipitation_probability_max[it]} %`:""}</div>
     <div class="wshs"><div class="wshrow">${hrs.join("")}</div>${curve(TT)}</div></div>
@@ -111,7 +131,7 @@ function html(){const L=loc(),D=W.d;
 const _card=window.wxCard;
 window.wxCard=function(){if(!W.d||(W.key&&W.key!==loc().lat+","+loc().lon)||Date.now()-W.at>15*60e3)load().then(()=>{try{if(typeof rerender==="function")rerender()}catch(x){}});
   const radar=`<div class="card"><div class="t">🛰️ Radar zrážok</div><div class="rdbox" id="radarBox"></div><div class="s" style="font-size:.7rem">Radar: <a class="copy" style="font-size:.7rem" href="https://www.pocasieradar.sk/" target="_blank" rel="noopener">pocasieradar.sk</a></div></div>`;
-  return html()+radar};
+  setTimeout(mountSat,60);setTimeout(mountSat,600);return html()+radar};
 try{wxCard=window.wxCard}catch(x){}
 const _lw=window.loadWx;if(typeof _lw==="function"){window.loadWx=async function(f){await Promise.all([_lw.apply(this,arguments),load(!!f)])};try{loadWx=window.loadWx}catch(x){}}
 setInterval(()=>{if(!document.hidden&&document.querySelector(".wsx")&&Date.now()-W.at>15*60e3)load(true).then(()=>{if(typeof formBusy==="function"&&formBusy())return;try{rerender()}catch(x){}})},60e3);
@@ -191,5 +211,26 @@ html[data-theme=light] .wscard{background:linear-gradient(135deg,rgba(255,255,25
 @keyframes wifog{0%,100%{transform:translateX(-3px)}50%{transform:translateX(3px)}}@keyframes wibolt{0%,8%,14%,100%{opacity:1}5%,11%{opacity:.15}}
 @media (prefers-reduced-motion:reduce){.wxi-s *,.wshero,.wshero::after,.wscard::before,.wscard::after,.wsshine{animation:none!important}}
 .whwx .wxi .wxi-s{width:1.6em;height:1.6em}
+/* 📸 skutočná obloha: fotka (pomalý pohyb), video oblakov, dážď / sneh / blesk naživo */
+.wshero .wsbg{position:absolute;inset:-6%;background-size:cover;background-position:center;animation:wskb 40s ease-in-out infinite alternate;z-index:0}
+@keyframes wskb{from{transform:scale(1.02) translate3d(-1.5%,0,0)}to{transform:scale(1.12) translate3d(1.5%,-2%,0)}}
+.wshero .wsvid{position:absolute;inset:0;width:100%!important;height:100%!important;max-width:none!important;object-fit:cover;z-index:0}
+.wshero .wsdim{position:absolute;inset:0;z-index:0;background:linear-gradient(180deg,rgba(0,0,0,.25) 0%,rgba(0,0,0,0) 35%,rgba(0,0,0,.15) 55%,rgba(2,6,23,.72) 100%)}
+.wshero .wsfx{position:absolute;inset:0;z-index:0;pointer-events:none}.wshero .wsfx.nt{background:rgba(2,6,23,.35)}
+.wshero .fx-rain{background-image:repeating-linear-gradient(105deg,rgba(255,255,255,0) 0 18px,rgba(220,235,255,.35) 18px 19px,rgba(255,255,255,0) 19px 46px),repeating-linear-gradient(100deg,rgba(255,255,255,0) 0 30px,rgba(220,235,255,.25) 30px 31px,rgba(255,255,255,0) 31px 70px);background-size:120px 160px,170px 210px;animation:wsrain .55s linear infinite}
+@keyframes wsrain{to{background-position:-30px 160px,-40px 210px}}
+.wshero .fx-snow{background-image:radial-gradient(2.5px 2.5px at 20px 30px,#fff,transparent),radial-gradient(2px 2px at 80px 70px,#fff,transparent),radial-gradient(3px 3px at 140px 20px,#fff,transparent),radial-gradient(2px 2px at 50px 120px,#fff,transparent),radial-gradient(2.5px 2.5px at 110px 150px,#fff,transparent);background-size:180px 180px;animation:wssnow 7s linear infinite;opacity:.9}
+@keyframes wssnow{to{background-position:40px 180px}}
+.wshero .fx-storm{animation:wsflash 7s steps(1) infinite}@keyframes wsflash{0%,88%,92%,96%,100%{background:transparent}89%,95%{background:rgba(233,240,255,.45)}}
+.wshero .fx-fog{background:linear-gradient(90deg,rgba(255,255,255,0),rgba(255,255,255,.22),rgba(255,255,255,0));background-size:200% 100%;animation:wsfog 14s ease-in-out infinite alternate}@keyframes wsfog{to{background-position:100% 0}}
+.wshero .wsstars{display:none}.wshero.k-night .wsstars{display:block}
+.wsx .wshero{background:#0b1020!important;animation:none!important;min-height:300px}
+.wscr{display:block;margin-top:10px;font-size:.66rem;opacity:.8;text-shadow:0 1px 4px rgba(0,0,0,.9)}
+.wxi-p{display:inline-block;width:2.1em;height:2.1em;border-radius:50%;background-size:cover;background-position:center;vertical-align:middle;box-shadow:0 0 0 1.5px rgba(255,255,255,.75),0 0 10px rgba(125,211,252,.55);flex:none}
+.wxi-p.big{width:100%;height:100%}.wsh span,.wsd>span{display:grid;place-items:center}.whwx .wxi .wxi-p{width:1.7em;height:1.7em}
+.wxi-p.k-rain,.wxi-p.k-storm{box-shadow:0 0 0 1.5px rgba(186,230,253,.9),0 0 12px rgba(56,189,248,.7)}
+.wsx .wshero::before{-webkit-backdrop-filter:none!important;backdrop-filter:none!important;background:linear-gradient(135deg,rgba(255,255,255,.14),rgba(255,255,255,0) 45%)!important;z-index:1}
+.wssat{height:260px;border-radius:16px;overflow:hidden;margin-top:6px;background:#020617}.wssat img{max-width:none!important}.wssatt small{display:block;opacity:.75;font-size:.72rem;margin-top:6px}
+@media (prefers-reduced-motion:reduce){.wshero .wsbg,.wshero .wsfx{animation:none!important}}
 @media (max-width:380px){.wsd{grid-template-columns:minmax(52px,1fr) 46px 26px minmax(30px,1fr) auto;gap:6px}.wsbig{font-size:4.4rem}}`;document.head.appendChild(s)}
 })();
