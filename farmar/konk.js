@@ -65,7 +65,7 @@ function offerHTML(L){const o=L[0];const rows=L.map(x=>{const our=ourPrice(x.com
   return `<div class="kko-card"><div class="kkh"><b>${E(o.who||"Konkurencia")}</b><small>${E(dk(o.d))}${o.del?" · "+E(o.del):""}${o.place?" "+E(o.place):""}</small><button type="button" class="kkdel" data-kkdel="${E(o.oid||o.id)}" aria-label="Zmazať ponuku">✕</button></div>${rows}</div>`}
 function sellHTML(L){const o=L[0],bo=buyerOfW(o.who)||{},dp=+(o.dop!=null?o.dop:bo.dop)||0;
   const rows=L.map(x=>{const our=ourPrice(x.com),fca=+x.price,dap=fca+dp,pf=our!=null?fca-our:null;
-    return `<div class="kkr"><div class="kkc"><b>${E(nm(x.com))}</b><small>${E(x.term||"")}</small></div><div class="kkv"><b>${f0(fca)} €/t</b><small>FCA – odvezú si</small>${dp?`<small>s našou dopravou <b>${f2(dap)}</b> (+${f2(dp)})</small>`:""}</div>
+    return `<div class="kkr"><div class="kkc"><b>${E(nm(x.com))}</b><small>${E(x.term||"")}</small></div><div class="kkv"><b>${f0(fca)} €/t</b><small>${/^(FCA|EXW)$/i.test(x.del||"FCA")?"FCA – odvezú si":E((x.del||"")+" "+(x.place||""))+(x.per?" · "+E(x.per):"")}</small>${dp?`<small>s našou dopravou <b>${f2(dap)}</b> (+${f2(dp)})</small>`:""}</div>
      <div class="kko ${pf==null?"":pf>=0?"up":"dn"}"><small>nákup my</small><b>${our!=null?f0(our):"–"}</b>${pf!=null?`<small>zisk ${pf>=0?"+":"−"}${f0(Math.abs(pf))}</small>`:""}</div></div>`}).join("");
   return `<div class="kko-card kksell"><div class="kkh"><b>💰 ${E(o.who||"Odberateľ")} – kupuje od nás</b><small>${E(dk(o.d))}</small><button type="button" class="kkdel" data-kkdel="${E(o.oid||o.id)}" aria-label="Zmazať ponuku">✕</button></div>${rows}</div>`}
 function html(){let h=`<div class="card kkcard" id="kkCard"><h2>🏷️ Konkurenčné ceny</h2>
