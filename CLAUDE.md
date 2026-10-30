@@ -160,6 +160,9 @@ s pripojeným repozitárom `ernte-trade/ernte-`.
 - **Úvod Martina a Jany (30. 10.)**: na skle graf našich nákupných cien (90 dní, `cennik_historia`), 💎 diamantové dlaždice ⛽ Nafta Slovnaft/MOL Group
   (workflow `fuel.yml` 3× denne → vetva `fuel-data`/fuel.json: fuel-prices.eu + EK Weekly Oil Bulletin, CC BY 4.0 – stanice MOL/INA/Tifon kde sú, inak priemer krajiny; navigácia Google Maps)
   a 🤝 graf obchodov (12 týždňov); Spotify nižšie na čiernom pozadí; na širokej obrazovke sa fotka roztiahne a posúva (`wfit`).
+- **🗺️ ERNTE Maps** (30. 10., `ernmaps.js`, tlačidlo 🗺️ v hornej lište pre celý tím + dlaždica ⛽ na úvode): vlastná GPS navigácia v aplikácii – presná poloha (≤ 1 km, inak čaká),
+  miesta z OpenStreetMap/Overpass (⛽ ČS, 🍽️ reštaurácie, ☕, 🅿️ kamióny, 🏨, 🛒, 🔧, 🚿, 🏧, 💊, 🚻), trasa OSRM so žiariacou čiarou, navigácia krok za krokom po slovensky s hlasom,
+  prepočet pri zídení z trasy, Google Maps ako záloha. Leaflet: globálne `img,svg{max-width:100%}` → v `fit.css` výnimka pre `.leaflet-container svg`.
 - Vtipy na úvode: ~100 vlastných vo východniarskom nárečí (`KE` vo `welcome.js`), bez opakovania na zariadení.
 - Kontroly bez prístupu k sieti z Claude: workflowy `health.yml` (dostupnosť) a `icotest.yml` (registre) zapisujú výsledok do vetiev
   `health-results` / `ico-results`.
