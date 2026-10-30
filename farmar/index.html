@@ -806,7 +806,7 @@ html[data-theme=light] .ftbl th{color:#0f172a}html[data-theme=light] .fdban{colo
 <link rel="stylesheet" href="trus.css?v=20261027-0140">
 <link rel="stylesheet" href="ev.css?v=20261027-1600">
 <link rel="stylesheet" href="ui.css?v=20261029-0030">
-<link rel="stylesheet" href="fit.css?v=20261030-1830">
+<link rel="stylesheet" href="fit.css?v=20261030-2255">
 </head>
 <body>
 <div class="wrap">
@@ -888,7 +888,7 @@ let LOGIN={email:"",sent:false};
 function showLogin(){$("outBtn").hidden=true;$("refBtn").hidden=true;$("aiBtn").hidden=true;$("hS").textContent="výkup komodít";
   const A=$("app");
   if(!LOGIN.sent){A.innerHTML=`<div class="center"><div class="hero"><small>Vitajte</small><b>Prihlásenie</b><small>Zadajte e-mail alebo telefón a heslo, ktoré vám poslala ERNTE.</small><small lang="hu" style="opacity:.8">🇭🇺 Bejelentkezés: adja meg az e-mail címét vagy telefonszámát és az ERNTE-től kapott jelszót.</small></div>
-    <form class="card" id="fEmail"><label>E-mail alebo telefón · E-mail vagy telefon<input name="email" type="text" inputmode="email" autocomplete="username" autocapitalize="off" required value="${esc(LOGIN.email)}" placeholder="meno@firma.sk alebo 0905 123 456"></label><label>Heslo · Jelszó <span style="font-weight:400">(od ERNTE · az ERNTE-től)</span><input name="pw" type="password" autocomplete="current-password"></label><button type="button" class="lgpaste" data-lgpaste>📋 Vložiť skopírované meno a heslo z PDF · Beillesztés</button><button class="pri" type="submit">Prihlásiť / Belépés</button></form>${installHint()}<div class="s" style="text-align:center;margin-top:10px"><a href="sukromie.html">🔒 Ochrana osobných údajov</a></div></div>`}
+    <form class="card" id="fEmail"><label>E-mail alebo telefón · E-mail vagy telefon<input name="email" type="text" inputmode="email" autocomplete="username" autocapitalize="off" required value="${esc(LOGIN.email)}" placeholder="meno@firma.sk alebo 0905 123 456"></label><label>Heslo · Jelszó <span style="font-weight:400">(od ERNTE · az ERNTE-től)</span><input name="pw" type="password" autocomplete="current-password"></label><button type="button" class="lgpaste" data-lgpaste>📋 Vložiť skopírované meno a heslo z PDF · Beillesztés</button><button class="pri" type="submit">Prihlásiť / Belépés</button></form>${installHint()}</div>`}
   else{A.innerHTML=`<div class="center"><div class="hero"><small>Kód sme poslali na</small><b>${esc(LOGIN.email)}</b><small>Pozrite si e-mail (aj priečinok Spam) a opíšte kód. Ak je v e-maile iba tlačidlo „Log In“, podržte na ňom prst → Kopírovať odkaz a vložte ho sem.</small></div>
     <form class="card" id="fCode"><label>Kód z e-mailu<input class="code" name="code" inputmode="numeric" autocomplete="one-time-code" required></label><button class="pri" type="submit">Prihlásiť</button><button type="button" id="backEmail">Zmeniť e-mail / poslať znova</button></form></div>`;
     setTimeout(()=>{const i=document.querySelector("input.code");if(i)i.focus()},50)}

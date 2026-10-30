@@ -91,3 +91,8 @@ html[data-theme=light] .zlcg .zlcs b{color:#3f6212}
 
 /* mapy Leaflet: globálne img,svg{max-width:100%} zmenšovalo vrstvu trás na 0 px (30. 10.) */
 .leaflet-container svg,.leaflet-container canvas{max-width:none!important}
+
+/* 30. 10.: skryté tlačidlá v hlavičke (prihlasovacia obrazovka) sa nesmú ukázať – kruhové pravidlo vyššie prebíjalo atribút hidden */
+header.top>[hidden],#app .hrow>button[hidden]{display:none!important}
+/* Odhlásiť v kruhu hlavičky: iba ikona ⏻ (text sa do kruhu nezmestil), názov ostáva v aria-label / title */
+header.top>.out .oi{display:inline!important;font-size:1.05rem;line-height:1}header.top>.out .ot{display:none!important}
