@@ -18,7 +18,7 @@ const S={cat:"fuel",me:null,wid:null,map:null,meM:null,acc:null,st:[],stL:null,d
 async function needLeaflet(){if(window.L)return;if(typeof needL==="function")return needL();await new Promise((ok,no)=>{const s=document.createElement("script");s.src=window.LEAFLET_SRC||"leaflet.js";s.onload=ok;s.onerror=no;document.head.appendChild(s)})}
 function ui(){let o=document.getElementById("emap");if(o)return o;o=document.createElement("div");o.id="emap";o.innerHTML=`
   <div class="emh"><b>🗺️ ERNTE Maps</b><span class="emgps">📡 hľadám GPS…</span><button type="button" class="emx" data-emx aria-label="Zavrieť mapu">✕</button></div>
-  <div class="emm"><div id="emMap"></div><button type="button" class="emq" data-emq>🔎 <span>Kam ideš? <small>odkiaľ → kam · 🚛 🚗 🚶</small></span></button><div class="emnbt" hidden><button type="button" class="emnb stop" data-emstop2 aria-label="Ukončiť navigáciu">■</button><button type="button" class="emnb" data-emcar aria-label="Do auta – Apple CarPlay / Android Auto">🚗</button><button type="button" class="emnb" data-emmute aria-label="Hlas zap/vyp">🔊</button><button type="button" class="emnb" data-emov aria-label="Celá trasa">🗺️</button><button type="button" class="emnb" data-emalb aria-label="Čerpacie stanice a reštaurácie po trase">⛽</button></div><div class="emcar" hidden></div><div class="emalp" hidden><b>Po trase – ťukni a pridá sa ako zastávka</b><div class="emalong"><button type="button" data-emp="fuel">⛽ ČS</button><button type="button" data-emp="food">🍽️ Reštaurácie</button><button type="button" data-emp="park">🅿️ Parkovanie</button></div><div class="empoi"></div></div><div class="emwarn" hidden></div><div class="emovt" hidden></div><div class="emhud" hidden><div><b class="emspd">0</b><small>km/h</small></div><div><b class="emrem">–</b><small>zostáva</small></div><div><b class="emeta">–</b><small>príchod</small></div></div></div>
+  <div class="emm"><div id="emMap"></div><button type="button" class="emq" data-emq>🔎 <span>Kam ideš? <small>odkiaľ → kam · 🚛 🚗 🚶</small></span></button><div class="emnbt" hidden><button type="button" class="emnb stop" data-emstop2 aria-label="Ukončiť navigáciu">■</button><button type="button" class="emnb" data-emcar aria-label="Do auta – Apple CarPlay / Android Auto">🚗</button><button type="button" class="emnb" data-emmute aria-label="Hlas zap/vyp">🔊</button><button type="button" class="emnb" data-emov aria-label="Celá trasa">🗺️</button><button type="button" class="emnb" data-emalb aria-label="Čerpacie stanice a reštaurácie po trase">⛽</button></div><div class="emcar" hidden></div><div class="emalp" hidden><b>Po trase – ťukni a pridá sa ako zastávka</b><div class="emalong"><button type="button" data-emp="fuel">⛽ ČS</button><button type="button" data-emp="food">🍽️ Reštaurácie</button><button type="button" data-emp="park">🅿️ Parkovanie</button></div><div class="empoi"></div></div><div class="emwarn" hidden></div><div class="emovt" hidden></div><div class="emhud" hidden><div><b class="emspd">0</b><small>km/h</small></div><div><b class="emrem">–</b><small>zostáva</small></div><div><b class="emeta">–</b><small>príchod</small></div><div><b class="emrt">–</b><small>jazdy ešte</small></div><div><b class="emalt">–</b><small>nad morom</small></div><div><b class="emcost">–</b><small>náklady zvyšok</small></div></div><div class="emfix" hidden></div></div>
   <div class="emnav" hidden><div class="emarrow">⬆️</div><div class="emtxt"><b class="emdist">—</b><b class="emins">—</b><small class="emsub"></small></div><i class="emprog"><i></i></i></div>
   <div class="emcats"><button type="button" data-emplan class="emplb">🧭 Trasa · 🚛 cena</button>${CAT.map(c=>`<button type="button" data-emcat="${c[0]}" class="${c[0]==="fuel"?"on":""}">${c[1]} ${c[2]}</button>`).join("")}</div>
   <div class="emp"><button type="button" class="empmin" data-empmin aria-label="Zmenšiť / zväčšiť panel">⇕</button><div class="emst"></div><div class="emlist"></div>
@@ -36,7 +36,7 @@ async function open(cat){if(cat&&CAT.some(c=>c[0]===cat))S.cat=cat;const o=ui();
   setTimeout(()=>S.map.invalidateSize(),60);startGps();acquireWake()}
 function close(){const o=document.getElementById("emap");if(o)o.classList.remove("on");document.documentElement.classList.remove("emon");stopNav();if(S.wid!=null){try{navigator.geolocation.clearWatch(S.wid)}catch(x){}S.wid=null}releaseWake()}
 function startGps(){if(!navigator.geolocation){status("Telefón nepodporuje GPS polohu.");return}if(S.wid!=null)return;let first=true;
-  S.wid=navigator.geolocation.watchPosition(p=>{const c={lat:p.coords.latitude,lng:p.coords.longitude,acc:(p.coords.accuracy??9999),hd:p.coords.heading,sp:p.coords.speed,at:Date.now()};
+  S.wid=navigator.geolocation.watchPosition(p=>{const c={lat:p.coords.latitude,lng:p.coords.longitude,acc:(p.coords.accuracy??9999),hd:p.coords.heading,sp:p.coords.speed,alt:p.coords.altitude,at:Date.now()};
       if(c.acc>5000&&S.me)return;liveBearing(c);S.me=c;gpsTxt();drawMe();
       if(first&&c.acc<=1000){first=false;if(S.mode!=="plan"){S.map.setView([c.lat,c.lng],14);findStations()}}else if(first){status(`📡 Poloha zatiaľ nepresná (±${fd(c.acc/1000)}) – čakám na GPS… Zapni v telefóne presnú polohu.`)}
       if(S.nav)navTick()},
@@ -139,12 +139,12 @@ function navTick(force){const c=S.me,st=S.steps;if(!S.nav||!c||!st.length)return
   if(S.route&&S.route.pts){const ni=nearIx(S.route,c);if(ni.d<0.1)while(S.si<st.length-1&&st[S.si].idx!=null&&ni.i>st[S.si].idx+1)S.si++}
   const nx=st[Math.min(S.si+ (S.si===0?1:0),st.length-1)],m=nx.maneuver.location,dn=km(c,{lat:m[1],lng:m[0]}),txt=stepTxt(nx);
   let rem=st.slice(S.si).reduce((a,s)=>a+s.distance,0)/1000;if(S.route&&S.route.pts){const R=S.route,C=cum(R),ni=nearIx(R,c),T=C[C.length-1]||1;rem=(R.distance/1000)*Math.max(0,1-C[ni.i]/T)}
-  liveTick();{const R=S.route,tot=(R&&R.distance)||1,left=Math.max(0,rem*1000),sec=R&&R.duration?R.duration*left/tot:0;const re=$(".emrem");if(re)re.textContent=fd(rem);const et=$(".emeta");if(et&&sec)et.textContent=new Date(Date.now()+sec*1000).toLocaleTimeString("sk-SK",{hour:"2-digit",minute:"2-digit"})}
+  liveTick();{const R=S.route,tot=(R&&R.distance)||1,left=Math.max(0,rem*1000),sec=R&&R.duration?R.duration*left/tot:0;const re=$(".emrem");if(re)re.textContent=fd(rem);const et=$(".emeta");if(et&&sec)et.textContent=new Date(Date.now()+sec*1000).toLocaleTimeString("sk-SK",{hour:"2-digit",minute:"2-digit"});hudX(rem,sec)}
   S.dn=dn;$(".emdist").textContent=fd(dn);$(".emins").textContent=txt;$(".emsub").textContent=`zostáva ${fd(rem)}`;{const nv=$(".emnav");nv.classList.toggle("near",dn<0.12);nv.querySelector(".emprog>i").style.width=Math.max(0,Math.min(100,(1-dn/0.5)*100))+"%"}
   mvDraw(nx);if(S.route&&S.route.pts){const R=S.route,n=nearIx(R,c);warnTick(R,cum(R)[n.i])}
   if(nx.maneuver.type==="via"&&dn<0.05){const v=P.via.find(v=>!v.done&&km(c,v)<0.3);if(v){v.done=true;say("Ste na zastávke "+v.n)}}$(".emarrow").textContent=nx.maneuver.type==="arrive"?"🏁":(ARR[nx.maneuver.modifier]||"⬆️");
   {const sv=nx.say||txt;if(force||(dn<0.2&&S.lastStep!==S.si+"n")||(dn<0.8&&dn>0.5&&S.lastStep!==S.si+"f")){if(dn<0.2)S.lastStep=S.si+"n";else if(dn<0.8&&dn>0.5)S.lastStep=S.si+"f";say((dn<0.2?"":"O "+fd(dn)+", ")+sv)}}
-  if(nx.maneuver.type==="arrive"&&dn<0.03){say("Ste v cieli.");stopNav();status("🏁 Ste v cieli.");return}
+  if(nx.maneuver.type==="arrive"&&dn<0.03){say("Ste v cieli.");navClear();stopNav();status("🏁 Ste v cieli.");return}
     if(distToRoute(c)>0.08&&Date.now()-S.rr>15000){S.rr=Date.now();say("Prepočítavam trasu");if(S.mode==="plan"&&S.replan)S.replan();else{const i=S.st.indexOf(S.dest);if(i>=0)route(i)}}}
 // 📺 navigácia na celú obrazovku (Android / PC – Fullscreen API; iPhone: v nainštalovanej aplikácii je celá obrazovka sama)
 function fsOn(){try{const d=document.documentElement;if(!document.fullscreenElement&&d.requestFullscreen){d.requestFullscreen({navigationUI:"hide"}).then(()=>{S.fs=true;try{screen.orientation&&screen.orientation.lock&&screen.orientation.lock("any").catch(()=>{})}catch(x){}}).catch(()=>{})}
@@ -172,15 +172,15 @@ document.addEventListener("click",e=>{const t=e.target.closest&&e.target.closest
 document.addEventListener("click",e=>{const t=e.target.closest&&e.target.closest("[data-emov],[data-emalb]");if(!t||!t.closest("#emap"))return;e.preventDefault();e.stopPropagation();
   if(t.dataset.emov!==undefined)return overview(!S.ov);const pp=$(".emalp");if(pp){pp.hidden=!pp.hidden;const c=$(".emcar");if(c)c.hidden=true}},true);
 document.addEventListener("click",e=>{const t=e.target.closest&&e.target.closest("[data-emstop2],[data-emcar],[data-emmute]");if(!t||!t.closest("#emap"))return;e.preventDefault();e.stopPropagation();
-  if(t.dataset.emstop2!==undefined)return stopNav();if(t.dataset.emcar!==undefined)return carPanel();
+  if(t.dataset.emstop2!==undefined){navClear();return stopNav()}if(t.dataset.emcar!==undefined)return carPanel();
   if(t.dataset.emmute!==undefined){S.mute=!S.mute;t.textContent=S.mute?"🔇":"🔊";try{if(S.mute)speechSynthesis.cancel()}catch(x){}}},true);
 document.addEventListener("fullscreenchange",()=>{if(!document.fullscreenElement)S.fs=false;setTimeout(()=>{try{S.map&&S.map.invalidateSize(false)}catch(x){}},300)});
-function startNav(){if(!S.route)return;fsOn();S.nav=true;S.follow=true;S.si=0;$(".emnav").hidden=false;$("[data-emgo]").hidden=true;$("[data-emstop]").hidden=false;document.getElementById("emap").classList.add("navon");liveView(true);navTick(true)}
+function startNav(){if(!S.route)return;fsOn();S.nav=true;S.follow=true;S.si=0;$(".emnav").hidden=false;$("[data-emgo]").hidden=true;$("[data-emstop]").hidden=false;document.getElementById("emap").classList.add("navon");liveView(true);navTick(true);navSave();fixStart()}
 function stopNav(){S.nav=false;fsOff();S.ov=false;S.brg=null;S.lastC=null;S.dn=null;S.wd={};if(S.mvL){S.mvL.forEach(l=>l.remove());S.mvL=null;S.mvFor=null}["emcar","emalp","emwarn","emovt"].forEach(k=>{const c=$("."+k);if(c)c.hidden=true});{const b=$("[data-emov]");if(b)b.classList.remove("on")}try{speechSynthesis.cancel()}catch(x){}const n=$(".emnav");if(n)n.hidden=true;const g=$("[data-emgo]");if(g)g.hidden=!S.route;const st=$("[data-emstop]");if(st)st.hidden=true;const o=document.getElementById("emap");if(o&&o.classList.contains("navon")){o.classList.remove("navon");liveView(false)}}
 async function acquireWake(){try{if(navigator.wakeLock&&!S.wl)S.wl=await navigator.wakeLock.request("screen")}catch(x){}}
 function releaseWake(){try{if(S.wl){S.wl.release();S.wl=null}}catch(x){}}
 document.addEventListener("click",e=>{const t=e.target.closest&&e.target.closest("[data-emx],[data-emgo],[data-emstop],[data-emcenter],[data-emi],[data-emretry],[data-emcat]");if(!t)return;e.preventDefault();e.stopPropagation();
-  if(t.dataset.emx!==undefined)return close();if(t.dataset.emgo!==undefined)return startNav();if(t.dataset.emstop!==undefined)return stopNav();
+  if(t.dataset.emx!==undefined)return close();if(t.dataset.emgo!==undefined)return startNav();if(t.dataset.emstop!==undefined){navClear();return stopNav()}
   if(t.dataset.emcenter!==undefined){S.follow=true;if(S.me)S.map.setView([S.me.lat,S.me.lng],16);return}
   if(t.dataset.emretry!==undefined)return findStations();if(t.dataset.emcat!==undefined){S.cat=t.dataset.emcat;showPlan(false);P.res=null;return S.me?findStations():null}if(t.dataset.emi!==undefined)return route(+t.dataset.emi)},true);
 document.addEventListener("visibilitychange",()=>{if(!document.hidden&&document.getElementById("emap")?.classList.contains("on"))acquireWake()});
@@ -417,7 +417,52 @@ document.addEventListener("click",e=>{const t=e.target.closest&&e.target.closest
   if(D.emsg!==undefined){const box=$(".emsug"),w=box.dataset.w,s=(P.sl||[])[+D.emsg];if(!s)return;setW(w,s);const i=$(`[data-emf=${w}]`);if(i)i.value=s.n;box.innerHTML="";
     if(w==="a"&&!P.b){const ib=$("[data-emf=b]");if(ib)ib.focus()}else if(P.b&&w!=="a"||P.b)calc()}},true);
 const OK=()=>typeof window.MAIN_OK==="function"&&window.MAIN_OK()&&!window.ERNTE_VIEWAS; // príkaz majiteľa 30. 10.: ERNTE Maps iba Martin
-window.ernteMaps={open:c=>OK()?open(c):null,close,ok:OK};
+// ===== 31. 10. (príkaz majiteľa): navigácia vždy pokračuje, dojazd km a čas, nadmorská výška, náklady, strážca trasy =====
+const NK="ernte-nav-live";
+function navSave(){try{if(!S.nav||!S.dest)return;localStorage.setItem(NK,JSON.stringify({dest:{n:S.dest.n,lat:+S.dest.lat,lng:+S.dest.lng},
+  via:(P.via||[]).filter(v=>!v.done).map(v=>({n:v.n,lat:+v.lat,lng:+v.lng})),rate:P.res&&P.res.D>0?P.res.tot/P.res.D:((navSaved()||{}).rate||null),at:Date.now()}))}catch(x){}}
+function navClear(){try{localStorage.removeItem(NK)}catch(x){}fixHide();if(S.fixT){clearInterval(S.fixT);S.fixT=null}}
+function navSaved(){try{const o=JSON.parse(localStorage.getItem(NK)||"null");if(o&&o.dest&&Date.now()-o.at<12*36e5)return o}catch(x){}return null}
+const fdur=s=>{const m=Math.max(0,Math.round(s/60));return m<60?m+" min":Math.floor(m/60)+" h "+String(m%60).padStart(2,"0")};
+// výška: GPS telefónu, inak Open-Meteo podľa polohy (najviac raz za minútu alebo po 300 m)
+function altOf(c){if(c&&c.alt!=null&&isFinite(c.alt))return Math.round(c.alt);const A=S.altE;if(A&&Date.now()-A.at<6e4&&km(c,A)<0.3)return A.v;
+  if(!S.altBusy&&c){S.altBusy=true;fetch(`https://api.open-meteo.com/v1/elevation?latitude=${c.lat.toFixed(5)}&longitude=${c.lng.toFixed(5)}`,{signal:tmo(8000)}).then(r=>r.json()).then(j=>{const v=j&&j.elevation&&j.elevation[0];if(v!=null){S.altE={lat:c.lat,lng:c.lng,v:Math.round(v),at:Date.now()};const al=$(".emalt");if(al)al.textContent=Math.round(v)+" m"}}).catch(()=>{}).finally(()=>{S.altBusy=false})}
+  return A?A.v:null}
+function hudX(rem,sec){{const hd=$(".emhud"),o=document.getElementById("emap");if(hd&&o&&!hd.hidden)o.style.setProperty("--hudh",hd.offsetHeight+"px")}const rt=$(".emrt");if(rt)rt.textContent=sec?fdur(sec):"–";const al=$(".emalt");if(al){const v=altOf(S.me);al.textContent=v!=null?v+" m":"–"}
+  const co=$(".emcost");if(co){const sv=navSaved(),r=(P.res&&P.res.D>0)?P.res.tot/P.res.D:sv&&sv.rate;co.textContent=r?Math.round(rem*r).toLocaleString("sk-SK")+" €":"–"}
+  if(S.nav&&(!S.lastSave||Date.now()-S.lastSave>30000)){S.lastSave=Date.now();navSave()}}
+// 🛡️ strážca trasy: každé 3 min prepočíta trasu z mojej polohy (aj s dopravnými udalosťami), nájde problém a ponúkne riešenie
+function fixHide(){const f=$(".emfix");if(f){f.hidden=true;f.innerHTML=""}S.fixR=null}
+function fixStart(){if(S.fixT)clearInterval(S.fixT);S.fixT=setInterval(()=>{if(S.nav&&!document.hidden)fixCheck()},180000);setTimeout(()=>{if(S.nav)fixCheck()},45000)}
+async function fixCheck(){if(S.fixBusy||!S.nav||!S.me||!S.dest||!S.route||cfg().mode==="pedestrian")return;S.fixBusy=true;
+  try{const left=(P.via||[]).filter(v=>!v.done);const Rs=await routesFor([{lat:S.me.lat,lng:S.me.lng,n:"Moja poloha"},...left,S.dest]);if(!Rs.length||!S.nav)return;
+    const keep=P.routes,keepRi=P.ri;P.routes=Rs.concat([S.route]);try{await incidents()}catch(x){}P.routes=keep;P.ri=keepRi;
+    const R=S.route,C=cum(R),T=C[C.length-1]||1,ni=nearIx(R,S.me),frac=Math.max(0,1-C[ni.i]/T),dCur=delayOf(R),cur=R.duration*frac+dCur;
+    let best=null;for(const A of Rs){const t=A.duration+delayOf(A);if(!best||t<best.t)best={A,t}}
+    if(!best)return;const gain=cur-best.t,same=Math.abs(best.A.distance-R.distance*frac)<Math.max(500,R.distance*frac*0.02);
+    if(gain<300||same){if(!S.fixR)fixHide();return}
+    const prob=dCur>120?`🚦 Na tvojej trase je zdržanie +${Math.round(dCur/60)} min (zápcha, nehoda alebo uzávera)`:`🐢 Premávka na tvojej trase je pomalšia, než sa čakalo`;
+    const sol=`Obchádzka ${fd(best.A.distance/1000)} · príchod ${new Date(Date.now()+best.t*1000).toLocaleTimeString("sk-SK",{hour:"2-digit",minute:"2-digit"})} · ušetríš ${fdur(gain)}`;
+    S.fixR=best.A;const f=$(".emfix");if(f){const hd=$(".emhud");f.style.bottom=((hd&&!hd.hidden?hd.offsetHeight:0)+20)+"px";f.innerHTML=`<b>${E(prob)}</b><span>✅ Riešenie: ${E(sol)}</span><div><button type="button" data-emfixok>Použiť obchádzku</button><button type="button" data-emfixno>Ostať</button></div>`;f.hidden=false}
+    if(!S.fixSaid||Date.now()-S.fixSaid>600000){S.fixSaid=Date.now();say("Pozor, na trase je problém. Našla som obchádzku, ušetríš "+fdur(gain)+".")}}
+  catch(x){}finally{S.fixBusy=false}}
+document.addEventListener("click",e=>{const b=e.target.closest&&e.target.closest("[data-emfixok],[data-emfixno]");if(!b||!b.closest("#emap"))return;e.preventDefault();e.stopPropagation();
+  if(b.dataset.emfixno!==undefined){fixHide();return}const R=S.fixR;if(!R)return fixHide();
+  S.route=R;S.steps=R.legs[0].steps||[];S.si=0;S.ix=0;drawRouteLines(R);if(S.mvL){S.mvL.forEach(l=>l.remove());S.mvL=null;S.mvFor=null}fixHide();say("Idem po obchádzke.");navTick(true);navSave()},true);
+// po znovuotvorení aplikácie (aj po zatvorení z plochy) navigácia pokračuje presne odtiaľ, kde si
+async function navResume(){const sv=navSaved();if(!sv||S.nav||!OK())return;open();status(`🧭 Pokračujem v navigácii do <b>${E(sv.dest.n||"cieľa")}</b> – čakám na GPS…`);
+  const t0=Date.now();while(!(S.me&&S.me.acc<=1000)&&Date.now()-t0<120000)await new Promise(r=>setTimeout(r,1000));
+  if(!S.me||!document.getElementById("emap")||!document.getElementById("emap").classList.contains("on"))return;
+  try{P.a={lat:S.me.lat,lng:S.me.lng,n:"Moja poloha"};P.b=sv.dest;P.via=sv.via||[];S.mode="plan";const Rs=await routesFor([P.a,...P.via,P.b]);if(!Rs.length)throw 0;
+    P.routes=Rs;P.ri=0;drawPlan(Rs[0]);startNav();say("Pokračujem v navigácii do "+(sv.dest.n||"cieľa"))}
+  catch(x){status("Trasu sa nepodarilo obnoviť – skús znova alebo zadaj cieľ.")}}
+{let n=0;const t=setInterval(()=>{n++;if(n>60){clearInterval(t);return}if(typeof ME==="undefined"||!ME||typeof ROLE==="undefined"||!ROLE)return;clearInterval(t);if(navSaved()&&OK())setTimeout(navResume,800)},1000)}
+{const s=document.createElement("style");s.textContent=`.emhud{grid-template-columns:repeat(3,minmax(0,1fr))!important;row-gap:4px!important;padding:6px 8px!important}.emhud>div{min-width:0;align-content:start}.emhud b{overflow-wrap:anywhere;font-size:1.15rem!important;white-space:nowrap}.emhud small{font-size:.66rem!important;white-space:nowrap}
+#emap.navon .emnbt{bottom:calc(var(--hudh,92px) + 12px + env(safe-area-inset-bottom))!important}
+.emfix{position:absolute;left:10px;right:10px;bottom:150px;z-index:1001;display:grid;gap:6px;padding:10px 12px;border-radius:16px;background:rgba(40,20,5,.94);border:1px solid rgba(251,191,36,.75);box-shadow:0 0 22px rgba(251,191,36,.4);color:#fff;text-align:left}
+.emfix b{color:#fde68a;overflow-wrap:anywhere}.emfix span{font-size:.9rem;overflow-wrap:anywhere}.emfix div{display:flex;gap:8px;flex-wrap:wrap}
+.emfix button{flex:1 1 140px;min-height:44px;border-radius:12px;border:0;font:800 .9rem system-ui;background:linear-gradient(135deg,#fde68a,#f59e0b);color:#1a1205}.emfix button[data-emfixno]{background:rgba(255,255,255,.12);color:#fff;border:1px solid rgba(255,255,255,.25)}`;document.head.appendChild(s)}
+window.ernteMaps={open:c=>OK()?open(c):null,close,ok:OK,resume:navResume};
 // 🗺️ tlačidlo v hornej lište aplikácie (iba Martin)
 function hdrBtn(){const app=document.getElementById("app");if(!app)return;const row=app.querySelector(":scope > .hrow");const ok=OK();
   let b=document.querySelector(".emhb");if(!ok||!row){if(b)b.remove();return}if(b&&b.parentNode===row)return;if(b)b.remove();
