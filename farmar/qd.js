@@ -35,6 +35,7 @@ window.vQd=function(){if(!OK())return `<div class="card"><div class="s">Uzatvár
    <div class="card"><div class="qdn"><i>1</i><b>Farmár</b></div>
     <input class="qdin" id="qdFq" list="qdFarms" placeholder="začni písať meno farmára…" value="${e(f?f.name:Q.fq||Q.F.nazov)}">
     <datalist id="qdFarms">${farmers().map(x=>`<option value="${e(x.name)}">`).join("")}</datalist>
+    <div id="qdRegBox">${regHTML(f)}</div>
     ${f?`<div class="qdok">✓ ${e(f.name)}${f.ico?" · IČO "+e(f.ico):""}${f.phone?" · "+e(f.phone):" · ⚠️ bez telefónu"}</div>`:`<details class="qdnew"${Q.F.ico||Q.F.adresa||Q.F.telefon?" open":""}><summary>➕ Nový farmár – údaje (alebo odfoť pečiatku)</summary>
       ${[["nazov","Názov / meno"],["ico","IČO","numeric"],["dic","DIČ","numeric"],["icdph","IČ DPH"],["adresa","Adresa"],["telefon","Telefón","tel"],["email","E-mail","email"],["iban","IBAN"]].map(([k,l,m])=>`<label>${l}<input class="qdin" data-qdf="${k}" value="${e(Q.F[k]||"")}"${m?` inputmode="${m}"`:""}></label>`).join("")}</details>`}
    </div>
@@ -50,6 +51,7 @@ window.vQd=function(){if(!OK())return `<div class="card"><div class="s">Uzatvár
     <label>Poznámka (nepovinné)<textarea class="qdin" id="qdNote" rows="2" placeholder="napr. vlhkosť do 14 %, platba do 30 dní">${e(Q.note)}</textarea></label>
     <button type="button" class="qdsm" data-qdtext="1">🤖 Vyplniť z textu poznámky</button></div>
    <button type="submit" class="qdgo">✅ Uzatvoriť a poslať farmárovi na podpis</button>
+   <button type="button" class="qdsec" data-qdgomail="1">📧 Uzatvoriť a poslať farmárovi na e-mail</button>
    <button type="button" class="qdclr" data-qdclr="1">Začať odznova</button>
    </form></div>`;
   return h};
@@ -59,11 +61,24 @@ function doneHTML(){const D=Q.done,c=COMS.find(x=>x[0]===D.com);
    <div class="qdst">📲 Odoslané do aplikácie farmára${D.pushed?" + upozornenie do mobilu":""}. ${D.has_login?"Farmár ju uvidí hore ako „Podpísať teraz“.":"Farmár ešte nemá aplikáciu – pošli mu správu nižšie (je v nej aj prihlásenie)."}</div>
    ${D.login?`<div class="qdst">🔑 Prihlásenie pre farmára vytvorené: <b>${e(D.login)}</b></div>`:""}
    <div class="qdacts">${D.phone?`<a class="qdgo" href="https://wa.me/${e(tel(D.phone))}?text=${encodeURIComponent(D.msg)}" target="_blank" rel="noopener">🟢 Poslať cez WhatsApp</a><a class="qdsec" href="sms:+${e(tel(D.phone))}?&body=${encodeURIComponent(D.msg)}">✉️ Poslať SMS</a>`:`<div class="qdwarn">⚠️ Farmár nemá v aplikácii telefón – skopíruj správu a pošli mu ju.</div>`}
-    <button type="button" class="qdsec" data-qdcopy="1">📋 Kopírovať správu</button><button type="button" class="qdsec" data-qdpdf="${e(D.deal_id)}">📄 Zmluva (PDF)</button></div>
+    <button type="button" class="qdsec" data-qdcopy="1">📋 Kopírovať správu</button><button type="button" class="qdsec" data-qdpdf="${e(D.deal_id)}">📄 Zmluva (PDF)</button><button type="button" class="qdsec" data-qdmail="1">📧 Poslať zmluvu e-mailom${D.email?" ("+e(D.email)+")":""}</button></div>
    <details class="qdmsg"><summary>Text správy</summary><pre>${e(D.msg)}</pre></details>
    <button type="button" class="qdgo" data-qdclr="1" style="margin-top:12px">➕ Ďalší obchod</button></div></div>`}
 const tel=p=>String(p||"").replace(/\D/g,"").replace(/^00/,"").replace(/^0/,"421");
 
+// ---------- 🔎 register firiem podľa mena (RPO) – údaje do zmluvy (IČO, adresa) ----------
+let RG={q:"",L:null,busy:false,t:0};
+const fmtA=a=>{if(!a)return "";const town=(a.municipality&&a.municipality.value)||"",no=[a.regNumber&&+a.regNumber>0?a.regNumber:"",a.buildingNumber||""].filter(Boolean).join("/"),pc=String((a.postalCodes||[])[0]||"").replace(/^(\d{3})(\d{2})$/,"$1 $2");return [(a.street||town)+(no?" "+no:""),[pc,town].filter(Boolean).join(" ")].filter(Boolean).join(", ")};
+async function regFind(q){q=String(q||"").trim();if(q.length<4||RG.q===q)return;RG.q=q;RG.busy=true;RG.L=null;regPaint();
+  try{const cur=a=>(a||[]).find(z=>!z.validTo)||(a||[])[0]||null;const r=await fetch("https://api.statistics.sk/rpo/v1/search?fullName="+encodeURIComponent(q.slice(0,80))+"&onlyActive=true",{headers:{Accept:"application/json"}});
+    const j=r.ok?await r.json():{results:[]};RG.L=(j.results||[]).slice(0,4).map(R=>{const i=cur(R.identifiers),n=cur(R.fullNames);return {ico:i?i.value:"",name:n?n.value:"",addr:fmtA(cur(R.addresses))}}).filter(x=>x.ico)}
+  catch(x){RG.L=[]}RG.busy=false;if(RG.q===q)regPaint()}
+function regPaint(){const b=document.getElementById("qdRegBox");if(!b)return;const f=Q.fid?farmers().find(y=>y.id===Q.fid):null;b.innerHTML=regHTML(f)}
+function regHTML(f){if(f&&f.ico&&f.addr)return "";if(RG.busy)return `<div class="s">🔎 Hľadám firmu v registri…</div>`;if(!RG.L||!RG.L.length)return "";
+  return `<div class="qdreg"><b>🔎 V registri – ťukni a údaje sa doplnia do zmluvy:</b>${RG.L.map((x,i)=>`<button type="button" class="qdsec" data-qdreg="${i}"><b>${e(x.name)}</b><small>IČO ${e(x.ico)}${x.addr?" · "+e(x.addr):""}</small></button>`).join("")}</div>`}
+function regPick(i){const x=RG.L&&RG.L[i];if(!x)return;grab();const f=Q.fid?farmers().find(y=>y.id===Q.fid):null;
+  if(!f){Q.F.nazov=x.name;Q.fq=x.name}Q.F.ico=Q.F.ico||x.ico;Q.F.adresa=Q.F.adresa||x.addr;RG.L=null;rr();
+  tst(f?`✓ ${f.name}: IČO a adresa sa pri uzatvorení doplnia na kartu farmára aj do zmluvy.`:"✓ Údaje firmy z registra vyplnené – doplň telefón alebo e-mail.",6000)}
 // ---------- zber hodnôt z formulára ----------
 function grab(){const g=id=>{const x=document.getElementById(id);return x?x.value:null};
   const v={tons:g("qdTons"),price:g("qdPrice"),od:g("qdOd"),do:g("qdDo"),miesto:g("qdMiesto"),note:g("qdNote"),fq:g("qdFq")};for(const k in v)if(v[k]!=null){if(k==="fq")Q.fq=v.fq;else Q[k]=v[k]}
@@ -124,10 +139,20 @@ document.addEventListener("click",async ev=>{const t=ev.target;if(!t.closest||!O
   if(t.closest("[data-qdtext]")){grab();const tx=String(Q.note||"").trim();if(tx.length<4){tst("Napíš alebo nadiktuj do Poznámky, napr. „Novák, repka 100 ton, 420 eur, budúci týždeň“.",7000);return}scan("hlas",null,tx);return}
   if(t.closest("[data-qdclr]")){Q=blank();rr();window.scrollTo(0,0);return}
   if(t.closest("[data-qdcopy]")){try{await navigator.clipboard.writeText(Q.done.msg);tst("Skopírované ✓")}catch(y){}return}
-  if(x=t.closest("[data-qdpdf]")){if(window.contractPdf)contractPdf(x.dataset.qdpdf);return}});
+  if(x=t.closest("[data-qdpdf]")){if(window.contractPdf)contractPdf(x.dataset.qdpdf);return}
+  if(t.closest("#fQd button[type=submit]"))Q.mail=false;
+  if(x=t.closest("[data-qdreg]")){regPick(+x.dataset.qdreg);return}
+  if(x=t.closest("[data-qdmail]")){mailContract();return}
+  if(x=t.closest("[data-qdgomail]")){Q.mail=true;const fm=document.getElementById("fQd");if(fm)fm.requestSubmit?fm.requestSubmit():fm.dispatchEvent(new Event("submit",{cancelable:true,bubbles:true}));return}});
+// 📧 zmluva farmárovi e-mailom (aj keď nemá aplikáciu): otvorí zmluvu a v lište je „Poslať e-mailom“ s adresou
+function mailContract(){const D=Q.done;if(!D)return;let to=String(D.email||Q.F.email||"").trim();
+  if(!to){to=String(prompt("E-mail farmára:","")||"").trim();if(!to)return;D.email=to}
+  const c=COMS.find(x=>x[0]===D.com),me=(typeof ME!=="undefined"&&ME&&ME.staffName)||"ERNTE";
+  window.__pvMail={to,subj:`Kúpna zmluva ${D.no} – ERNTE spol. s r.o.`,body:`Dobrý deň,\n\nv prílohe Vám posielam kúpnu zmluvu ${D.no}: ${c?c[2].toLowerCase():D.com} ${D.tons} t za ${D.price} €/t${D.term?", vývoz "+D.term:""}.\nProsím o podpis a vrátenie. Zmluvu môžete podpísať aj v aplikácii ERNTE (Podpísať teraz).\n\nĎakujem\n${me} · ERNTE spol. s r.o.\n\n👉 ERNTE Trade & Logistic: ${typeof APP_URL!=="undefined"?APP_URL:location.href.split("#")[0]}`};
+  if(window.contractPdf)contractPdf(D.deal_id)}
 document.addEventListener("change",async ev=>{const t=ev.target;if(!t||!t.dataset||!t.dataset.qdfoto||!OK())return;const f=t.files&&t.files[0];if(!f)return;grab();
   try{const img=await shrink(f,1600,.82),th=await shrink(f,240,.6);scan(t.dataset.qdfoto,img,null,th)}catch(x){tst(x.message||String(x),6000)}});
-document.addEventListener("input",ev=>{const t=ev.target;if(t&&t.id==="qdFq"){Q.fq=t.value;const m=farmers().find(f=>nz(f.name)===nz(t.value));if(m&&m.id!==Q.fid){grab();rr();setTimeout(()=>{const i=document.getElementById("qdFq");if(i){i.focus();i.setSelectionRange(i.value.length,i.value.length)}},30)}}});
+document.addEventListener("input",ev=>{const t=ev.target;if(t&&t.id==="qdFq"){Q.fq=t.value;clearTimeout(RG.t);{const v=t.value,m0=farmers().find(f=>nz(f.name)===nz(v));if(!(m0&&m0.ico&&m0.addr))RG.t=setTimeout(()=>regFind(v),900)}const m=farmers().find(f=>nz(f.name)===nz(t.value));if(m&&m.id!==Q.fid){grab();rr();setTimeout(()=>{const i=document.getElementById("qdFq");if(i){i.focus();i.setSelectionRange(i.value.length,i.value.length)}},30)}}});
 document.addEventListener("submit",async ev=>{if(!ev.target||ev.target.id!=="fQd")return;ev.preventDefault();ev.stopPropagation();grab();
   const num_=v=>{const n=parseFloat(String(v||"").replace(/\s/g,"").replace(",","."));return isFinite(n)?n:0};
   const tons=num_(Q.tons),price=num_(Q.price||fPrice(Q.com));
@@ -143,7 +168,7 @@ document.addEventListener("submit",async ev=>{if(!ev.target||ev.target.id!=="fQd
       if(!s.error){D.login=usePhone?D.phone:D.email;cred=`\n\nPrihlasovacie meno: ${D.login}\nJednorazový kód: ${pw}\nPo prvom prihlásení si nastavíte vlastný PIN (kód potom prestane platiť).`}}
     const c=COMS.find(x=>x[0]===Q.com),me=(typeof ME!=="undefined"&&ME&&ME.staffName)||"ERNTE";
     D.msg=`Dobrý deň, ERNTE vám posiela na podpis kúpnu zmluvu ${D.no}: ${c?c[2].toLowerCase():Q.com} ${D.tons} t za ${D.price} €/t${D.term?", vývoz "+D.term:""}.\nOtvorte aplikáciu ERNTE – hore ťuknite „Podpísať teraz“. Podpis prstom trvá 30 sekúnd.${cred}\n\nĎakujeme, ${me} · ERNTE\n\n👉 ERNTE Trade & Logistic: ${typeof APP_URL!=="undefined"?APP_URL:location.href.split("#")[0]}`;
-    Q.done=D;if(typeof loadStaff==="function")await loadStaff();rr();window.scrollTo(0,0)}
+    Q.done=D;if(typeof loadStaff==="function")await loadStaff();rr();window.scrollTo(0,0);if(Q.mail){Q.mail=false;setTimeout(mailContract,400)}}
   catch(x){tst("⚠️ "+(x.message||x),8000)}finally{if(typeof busy==="function")busy(b,false)}},true);
 // obchodník (rola obchod) začína na tejto obrazovke
 const _ss=window.startStaff;if(typeof _ss==="function")window.startStaff=async function(){let had=false;try{had=!!sessionStorage.getItem("ernte-tab")}catch(x){}if(!had&&typeof ROLE!=="undefined"&&ROLE==="admin")TAB="qd";return _ss.apply(this,arguments)};
@@ -160,6 +185,7 @@ const _ss=window.startStaff;if(typeof _ss==="function")window.startStaff=async f
 .qdrow{display:grid;grid-template-columns:1fr 1fr;gap:10px}.qdrow label,.qdform>.card>label{display:grid;gap:4px}.qdchips{display:flex;flex-wrap:wrap;gap:6px}.qdchips button{min-height:42px;border-radius:12px;padding:0 14px}
 .qdgo{display:flex;align-items:center;justify-content:center;width:100%;min-height:64px;border-radius:20px;font-size:1.2rem;font-weight:800;border:0;background:linear-gradient(90deg,#34d399,#22d3ee);color:#05210f;text-decoration:none}
 .qdsec{display:flex;align-items:center;justify-content:center;min-height:52px;border-radius:16px;font-weight:700;text-decoration:none;width:100%}.qdclr,.qdsm{min-height:44px;border-radius:14px}
+.qdreg{display:grid;gap:6px;padding:10px;border-radius:14px;background:rgba(56,189,248,.08);border:1px solid rgba(56,189,248,.3)}.qdreg button{display:grid;justify-items:start;text-align:left;min-height:52px;padding:8px 12px;height:auto}.qdreg small{opacity:.8;font-weight:400}
 .qddone{text-align:center;display:grid;gap:10px}.qdbigok{font-size:3.5rem}.qdst{padding:10px 12px;border-radius:14px;background:rgba(255,255,255,.06);text-align:left}.qdacts{display:grid;gap:8px}.qdmsg pre{white-space:pre-wrap;text-align:left;font:13px/1.4 inherit}
 @media(max-width:520px){.qdbig{grid-template-columns:1fr 1fr 1fr}.qdb{min-height:104px}.qdb span{font-size:2rem}.qdb small{display:none}}`;document.head.appendChild(s)}
 })();

@@ -7,6 +7,7 @@
 const MOB=/Android|iPhone|iPad|iPod/i.test(navigator.userAgent)||(navigator.platform==="MacIntel"&&navigator.maxTouchPoints>1);
 const origOpen=window.open.bind(window);
 let V=null; // {ov,fr,iw,orig,t0,timer,pushed}
+const esc=t=>String(t==null?"":t).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 const tmsg=(m,ms)=>{try{(typeof toast==="function"?toast:alert)(m,ms)}catch(x){}};
 const fname=()=>{let t="";try{t=(V.iw.document.title||"").trim()}catch(x){}t=(t||"Dokument ERNTE").replace(/[_]+/g," ").replace(/[\\/:*?"<>|]+/g," ").replace(/\s+/g," ").trim().slice(0,90);return t+".pdf"};
 function arm(){if(!V)return;let d;try{d=V.iw.document}catch(x){return}
@@ -16,14 +17,14 @@ function arm(){if(!V)return;let d;try{d=V.iw.document}catch(x){return}
     s.textContent=`.pb,body>button.btn,button[onclick^="print"]{display:none!important}html{-webkit-text-size-adjust:100%}@media screen{html{background:#e5e7eb}body{background:#fff;max-width:var(--pvw,210mm);margin:0 auto!important;padding:12mm 10mm!important;box-sizing:border-box;min-height:100vh;box-shadow:0 0 18px rgba(0,0,0,.15)}}@media screen and (max-width:600px){body{padding:6mm 4mm!important}}`;d.head.appendChild(s)}
   try{if(d.documentElement&&[...d.querySelectorAll("style")].some(x=>/size\s*:\s*A4\s+landscape/i.test(x.textContent)))d.documentElement.style.setProperty("--pvw","297mm")}catch(x){}
   const tt=V.ov.querySelector(".pvt");try{const t=(d.title||"Dokument").replace(/_+/g," ");if(tt&&tt.textContent!==t)tt.textContent=t}catch(x){}}
-function open(){if(V)close(true);
+function open(){if(V)close(true);const M=window.__pvMail||null;window.__pvMail=null;
   const ov=document.createElement("div");ov.id="pdfv";ov.setAttribute("role","dialog");ov.setAttribute("aria-modal","true");
   ov.innerHTML=`<div class="pvbar"><button type="button" class="pvx" data-pv="x" aria-label="Zavrieť">✕</button><b class="pvt">Dokument</b>
-    <div class="pvb"><button type="button" data-pv="print">🖨️ Tlačiť</button><button type="button" data-pv="pdf" class="pvpri">⬇️ Uložiť PDF</button>${MOB&&navigator.canShare?`<button type="button" data-pv="share">📤 Poslať</button>`:""}</div></div>
+    <div class="pvb"><button type="button" data-pv="print">🖨️ Tlačiť</button>${M?`<button type="button" data-pv="mail" class="pvpri">📧 Poslať na ${esc(M.to)}</button>`:""}<button type="button" data-pv="pdf"${M?"":' class="pvpri"'}>⬇️ Uložiť PDF</button>${MOB&&navigator.canShare?`<button type="button" data-pv="share">📤 Poslať</button>`:""}</div></div>
     <iframe class="pvf" title="Dokument"></iframe><div class="pvbusy" hidden>Pripravujem PDF…</div>`;
   document.body.appendChild(ov);document.documentElement.classList.add("pvon");
   const fr=ov.querySelector("iframe");const iw=fr.contentWindow;
-  V={ov,fr,iw,orig:null,pp:null,t0:Date.now(),timer:0,pushed:false};
+  V={ov,fr,iw,orig:null,pp:null,t0:Date.now(),timer:0,pushed:false,M};
   try{iw.document.open();iw.document.write("<!doctype html><meta charset='utf-8'><title>Dokument</title><p style='font:16px system-ui;padding:20px'>Pripravujem dokument…</p>");iw.document.close()}catch(x){}
   arm();V.timer=setInterval(arm,300);
   try{history.pushState({pdfv:1},"",location.href);V.pushed=true}catch(x){}
@@ -56,7 +57,12 @@ function doPrint(){if(!V)return;
   // mobil: tlač z rámu v telefóne nefunguje spoľahlivo → hotové PDF (Zdieľať → Tlačiť, alebo otvoriť a vytlačiť)
   (async()=>{try{const f=await makeFile();if(!(await share(f))){dl(f);tmsg("✓ PDF uložené – otvor ho a daj Tlačiť.",6000)}}catch(e){try{(V.orig||V.iw.print).call(V.iw)}catch(x){tmsg("Tlač sa nepodarila: "+(e&&e.message||e),7000)}}})()}
 document.addEventListener("click",e=>{const b=e.target.closest&&e.target.closest("#pdfv [data-pv]");if(!b||!V)return;e.preventDefault();const k=b.dataset.pv;
-  if(k==="x")close();else if(k==="print")doPrint();else if(k==="pdf")savePdf();else if(k==="share")sendPdf()});
+  if(k==="x")close();else if(k==="print")doPrint();else if(k==="pdf")savePdf();else if(k==="share")sendPdf();else if(k==="mail")mailPdf()});
+// e-mail s PDF: na mobile zdieľanie (Gmail / Mail – adresa a text sú pripravené, adresa sa skopíruje), inak stiahnutie + e-mailový program
+async function mailPdf(){const M=V&&V.M;if(!M)return;try{const f=await makeFile();try{await navigator.clipboard.writeText(M.to)}catch(x){}
+  if(navigator.canShare&&navigator.canShare({files:[f]})){try{await navigator.share({files:[f],title:M.subj,text:"Pre: "+M.to+"\n\n"+M.body});tmsg("✓ Zmluva odoslaná na zdieľanie. Adresa "+M.to+" je skopírovaná – vlož ju do príjemcu.",8000);return}catch(e){if(e&&e.name==="AbortError")return}}
+  dl(f);setTimeout(()=>{location.href="mailto:"+encodeURIComponent(M.to)+"?subject="+encodeURIComponent(M.subj)+"&body="+encodeURIComponent(M.body+"\n\n(Zmluva v PDF je stiahnutá: "+f.name+" – priložte ju.)")},400)}
+  catch(e){tmsg("PDF sa nepodarilo vytvoriť: "+(e&&e.message||e),8000)}}
 // prevzatie window.open("") – dokumenty písané cez document.write
 window.open=function(url,target,feat){const u=url==null?"":String(url);
   if(u===""&&(!target||target==="_blank")){try{return open()}catch(x){}}

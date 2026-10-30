@@ -116,7 +116,15 @@ function contractCard(k,own){const L=Z.L[k.id],op=Z.open===k.id,over=k.remain_t<
    ${op?(L?linesTable(L):`<div class="s">Načítavam…</div>`):""}</div>`}
 function linesTable(L){if(!L.length)return `<div class="s">Žiadne lístky.</div>`;const T=L.reduce((a,x)=>(a.g+=+x.gross_kg||0,a.w+=+x.invoice_kg||0,a.e+=+x.invoice_eur||0,a),{g:0,w:0,e:0});
   return `<div class="hrt"><table><thead><tr><th>Dátum</th><th>Lístok</th><th>ŠPZ</th><th>Netto kg</th><th>Neč.%</th><th>Po čist. kg</th><th>Vlh.%</th><th>Po suš. kg</th><th>Čist.</th><th>Suš.</th><th>Cena</th><th>Fakt. kg</th><th>€</th></tr></thead><tbody>${L.map(x=>`<tr><td>${esc(dSK(x.day))}</td><td>${esc(x.ticket)}</td><td>${esc(x.plate||"")}</td><td>${fmt(x.gross_kg,0)}</td><td>${x.impurity_pct!=null?fmt(x.impurity_pct,2):"–"}</td><td>${fmt(x.clean_kg,0)}</td><td class="${x.moisture_pct>x.norm?"wn":""}">${x.moisture_pct!=null?fmt(x.moisture_pct,1):"–"}</td><td>${fmt(x.dry_kg,0)}</td><td>${fmt(x.clean_cost,2)}</td><td>${fmt(x.dry_cost,2)}</td><td>${x.price!=null?fmt(x.price):"<span class=wn>–</span>"}${x.protein_pct!=null?`<small>N ${fmt(x.protein_pct,1)}%</small>`:""}</td><td>${fmt(x.invoice_kg,0)}</td><td>${x.invoice_eur!=null?fmt(x.invoice_eur):"–"}</td></tr>`).join("")}
-   <tr class="ztot"><td colspan="3"><b>Spolu</b></td><td><b>${fmt(T.g,0)}</b></td><td colspan="7"></td><td><b>${fmt(T.w,0)}</b></td><td><b>${fmt(T.e)}</b></td></tr></tbody></table></div>`}
+   <tr class="ztot"><td colspan="3"><b>Spolu</b></td><td><b>${fmt(T.g,0)}</b></td><td colspan="7"></td><td><b>${fmt(T.w,0)}</b></td><td><b>${fmt(T.e)}</b></td></tr></tbody></table></div>`+linesCards(L,T)}
+/* lístky ako karty – na telefóne a Folde (tabuľka by sa nezmestila a údaje by nebolo vidno) */
+function linesCards(L,T){const kv=(l,v,c)=>`<div${c?` class="${c}"`:""}><small>${l}</small><b>${v}</b></div>`;
+  return `<div class="zlc">${L.map(x=>`<div class="zlci"><div class="zlch"><b>${esc(x.ticket)}</b><span>${esc(dSK(x.day))}${x.plate?" · "+esc(x.plate):""}</span></div><div class="zlcg">
+    ${kv("Netto",fmt(x.gross_kg,0)+" kg")}${kv("Nečistoty",x.impurity_pct!=null?fmt(x.impurity_pct,2)+" %":"–")}${kv("Po čistení",fmt(x.clean_kg,0)+" kg")}
+    ${kv("Vlhkosť",x.moisture_pct!=null?fmt(x.moisture_pct,1)+" %":"–",x.moisture_pct>x.norm?"wn":"")}${kv("Po sušení",fmt(x.dry_kg,0)+" kg")}${kv("Cena",x.price!=null?fmt(x.price)+" €/t":"–")}
+    ${kv("Čistenie",fmt(x.clean_cost,2)+(x.kg_mode?" kg":" €"))}${kv("Sušenie",fmt(x.dry_cost,2)+(x.kg_mode?" kg":" €"))}${kv("Fakt. váha",fmt(x.invoice_kg,0)+" kg")}
+    ${kv("Suma",x.invoice_eur!=null?fmt(x.invoice_eur)+" €":"–","zlcs")}</div></div>`).join("")}
+   <div class="zlci zlct"><div class="zlch"><b>Spolu · ${L.length} ${L.length===1?"lístok":L.length<5?"lístky":"lístkov"}</b></div><div class="zlcg">${kv("Netto",fmt(T.g,0)+" kg")}${kv("Fakt. váha",fmt(T.w,0)+" kg")}${kv("Suma",fmt(T.e)+" €","zlcs")}</div></div></div>`}
 async function loadC(){const r=await sb.rpc("settle_contracts",{p_farmer:Z.farm});Z.C=r.error?{err:r.error.message}:(r.data??{});renderStaff()}
 async function loadL(id){const k=(Z.C.contracts||[]).find(x=>x.id===id);const r=await sb.rpc("settle_lines",{p_farmer:Z.C.farmer.id,p_deal:id,d0:null,d1:null});Z.L[id]=r.error?[]:r.data||[];return Z.L[id]}
 // --- PDF zúčtovania (ERNTE) ---

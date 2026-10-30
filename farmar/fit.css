@@ -74,3 +74,17 @@ html{overflow-x:hidden}
 .odedf .w{grid-column:1/-1}.odedf label{min-width:0}.odedf input,.odedf select{width:100%;box-sizing:border-box}
 .odedf .btns{display:flex;flex-wrap:wrap;gap:8px}.odedf .btns button{flex:1 1 140px}
 @media (min-width:700px){.odedf{grid-template-columns:repeat(4,minmax(0,1fr))}}
+/* Zúčtovanie farmára: na telefóne a Folde lístky ako karty (celé údaje), tabuľka iba na širokom displeji; dlaždice a tlačidlá na stred – 30. 10. */
+.zlc{display:none;gap:10px}
+.zlci{border:1px solid var(--line,rgba(255,255,255,.12));border-radius:16px;padding:12px;background:rgba(255,255,255,.04);min-width:0}
+.zlch{display:flex;flex-wrap:wrap;justify-content:center;align-items:baseline;gap:4px 10px;margin-bottom:8px;text-align:center}.zlch span{opacity:.75;font-size:.85rem}
+.zlcg{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}
+.zlcg>div{display:grid;justify-items:center;text-align:center;gap:2px;padding:7px 4px;border-radius:12px;background:rgba(255,255,255,.04);min-width:0}
+.zlcg small{font-size:.7rem;opacity:.7}.zlcg b{font-size:.92rem;overflow-wrap:anywhere}.zlcg .wn b{color:#fbbf24}
+.zlcg .zlcs{grid-column:1/-1;background:rgba(190,242,100,.12);border:1px solid rgba(190,242,100,.35)}.zlcg .zlcs b{font-size:1.15rem;color:#bef264}
+.zlct{border-color:rgba(190,242,100,.45)}
+@media (max-width:1100px){.hrt:has(+ .zlc){display:none}.zlc{display:grid}}
+@media (min-width:600px) and (max-width:1100px){.zlc{grid-template-columns:repeat(2,minmax(0,1fr))}.zlct{grid-column:1/-1}}
+.zt .zsg>div{text-align:center;justify-items:center;align-content:center;height:auto!important;min-height:0}.zt .zsg>div b{overflow-wrap:anywhere}
+.zt .btns{justify-content:center}
+html[data-theme=light] .zlcg .zlcs b{color:#3f6212}

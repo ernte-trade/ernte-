@@ -93,7 +93,7 @@ const KT={ja:["Vyvezené","Jazdy · 7 dní"],ceo:["Vyvezené","Jazdy · 7 dní"]
   obchod:["Vyvezené","Požiadavky"],evid:["Tento mesiac",""],mzdy:["Tento mesiac",""],farmar:["Výkupné ceny",""],trus:["Požiadavky",""]};
 function hud(k){return `<div class="whud"><div class="whtop"><span class="wlive"><i></i>LIVE</span><span class="wclk">--:--<small>:--</small></span></div>
   <div class="whrow"><div class="whc whwx"><small>Počasie</small><div class="whv"><span class="wxi">…</span><b class="wxt">--°</b></div><div class="wxs">načítavam</div><svg class="wspk" viewBox="0 0 120 34" preserveAspectRatio="none"></svg></div>
-  <div class="whc whk"><small>${E((KT[k]||KT.tim)[0])}</small><div class="whkb"></div><small class="whk2">${E((KT[k]||KT.tim)[1])}</small><div class="whbars"></div></div></div>${k==="ja"||k==="ceo"||k==="obchod"&&(can_("price_view")||can_("price_edit"))?`<div class="whc whpr"><small>Naše nákupné ceny · €/t</small><div class="whpl"></div></div>`:""}${spotOK(k)?spot():""}</div>`}
+  <div class="whc whk"><small>${E((KT[k]||KT.tim)[0])}</small><div class="whkb"></div><small class="whk2">${E((KT[k]||KT.tim)[1])}</small><div class="whbars"></div></div></div>${k==="ja"||k==="ceo"||k==="obchod"&&(can_("price_view")||can_("price_edit"))?`<div class="whc whpr"><small>Naše nákupné ceny · €/t</small><div class="whpl"></div></div>`:""}${spotOK(k)?(radioOff()?radioOnHTML():spot()):""}</div>`}
 /* 🎵 Spotify – Martin, Jana, Galajda, Ličko, Tóth, Tomáš Štofa, Tomáš Vaľko. Vlastný playlist: „Zmeniť“ → vlož odkaz zo Spotify (Zdieľať → Kopírovať odkaz). Uloží sa v tomto zariadení. */
 const SPK="ernte-spotify",SPDEF="playlist/1sri3NOK9SPtrmUq7ActiX";
 /* rádiá: najnovšie hity z playlistov rádií SK, RO, HU, PL, UA (playlisty sa aktualizujú samy, uložené aj v Spotify majiteľa) */
@@ -105,10 +105,16 @@ function spRef(){try{return localStorage.getItem(SPK)||SPDEF}catch(x){return SPD
 function spParse(u){const m=String(u||"").match(/open\.spotify\.com\/(?:intl-[a-z-]+\/)?(?:embed\/)?(playlist|album|track|artist|show|episode)\/([A-Za-z0-9]{10,})/)||String(u||"").match(/spotify:(playlist|album|track|artist|show|episode):([A-Za-z0-9]{10,})/);return m?m[1]+"/"+m[2]:null}
 /* komu Spotify: celý tím ERNTE/VALKO (každý zamestnanec v aplikácii); farmári a partnerské firmy trusu nie */
 const SPWHO=[["jana"],["galajda"],["licko"],["toth"],["tomas","stofa"],["tomas","valko"]];
+/* štýl tlačidiel rádia */
+{const st=document.createElement("style");st.textContent=".wspx{all:unset;cursor:pointer;margin-left:6px;padding:1px 7px;border-radius:9px;font-size:.68rem;border:1px solid rgba(255,255,255,.3);opacity:.85}.whoff{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap}.wspon{min-height:38px;padding:0 12px;border-radius:12px}";document.head.appendChild(st)}
+/* 📻 rádio sa dá vypnúť natrvalo (návrh obchodníkov – slabší telefón); na slabom telefóne je predvolene vypnuté */
+const RADK="ernte-radio";function radioOff(){let v="";try{v=localStorage.getItem(RADK)||""}catch(x){}if(v)return v==="off";return !!(navigator.deviceMemory&&navigator.deviceMemory<=3)}
+function radioSet(on){try{localStorage.setItem(RADK,on?"on":"off")}catch(x){}}
+function radioOnHTML(){return `<div class="whc whsp whoff"><small>🎵 Rádio je vypnuté</small><button type="button" class="wspon" data-radon="1">▶ Zapnúť rádio</button></div>`}
 function spotOK(k){if(k==="ja")return true;if(typeof FARMER!=="undefined"&&FARMER)return false;if(window.ERNTE_KIND!=="trus"&&typeof ROLE!=="undefined"&&ROLE)return true;/* celý tím (zamestnanci); farmári a partneri trusu nie */
   const raw=((typeof ME!=="undefined"&&ME&&(ME.staffName||""))+" "+(typeof ME!=="undefined"&&ME&&ME.email||"")).toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"");
   const T=raw.split(/[^a-z0-9]+/);return SPWHO.some(ws=>ws.every(w=>T.includes(w)))}
-function spot(){const r=spRef(),cur=SPRAD.find(x=>x[2]===r);return `<div class="whc whsp"><div class="wsph"><div class="wspt"><small>🎵 Rádio · Spotify</small><b>${cur?`<i>${cur[0]}</i> <span>${E(cur[1])}</span>`:"<span>Môj playlist</span>"}</b></div><span><a class="wspo" href="https://open.spotify.com/${r}" target="_blank" rel="noopener">Spotify ↗</a><button type="button" class="wspc" data-spchg>Zmeniť</button></span></div>
+function spot(){const r=spRef(),cur=SPRAD.find(x=>x[2]===r);return `<div class="whc whsp"><div class="wsph"><div class="wspt"><small>🎵 Rádio · Spotify <button type="button" class="wspx" data-radoff="1" title="Vypnúť rádio natrvalo">✕ vypnúť</button></small><b>${cur?`<i>${cur[0]}</i> <span>${E(cur[1])}</span>`:"<span>Môj playlist</span>"}</b></div><span><a class="wspo" href="https://open.spotify.com/${r}" target="_blank" rel="noopener">Spotify ↗</a><button type="button" class="wspc" data-spchg>Zmeniť</button></span></div>
   <div class="wspr" role="group" aria-label="Rádiá">${SPRAD.map(x=>`<button type="button" class="wsprb" data-sprad="${x[2]}" aria-pressed="${x[2]===r}">${x[0]} ${E(x[1])}</button>`).join("")}</div>
   <div class="wspw wslot"></div><div class="wspn">▶ Hrá ďalej aj počas práce v aplikácii – dole sa zbalí do 🎵.</div></div>`}
 /* prehrávač žije mimo úvodu (spdock.js) – tu ho iba prilepíme do panelu, aby hudba pri zatvorení úvodu nestíchla */
@@ -216,6 +222,7 @@ async function show(force){const k=kind();if(!k||document.querySelector(".wlc"))
     if(ev.target.closest(".wcred"))return;
     if(ev.target.closest("[data-spchg]")){const u=prompt("Vlož odkaz na playlist, album alebo skladbu zo Spotify (v Spotify: ⋯ → Zdieľať → Kopírovať odkaz):","");if(u==null)return;const r=spParse(u);
       if(!r){if(typeof toast==="function")toast("Toto nie je odkaz zo Spotify – skús znova.",5000);return}try{localStorage.setItem(SPK,r)}catch(x){}const w=el.querySelector(".whsp");if(w)w.outerHTML=spot();spHook(el);return}
+    {const ro=ev.target.closest("[data-radoff],[data-radon]");if(ro){const on=!!ro.dataset.radon;radioSet(on);if(!on){const d=document.getElementById("spdock");if(d)d.remove()}const w=el.querySelector(".whsp");if(w)w.outerHTML=on?spot():radioOnHTML();if(on)spHook(el);if(typeof toast==="function")toast(on?"🎵 Rádio zapnuté.":"Rádio vypnuté – aplikácia je ľahšia. Zapneš ho tu na úvode.",4000);return}}
     {const rb=ev.target.closest("[data-sprad]");if(rb){try{localStorage.setItem(SPK,rb.dataset.sprad)}catch(x){}const w=el.querySelector(".whsp");if(w)w.outerHTML=spot();spHook(el);return}}
     if(ev.target.closest(".whsp"))return;
     if(ev.target.closest(".whc")){const c=ev.target.closest(".whc");c.classList.remove("wtap");void c.offsetWidth;c.classList.add("wtap");honk(false);confetti(el,ev.clientX,ev.clientY);if(navigator.vibrate)try{navigator.vibrate(20)}catch(x){}return}
