@@ -55,18 +55,35 @@ function options(com,buy){const out=[],B=D.B||[];
   const last={};for(const t of D.T){if(t.k!==com||!(+t.s>0))continue;const bn=t.b||"Odberateľ";if(!last[bn]||String(t.d)>String(last[bn].d))last[bn]=t}
   for(const bn in last){const t=last[bn],b=buyerOf(bn)||{id:"t:"+bn,name:bn,sites:[]},site=(b.sites||[])[0]||null;push(b,site&&site.n,site,"DAP",+t.s,t.d,"skutočný predaj (vážne lístky)",{})}
   return out.filter(o=>o.age<=Math.max(MAXAGE,o.src.startsWith("skutočný")?45:MAXAGE)).sort((a,b)=>(b.profit??-1e9)-(a.profit??-1e9))}
+// všetci odberatelia, ktorí komoditu vykupujú (sell_buyers.coms) – aj bez platnej ponuky: miesto + naša doprava (vzorec Kalkulačky)
+const MARGIN=()=>{try{return +(window.__sellcapM??10)}catch(x){return 10}};
+function allOpts(com,buy){const O=options(com,buy),have=new Set(O.map(o=>o.b.id+"|"+(o.siteName||"")));const out=O.slice();
+  for(const b of (D.B||[])){if(!(b.coms||[]).includes(com))continue;const S=(b.sites||[]).length?b.sites:[null];
+    for(const st of S){const k=b.id+"|"+(st?st.n:"");if(have.has(k)||(!st&&O.some(o=>o.b.id===b.id)))continue;if(st&&O.some(o=>o.b.id===b.id&&!o.siteName))continue;
+      const d0=st?dop(st):null;out.push({b,siteName:st?st.n:"",del:"DAP",price:null,d:null,src:"bez ponuky",dop:d0,net:null,profit:null,need:d0!=null?Math.ceil(buy+d0+MARGIN()):null,age:0,none:true})}}
+  return out}
+window.sellAllOpts=allOpts;
+// pri nákupnej cene v Cenníku (iba majiteľ): všetky možnosti predaja so ziskom a dopravou
+window.sellTileHTML=function(com,buy){if(!OWN()||buy==null||!(+buy>0))return "";if(!D.B){if(!D.busy&&Date.now()-D.at>60e3)load();return ""}
+  const L=allOpts(com,+buy);if(!L.length)return `<span class="stl"><small>Kde predať: žiadny odberateľ nemá túto komoditu</small></span>`;
+  const Y=L.filter(o=>!o.none&&o.net!=null),N=L.filter(o=>o.none);
+  return `<span class="stl">${Y.map(o=>`<small class="${o.profit>=0?"ps":"ng"}"><b>${sg(o.profit)}</b> ${E(o.b.name)}${o.siteName?" "+E(o.siteName):""} · ${E(o.del)} ${f0(o.price)}${o.dop?` − dopr. ${f0(o.dop)}`:""} = ${f0(o.net)}</small>`).join("")||`<small>Žiadna platná ponuka odberateľa</small>`}
+    ${N.length?`<details class="stnd"><summary>+ ${N.length} bez ponuky (koľko musia dať)</summary>${N.map(o=>`<small class="stn">${E(o.b.name)}${o.siteName?" "+E(o.siteName):""}${o.dop!=null?` · dopr. ${f0(o.dop)} € → treba ≥ ${f0(o.need)}`:""}</small>`).join("")}</details>`:""}</span>`};
 function missing(com,opts){const have=new Set(opts.map(o=>o.b.id));return (D.B||[]).filter(b=>(b.coms||[]).includes(com)&&!have.has(b.id))}
 // PRÍKAZ MAJITEĽA (30. 10.): nákupná cena nikdy nad najlepší predaj po našej doprave − marža (predvolene 10 €/t)
 // strop = najlepší MODEL / ponuka odberateľa (posúvaná s burzou), NIE posledné lístky (príkaz majiteľa); ukladá sa do kalk_store pricelist/sellcap; databáza (soja_adm_tick, ia_tick, price_propose) zverejní najviac strop
 async function caps(){if(!OWN()||!window.sb)return;const P=(typeof STATE!=="undefined"&&STATE.prices)||[];if(!P.length)return;
   let cur=null;try{const r=await sb.from("kalk_store").select("data").eq("path","pricelist").eq("id","sellcap").maybeSingle();cur=r.error?undefined:(r.data?r.data.data:null)}catch(x){cur=undefined}
-  if(cur===undefined)return;const m=cur&&cur.m!=null?+cur.m:10,C={};
+  if(cur===undefined)return;const m=cur&&cur.m!=null?+cur.m:10,C={};window.__sellcapM=m;
   for(const p of P){const o=options(p.com,+p.price||0).filter(x=>x.net!=null&&x.net>0&&!/^skutočný/.test(x.src||""));if(!o.length)continue;const b=o.reduce((a,x)=>x.net>a.net?x:a,o[0]);
     C[p.com]={best:Math.round(b.net*100)/100,cap:Math.floor(b.net-m),src:`${b.b.name}${b.siteName?" "+b.siteName:""} ${b.del} ${Math.round(b.price)}${b.dop?" − doprava "+b.dop:""} (${b.src}, ${dk(b.d)})`}}
   const same=cur&&cur.c&&JSON.stringify(cur.c)===JSON.stringify(C)&&Date.now()-Date.parse(cur.at||0)<6*3600e3;
   if(!same){const data={m,at:new Date().toISOString(),c:C};const r=await sb.from("kalk_store").upsert({path:"pricelist",id:"sellcap",data},{onConflict:"path,id"});if(r.error)return}
   try{const a=await sb.rpc("sellcap_apply");if(!a.error&&a.data&&a.data.zmenene&&a.data.zmenene.length&&typeof toast==="function")toast("📉 Nákupná cena znížená na najlepší predaj − "+m+" €/t: "+a.data.zmenene.map(x=>nm(x.c)+" "+x.old+" → "+x.new).join(", "),9000)}catch(x){}}
 window.sellCaps=caps;
+document.addEventListener("click",async e=>{const t=e.target.closest&&e.target.closest("[data-scom]");if(!t||!OWN())return;e.preventDefault();const [id,c]=t.dataset.scom.split("|");const b=(D.B||[]).find(x=>x.id===id);if(!b)return;
+  const on=(b.coms||[]).includes(c),nc=on?(b.coms||[]).filter(x=>x!==c):[...(b.coms||[]),c];t.disabled=true;const r=await sb.from("sell_buyers").update({coms:nc,updated_at:new Date().toISOString()}).eq("id",id);t.disabled=false;
+  if(r.error){toast("Nepodarilo sa uložiť: "+r.error.message,5000);return}b.coms=nc;t.classList.toggle("on",!on);toast(`${b.name}: ${nm(c)} ${on?"nevykupuje":"vykupuje"}`,3000);try{caps()}catch(x){}},true);
 // pre owner: obnovenie každých 30 min aj mimo Prehľadu
 setInterval(()=>{if(OWN()&&!D.busy&&Date.now()-D.at>30*60e3)load()},5*60e3);
 setTimeout(()=>{if(OWN()&&!D.B&&!D.busy)load()},8000);
@@ -85,9 +102,10 @@ window.sellRecHTML=function(){if(!OWN())return "";if(!D.B){if(!D.busy)load();ret
    <div class="s">Zisk = cena odberateľa (posunutá s burzou, ak podľa nej ráta) − naša doprava z regiónu farmárov − naša zverejnená nákupná cena. Ponuky staršie ako ${MAXAGE} dní sa nepočítajú.</div>`;
   for(const p of P){const buy=+p.price,O=options(p.com,buy),best=O.find(o=>o.profit!=null),M=missing(p.com,O);
     h+=`<details class="scom"${best?"":" open"}><summary><span class="sn">${E(nm(p.com))}<small>nákup ${f0(buy)} €/t</small></span>${best?`<span class="sb ${best.profit>=0?"ps":"ng"}">${E(best.b.name)}${best.siteName?" "+E(best.siteName):""}<b>${sg(best.profit)} €/t</b></span>`:`<span class="sb">bez ponuky</span>`}</summary>
-     ${O.length?O.slice(0,8).map(row).join(""):`<div class="s">Zatiaľ žiadna platná ponuka.</div>`}
-     ${M.length?`<div class="smiss">Chýba ponuka: ${M.map(b=>`<span title="${E(b.model||"")}">${E(b.name)}</span>`).join(" · ")}</div>`:""}</details>`}
-  h+=`<details class="smod"><summary>📚 Modely odberateľov – podľa čoho rátajú</summary>${(D.B||[]).map(b=>`<div class="srow"><b>${E(b.name)}</b>${(b.sites||[]).length?` <small>· ${(b.sites||[]).map(s=>E(s.n)+" ~"+f0(dop(s))+" €/t doprava").join(" · ")}</small>`:""}<small>${E(b.model||"")}</small></div>`).join("")}</details>`;
+     ${O.length?O.map(row).join(""):`<div class="s">Zatiaľ žiadna platná ponuka.</div>`}
+     ${(()=>{const N=allOpts(p.com,buy).filter(o=>o.none);return N.length?`<div class="smiss"><b>Bez platnej ponuky</b> (vykupujú ${E(nm(p.com))}):${N.map(o=>`<div>${E(o.b.name)}${o.siteName?" · "+E(o.siteName):""}${o.dop!=null?` – naša doprava ${f0(o.dop)} €/t, aby sme zarobili ${MARGIN()} €/t, musia dať aspoň <b>${f0(o.need)} €/t</b> DAP`:""}</div>`).join("")}</div>`:""})()}</details>`}
+  h+=`<details class="smod"><summary>📚 Modely odberateľov – podľa čoho rátajú</summary><div class="s">Ťuknutím na komoditu nastavíš, čo odberateľ vykupuje (zelené = vykupuje).</div>${(D.B||[]).map(b=>`<div class="srow"><b>${E(b.name)}</b>${(b.sites||[]).length?` <small>· ${(b.sites||[]).map(s=>E(s.n)+" ~"+f0(dop(s))+" €/t doprava").join(" · ")}</small>`:""}<small>${E(b.model||"")}</small>
+     <span class="scoms">${(typeof MK!=="undefined"?MK:[]).map(m=>`<button type="button" class="scm${(b.coms||[]).includes(m[0])?" on":""}" data-scom="${E(b.id)}|${m[0]}">${E(m[1])}</button>`).join("")}</span></div>`).join("")}</details>`;
   h+=D.form?formHTML():`<div class="btns"><button type="button" class="lime" data-sform="1">➕ Vložiť ponuku odberateľa</button><button type="button" data-sref>↻ Prepočítať</button></div>`;
   return h+`</div>`};
 function newRow(o){return Object.assign({on:true,com:"repka",site:"",del:"DDP",price:"",period:"",note:""},o||{})}
@@ -152,5 +170,7 @@ document.addEventListener("submit",async e=>{const f=e.target;if(f.id!=="sForm"|
 .scom .sn{display:grid}.scom .sn small{opacity:.7;font-size:.78rem}.scom .sb{text-align:right;display:grid;font-size:.86rem}.scom .sb b{font-size:1.05rem}.sb.ps b,.srow.ps .srh span{color:#86efac}.sb.ng b,.srow.ng .srh span{color:#fca5a5}
 .srow{display:grid;gap:2px;padding:7px 10px;margin:6px 0;border-radius:12px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08)}.srow .srh{display:flex;justify-content:space-between;gap:8px}.srow small{opacity:.8;overflow-wrap:anywhere;line-height:1.4}
 .srow em{color:#fcd34d;font-style:normal}.smiss{font-size:.8rem;opacity:.75;margin-top:4px}.smiss span{text-decoration:underline dotted}.smod{margin:10px 0}.smod summary{cursor:pointer;font-weight:700}
+.stl{display:grid;gap:2px;margin-top:6px;text-align:left;font-size:.74rem;line-height:1.35}.stl small{display:block;overflow-wrap:anywhere;opacity:.9}.stl .ps b{color:#86efac}.stl .ng b{color:#fca5a5}.stl .stn{opacity:.65}.stnd summary{cursor:pointer;font-size:.74rem!important;font-weight:600;opacity:.8;list-style:none;padding:2px 0}.stnd summary::-webkit-details-marker{display:none}
+.scoms{display:flex;flex-wrap:wrap;gap:4px;margin-top:4px}.scm{min-height:30px!important;padding:2px 9px!important;border-radius:999px!important;font-size:.74rem!important;opacity:.55}.scm.on{opacity:1;background:rgba(134,239,172,.2)!important;border-color:rgba(134,239,172,.6)!important}.smiss div{margin-top:3px}
 .owrec{display:block;margin-top:4px;font-size:.78rem;font-weight:700}.owrec.ps{color:#86efac}.owrec.ng{color:#fca5a5}.sform{margin-top:8px}.sscan{display:grid;gap:6px;padding:12px;border-radius:16px;border:1px solid rgba(165,243,252,.4);background:linear-gradient(135deg,rgba(165,243,252,.12),rgba(139,92,246,.10))}.sscan small{opacity:.8}.sfile{cursor:pointer;display:inline-flex;align-items:center;justify-content:center}.srows{display:grid;gap:8px}.srowf{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:6px 8px;padding:10px;border-radius:14px;border:1px solid rgba(255,255,255,.1);background:rgba(255,255,255,.03)}.srowf .w{grid-column:1/-1}.sck{display:flex;align-items:center;gap:6px;grid-column:1/-1;font-weight:700}`;document.head.appendChild(s)}
 })();

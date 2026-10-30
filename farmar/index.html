@@ -2776,7 +2776,7 @@ function vPrice(){const P=STATE.prices,valid=((STATE.settings||{}).pricelist||{}
     if(dd<0){vc="r";vt="Platnosť uplynula "+dSK(valid)}else if(dd<7){vc="w";vt=dd===0?"Platí už len dnes":"Do konca platnosti "+dd+" "+(dd===1?"deň":dd<5?"dni":"dní")}else{vc="ok";vt="Platí ešte "+dd+" dní"}}
   return `<div class="card bzc"><div class="tdh"><b>📈 Burza pri cenách</b><small>${mAt?"aktualizované "+esc(new Date(mAt).toLocaleString("sk-SK",{day:"numeric",month:"numeric",hour:"2-digit",minute:"2-digit"})):"zatiaľ bez údajov"}</small></div><div class="s">MATIF (Euronext Paríž) repka, pšenica, kukurica; CBOT sója prepočítaná na €/t podľa kurzu EUR/USD${STATE.mkt&&STATE.mkt.eurusd?" ("+String(STATE.mkt.eurusd.price).replace(".",",")+")":""}. Najbližší kontrakt, automaticky v pracovné dni ráno a poobede. Farmári burzu nevidia.</div><div class="btns"><button type="button" data-mktref="1">↻ Obnoviť burzu</button></div></div>
   ${window.PADJ?`<div class="card padjn"><b>💶 Tvoje nákupné ceny</b><div class="s">Ceny nižšie sú už upravené pre teba: ${PADJ<0?"−":"+"}${String(Math.abs(PADJ)).replace(".",",")} €/t${PADJN?" ("+esc(PADJN)+")":""}. Za tieto ceny ponúkaj a uzatváraj obchody.</div></div>`:""}<form class="card f" id="fPrice"><div class="w s">Výkupné ceny FCA farma bez DPH. Prázdne = farmár komoditu nevidí. Po uložení ich hneď vidia všetci prihlásení farmári.</div>
-  <div class="w ds-ptiles">${MK.map(m=>{const p=P.find(x=>x.com===m[0]),has=p&&p.price!=null;return `<label class="ds-tile${has?"":" emp"}"><span class="pn">${esc(m[1])}</span><span class="pv"><input name="p_${m[0]}" inputmode="decimal" value="${has?String(p.price).replace(".",","):""}" placeholder="nezadané" aria-label="${esc(m[1])} €/t"><i>€/t</i></span>${burzaTile(m[0],has?p.price:null)}${window.fwdLine?fwdLine(m[0]):""}</label>`}).join("")}</div>
+  <div class="w ds-ptiles">${MK.map(m=>{const p=P.find(x=>x.com===m[0]),has=p&&p.price!=null;return `<label class="ds-tile${has?"":" emp"}"><span class="pn">${esc(m[1])}</span><span class="pv"><input name="p_${m[0]}" inputmode="decimal" value="${has?String(p.price).replace(".",","):""}" placeholder="nezadané" aria-label="${esc(m[1])} €/t"><i>€/t</i></span>${burzaTile(m[0],has?p.price:null)}${window.fwdLine?fwdLine(m[0]):""}${ROLE==="owner"&&window.sellTileHTML?sellTileHTML(m[0],has?p.price:null):""}</label>`}).join("")}</div>
   <label class="w ds-valid ${vc}">Platí do<input name="valid" type="date" value="${esc(valid)}"><small>${esc(vt)}</small></label><div class="w btns"><button class="pri" type="submit">Uložiť a zverejniť</button></div></form>`}
 function vDeals(){const F=STATE.farmers.filter(f=>f.active),pre=DEALF||{},OWN=ROLE==="owner";
   let h=`<form class="card f" id="fDeal"><div class="w t">Nový obchod</div>
@@ -2929,7 +2929,7 @@ document.addEventListener("click",e=>{const b=e.target.closest("[data-dfp]");if(
 <script src="sus.js?v=20261027-0730"></script>
 <script src="praca.js?v=20261029-2210"></script>
 <script src="opush.js?v=20261028-2400"></script>
-<script src="predaj.js?v=20261030-1220"></script>
+<script src="predaj.js?v=20261030-1305"></script>
 <script src="owhome.js?v=20261029-2320"></script>
 <script src="nbell.js?v=20261028-1130"></script>
 <script src="novinky.js?v=20261027-0845"></script>
