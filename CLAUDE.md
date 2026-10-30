@@ -77,6 +77,9 @@ s pripojeným repozitárom `ernte-trade/ernte-`.
 - **Pravidlo majiteľa (trvalé): REPKA, KUKURICA, LO SLNEČNICA = Interagros − 10 €/t.** Naša výkupná cena = posledná ponuka Interagros
   (v „Konkurenčné ceny“; FCA prednostne, inak DAP; bez „nad 500 t“, neskoršieho odberu a DAP Parchovany) mínus `iaMinus` (10 €).
   Zverejňuje iba databáza (`ia_tick`, pg_cron `interagros` každých 30 min, `ia_run` hneď po vložení ponuky); klient ich nezverejňuje, ručná cena sa neukladá.
+- **Pravidlo majiteľa (trvalé, 30. 10.): NÁKUP VIAZANÝ NA PREDAJ** – zverejnená nákupná cena nikdy nad najlepší predaj po našej doprave − marža (`sellcap.m`, 10 €/t),
+  pre všetky komodity. Strop počíta aplikácia majiteľa z „Kde predať“ (`predaj.js` → `caps()`, kalk_store `pricelist/sellcap`, platí 3 dni); databáza `price_cap()`
+  v `soja_adm_tick`, `ia_tick`, `price_propose`; `sellcap_apply()` zníži zverejnené ceny nad stropom hneď.
 - **Pravidlo majiteľa (trvalé): ŽIADNE +0,777 %** – pri žiadnej komodite sa k cene nepripočítava (zrušené 29. 10.; `refPct()` = 0). Pšenica = výkup VSK, resp. burza + ich báza.
 - **Ceny na neskorší odber** (`ia_tick` → settings `prices_fwd`, `fwd.js`): ponuky Interagros s termínom „odber …“ (bez nad 500 t / Parchovany) − `iaMinus` sa zobrazia pod cenou („📅 odber 1.–3. 2027: … €/t“); hlavná cena = odber teraz.
 - **Kontrola automatických cien** (`price_guard`, `price_pending`, `price_watch`): skok > 25 €/t (`autoMaxJump`) sa nezverejní sám – push + potvrdenie v Cenníku

@@ -34,7 +34,7 @@ async function load(){if(!OWN()||D.busy)return;D.busy=true;D.err="";
     if(s.error){D.err=/sell_data/.test(s.error.message)?"Zapne sa po aktualizácii databázy (pár minút).":s.error.message;D.B=[]}else{D.B=s.data.buyers||[];D.O=s.data.offers||[]}
     D.mk=mk;D.K=(k&&k.data&&k.data.data&&k.data.data.items)||[];D.T=(t&&!t.error&&t.data)||[]}
   catch(x){D.err=String(x&&x.message||x);D.B=D.B||[]}
-  D.at=Date.now();D.busy=false;if(typeof TAB!=="undefined"&&(TAB==="home"||TAB==="pred")&&typeof renderStaff==="function")renderStaff()}
+  D.at=Date.now();D.busy=false;try{if(D.B&&D.B.length)await caps()}catch(x){}if(typeof TAB!=="undefined"&&(TAB==="home"||TAB==="pred")&&typeof renderStaff==="function")renderStaff()}
 
 // všetky možnosti predaja pre komoditu
 function options(com,buy){const out=[],B=D.B||[];
@@ -56,6 +56,20 @@ function options(com,buy){const out=[],B=D.B||[];
   for(const bn in last){const t=last[bn],b=buyerOf(bn)||{id:"t:"+bn,name:bn,sites:[]},site=(b.sites||[])[0]||null;push(b,site&&site.n,site,"DAP",+t.s,t.d,"skutočný predaj (vážne lístky)",{})}
   return out.filter(o=>o.age<=Math.max(MAXAGE,o.src.startsWith("skutočný")?45:MAXAGE)).sort((a,b)=>(b.profit??-1e9)-(a.profit??-1e9))}
 function missing(com,opts){const have=new Set(opts.map(o=>o.b.id));return (D.B||[]).filter(b=>(b.coms||[]).includes(com)&&!have.has(b.id))}
+// PRÍKAZ MAJITEĽA (30. 10.): nákupná cena nikdy nad najlepší predaj po našej doprave − marža (predvolene 10 €/t)
+// strop sa ukladá do kalk_store pricelist/sellcap; databáza (soja_adm_tick, ia_tick, price_propose) zverejní najviac strop
+async function caps(){if(!OWN()||!window.sb)return;const P=(typeof STATE!=="undefined"&&STATE.prices)||[];if(!P.length)return;
+  let cur=null;try{const r=await sb.from("kalk_store").select("data").eq("path","pricelist").eq("id","sellcap").maybeSingle();cur=r.error?undefined:(r.data?r.data.data:null)}catch(x){cur=undefined}
+  if(cur===undefined)return;const m=cur&&cur.m!=null?+cur.m:10,C={};
+  for(const p of P){const o=options(p.com,+p.price||0).filter(x=>x.net!=null&&x.net>0);if(!o.length)continue;const b=o.reduce((a,x)=>x.net>a.net?x:a,o[0]);
+    C[p.com]={best:Math.round(b.net*100)/100,cap:Math.floor(b.net-m),src:`${b.b.name}${b.siteName?" "+b.siteName:""} ${b.del} ${Math.round(b.price)}${b.dop?" − doprava "+b.dop:""} (${b.src}, ${dk(b.d)})`}}
+  const same=cur&&cur.c&&JSON.stringify(cur.c)===JSON.stringify(C)&&Date.now()-Date.parse(cur.at||0)<6*3600e3;
+  if(!same){const data={m,at:new Date().toISOString(),c:C};const r=await sb.from("kalk_store").upsert({path:"pricelist",id:"sellcap",data},{onConflict:"path,id"});if(r.error)return}
+  try{const a=await sb.rpc("sellcap_apply");if(!a.error&&a.data&&a.data.zmenene&&a.data.zmenene.length&&typeof toast==="function")toast("📉 Nákupná cena znížená na najlepší predaj − "+m+" €/t: "+a.data.zmenene.map(x=>nm(x.c)+" "+x.old+" → "+x.new).join(", "),9000)}catch(x){}}
+window.sellCaps=caps;
+// pre owner: obnovenie každých 30 min aj mimo Prehľadu
+setInterval(()=>{if(OWN()&&!D.busy&&Date.now()-D.at>30*60e3)load()},5*60e3);
+setTimeout(()=>{if(OWN()&&!D.B&&!D.busy)load()},8000);
 // pre Predikciu: všetky predajné možnosti s cenou (posunutou s burzou) a dopravou z regiónu
 window.sellOpts=function(com){if(!OWN())return [];if(!D.B){if(!D.busy)load();return []}return options(com,0).filter(o=>o.net!=null)};
 window.sellBest=function(com,buy){if(!OWN()||!D.B)return null;const o=options(com,buy).find(x=>x.profit!=null);return o||null};
