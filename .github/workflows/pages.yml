@@ -65,7 +65,7 @@ jobs:
           L=[]
           for ln in out.splitlines():
             h,d,s=ln.split("\x1f",2)
-            if s.startswith(("Trhové ceny","Diagnostika","Zmazať dočasnú","icotest","Zverejnená nová verzia")):continue
+            if s.startswith(("Trhové ceny","Diagnostika","Zmazať dočasnú","icotest","Zverejnená nová verzia","Stará verzia pre všetkých","K2026/7")):continue
             L.append({"h":h,"d":d,"s":s})
           z={"stable":st[:7],"beta":hd[:7],"same":st==hd,"n":len(L),"list":L[:80],"at":datetime.datetime.utcnow().isoformat()+"Z"}
           for p in ("/tmp/site/farmar/beta/zmeny.json","/tmp/site/farmar/zmeny.json"):
