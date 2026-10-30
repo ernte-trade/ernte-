@@ -150,6 +150,9 @@ s pripojeným repozitárom `ernte-trade/ernte-`.
 - Firmy podľa IČO (`firmy.js`, prístup `firmy`): po zadaní IČO / odfotení pečiatky vyplní meno a sídlo z registra RPO
   (api.statistics.sk, CORS povolený, zadarmo) + odkaz FinStat. DIČ / IČ DPH: RÚZ (registeruz.sk) ich má, ale nemá CORS →
   iba cez databázu (pg_net); plný FinStat API potrebuje platený kľúč (zadať v aplikácii, nikdy v chate).
+- **Úvod Martina a Jany (30. 10.)**: na skle graf našich nákupných cien (90 dní, `cennik_historia`), 💎 diamantové dlaždice ⛽ Nafta Slovnaft/MOL Group
+  (workflow `fuel.yml` 3× denne → vetva `fuel-data`/fuel.json: fuel-prices.eu + EK Weekly Oil Bulletin, CC BY 4.0 – stanice MOL/INA/Tifon kde sú, inak priemer krajiny; navigácia Google Maps)
+  a 🤝 graf obchodov (12 týždňov); Spotify nižšie na čiernom pozadí; na širokej obrazovke sa fotka roztiahne a posúva (`wfit`).
 - Vtipy na úvode: ~100 vlastných vo východniarskom nárečí (`KE` vo `welcome.js`), bez opakovania na zariadení.
 - Kontroly bez prístupu k sieti z Claude: workflowy `health.yml` (dostupnosť) a `icotest.yml` (registre) zapisujú výsledok do vetiev
   `health-results` / `ico-results`.

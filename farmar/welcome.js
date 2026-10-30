@@ -93,7 +93,48 @@ const KT={ja:["Vyvezené","Jazdy · 7 dní"],ceo:["Vyvezené","Jazdy · 7 dní"]
   obchod:["Vyvezené","Požiadavky"],evid:["Tento mesiac",""],mzdy:["Tento mesiac",""],farmar:["Výkupné ceny",""],trus:["Požiadavky",""]};
 function hud(k){return `<div class="whud"><div class="whtop"><span class="wlive"><i></i>LIVE</span><span class="wclk">--:--<small>:--</small></span></div>
   <div class="whrow"><div class="whc whwx"><small>Počasie</small><div class="whv"><span class="wxi">…</span><b class="wxt">--°</b></div><div class="wxs">načítavam</div><svg class="wspk" viewBox="0 0 120 34" preserveAspectRatio="none"></svg></div>
-  <div class="whc whk"><small>${E((KT[k]||KT.tim)[0])}</small><div class="whkb"></div><small class="whk2">${E((KT[k]||KT.tim)[1])}</small><div class="whbars"></div></div></div>${k==="ja"||k==="ceo"||k==="obchod"&&(can_("price_view")||can_("price_edit"))?`<div class="whc whpr"><small>Naše nákupné ceny · €/t</small><div class="whpl"></div></div>`:""}${k==="obchod"?obPanel():GRK(k)?`<div class="whc whgr"><div class="wgrh"><small>📈 Vývoj našich nákupných cien</small><span class="wgrv"></span></div><div class="wgrc"></div><div class="wgrs"></div></div>`:spotOK(k)?(radioOff()?radioOnHTML():spot()):""}</div>`}
+  <div class="whc whk"><small>${E((KT[k]||KT.tim)[0])}</small><div class="whkb"></div><small class="whk2">${E((KT[k]||KT.tim)[1])}</small><div class="whbars"></div></div></div>${k==="ja"||k==="ceo"||k==="obchod"&&(can_("price_view")||can_("price_edit"))?`<div class="whc whpr"><small>Naše nákupné ceny · €/t</small><div class="whpl"></div></div>`:""}${k==="obchod"?obPanel():GRK(k)?`<div class="whc whgr"><div class="wgrh"><small>📈 Vývoj našich nákupných cien</small><span class="wgrv"></span></div><div class="wgrc"></div><div class="wgrs"></div></div>${DIA(k)}`:spotOK(k)?(radioOff()?radioOnHTML():spot()):""}</div>`}
+/* na širokej obrazovke sa „live“ fotka roztiahne nižšie, aby sa zmestili všetky dlaždice (dá sa posúvať) */
+function wfit(el){try{const im=el.querySelector(".wimg"),hd=el.querySelector(".whud");if(!im||!hd||el.classList.contains("por"))return;const need=hd.offsetTop+hd.offsetHeight+48;im.style.minHeight=need>innerHeight?need+"px":""}catch(x){}}
+/* 💎 diamantové dlaždice (príkaz majiteľa 30. 10.) – iba Martin a Jana: ⛽ nafta MOL Group + navigácia, 🤝 graf obchodov */
+const DIA=k=>GRK(k)?`<div class="whc wdia wfuel"><i class="wdsh"></i><div class="wgrh"><small>⛽ Nafta · Slovnaft / MOL Group</small><span class="wfv"></span></div><div class="wfc"></div><div class="wfl"></div>
+  <div class="wfnav"><a class="wfbtn" target="_blank" rel="noopener" href="https://www.google.com/maps/search/?api=1&query=Slovnaft%20%C4%8Derpacia%20stanica">🧭 Najbližší Slovnaft</a><a class="wfbtn" target="_blank" rel="noopener" href="https://www.google.com/maps/search/?api=1&query=MOL%20benzinkut">🧭 Najbližší MOL</a></div><div class="wfsrc"></div></div>
+  <div class="whc wdia wdeal"><i class="wdsh"></i><div class="wgrh"><small>🤝 Obchody · nákup od farmárov</small><span class="wdv"></span></div><div class="wdc"></div><div class="wdk"></div></div>`:"";
+const FCN={SK:"🇸🇰 Slovensko",HU:"🇭🇺 Maďarsko",CZ:"🇨🇿 Česko",AT:"🇦🇹 Rakúsko",SI:"🇸🇮 Slovinsko",HR:"🇭🇷 Chorvátsko",RO:"🇷🇴 Rumunsko",PL:"🇵🇱 Poľsko"};
+const glowDefs=(id,col)=>`<defs><linearGradient id="${id}A" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${col}" stop-opacity=".42"/><stop offset="1" stop-color="${col}" stop-opacity="0"/></linearGradient><filter id="${id}G" filterUnits="userSpaceOnUse" x="-20" y="-20" width="400" height="160"><feGaussianBlur stdDeviation="3" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter></defs>`;
+function lineSvg(id,series,W,Hh,fmt){fmt=fmt||(v=>v.toFixed(3).replace(".",","));/* series: [{pts:[[t,v]],col,area}] */const all=series.flatMap(x=>x.pts);if(all.length<2)return "";
+  const t0=Math.min(...all.map(p=>p[0])),t1=Math.max(...all.map(p=>p[0])),vs=all.map(p=>p[1]),mn=Math.min(...vs),mx=Math.max(...vs),pad=(mx-mn)*.18||.02;
+  const X=t=>((t-t0)/Math.max(1,t1-t0))*W,Y=v=>Hh-6-((v-(mn-pad))/((mx+pad)-(mn-pad)))*(Hh-14);let h="";
+  series.forEach((S,i)=>{const d=S.pts.map((p,j)=>(j?"L":"M")+X(p[0]).toFixed(1)+","+Y(p[1]).toFixed(1)).join(" ");const l=S.pts[S.pts.length-1];
+    h+=glowDefs(id+i,S.col)+(S.area?`<path d="${d} L${X(l[0]).toFixed(1)},${Hh} L${X(S.pts[0][0]).toFixed(1)},${Hh} Z" fill="url(#${id}${i}A)"/>`:"")+`<path d="${d}" fill="none" stroke="${S.col}" stroke-width="2.4" stroke-linejoin="round" vector-effect="non-scaling-stroke" filter="url(#${id}${i}G)" class="wgln"/><circle cx="${X(l[0]).toFixed(1)}" cy="${Y(l[1]).toFixed(1)}" r="3.6" fill="${S.col}" filter="url(#${id}${i}G)" class="wgdot"/>`});
+  return `<svg viewBox="0 0 ${W} ${Hh}" preserveAspectRatio="none" class="wgsvg">${h}</svg><span class="wgmx">${fmt(mx)}</span><span class="wgmn">${fmt(mn)}</span>`}
+async function fuelLive(hd,k){const box=hd.querySelector(".wfuel");if(!GRK(k)||!box)return;
+  let F=null,M=null;try{const [a,b]=await Promise.all([fetch("https://raw.githubusercontent.com/ernte-trade/ernte-/fuel-data/fuel.json?u="+Math.floor(Date.now()/3e5),{cache:"no-store"}).then(r=>r.ok?r.json():null).catch(()=>null),fetch("market.json",{cache:"no-store"}).then(r=>r.ok?r.json():null).catch(()=>null)]);F=a;M=b}catch(x){}
+  const C=(F&&F.c)||{},fu=(M&&M.fuel)||{},R=[];
+  for(const c of Object.keys(FCN)){const v=C[c]||{};let p=null,src="";
+    if(v.mol){p=v.mol.p;src=v.mol.b+" · "+v.mol.n+" staníc"}else if(c==="SK"&&fu.sk&&fu.sk.eurL){p=+fu.sk.eurL;src="priemer SR (EK)"}else if(c==="HU"&&fu.hu&&fu.hu.eurL){p=+fu.hu.eurL;src="priemer HU dnes ("+fu.hu.ftL+" Ft)"}
+    else if(v.live){p=+v.live.p;src="priemer staníc dnes"}else if(v.w){p=+v.w.p;src="priemer krajiny (EK)"}
+    if(p)R.push({c,p,src,mol:!!v.mol})}
+  if(!R.length){box.querySelector(".wfc").innerHTML=`<span class="whu">Ceny nafty sa načítavajú…</span>`;return}
+  const sk=R.find(x=>x.c==="SK"),hu=R.find(x=>x.c==="HU"),mn=Math.min(...R.map(x=>x.p)),mx=Math.max(...R.map(x=>x.p));
+  const fv=box.querySelector(".wfv");if(fv&&sk)fv.innerHTML=`<b>${sk.p.toFixed(3).replace(".",",")} €/l</b><em>SK${hu?` · HU ${hu.p.toFixed(3).replace(".",",")}`:""}</em>`;
+  const ser=[];const hs=(C.SK&&C.SK.h)||[],hh=(C.HU&&C.HU.h)||[];const T=d=>Date.parse(d+"T12:00:00");
+  if(hs.length>1)ser.push({pts:hs.map(p=>[T(p[0]),+p[1]]),col:"#7dd3fc",area:true});if(hh.length>1)ser.push({pts:hh.map(p=>[T(p[0]),+p[1]]),col:"#f472b6"});
+  box.querySelector(".wfc").innerHTML=ser.length?lineSvg("wf",ser,320,86)+`<span class="wgax">${hs.length?Math.round(hs.length)+" týždňov":""}</span><span class="wflg"><i style="--c:#7dd3fc"></i>SK <i style="--c:#f472b6"></i>HU</span>`:"";
+  box.querySelector(".wfl").innerHTML=R.sort((a,b)=>a.p-b.p).map(x=>`<div class="wfr${x.c==="SK"||x.c==="HU"?" wfme":""}"><span>${FCN[x.c]}</span><i style="--w:${Math.max(12,(x.p-mn*.97)/(mx-mn*.97)*100)}%"></i><b>${x.p.toFixed(3).replace(".",",")}</b><em class="wfs">${E(x.src)}${x.mol?" ⛽":""}</em></div>`).join("");
+  const sr=box.querySelector(".wfsrc");if(sr)sr.innerHTML=`Nafta s DPH, €/l · <a href="https://www.fuel-prices.eu/charts/" target="_blank" rel="noopener">fuel-prices.eu</a>, EK Weekly Oil Bulletin (CC BY 4.0)${F&&F.at?" · "+new Date(F.at).toLocaleString("sk-SK",{day:"numeric",month:"numeric",hour:"2-digit",minute:"2-digit"}):""}`}
+function dealsLive(hd,k){const box=hd.querySelector(".wdeal");if(!GRK(k)||!box)return;const D=((typeof STATE!=="undefined"&&STATE.deals)||[]).filter(d=>!/zrus/.test(String(d.status||"")));
+  const wk=t=>{const d=new Date(t);d.setHours(12,0,0,0);d.setDate(d.getDate()-((d.getDay()+6)%7));return d.toLocaleDateString("sv-SE")};const N=12,B=[];
+  for(let i=N-1;i>=0;i--){const k0=wk(Date.now()-i*7*864e5);B.push({k:k0,t:Date.parse(k0+"T12:00:00"),tons:0,eur:0,n:0})}
+  for(const d of D){const t=wk(Date.parse(d.created_at||d.signed_at||0));const b=B.find(x=>x.k===t);if(b){b.tons+=+d.tons||0;b.eur+=(+d.tons||0)*(+d.price||0);b.n++}}
+  const tot=B.reduce((a,b)=>a+b.tons,0),eur=B.reduce((a,b)=>a+b.eur,0),n=B.reduce((a,b)=>a+b.n,0),mx=Math.max(1,...B.map(b=>b.tons));
+  const dv=box.querySelector(".wdv");if(dv)dv.innerHTML=`<b>${Math.round(tot).toLocaleString("sk-SK")} t</b><em>${n} zmlúv · 12 týždňov</em>`;
+  const W=320,Hh=86,bw=W/N;let bars="";B.forEach((b,i)=>{const h=Math.max(1.5,(b.tons/mx)*(Hh-14));bars+=`<rect x="${(i*bw+bw*.18).toFixed(1)}" y="${(Hh-h).toFixed(1)}" width="${(bw*.64).toFixed(1)}" height="${h.toFixed(1)}" rx="3" fill="url(#wdbA0)" class="wdbar" style="animation-delay:${i*.05}s"/>`});
+  let cum=0;const pts=B.map(b=>{cum+=b.tons;return [b.t,cum]});
+  box.querySelector(".wdc").innerHTML=`<svg viewBox="0 0 ${W} ${Hh}" preserveAspectRatio="none" class="wgsvg"><defs><linearGradient id="wdbA0" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#a78bfa" stop-opacity=".95"/><stop offset="1" stop-color="#22d3ee" stop-opacity=".35"/></linearGradient></defs>${bars}</svg>`+
+    `<div class="wdline">${lineSvg("wd",[{pts,col:"#b6ff3b"}],W,Hh,v=>Math.round(v).toLocaleString("sk-SK")+" t")}</div><span class="wgax">týždne</span><span class="wflg"><i style="--c:#a78bfa"></i>t za týždeň <i style="--c:#b6ff3b"></i>spolu</span>`;
+  const mo=D.filter(d=>{const t=new Date(d.created_at||0),x=new Date();return t.getMonth()===x.getMonth()&&t.getFullYear()===x.getFullYear()});
+  box.querySelector(".wdk").innerHTML=`<span><b>${mo.length}</b> zmlúv tento mesiac</span><span><b>${Math.round(mo.reduce((a,d)=>a+(+d.tons||0),0)).toLocaleString("sk-SK")} t</b> tento mesiac</span><span><b>${Math.round(eur/1000).toLocaleString("sk-SK")} tis. €</b> nákup za 12 týždňov</span>`}
 /* 📈 graf so žiariacou čiarou na skle (príkaz majiteľa 30. 10.) – majiteľ: naše nákupné ceny z histórie cenníka; Spotify je nižšie na čiernom pozadí */
 const GRK=k=>k==="ja"||k==="ceo";
 const GRC={repka:"#facc15",soja:"#a3e635",kukurica:"#fb923c",psenica_p:"#fde68a",psenica_k:"#f5d0a9",jacmen_k:"#93c5fd",jacmen_s:"#c4b5fd",lo:"#fbbf24",ho:"#f472b6",cirok:"#fca5a5"};
@@ -246,7 +287,7 @@ async function show(force){const k=kind();if(!k||document.querySelector(".wlc"))
   const jb=el.querySelector("[data-wljoke]");if(jb){jb.addEventListener("click",nextJoke);jb.addEventListener("touchend",nextJoke,{passive:false})}
   const go=ev=>{if(ev){ev.preventDefault();ev.stopPropagation()}if(el._gone)return;el._gone=1;try{window.opushAuto&&opushAuto(true)}catch(x){}close(el);goHome()};
   const gb=el.querySelector("[data-wlgo]");if(gb){gb.addEventListener("click",go);gb.addEventListener("touchend",go,{passive:false});gb.addEventListener("pointerup",e=>{if(e.pointerType!=="mouse")go(e)})}document.documentElement.classList.add("wlon");requestAnimationFrame(()=>el.classList.add("in"));
-  const hd=el.querySelector(".whud");let ck=0;if(hd){ck=clock(hd);el._ck=ck;wx(hd);try{kpis(k,hd)}catch(x){}el._px=pxLive(hd,k);grLive(hd,k).then(t=>{el._gr=t},()=>{})}
+  const hd=el.querySelector(".whud");let ck=0;if(hd){ck=clock(hd);el._ck=ck;wx(hd);try{kpis(k,hd)}catch(x){}el._px=pxLive(hd,k);grLive(hd,k).then(t=>{el._gr=t},()=>{});try{fuelLive(hd,k).then(()=>wfit(el));dealsLive(hd,k);wfit(el)}catch(x){}}
   const fill=async()=>{const f=await facts(k);const ul=el.querySelector(".wlf");if(ul)ul.innerHTML=f.map(x=>`<li>${x}</li>`).join("")};
   /* údaje sa po otvorení ešte načítavajú – keď prídu, čísla a ceny sa doplnia (najviac 20 s) */
   const ready=()=>{const S=typeof STATE!=="undefined"?STATE:{};return (S.prices&&S.prices.length)||(S.deals&&S.deals.length)};
@@ -403,7 +444,25 @@ html.wlon,html.wlon body{overflow:hidden}
 .wpst{margin-top:6px;font:500 .6rem/1.3 "Geist Mono",ui-monospace,monospace;color:#c9d1e3;opacity:.85;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .wpc b sup,.whu sup{font:700 .58rem/1 "Geist Mono",ui-monospace,monospace;margin-left:3px;vertical-align:super}.wup{color:#b6ff3b}.wdn{color:#fda4af}
 .wfl{animation:wflash 1.6s ease}@keyframes wflash{0%,30%{background:rgba(182,255,59,.35);border-radius:8px}100%{background:transparent}}
-.whpr{animation-delay:.55s!important}.whgr{animation-delay:.6s!important;overflow:hidden}.wgrh{display:flex;justify-content:space-between;align-items:baseline;gap:8px;flex-wrap:wrap}.wgrv{display:flex;gap:8px;align-items:baseline;font-size:.92rem}.wgrv b{font-weight:800;text-shadow:0 0 12px currentColor}.wgrv em{font-style:normal;font-size:.74rem;opacity:.9}
+.whpr{animation-delay:.55s!important}.whgr{animation-delay:.6s!important;overflow:hidden}.wdia{overflow:hidden;background:linear-gradient(135deg,rgba(255,255,255,.16),rgba(186,230,253,.06) 40%,rgba(244,114,182,.08) 70%,rgba(255,255,255,.12))!important;border:1px solid transparent!important;
+ background-clip:padding-box;box-shadow:0 0 0 1px rgba(255,255,255,.35) inset,0 0 26px rgba(125,211,252,.35),0 0 46px rgba(167,139,250,.22),0 14px 40px rgba(0,0,0,.35)!important;-webkit-backdrop-filter:blur(10px) saturate(180%) brightness(1.08)!important;backdrop-filter:blur(10px) saturate(180%) brightness(1.08)!important}
+.wdia::before{content:"";position:absolute;inset:-1px;border-radius:inherit;padding:1.5px;background:conic-gradient(from var(--wa,0deg),#7dd3fc,#f0abfc,#fde68a,#a7f3d0,#c4b5fd,#7dd3fc);-webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);-webkit-mask-composite:xor;mask-composite:exclude;animation:wdspin 6s linear infinite;pointer-events:none;opacity:.9}
+@property --wa{syntax:"<angle>";initial-value:0deg;inherits:false}@keyframes wdspin{to{--wa:360deg}}
+.wdsh{position:absolute;inset:0;pointer-events:none;background:linear-gradient(115deg,transparent 30%,rgba(255,255,255,.28) 46%,rgba(255,255,255,.05) 52%,transparent 60%);transform:translateX(-120%);animation:wdshine 5.5s ease-in-out infinite}
+@keyframes wdshine{0%,55%{transform:translateX(-120%)}80%,100%{transform:translateX(120%)}}
+.wdia .wgrh small{color:#e0f2fe!important;text-shadow:0 0 10px rgba(125,211,252,.8)}
+.wfv,.wdv{display:flex;gap:8px;align-items:baseline}.wfv b,.wdv b{font-weight:800;font-size:1rem;color:#fff;text-shadow:0 0 14px rgba(125,211,252,.9)}.wfv em,.wdv em{font-style:normal;font-size:.72rem;opacity:.85}
+.wfc,.wdc{position:relative;height:90px;margin:8px 0 4px}.wdline{position:absolute;inset:0}.wfc span,.wdc span{position:absolute;font:600 .58rem "Geist Mono",ui-monospace,monospace;opacity:.75}
+.wflg{right:0;bottom:-14px;display:flex;gap:4px;align-items:center}.wflg i{display:inline-block;width:10px;height:3px;border-radius:2px;background:var(--c);box-shadow:0 0 6px var(--c);margin-left:6px}
+.wdbar{transform-origin:bottom;animation:wdgrow .8s cubic-bezier(.2,.8,.2,1) both;filter:drop-shadow(0 0 6px rgba(167,139,250,.8))}@keyframes wdgrow{from{transform:scaleY(0)}to{transform:scaleY(1)}}
+.wfl{display:grid;gap:4px;margin-top:16px}.wfr{display:grid;grid-template-columns:minmax(0,1.25fr) minmax(0,1fr) auto;gap:2px 8px;align-items:center;font-size:.78rem}.wfr span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.wfr i{height:5px;border-radius:3px;width:var(--w);background:linear-gradient(90deg,#22d3ee,#a78bfa);box-shadow:0 0 8px rgba(125,211,252,.8)}.wfr b{font-weight:800;font-variant-numeric:tabular-nums}.wfr .wfs{grid-column:1/-1;font-size:.62rem;opacity:.65;margin-top:-2px;font-style:normal}
+.wfr.wfme span,.wfr.wfme b{color:#bae6fd;text-shadow:0 0 8px rgba(125,211,252,.8)}
+.wfnav{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap}.wfbtn{flex:1 1 130px;display:inline-flex;justify-content:center;align-items:center;min-height:42px;border-radius:999px;font-weight:800;font-size:.82rem;color:#0b1020!important;text-decoration:none;background:linear-gradient(135deg,#e0f2fe,#c4b5fd 55%,#f5d0fe);box-shadow:0 0 16px rgba(196,181,253,.7)}
+.wfsrc{margin-top:8px;font-size:.6rem;opacity:.6}.wfsrc a{color:inherit}
+.wdk{display:flex;flex-wrap:wrap;gap:6px 12px;margin-top:16px;font-size:.74rem}.wdk span{opacity:.9}.wdk b{color:#fff;text-shadow:0 0 10px rgba(182,255,59,.7)}
+.wlc:not(.por){overflow-y:auto}.wlc:not(.por) .wlsp{margin-left:28px;margin-right:auto;width:min(560px,calc(100vw - 520px))}.wlc:not(.por) .wimg{bottom:auto;min-height:100%}
+.wgrh{display:flex;justify-content:space-between;align-items:baseline;gap:8px;flex-wrap:wrap}.wgrv{display:flex;gap:8px;align-items:baseline;font-size:.92rem}.wgrv b{font-weight:800;text-shadow:0 0 12px currentColor}.wgrv em{font-style:normal;font-size:.74rem;opacity:.9}
 .wgrc{position:relative;height:96px;margin:8px 0 4px}.wgsvg{width:100%;height:100%;overflow:visible;display:block}.wgln{animation:wgfade 1.2s ease-out both}@keyframes wgfade{from{opacity:0}to{opacity:1}}
 .wgdot{animation:wgpulse 1.6s ease-in-out infinite}@keyframes wgpulse{0%,100%{opacity:1}50%{opacity:.35}}
 .wgrc span{position:absolute;font:600 .58rem "Geist Mono",ui-monospace,monospace;opacity:.7;letter-spacing:.04em}.wgmx{top:-2px;left:0}.wgmn{bottom:0;left:0}.wgax{bottom:-14px;left:0}.wgnw{bottom:-14px;right:0}
