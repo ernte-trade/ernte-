@@ -145,7 +145,8 @@ s pripojeným repozitárom `ernte-trade/ernte-`.
 - Service worker (`sw.js`): overená verzia network-first (súbory sa vždy overia u servera). Zrýchlenie s ukladaním do telefónu
   je VYPNUTÉ (28. 10. núdzovo vrátené); `index.html` má jednorazové vyčistenie uložených súborov (`ernte-clean-2810b`).
   Údaje z databázy sa nikdy necachujú – vždy živé.
-- Úvod sa dá vždy opustiť: „Poďme na to“, ✕ vľavo hore, ťuknutie mimo karty; ukazuje sa aj v náhľade „Pozrieť ako“.
+- **PRÍKAZ MAJITEĽA (30. 10.): úvod LIVE sa nedá vypnúť ani zavrieť** – žiadne ✕, ťuknutie mimo ani Escape; pokračuje sa iba „Poďme na to →“ (pre všetkých).
+  Skrytý `[data-wlx]` slúži iba upozorneniam (`cennikalert.js`, `pushcenter.js`), ktoré otvárajú konkrétne miesto. Ukazuje sa aj v náhľade „Pozrieť ako“.
   Rozloženie: pod 1100 px šírky panely nad kartou (bez prekrývania, posúvateľné), nad 1100 px panely vpravo, karta vľavo.
 - Firmy podľa IČO (`firmy.js`, prístup `firmy`): po zadaní IČO / odfotení pečiatky vyplní meno a sídlo z registra RPO
   (api.statistics.sk, CORS povolený, zadarmo) + odkaz FinStat. DIČ / IČ DPH: RÚZ (registeruz.sk) ich má, ale nemá CORS →

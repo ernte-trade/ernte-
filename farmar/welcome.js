@@ -277,7 +277,7 @@ async function show(force){const k=kind();if(!k||document.querySelector(".wlc"))
   const rz=()=>{if(!el.isConnected){removeEventListener("resize",rz);return}el.classList.toggle("por",POR())};addEventListener("resize",rz);
   el.innerHTML=`${scene(k,ph,por)}<div class="wlb"><img src="icon-192.png" alt=""><div class="wlt"><small>${E(tag)}</small><b>${g}</b><p>${E(sub)}</p>${joke?`<p class="wjk">💡 <b>Vedeli ste?</b> <span>${E(joke)}</span></p>`:""}<ul class="wlf"></ul>
    <div class="wla"><button type="button" class="lime" data-wlgo>Poďme na to →</button><button type="button" class="wmore" data-wljoke>💡 Ďalšia zaujímavosť</button></div></div></div>${GRK(k)&&spotOK(k)?`<div class="wlsp">${radioOff()?radioOnHTML():spot()}</div>`:""}
-   <button type="button" class="wlx" data-wlx aria-label="Zavrieť a pokračovať">✕</button><div class="wltap">${new Date().toLocaleDateString("sk-SK",{weekday:"long",day:"numeric",month:"long"})}</div>`;
+   <button type="button" class="wlx" data-wlx hidden tabindex="-1" aria-hidden="true">✕</button><div class="wltap">${new Date().toLocaleDateString("sk-SK",{weekday:"long",day:"numeric",month:"long"})}</div>`;
   document.body.appendChild(el);
   const nextJoke=ev=>{if(ev){ev.preventDefault();ev.stopPropagation()}const now=Date.now();if(nextJoke.t&&now-nextJoke.t<500)return;nextJoke.t=now;
     const jt=pickJoke();
@@ -304,8 +304,9 @@ async function show(force){const k=kind();if(!k||document.querySelector(".wlc"))
     if(ev.target.closest(".whsp"))return;
     if(ev.target.closest(".whc")){const c=ev.target.closest(".whc");c.classList.remove("wtap");void c.offsetWidth;c.classList.add("wtap");honk(false);confetti(el,ev.clientX,ev.clientY);if(navigator.vibrate)try{navigator.vibrate(20)}catch(x){}return}
     if(ev.target.closest("[data-wlgo]"))return;
-    if(ev.target.closest("[data-wlx]")||!ev.target.closest(".wlb")&&!ev.target.closest(".whc")&&!ev.target.closest("a")){if(!el._gone){el._gone=1;close(el);goHome()}}});
-  el.addEventListener("keydown",ev=>{if(ev.key==="Escape"||ev.key==="Enter"&&!ev.target.closest("button")){ev.preventDefault();if(!el._gone){el._gone=1;close(el);goHome()}}});
+    /* PRÍKAZ MAJITEĽA (30. 10.): úvod LIVE sa nedá zavrieť ✕ ani ťuknutím mimo – iba „Poďme na to →“ (skrytý data-wlx používajú iba upozornenia, ktoré otvárajú konkrétne miesto) */
+    if(ev.target.closest("[data-wlx]")&&ev.isTrusted===false){if(!el._gone){el._gone=1;close(el);goHome()}}});
+  el.addEventListener("keydown",ev=>{if(ev.key==="Enter"&&!ev.target.closest("button")){ev.preventDefault();if(!el._gone){el._gone=1;close(el);goHome()}}});
   setTimeout(()=>{try{el.querySelector("[data-wlgo]").focus({preventScroll:true})}catch(x){}},400)}
 /* „Poďme na to“ → vždy do pridelených sekcií (Prehľad / prvá záložka používateľa) */
 function goHome(){try{if(typeof FARMER!=="undefined"&&FARMER){window.scrollTo(0,0);return}
@@ -338,7 +339,7 @@ html.wlon,html.wlon body{overflow:hidden}
 .wlc.por .wcomb{animation-duration:11s}.wlc.por .wcut{animation-duration:11s}.wlc.por .wtrac{animation-duration:9s}.wlc.por .wtk1{animation-duration:6s}.wlc.por .wtk2{animation-duration:7.5s}.wlc.por .wlane{--x0:-40px;--x1:0px;animation-duration:1.2s}
 .wlb{position:relative;margin:0 auto calc(18px + env(safe-area-inset-bottom,0px));width:min(560px,calc(100% - 28px));display:grid;grid-template-columns:48px 1fr;gap:12px;align-items:start;padding:16px;max-height:62vh;overflow:auto;border-radius:26px;
   background:rgba(11,16,32,.72);-webkit-backdrop-filter:blur(18px) saturate(160%);backdrop-filter:blur(18px) saturate(160%);border:1px solid rgba(255,255,255,.18);box-shadow:0 24px 60px rgba(0,0,0,.45);color:#f1f5ff;transform:translateY(30px);transition:transform .5s cubic-bezier(.2,.8,.2,1) .1s}
-.wlc.in .wlb{transform:none}.wla button{touch-action:manipulation;-webkit-tap-highlight-color:transparent;position:relative;z-index:2}.wlc{cursor:pointer}
+.wlc.in .wlb{transform:none}.wla button{touch-action:manipulation;-webkit-tap-highlight-color:transparent;position:relative;z-index:2}.wlc{cursor:default}
 .wlb img{width:48px;height:48px;border-radius:16px;background:#fff}
 .wlt small{display:block;font-size:.72rem;letter-spacing:.12em;text-transform:uppercase;color:#b6ff3b;font-weight:700}
 .wlt>b{display:block;font-size:1.6rem;letter-spacing:-.03em;line-height:1.15;margin:2px 0 4px}
@@ -429,7 +430,7 @@ html.wlon,html.wlon body{overflow:hidden}
 @media (max-height:640px){.wlc.por .wspk{height:20px}.wlc.por .whbars{height:24px}.wclk{font-size:1.2rem}}
 .wlc:not(.por) .whud{left:auto;right:28px;top:calc(56px + env(safe-area-inset-top,0px));width:420px}.wlc:not(.por) .wclk{font-size:2rem}.wlc:not(.por) .wlb{margin-left:28px;margin-right:auto}
 .wlc.por .whud{max-width:640px;align-self:center;width:calc(100% - 28px)}.wlc.por .wlb{width:min(640px,calc(100% - 28px))}
-.wltap{z-index:3}
+.wltap{z-index:3}.wlc .wlx[hidden]{display:none!important}
 .whsp{cursor:default;padding:8px 10px 10px}.whsp::before{display:none}.wsph{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:6px}
 .wsph span{display:flex;gap:6px;align-items:center;flex:none}.wspo{font-size:.72rem;font-weight:700;color:#d9f99d;text-decoration:none}
 .wspc{min-height:30px!important;padding:0 10px!important;border-radius:999px!important;font-size:.72rem!important}
