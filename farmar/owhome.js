@@ -78,6 +78,7 @@ function profitHTML(){const X=window.HUBX,R=X&&X.H.risk,L=[];
     L.push(tile({i:"🔒",l:"Zamknutá marža",v:F(T.lock,0)+"<small> €</small>",s:"zo zmlúv s odberateľmi",go:"#hs-risk",c:"ok"}));
     L.push(tile({i:"⚖️",l:"Otvorená pozícia",v:(T.pos>0?"+":"")+F(T.pos,0)+"<small> t</small>",s:T.pos>0?"nakúpené, nepredané":T.pos<0?"predané naviac":"všetko kryté",go:"#hs-risk",c:T.pos>0?"w":T.pos<0?"r":""}));
     L.push(tile({i:"📉",l:"Ak burza klesne o 10 €",v:(risk?"−":"")+F(risk,0)+"<small> €</small>",s:"riziko otvorenej pozície",go:"#hs-risk",c:risk?"w":""}))}
+  if(MAIN()&&window.ziskOpen)L.push(tile({i:"🔍",l:"Kde zarábame a strácame",v:"→",s:"komodity · odberatelia · farmári · úniky",go:"#zisk",c:"acc"}));
   if(window.vZuct)L.push(tile({i:"🧾",l:"Zúčtovanie",v:"→",s:"lístky · faktúry · PDF",go:"zuct"}));
   if(MAIN()&&STATE.me&&STATE.me.hlavny!==false)L.push(tile({i:"🔮",l:"Predikcia",v:"→",s:"kedy predať · trend",go:"pred",c:"acc"}));
   return `<div class="owg">${L.join("")}</div>`}
