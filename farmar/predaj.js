@@ -57,11 +57,11 @@ function options(com,buy){const out=[],B=D.B||[];
   return out.filter(o=>o.age<=Math.max(MAXAGE,o.src.startsWith("skutočný")?45:MAXAGE)).sort((a,b)=>(b.profit??-1e9)-(a.profit??-1e9))}
 function missing(com,opts){const have=new Set(opts.map(o=>o.b.id));return (D.B||[]).filter(b=>(b.coms||[]).includes(com)&&!have.has(b.id))}
 // PRÍKAZ MAJITEĽA (30. 10.): nákupná cena nikdy nad najlepší predaj po našej doprave − marža (predvolene 10 €/t)
-// strop sa ukladá do kalk_store pricelist/sellcap; databáza (soja_adm_tick, ia_tick, price_propose) zverejní najviac strop
+// strop = najlepší MODEL / ponuka odberateľa (posúvaná s burzou), NIE posledné lístky (príkaz majiteľa); ukladá sa do kalk_store pricelist/sellcap; databáza (soja_adm_tick, ia_tick, price_propose) zverejní najviac strop
 async function caps(){if(!OWN()||!window.sb)return;const P=(typeof STATE!=="undefined"&&STATE.prices)||[];if(!P.length)return;
   let cur=null;try{const r=await sb.from("kalk_store").select("data").eq("path","pricelist").eq("id","sellcap").maybeSingle();cur=r.error?undefined:(r.data?r.data.data:null)}catch(x){cur=undefined}
   if(cur===undefined)return;const m=cur&&cur.m!=null?+cur.m:10,C={};
-  for(const p of P){const o=options(p.com,+p.price||0).filter(x=>x.net!=null&&x.net>0);if(!o.length)continue;const b=o.reduce((a,x)=>x.net>a.net?x:a,o[0]);
+  for(const p of P){const o=options(p.com,+p.price||0).filter(x=>x.net!=null&&x.net>0&&!/^skutočný/.test(x.src||""));if(!o.length)continue;const b=o.reduce((a,x)=>x.net>a.net?x:a,o[0]);
     C[p.com]={best:Math.round(b.net*100)/100,cap:Math.floor(b.net-m),src:`${b.b.name}${b.siteName?" "+b.siteName:""} ${b.del} ${Math.round(b.price)}${b.dop?" − doprava "+b.dop:""} (${b.src}, ${dk(b.d)})`}}
   const same=cur&&cur.c&&JSON.stringify(cur.c)===JSON.stringify(C)&&Date.now()-Date.parse(cur.at||0)<6*3600e3;
   if(!same){const data={m,at:new Date().toISOString(),c:C};const r=await sb.from("kalk_store").upsert({path:"pricelist",id:"sellcap",data},{onConflict:"path,id"});if(r.error)return}
