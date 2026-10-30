@@ -80,7 +80,7 @@ function edHTML(x){const F=(k,l,v,a)=>`<label>${l}<input name="${k}" value="${es
    <label>Komodita<select name="k">${[...new Set(COMS.concat(x.k?[x.k]:[]))].map(k=>`<option value="${k}"${k===x.k?" selected":""}>${esc(comName(k))}</option>`).join("")}</select></label>
    ${F("p","ŠPZ",x.p,'autocapitalize="characters"')}${F("g","Hrubá váha kg",x.g)}${F("i","Nečistoty %",x.i)}${F("n","Čistá váha kg",x.n)}${F("m","Vlhkosť %",x.m)}${F("dk","Sušenie kg",x.dk)}${F("pr","Bielkoviny %",x.pr)}${F("ol","Olej %",x.ol)}${F("s","Cena €/t",x.s)}${F("v","Hodnota €",x.v)}
    ${F("cu","Zákazník u odberateľa",x.cu,'autocomplete="off"')}<label class="w">Poznámka<input name="o" value="${esc(x.o||"")}"></label>
-   <div class="w s">Hodnota sa prepočíta sama z čistej váhy × ceny (dá sa prepísať). Po uložení sa prepočíta zmluva a zúčtovanie farmára; oprava sa zapíše do histórie a nové nahratie Excelu ju neprepíše.</div>
+   <div class="w s">Čistá váha sa prepočíta sama z hrubej váhy a nečistôt, hodnota z čistej váhy × ceny (obe sa dajú prepísať). Po uložení sa prepočíta zmluva a zúčtovanie farmára; oprava sa zapíše do histórie a nové nahratie Excelu ju neprepíše.</div>
    ${(x.fx&&Object.keys(x.fx).length)?`<div class="w s">✎ Už opravené: ${esc(Object.keys(x.fx).join(", "))}${x.eb?" · "+esc(x.eb):""}</div>`:""}
    <div class="w btns"><button type="submit" class="pri">💾 Uložiť opravu</button><button type="button" data-oded="">Zrušiť</button></div></form>`}
 function srchHTML(){let h=`<div class="card f odsc"><form id="fOdQ" class="w odq"><label>🔎 Hľadať lístok / zákazníka<input id="odQ" type="search" value="${esc(O.q)}" placeholder="č. lístka, farmár, ŠPZ, zmluva…" autocomplete="off" enterkeyhint="search"></label><button class="pri">Hľadať</button>${O.q?`<button type="button" data-odqx="1">✕ Zrušiť</button>`:""}</form>`;
@@ -135,7 +135,9 @@ document.addEventListener("submit",async e=>{const f=e.target;if(!f||ROLE!=="own
   busy(b,true);const r=await sb.rpc("buyer_ticket_edit",{p_ticket:t0,p});busy(b,false);
   if(r.error){toast("Chyba: "+(/could not find|does not exist/i.test(r.error.message)?"Úprava sa zapne po aktualizácii databázy (pár minút).":r.error.message),8000);return}
   O.ed=null;O.L=null;O.LA=null;window.zdashReload&&zdashReload();toast(`✓ Lístok ${t0} opravený (${Object.keys(p).length} ${Object.keys(p).length===1?"údaj":"údaje"}). Zúčtovanie farmára prepočítané.`,6000);renderStaff()},true);
-document.addEventListener("input",e=>{const f=e.target&&e.target.closest&&e.target.closest(".odedf");if(!f||!/^(n|s)$/.test(e.target.name))return;const n=num(String(f.n.value).replace(/\s/g,"")),s=num(String(f.s.value).replace(/\s/g,""));if(isFinite(n)&&isFinite(s)&&f.v)f.v.value=String(Math.round(n*s/10)/100).replace(".",",")});
+document.addEventListener("input",e=>{const f=e.target&&e.target.closest&&e.target.closest(".odedf");if(!f||!/^(g|i|n|s)$/.test(e.target.name))return;const V=k=>num(String(f.elements[k].value||"").replace(/\s/g,""));
+  if(/^(g|i)$/.test(e.target.name)){const g=V("g"),i=String(f.elements.i.value).trim()===""?0:V("i");if(isFinite(g)&&isFinite(i))f.elements.n.value=String(Math.round(g*(1-i/100)))}
+  const n=V("n"),s=V("s");if(isFinite(n)&&isFinite(s)&&f.elements.v)f.elements.v.value=String(Math.round(n*s/10)/100).replace(".",",")});
 document.addEventListener("submit",async e=>{if(!e.target||e.target.id!=="fOdNf")return;e.preventDefault();e.stopPropagation();const f=e.target,fd=new FormData(f),b=f.querySelector("button[type=submit]");
   const row={name:String(fd.get("name")||"").trim(),active:true};for(const k of ["ico","phone","addr"]){const v=String(fd.get(k)||"").trim();if(v)row[k]=v}
   if(row.name.length<3){toast("Napíš meno alebo názov firmy.");return}
