@@ -20,7 +20,7 @@ function ui(){let o=document.getElementById("emap");if(o)return o;o=document.cre
   <div class="emh"><b>🗺️ ERNTE Maps</b><span class="emgps">📡 hľadám GPS…</span><button type="button" class="emx" data-emx aria-label="Zavrieť mapu">✕</button></div>
   <div class="emm" id="emMap"></div>
   <div class="emnav" hidden><div class="emarrow">⬆️</div><div class="emtxt"><b class="emins">—</b><small class="emsub"></small></div></div>
-  <div class="emcats"><button type="button" data-emplan class="emplb">🚛 Trasa a cena</button>${CAT.map(c=>`<button type="button" data-emcat="${c[0]}" class="${c[0]==="fuel"?"on":""}">${c[1]} ${c[2]}</button>`).join("")}</div>
+  <div class="emcats"><button type="button" data-emplan class="emplb">🧭 Trasa · 🚛 cena</button>${CAT.map(c=>`<button type="button" data-emcat="${c[0]}" class="${c[0]==="fuel"?"on":""}">${c[1]} ${c[2]}</button>`).join("")}</div>
   <div class="emp"><div class="emst"></div><div class="emlist"></div>
    <div class="embt"><button type="button" class="emgo" data-emgo hidden>▶ Štart navigácie</button><button type="button" data-emstop hidden>■ Ukončiť</button><button type="button" data-emcenter>◎ Moja poloha</button><a class="emgg" target="_blank" rel="noopener" hidden>Google Maps</a></div>
    <div class="emsrc">Mapa © <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a> · trasy OSRM</div></div>`;
@@ -114,6 +114,7 @@ document.addEventListener("visibilitychange",()=>{if(!document.hidden&&document.
 // Odkiaľ → kam, kamiónová trasa (Valhalla, profil truck 40 t / 5 náprav), mýto podľa krajín a tried ciest, nafta podľa skutočnej ceny,
 // ostatné pohyblivé náklady ako Kalkulačka (sadzba €/km pri referenčnej nafte), prázdny návrat, marža → návrh ceny prepravy. Navigácia po tejto trase.
 const PK="ernte-plan-cfg";
+const CL=m=>m==="truck"?"🚛 Vypočítať trasu a cenu prepravy":m==="auto"?"🚗 Vypočítať trasu autom":"🚶 Vypočítať trasu pešo";
 const VH="https://valhalla1.openstreetmap.de";
 const CN={SK:"Slovensko",HU:"Maďarsko",CZ:"Česko",AT:"Rakúsko",PL:"Poľsko",DE:"Nemecko",RO:"Rumunsko",UA:"Ukrajina",SI:"Slovinsko",HR:"Chorvátsko",RS:"Srbsko",IT:"Taliansko"};
 const FLAG={SK:"🇸🇰",HU:"🇭🇺",CZ:"🇨🇿",AT:"🇦🇹",PL:"🇵🇱",DE:"🇩🇪",RO:"🇷🇴",UA:"🇺🇦",SI:"🇸🇮",HR:"🇭🇷",RS:"🇷🇸",IT:"🇮🇹"};
@@ -123,9 +124,9 @@ const P={a:null,b:null,res:null,mk:null,cfg:null};
 function mkLoad(){if(P.mk)return Promise.resolve(P.mk);return fetch("market.json",{cache:"no-store"}).then(r=>r.ok?r.json():null).catch(()=>null).then(j=>(P.mk=j||{},P.mk))}
 function cfg(){if(P.cfg)return P.cfg;const f=(P.mk&&P.mk.fuel)||{},rf=f.ref||{ekm:1.6,cons:0.32,netL:1.5551},huf=(P.mk&&P.mk.fx&&P.mk.fx.huf)||366;
   let c={};try{c=JSON.parse(localStorage.getItem(PK)||"{}")}catch(x){}
-  P.cfg=Object.assign({t:25,ret:true,marza:10,cons:+(rf.cons*100).toFixed(1),other:+(rf.ekm-rf.cons*rf.netL).toFixed(3),skL:f.sk&&f.sk.netL||rf.netL,huL:f.hu&&f.hu.netL||rf.netL,toll:TOLL0(huf)},c);
+  P.cfg=Object.assign({mode:"truck",t:25,ret:true,marza:10,cons:+(rf.cons*100).toFixed(1),other:+(rf.ekm-rf.cons*rf.netL).toFixed(3),skL:f.sk&&f.sk.netL||rf.netL,huL:f.hu&&f.hu.netL||rf.netL,toll:TOLL0(huf)},c);
   P.cfg.toll=Object.assign(TOLL0(huf),c.toll||{});return P.cfg}
-function cfgSave(){try{const c=P.cfg,o={t:c.t,ret:c.ret,marza:c.marza,cons:c.cons,other:c.other,toll:c.toll};localStorage.setItem(PK,JSON.stringify(o))}catch(x){}}
+function cfgSave(){try{const c=P.cfg,o={mode:c.mode,t:c.t,ret:c.ret,marza:c.marza,cons:c.cons,other:c.other,toll:c.toll};localStorage.setItem(PK,JSON.stringify(o))}catch(x){}}
 const n2=(x,d=2)=>Number.isFinite(x)?x.toLocaleString("sk-SK",{minimumFractionDigits:d,maximumFractionDigits:d}):"–";
 const eur=x=>n2(x,0)+" €";
 function dec6(s){const o=[];let i=0,la=0,ln=0;while(i<s.length){for(const k of [0,1]){let b,sh=0,r=0;do{b=s.charCodeAt(i++)-63;r|=(b&31)<<sh;sh+=5}while(b>=32);const d=r&1?~(r>>1):r>>1;if(k)ln+=d;else la+=d}o.push([la/1e6,ln/1e6])}return o}
@@ -141,20 +142,22 @@ async function geo(q){q=String(q||"").trim();const m=q.match(/^(-?\d+(?:[.,]\d+)
 let acT=0,acSeq=0;
 function sug(which,list){const e=$(".emsug");if(!e)return;e.dataset.w=which;e.innerHTML=list.map((s,i)=>`<button type="button" class="emsg" data-emsg="${i}"><b>${E(s.n)}</b>${s.w?`<small>${E(s.w)}</small>`:""}</button>`).join("");P.sl=list}
 function planUI(){const c=cfg(),T=c.toll,rows=Object.keys(T).map(k=>`<div class="emtr"><span>${FLAG[k]||"🌍"} ${k==="*"?"ostatné (spoplatnené úseky)":E(CN[k]||k)}</span><input inputmode="decimal" data-emtl="${k}.m" value="${n2(T[k].m,4)}" aria-label="mýto diaľnica ${k}"><input inputmode="decimal" data-emtl="${k}.p" value="${n2(T[k].p,4)}" aria-label="mýto I. trieda ${k}"></div>`).join("");
-  return `<div class="emab"><label><small>Odkiaľ</small><input data-emf="a" autocomplete="off" placeholder="📍 Moja poloha" value="${E(P.a&&!P.a.me?P.a.n:"")}"></label>
+  const MD=[["truck","🚛 Kamión"],["auto","🚗 Autom"],["pedestrian","🚶 Pešo"]];
+  return `<div class="emmd" role="group" aria-label="Spôsob dopravy">${MD.map(m=>`<button type="button" data-emmd="${m[0]}" class="${c.mode===m[0]?"on":""}">${m[1]}</button>`).join("")}</div>
+  <div class="emab"><label><small>Odkiaľ</small><input data-emf="a" autocomplete="off" placeholder="📍 Moja poloha" value="${E(P.a&&!P.a.me?P.a.n:"")}"></label>
   <label><small>Kam</small><input data-emf="b" autocomplete="off" placeholder="Mesto, adresa, firma alebo GPS" value="${E(P.b?P.b.n:"")}"></label></div><div class="emsug"></div>
-  <div class="emrw"><label><small>Náklad t</small><input inputmode="decimal" data-emc="t" value="${n2(c.t,0)}"></label><label><small>Marža %</small><input inputmode="decimal" data-emc="marza" value="${n2(c.marza,0)}"></label>
+  <div class="emrw emtk"><label><small>Náklad t</small><input inputmode="decimal" data-emc="t" value="${n2(c.t,0)}"></label><label><small>Marža %</small><input inputmode="decimal" data-emc="marza" value="${n2(c.marza,0)}"></label>
   <label class="emck"><input type="checkbox" data-emc="ret" ${c.ret?"checked":""}><span>prázdny návrat</span></label></div>
-  <details class="emcfg"><summary>⚙️ Náklady, nafta a mýto</summary><div class="emrw"><label><small>Spotreba l/100</small><input inputmode="decimal" data-emc="cons" value="${n2(c.cons,1)}"></label>
+  <details class="emcfg emtk"><summary>⚙️ Náklady, nafta a mýto</summary><div class="emrw"><label><small>Spotreba l/100</small><input inputmode="decimal" data-emc="cons" value="${n2(c.cons,1)}"></label>
    <label><small>Ostatné €/km</small><input inputmode="decimal" data-emc="other" value="${n2(c.other,3)}"></label></div>
    <div class="emrw"><label><small>Nafta SK €/l bez DPH</small><input inputmode="decimal" data-emc="skL" value="${n2(c.skL,3)}"></label><label><small>Nafta HU €/l bez DPH</small><input inputmode="decimal" data-emc="huL" value="${n2(c.huL,3)}"></label></div>
    <small class="emnote">Ostatné pohyblivé náklady (vodič, pneu, servis, AdBlue, odpisy) = sadzba Kalkulačky ${n2(1.6)} €/km mínus nafta pri referenčnej cene. Nafta = aktuálny priemer SK / HU bez DPH (market.json), v ostatných krajinách cena SK.</small>
    <div class="emtr emth"><span>Mýto €/km (5 náprav, EURO 6)</span><b>diaľnica</b><b>I. trieda</b></div>${rows}
    <small class="emnote">SK, HU, AT ako Kalkulačka; CZ, PL, DE a ostatné sú orientačné – over a uprav sadzby. Ukladá sa v tomto zariadení.</small></details>
-  <button type="button" class="emgo emcalc" data-emcalc>🚛 Vypočítať trasu a cenu prepravy</button><div class="emres">${P.res?resHTML(P.res):""}</div>`}
+  <button type="button" class="emgo emcalc" data-emcalc>${CL(c.mode)}</button><div class="emres">${P.res?resHTML(P.res):""}</div>`}
 function showPlan(on){S.mode=on?"plan":"poi";const o=document.getElementById("emap");if(!o)return;o.classList.toggle("plan",on);
   document.querySelectorAll("#emap [data-emcat]").forEach(b=>b.classList.toggle("on",!on&&b.dataset.emcat===S.cat));const pb=$("[data-emplan]");if(pb)pb.classList.toggle("on",on);
-  let pl=$(".empl");if(on){if(!pl){pl=document.createElement("div");pl.className="empl";$(".emp").prepend(pl)}mkLoad().then(()=>{pl.innerHTML=planUI()});
+  let pl=$(".empl");if(on){if(!pl){pl=document.createElement("div");pl.className="empl";$(".emp").prepend(pl)}mkLoad().then(()=>{pl.innerHTML=planUI();pl.dataset.md=cfg().mode});
     if(S.stL){S.stL.remove();S.stL=null}if(!P.res){S.route=null;S.rL.forEach(l=>l.remove());S.rL=[];stopNav()}}
   else if(pl)pl.remove()}
 function rdNum(v){const x=parseFloat(String(v).replace(/\s/g,"").replace(",","."));return Number.isFinite(x)?x:null}
@@ -163,21 +166,21 @@ async function calc(){const c=cfg(),btn=$("[data-emcalc]"),out=$(".emres");
   if(!P.b||(ib&&ib.value.trim()&&ib.value.trim()!==P.b.n)){const g=ib&&ib.value.trim()?await geo(ib.value):[];if(!g.length){out.innerHTML=`<div class="emerr">Zadaj cieľ „Kam“ (mesto, adresu alebo GPS) a vyber ho zo zoznamu.</div>`;return}P.b=g[0];ib.value=g[0].n}
   if(ia&&ia.value.trim()&&(!P.a||P.a.me||ia.value.trim()!==P.a.n)){const g=await geo(ia.value);if(!g.length){out.innerHTML=`<div class="emerr">Miesto „Odkiaľ“ som nenašiel.</div>`;return}P.a=g[0];ia.value=g[0].n}
   if(!ia||!ia.value.trim()){if(!S.me){out.innerHTML=`<div class="emerr">📡 Čakám na tvoju GPS polohu – alebo napíš „Odkiaľ“.</div>`;return}P.a={n:"Moja poloha",lat:S.me.lat,lng:S.me.lng,me:true}}
-  btn.disabled=true;btn.textContent="🛣️ Počítam kamiónovú trasu…";out.innerHTML="";
-  try{const R=await truckRoute(P.a,P.b);btn.textContent="💶 Počítam mýto a náklady…";const A=await tollSplit(R).catch(()=>null);
-    P.res=price(R,A);drawPlan(R);out.innerHTML=resHTML(P.res)}
+  btn.disabled=true;btn.textContent="🛣️ Počítam trasu…";out.innerHTML="";
+  try{const R=await truckRoute(P.a,P.b);if(c.mode==="truck"){btn.textContent="💶 Počítam mýto a náklady…";const A=await tollSplit(R).catch(()=>null);P.res=price(R,A)}
+    else P.res={simple:true,mode:c.mode,a:P.a.n,b:P.b.n,D:R.distance/1000,dur:R.duration,src:R.src};drawPlan(R);out.innerHTML=resHTML(P.res)}
   catch(x){out.innerHTML=`<div class="emerr">Trasu sa nepodarilo vypočítať (${E(x.message||x)}). Skús znova o chvíľu.</div>`}
-  btn.disabled=false;btn.textContent="🚛 Vypočítať trasu a cenu prepravy"}
-async function truckRoute(a,b){const body={locations:[{lat:a.lat,lon:a.lng},{lat:b.lat,lon:b.lng}],costing:"truck",
-    costing_options:{truck:{height:4,width:2.55,length:16.5,weight:40,axle_load:11.5,axle_count:5,hazmat:false}},language:"sk-SK",units:"kilometers",directions_options:{language:"sk-SK"}};
+  btn.disabled=false;btn.textContent=CL(c.mode)}
+async function truckRoute(a,b){const md=cfg().mode,body={locations:[{lat:a.lat,lon:a.lng},{lat:b.lat,lon:b.lng}],costing:md,
+    costing_options:md!=="truck"?{}:{truck:{height:4,width:2.55,length:16.5,weight:40,axle_load:11.5,axle_count:5,hazmat:false}},language:"sk-SK",units:"kilometers",directions_options:{language:"sk-SK"}};
   let r;try{r=await fetch(VH+"/route",{method:"POST",body:JSON.stringify(body),headers:{"Content-Type":"application/json"},signal:tmo(30000)})}catch(x){r=null}
   if(r&&r.ok){const j=await r.json(),t=j.trip,lg=t.legs[0],pts=dec6(lg.shape);
     const steps=(lg.maneuvers||[]).map(m=>({distance:(m.length||0)*1000,name:(m.street_names||[])[0]||"",txt:m.instruction,say:m.verbal_pre_transition_instruction||m.instruction,
       maneuver:{type:VT[m.type]||"turn",modifier:VM[m.type]||"straight",location:[pts[m.begin_shape_index][1],pts[m.begin_shape_index][0]]}}));
-    return {src:"truck",shape:lg.shape,pts,distance:t.summary.length*1000,duration:t.summary.time,geometry:{coordinates:pts.map(p=>[p[1],p[0]])},legs:[{steps}]}}
+    return {src:md,shape:lg.shape,pts,distance:t.summary.length*1000,duration:t.summary.time,geometry:{coordinates:pts.map(p=>[p[1],p[0]])},legs:[{steps}]}}
   // záloha: OSRM (osobné auto) – mýto sa odhadne z ciest, ktorými trasa ide, bez tried
-  const o=await fetch(`https://router.project-osrm.org/route/v1/driving/${a.lng.toFixed(6)},${a.lat.toFixed(6)};${b.lng.toFixed(6)},${b.lat.toFixed(6)}?overview=full&geometries=geojson&steps=true`,{signal:tmo(20000)});
-  if(!o.ok)throw new Error("služby trás neodpovedajú");const R=(await o.json()).routes[0];if(!R)throw new Error("trasa neexistuje");R.src="car";R.pts=R.geometry.coordinates.map(p=>[p[1],p[0]]);return R}
+  const o=await fetch(`${md==="pedestrian"?"https://routing.openstreetmap.de/routed-foot/route/v1/driving/":"https://router.project-osrm.org/route/v1/driving/"}${a.lng.toFixed(6)},${a.lat.toFixed(6)};${b.lng.toFixed(6)},${b.lat.toFixed(6)}?overview=full&geometries=geojson&steps=true`,{signal:tmo(20000)});
+  if(!o.ok)throw new Error("služby trás neodpovedajú");const R=(await o.json()).routes[0];if(!R)throw new Error("trasa neexistuje");R.src=md==="pedestrian"?"pedestrian":"car";R.pts=R.geometry.coordinates.map(p=>[p[1],p[0]]);return R}
 async function tollSplit(R){if(R.src!=="truck")return null;
   const r=await fetch(VH+"/trace_attributes",{method:"POST",headers:{"Content-Type":"application/json"},signal:tmo(40000),
     body:JSON.stringify({encoded_polyline:R.shape,costing:"truck",shape_match:"edge_walk",filters:{attributes:["edge.length","edge.road_class","edge.toll","node.admin_index","admin.country_code"],action:"include"}})});
@@ -191,7 +194,9 @@ function price(R,C){const c=cfg(),f=c.ret?2:1,D=R.distance/1000,cons=c.cons/100,
     const toll=(x.m*tr.m+x.p*tr.p+x.t*T["*"].m)*f,fuelL=x.km*cons*f,fuel=fuelL*L,tkm=(tr.m?x.m:0)+(tr.p?x.p:0)+x.t;return {k,km:x.km,tkm,toll,fuelL,fuel,L}}).sort((a,b)=>b.km-a.km);
   const fuel=rows.reduce((a,r)=>a+r.fuel,0),toll=rows.reduce((a,r)=>a+r.toll,0),other=D*c.other*f,tot=fuel+toll+other,offer=tot*(1+c.marza/100);
   return {a:P.a.n,b:P.b.n,D,dur:R.duration,src:R.src,est:!C||Object.values(C).some(x=>x.est),rows,fuel,toll,other,tot,offer,f,t:c.t,marza:c.marza,ret:c.ret,cons:c.cons,oth:c.other}}
-function resHTML(X){const fl=X.rows.reduce((a,r)=>a+r.fuelL,0);
+function resHTML(X){if(X.simple)return `<div class="emcard emsim"><div class="emhd"><b>${X.mode==="pedestrian"?"🚶":"🚗"} ${E(X.a)} → ${E(X.b)}</b><small>${fd(X.D)} · ${ft(X.dur)} ${X.mode==="pedestrian"?"pešo":"autom"}</small></div>
+  <div class="embt"><button type="button" class="emgo" data-emgo>▶ Štart navigácie</button></div></div>`;
+  const fl=X.rows.reduce((a,r)=>a+r.fuelL,0);
   return `<div class="emcard"><div class="emhd"><b>🚛 ${E(X.a)} → ${E(X.b)}</b><small>${fd(X.D)} · ${ft(X.dur)} ${X.src==="truck"?"· kamiónová trasa 40 t":"· ⚠️ záloha osobná trasa (kamiónová služba neodpovedá)"}${X.ret?` · s prázdnym návratom ${fd(X.D*2)}`:""}</small></div>
   <div class="emtb">${X.rows.map(r=>`<div><span>${FLAG[r.k]||"🌍"} ${E(CN[r.k]||r.k)}</span><small>${n2(r.km,0)} km · mýtne ${n2(r.tkm,0)} km</small><small>⛽ ${n2(r.fuelL*1,0)} l × ${n2(r.L,3)} = ${eur(r.fuel)}</small><small>🛣️ mýto ${eur(r.toll)}</small></div>`).join("")}</div>
   <div class="emsum"><span>⛽ Nafta ${n2(fl,0)} l</span><b>${eur(X.fuel)}</b><span>🛣️ Mýto${X.est?" (odhad nedostupný)":""}</span><b>${eur(X.toll)}</b><span>🔧 Ostatné pohyblivé (${n2(X.oth,3)} €/km)</span><b>${eur(X.other)}</b>
@@ -200,9 +205,10 @@ function resHTML(X){const fl=X.rows.reduce((a,r)=>a+r.fuelL,0);
   <div class="embt"><button type="button" class="emgo" data-emgo>▶ Štart navigácie</button><button type="button" data-emcopy>📋 Kopírovať cenu</button></div></div>`}
 function drawPlan(R){S.route=R;S.steps=R.legs[0].steps||[];S.si=0;S.dest={n:P.b.n,lat:P.b.lat,lng:P.b.lng};S.replan=replan;
   S.rL.forEach(l=>l.remove());const ll=R.pts;
-  S.rL=[L.polyline(ll,{color:"#f59e0b",weight:12,opacity:.25}).addTo(S.map),L.polyline(ll,{color:"#fde68a",weight:5,opacity:.95,className:"emglow"}).addTo(S.map),
+  const md=cfg().mode,c1=md==="truck"?"#f59e0b":md==="auto"?"#22d3ee":"#a78bfa",c2=md==="truck"?"#fde68a":md==="auto"?"#a7f3d0":"#ddd6fe";
+  S.rL=[L.polyline(ll,{color:c1,weight:12,opacity:.25}).addTo(S.map),L.polyline(ll,{color:c2,weight:5,opacity:.95,className:"emglow"}).addTo(S.map),
     L.marker(ll[0],{icon:L.divIcon({className:"emfuel",html:"🅰️",iconSize:[30,30]})}).addTo(S.map),L.marker(ll[ll.length-1],{icon:L.divIcon({className:"emfuel near",html:"🏁",iconSize:[30,30]})}).addTo(S.map)];
-  S.follow=false;S.map.fitBounds(L.latLngBounds(ll).pad(.15));const st=$(".emst");if(st)st.innerHTML="";const g=$(".emgg");if(g){g.hidden=false;g.href=`https://www.google.com/maps/dir/?api=1&origin=${P.a.lat},${P.a.lng}&destination=${P.b.lat},${P.b.lng}&travelmode=driving`}}
+  S.follow=false;S.map.fitBounds(L.latLngBounds(ll).pad(.15));const st=$(".emst");if(st)st.innerHTML="";const g=$(".emgg");if(g){g.hidden=false;g.href=`https://www.google.com/maps/dir/?api=1&origin=${P.a.lat},${P.a.lng}&destination=${P.b.lat},${P.b.lng}&travelmode=${cfg().mode==="pedestrian"?"walking":"driving"}`}}
 // pri zídení z trasy počas navigácie: nová kamiónová trasa z mojej polohy do cieľa (cena sa nemení)
 async function replan(){if(!S.me||!P.b)return;try{const R=await truckRoute({lat:S.me.lat,lng:S.me.lng},P.b);S.route=R;S.steps=R.legs[0].steps||[];S.si=0;
   S.rL.slice(0,2).forEach(l=>l.setLatLngs(R.pts));navTick(true)}catch(x){}}
@@ -213,8 +219,8 @@ document.addEventListener("input",e=>{const t=e.target;if(!t.closest||!t.closest
   if(t.dataset.emc){const c=cfg(),k=t.dataset.emc;if(k==="ret")c.ret=t.checked;else{const v=rdNum(t.value);if(v!=null)c[k]=v}cfgSave();return}
   if(t.dataset.emtl){const [k,w]=t.dataset.emtl.split("."),v=rdNum(t.value);if(v!=null){cfg().toll[k][w]=v;cfgSave()}}},true);
 document.addEventListener("change",e=>{const t=e.target;if(t.dataset&&t.dataset.emc==="ret"){cfg().ret=t.checked;cfgSave()}},true);
-document.addEventListener("click",e=>{const t=e.target.closest&&e.target.closest("[data-emplan],[data-emsg],[data-emcalc],[data-emcopy]");if(!t||!t.closest("#emap"))return;e.preventDefault();e.stopPropagation();
-  if(t.dataset.emplan!==undefined)return showPlan(true);if(t.dataset.emcalc!==undefined)return calc();if(t.dataset.emcopy!==undefined)return copyTxt();
+document.addEventListener("click",e=>{const t=e.target.closest&&e.target.closest("[data-emplan],[data-emsg],[data-emcalc],[data-emcopy],[data-emmd]");if(!t||!t.closest("#emap"))return;e.preventDefault();e.stopPropagation();
+  if(t.dataset.emplan!==undefined)return showPlan(true);if(t.dataset.emmd!==undefined){const c=cfg();c.mode=t.dataset.emmd;cfgSave();const pl=$(".empl");pl.dataset.md=c.mode;pl.querySelectorAll("[data-emmd]").forEach(b=>b.classList.toggle("on",b===t));$("[data-emcalc]").textContent=CL(c.mode);if(P.b)calc();return}if(t.dataset.emcalc!==undefined)return calc();if(t.dataset.emcopy!==undefined)return copyTxt();
   if(t.dataset.emsg!==undefined){const box=$(".emsug"),w=box.dataset.w,s=(P.sl||[])[+t.dataset.emsg];if(!s)return;P[w]=s;const i=$(`[data-emf=${w}]`);if(i)i.value=s.n;box.innerHTML="";
     if(w==="a"&&!P.b){const ib=$("[data-emf=b]");if(ib)ib.focus()}else if(P.b)calc()}},true);
 const OK=()=>typeof window.MAIN_OK==="function"&&window.MAIN_OK()&&!window.ERNTE_VIEWAS; // príkaz majiteľa 30. 10.: ERNTE Maps iba Martin
@@ -250,7 +256,9 @@ function hdrBtn(){const app=document.getElementById("app");if(!app)return;const 
 
 #emap.plan .emp>.emst,#emap.plan .emp>.emlist,#emap.plan .emp>.embt>[data-emgo]{display:none!important}#emap.plan .emp{max-height:62vh}#emap.plan.navon .emp{max-height:22vh}#emap.navon .empl>:not(.emres),#emap.navon .emres>.emcard>:not(.embt){display:none}
 .emplb{background:linear-gradient(135deg,#f59e0b,#fde68a)!important;color:#1a1204!important;border:0!important}.emplb.on{box-shadow:0 0 14px rgba(245,158,11,.7)}
-.empl{display:grid;gap:8px}.emab{display:grid;gap:6px}.empl label{display:grid;gap:2px;min-width:0}.empl label small{opacity:.7;font-size:.72rem;font-weight:600}
+.empl{display:grid;gap:8px}.empl:not([data-md=truck]) .emtk{display:none!important}
+.emmd{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}.emmd button{min-height:44px;border-radius:999px;font-weight:800;padding:4px 6px;white-space:nowrap}.emmd button.on{background:linear-gradient(135deg,#f59e0b,#fde68a)!important;color:#1a1204!important;border-color:transparent!important;box-shadow:0 0 12px rgba(245,158,11,.6)}
+.emab{display:grid;gap:6px}.empl label{display:grid;gap:2px;min-width:0}.empl label small{opacity:.7;font-size:.72rem;font-weight:600}
 .empl input:not([type=checkbox]){width:100%;min-height:44px;box-sizing:border-box;font-size:16px}.emrw{display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:8px;align-items:end}
 .emck{display:flex!important;align-items:center;gap:8px;min-height:44px}.emck input{width:22px;height:22px}
 .emsug{display:grid;gap:4px}.emsug:empty{display:none}.emsg{display:grid;gap:1px;justify-items:start;text-align:left!important;padding:6px 12px;border-radius:12px;min-height:44px}.emsg small{opacity:.7;font-weight:500}
