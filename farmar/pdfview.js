@@ -60,7 +60,8 @@ document.addEventListener("click",e=>{const b=e.target.closest&&e.target.closest
   if(k==="x")close();else if(k==="print")doPrint();else if(k==="pdf")savePdf();else if(k==="share")sendPdf();else if(k==="mail")mailBox();else if(k==="msend")mailDirect();else if(k==="mcfg")mailCfgSave();else if(k==="mx"){const b=document.getElementById("pvMail");if(b)b.remove()}else if(k==="mold"){const b=document.getElementById("pvMail");if(b)b.remove();mailPdf()}});
 // 📧 odoslanie priamo z aplikácie (schránka ERNTE cez databázu → GitHub Actions); bez nastavenia → zdieľanie / pošta
 let MR=null;
-const PRF={ernte:{t:"Zmluvy a zúčtovania – ERNTE",host:"smtp.office365.com",port:587,user:"ernte@ernte.sk",name:"ERNTE spol. s r.o.",kind:"Microsoft 365"},
+const PRF={ernte:{t:"Zmluvy, zúčtovania a faktúry – ERNTE",host:"smtp.office365.com",port:587,user:"jana.valkova@ernte.sk",name:"ERNTE spol. s r.o.",kind:"Microsoft 365"},
+  ponuky:{t:"Ponuky a dopyty – ERNTE",host:"smtp.office365.com",port:587,user:"ernte@ernte.sk",name:"ERNTE spol. s r.o.",kind:"Microsoft 365"},
   danube:{t:"Danube Trade – zmluvy",host:"smtp.gmail.com",port:465,user:"danube.commodities.kft@gmail.com",name:"Danube Commodities Kft.",kind:"Gmail – zadaj <b>heslo aplikácie</b>: Google účet → Zabezpečenie → Dvojstupňové overenie → Heslá aplikácií"},
   valko:{t:"VALKO – doprava (CMR, jazdy)",host:"smtp.office365.com",port:587,user:"",ph:"…@valko-logistics.sk",name:"VALKO s.r.o.",kind:"schránka @valko-logistics.sk – server a port uprav podľa poskytovateľa"}};
 const PF=k=>PRF[k]||PRF.ernte;window.ernteMailProfiles=PRF;
@@ -101,9 +102,9 @@ async function mailPdf(){const M=V&&V.M;if(!M)return;try{const f=await makeFile(
 window.open=function(url,target,feat){const u=url==null?"":String(url);
   if(u===""&&(!target||target==="_blank")){try{return open()}catch(x){}}
   return origOpen(url,target,feat)};
-// priamy odkaz na nastavenie odosielania: …/farmar/#nastav-email (iba Martin)
-try{if(/^#nastav-?e?mail/i.test(location.hash))sessionStorage.setItem("ernte-mailsetup",/danube/i.test(location.hash)?"danube":/valko/i.test(location.hash)?"valko":"ernte")}catch(x){}
-async function setupLink(force){let f=typeof force==="string"?force:"";if(!f)try{f=/^#nastav-?e?mail/i.test(location.hash)?(/danube/i.test(location.hash)?"danube":/valko/i.test(location.hash)?"valko":"ernte"):(sessionStorage.getItem("ernte-mailsetup")||"");sessionStorage.removeItem("ernte-mailsetup")}catch(x){}if(!f)return;const P=PF(f);if(document.getElementById("pvSetup"))return;let n=0;
+// priamy odkaz na nastavenie odosielania: …/farmar/#nastav-email (zmluvy, zúčtovania, faktúry – jana.valkova@ernte.sk), #nastav-email-ponuky (ponuky a dopyty – ernte@ernte.sk), #nastav-email-danube, #nastav-email-valko
+try{if(/^#nastav-?e?mail/i.test(location.hash))sessionStorage.setItem("ernte-mailsetup",/danube/i.test(location.hash)?"danube":/valko/i.test(location.hash)?"valko":/ponuk/i.test(location.hash)?"ponuky":"ernte")}catch(x){}
+async function setupLink(force){let f=typeof force==="string"?force:"";if(!f)try{f=/^#nastav-?e?mail/i.test(location.hash)?(/danube/i.test(location.hash)?"danube":/valko/i.test(location.hash)?"valko":/ponuk/i.test(location.hash)?"ponuky":"ernte"):(sessionStorage.getItem("ernte-mailsetup")||"");sessionStorage.removeItem("ernte-mailsetup")}catch(x){}if(!f)return;const P=PF(f);if(document.getElementById("pvSetup"))return;let n=0;
   const OWN=()=>typeof ROLE!=="undefined"&&ROLE==="owner"&&!(typeof FARMER!=="undefined"&&FARMER);
   while(n++<60&&!OWN())await new Promise(r=>setTimeout(r,500));
   if(!OWN()){tmsg("Schránku na odosielanie nastavuje majiteľ (Martin alebo Jana) – prihlás sa.",7000);return}
