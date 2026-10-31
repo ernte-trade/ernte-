@@ -1,0 +1,165 @@
+== RPO fullName
+
+== FUEL raw
+HTTP/2 200 
+content-type: text/plain; charset=utf-8
+x-content-type-options: nosniff
+access-control-allow-origin: *
+== OVERPASS
+-- https://overpass-api.de/api/interpreter
+-- https://overpass.kumi.systems/api/interpreter
+-- https://overpass.private.coffee/api/interpreter
+-- https://maps.mail.ru/osm/tools/overpass/api/interpreter
+== NOMINATIM
+HTTP/2 200 
+access-control-allow-origin: *
+"name":"LPG Flaga"
+"name":"Orlen"
+"name":"Shell"
+"name":"Shell"
+"name":"Gulf"
+"name":""
+== PHOTON
+HTTP/1.1 200 OK
+Access-Control-Allow-Origin: *
+"name":"Fuel"
+"name":"Fuel"
+"name":"Fuel"
+"name":"Fuel"
+"name":"Fuel"
+"name":"Fuel"
+== OVP GET
+== DOMENA ernte.sk
+-- http://ernte.sk
+308 -> https://ernte.sk/
+-- https://ernte.sk
+307 -> https://ernte.sk/sk/
+-- http://www.ernte.sk
+308 -> https://www.ernte.sk/
+-- https://www.ernte.sk
+308 -> https://ernte.sk/
+-- http://app.ernte.sk
+200 -> 
+-- https://app.ernte.sk
+200 -> 
+216.198.79.1
+8dabf2fbe4d5cb13.vercel-dns-017.com.
+8dabf2fbe4d5cb13.vercel-dns-017.com.
+216.150.1.193
+216.150.16.193
+ns1.hostcreators.sk.
+ns2.hostcreators.sk.
+ns3.hostcreators.sk.
+ns4.hostcreators.eu.
+== VALHALLA
+HTTP/2 200 
+access-control-allow-origin: *
+{"s":{"has_time_restrictions":false,"has_toll":true,"has_highway":true,"has_ferry":false,"min_lat":47.016763,"min_lon":20.140158,"max_lat":48.754833,"max_lon":21.925732,"time":15563.434,"length":308.024,"cost":14469.323},"n":45,"m":[{"i":"Choďte na juhozápad.","v":"Choďte na juhozápad. Potom Odbočte vľavo na Kpt. Nálepku.","t":2,"l":0.06,"toll":null,"highway":null,"sn":null},{"i":"Odbočte vľavo na Kpt. Nálepku.","v":"Odbočte vľavo na Kpt. Nálepku. Potom Odbočte vľavo na Fr. Kráľa.","t":15,"l":0.046,"toll":null,"highway":null,"sn":["Kpt. Nálepku"]},{"i":"Odbočte vľavo na Fr. Kráľa.","v":"Odbočte vľavo na Fr. Kráľa.","t":15,"l":0.91,"toll":null,"highway":null,"sn":["Fr. Kráľa"]},{"i":"Odbočte vľavo na Okružná.","v":"Odbočte vľavo na Okružná.","t":15,"l":0.175,"toll":null,"highway":null,"sn":["Okružná"]}]}
+
+HTTP/2 200 
+access-control-allow-origin: *
+{"a":[{"country_code":"SK","country_text":"Slovensko"},{"country_code":"HU","country_text":"Magyarország"}],"n":1241,"e":[{"toll":false,"use":"driveway","end_shape_index":3,"begin_shape_index":0,"road_class":"service_other","length":0.052,"source_percent_along":0.233,"end_node":{"admin_index":0}},{"toll":false,"use":"driveway","end_shape_index":4,"begin_shape_index":3,"road_class":"service_other","length":0.002,"end_node":{"intersecting_edges":[{},{}],"admin_index":0}},{"toll":false,"use":"driveway","end_shape_index":5,"begin_shape_index":4,"road_class":"service_other","length":0.006,"end_node":{"intersecting_edges":[{}],"admin_index":0}},{"toll":false,"use":"road","end_shape_index":6,"begin_shape_index":5,"road_class":"residential","length":0.006,"end_node":{"intersecting_edges":[{},{}],"admin_index":0}},{"toll":false,"use":"road","end_shape_index":8,"begin_shape_index":6,"road_class":"residential","length":0.04,"end_node":{"intersecting_edges":[{}],"admin_index":0}}],"tot":[{"k":"0|motorway|false","km":14.833},{"k":"0|motorway|true","km":22.653000000000002},{"k":"0|primary|false","km":41.83599999999998},{"k":"0|residential|false","km":1.131},{"k":"0|secondary|false","km":0.7040000000000001},{"k":"0|secondary|true","km":0.295},{"k":"0|service_other|false","km":0.06},{"k":"0|tertiary|false","km":0.20299999999999999},{"k":"1|motorway|true","km":124.59600000000005},{"k":"1|primary|false","km":51.315999999999995},{"k":"1|residential|false","km":0.384},{"k":"1|secondary|false","km":49.98299999999998}]}
+
+== GIBS
+200 image/jpeg 15695 https://gibs.earthdata.nasa.gov/wmts/epsg3857/best/VIIRS_NOAA20_CorrectedReflectance_TrueColor/default/2026-10-30/GoogleMapsCompatible_Level9/6/22/35.jpg
+200 image/png 155 https://gibs.earthdata.nasa.gov/wmts/epsg3857/best/Reference_Labels_15m/default/default/GoogleMapsCompatible_Level13/6/22/35.png
+200 image/jpeg 14655 https://gibs.earthdata.nasa.gov/wmts/epsg3857/best/MODIS_Terra_CorrectedReflectance_TrueColor/default/2026-10-30/GoogleMapsCompatible_Level9/6/22/35.jpg
+== MX
+0 ernte-sk.mail.protection.outlook.com.
+"v=spf1 include:spf.protection.outlook.com -all"
+autodiscover.outlook.com.
+autodiscover.outlook.cloud.microsoft.
+acdcatm.autodiscover.mira.tm.svc.cloud.microsoft.
+atm.autodiscover.mira.tm.svc.cloud.microsoft.
+52.97.104.104
+52.97.104.56
+40.104.23.104
+40.104.23.72
+40.99.229.200
+52.96.104.200
+40.104.2.216
+40.99.230.104
+smtp.hostcreators.sk.
+93.184.72.23
+== LIVE zmeny
+<html>
+<head><title>301 Moved Permanently</title></head>
+<body>
+<center><h1>301 Moved Permanently</h1></center>
+<hr><center>nginx</center>
+</body>
+</html>
+
+301
+== RPO search
+HTTP/2 200 
+content-type: application/json
+strict-transport-security: max-age=31536000
+access-control-allow-origin: *
+x-cache-status: NOTCACHED
+x-xss-protection: 1; mode=block
+date: Sat, 31 Oct 2026 04:15:21 GMT
+x-frame-options: sameorigin
+vary: Origin
+opc-request-id: /894E493E5E28495292CA138171FA6A82/395130B53811453A994967B747871E27
+content-length: 1836
+x-zen-fury: 4546052069644501cd509527c88e50bcb69d4109
+x-content-type-options: nosniff
+server: ZENEDGE
+x-cdn: Served-By-Zenedge
+
+{"results":[{"id":9872053,"dbModificationDate":"2025-07-07","identifiers":[{"value":"52341356","validFrom":"2019-04-17"}],"fullNames":[{"value":"Ernte spol. s r. o.","validFrom":"2019-04-17"}],"addresses":[{"validFrom":"2023-03-22","regNumber":0,"buildingNumber":"141","postalCodes":["07223"],"municipality":{"value":"Zbudza","code":"SK0427523356","codelistCode":"CL000025"},"country":{"value":"Slovenská republika","code":"703","codelistCode":"CL000086"}},{"validFrom":"2019-04-17","validTo":"2023-03-21","regNumber":0,"buildingNumber":"141","postalCodes":["07101"],"municipality":{"value":"Zbudza","code":"SK0427523356","codelistCode":"CL000025"},"country":{"value":"Slovenská republika","code":"703","codelistCode":"CL000086"}}],"establishment":"2019-04-17","sourceRegister":{"value":{"value":"Obchodný register","code":"1","codelistCode":"CL010112"},"registrationOffices":[{"value":"Mestský súd Košice","validFrom":"2019-04-17"}],"registrationNumbers":[{"value":"Sro/46166/V","validFrom":"2019-04-17"}]}}],"license":"1. ŠÚ SR ako správca informačného systému RPO uplatňuje na použitie sprístupnených údajov z RPO uvedených v § 7 ods. 2 a § 7a ods. 4 zákona č. 272/2015 Z. z. o registri právnických osôb, podnikateľov a orgánov verejnej moci a o zmene a doplnení niektorých zákonov (ďalej len „zákon o registri právnických osôb“) medzinárodnú verejnú licenciu Creative Commons Attribution License (cc-by) 4.0 (ďalej len „verejná licencia“).\n2. Predmetom verejnej licencie sú sprístupnené údaje z RPO prostredníctvom webového sídla ŠÚ SR v zmysle § 7 ods. 2 a § 7a ods. 4 zákona o registri právnických osôb.\n3. ŠÚ SR udeľuje súhlas na použitie predmetu verejnej licencie a výkon licencovaných práv („licencia“) podľa vyššie citovanej verejnej licencie."}
+== RUZ list
+
+== RUZ detail 1842180
+HTTP/1.1 200 
+Cache-Control: no-cache, no-store, max-age=0
+Pragma: no-cache
+Expires: 0
+X-API-Version: 2.5
+Content-Type: application/json;charset=UTF-8
+Content-Length: 453
+Date: Sat, 31 Oct 2026 04:15:35 GMT
+X-Frame-Options: SAMEORIGIN
+X-XSS-Protection: 1; mode=block
+X-Content-Type-Options: nosniff
+Set-Cookie: 08f9f27419e7710d54772a360108306e57d85754435dcc949bffef5573b54944=7ce2a3d9b415d2d1a49ff5181ab57d3d223004dc821906c978dce81a9d592804d1957887;expires=Sat, 31-Oct-2026 04:30:35 GMT;path=/;secure;httponly
+Strict-Transport-Security: max-age=31536000; includeSubDomains; preload
+Set-Cookie: TS011ce92c=0126512220674e4011d450676183f8520ab26b5fe21540c8e1b6e899cccce2f273307be6e61775ba6cdb4fc459dbb4c251062f82b54fa023f500a490c19cde3c8084726188; Path=/; Domain=.www.registeruz.sk
+
+{"id":1842180,"idUctovnychZavierok":[5068544,5584094,5922953,4540524,6451730,4172161,6987031],"skNace":"81300","konsolidovana":false,"ico":"52341356","dic":"2120988551","nazovUJ":"Ernte spol. s r. o.","mesto":"Zbudza","ulica":"141","psc":"07223","datumPoslednejUpravy":"2026-07-03","datumZalozenia":"2019-04-17","pravnaForma":"112","velkostOrganizacie":"06","druhVlastnictva":"2","kraj":"SK042","okres":"SK0427","sidlo":"SK0427523356","zdrojDat":"SUSR"}
+== RPO entity 9872053
+HTTP/2 200 
+content-type: application/json
+date: Sat, 31 Oct 2026 04:15:39 GMT
+opc-request-id: /A5E89FCAEB02480E9CFA709199DCAB65/7A4762A837894DC9BD8695738C4AD245
+x-cache-status: NOTCACHED
+x-xss-protection: 1; mode=block
+access-control-allow-origin: *
+x-content-type-options: nosniff
+strict-transport-security: max-age=31536000
+content-length: 4291
+server: ZENEDGE
+vary: Origin
+x-zen-fury: 190a30af74350bc25e14f18f3880f39ef5f4443f
+x-frame-options: sameorigin
+x-cdn: Served-By-Zenedge
+
+{"id":9872053,"dbModificationDate":"2025-07-07","identifiers":[{"value":"52341356","validFrom":"2019-04-17"}],"fullNames":[{"value":"Ernte spol. s r. o.","validFrom":"2019-04-17"}],"addresses":[{"validFrom":"2023-03-22","regNumber":0,"buildingNumber":"141","postalCodes":["07223"],"municipality":{"value":"Zbudza","code":"SK0427523356","codelistCode":"CL000025"},"country":{"value":"Slovenská republika","code":"703","codelistCode":"CL000086"}}],"legalForms":[{"value":{"value":"Spoločnosť s ručením obmedzeným","code":"112","codelistCode":"CL000056"},"validFrom":"2019-04-17"}],"establishment":"2019-04-17","activities":[{"economicActivityDescription":"Kúpa tovaru na účely jeho predaja konečnému spotrebiteľovi (maloobchod) alebo iným prevádzkovateľom živnosti (veľkoobchod)","validFrom":"2019-04-17"},{"economicActivityDescription":"Poskytovanie služieb v poľnohospodárstve a záhradníctve","validFrom":"2019-04-17"},{"economicActivityDescription":"Prenájom hnuteľných vecí","validFrom":"2019-04-17"},{"economicActivityDescription":"Rastlinná a živočíšna výroba","validFrom":"2020-01-29"},{"economicActivityDescription":"Skladové, pomocné a prepravné služby v doprave","validFrom":"2023-03-22"},{"economicActivityDescription":"Nákladná cestná doprava vykonávaná vozidlami s celkovou hmotnosťou do 3,5 t vrátane prípojného vozidla","validFrom":"2023-03-22"}],"statutoryBodies":[{"stakeholderType":{"value":"Konateľ","code":"3","codelistCode":"CL010113"},"validFrom":"2019-04-17","address":{"street":"Zbudza","regNumber":0,"buildingNumber":"141","postalCodes":["07223"],"municipality":{"value":"Zbudza","code":"SK0427523356","codelistCode":"CL000025"},"country":{"value":"Slovenská republika","code":"703","codelistCode":"CL000086"}},"personName":{"formatedName":"Martin Vaľko","familyNames":["Vaľko"],"givenNames":["Martin"]}}],"stakeholders":[{"stakeholderType":{"value":"Spoločník v.o.s. / s.r.o.","code":"99","codelistCode":"CL010109"},"validFrom":"2021-12-01","address":{"street":"Zbudza","regNumber":0,"buildingNumber":"141","postalCodes":["072 23"],"municipality":{"value":"Zbudza","code":"SK0427523356","codelistCode":"CL000025"},"country":{"value":"Slovenská republika","code":"703","codelistCode":"CL000086"}},"personName":{"formatedName":"Martin Vaľko","familyNames":["Vaľko"],"givenNames":["Martin"]}}],"authorizations":[{"value":"Konateľ koná samostatne.","validFrom":"2019-04-17"}],"equities":[{"validFrom":"2021-12-01","value":100000.00,"currency":{"value":"euro","code":"EUR","codelistCode":"CL000083"}},{"validFrom":"2021-12-01","valuePaid":100000.00,"currency":{"value":"euro","code":"EUR","codelistCode":"CL000083"}}],"deposits":[{"validFrom":"2021-12-01","personName":{"formatedName":"Martin Vaľko","familyNames":["Vaľko"],"givenNames":["Martin"]},"type":"(peňažný vklad)","amount":100000.00,"currency":{"value":"euro","code":"EUR","codelistCode":"CL000083"}}],"sourceRegister":{"value":{"value":"Obchodný register","code":"1","codelistCode":"CL010112"},"registrationOffices":[{"value":"Mestský súd Košice","validFrom":"2019-04-17"}],"registrationNumbers":[{"value":"Sro/46166/V","validFrom":"2019-04-17"}]},"statisticalCodes":{"statCodesActualization":"2026-01-01","mainActivity":{"value":"Činnosti súvisiace s krajinnou úpravou","code":"8130","codelistCode":"CL010579"},"esa2010":{"value":"Národné súkromné nefinančné korporácie","code":"11002","codelistCode":"CL010010"}},"license":"1. ŠÚ SR ako správca informačného systému RPO uplatňuje na použitie sprístupnených údajov z RPO uvedených v § 7 ods. 2 a § 7a ods. 4 zákona č. 272/2015 Z. z. o registri právnických osôb, podnikateľov a orgánov verejnej moci a o zmene a doplnení niektorých zákonov (ďalej len „zákon o registri právnických osôb“) medzinárodnú verejnú licenciu Creative Commons Attribution License (cc-by) 4.0 (ďalej len „verejná licencia“).\n2. Predmetom verejnej licencie sú sprístupnené údaje z RPO prostredníctvom webového sídla ŠÚ SR v zmysle § 7 ods. 2 a § 7a ods. 4 zákona o registri právnických osôb.\n3. ŠÚ SR udeľuje súhlas na použitie predmetu verejnej licencie a výkon licencovaných práv („licencia“) podľa vyššie citovanej verejnej licencie."}
+== novinky anon
+[]
+== FinStat api detail (bez kľúča)
+HTTP/2 403 
+date: Sat, 31 Oct 2026 04:15:41 GMT
+content-type: text/plain; charset=utf-8
+content-language: sk-SK
+vary: Accept-Encoding
+server: cloudflare
+request-context: appId=cid-v1:6f62160f-40d4-40bc-b118-e4d8c2824263
+x-powered-by: ASP.NET
+x-powered-by: ARR/3.0
+x-powered-by: ASP.NET
+cf-cache-status: DYNAMIC
+cf-ray: a52fd70a1f1f3ccc-LAX
+
+Invalid customer key!
