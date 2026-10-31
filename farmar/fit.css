@@ -203,3 +203,10 @@ html[data-theme=light] .wlc .wlb,html[data-theme=light] .wlc .whc:not(.wlsp .whc
 .wlc:has(.wimg.wme)::after{content:"";position:fixed;inset:0;pointer-events:none;z-index:5;background:radial-gradient(120% 80% at 50% 30%,rgba(230,245,255,.55),rgba(190,255,120,.15) 60%,transparent 80%);opacity:0;animation:wlFlash 9s linear infinite}
 @keyframes wlFlash{0%,86%{opacity:0}87%{opacity:.9}88%{opacity:.1}89.5%{opacity:.7}91%,100%{opacity:0}}
 @media (prefers-reduced-motion:reduce){.wimg.wme .wscan::after,.wimg.wme .wscan::before,.wlc:has(.wimg.wme)::after{animation:none}}
+/* 11:56 PRÍKAZ MAJITEĽA: čiara skenera tenká ako niť, silná ako blesk, jemne rozptýlená iba z jednej strany – pri pohybe dole zhora */
+.wimg.wme .wscan{height:56px!important;filter:none!important;
+  background:linear-gradient(180deg,transparent 0%,rgba(182,255,59,.05) 55%,rgba(200,255,120,.22) 92%,rgba(235,255,190,.45) 100%)!important}
+.wimg.wme .wscan::after{height:1px!important;bottom:0!important;background:#fff!important;
+  box-shadow:0 0 1px 0 #fff,0 0 3px .5px rgba(255,255,255,1),0 -2px 6px 1px rgba(214,255,140,.95),0 -6px 16px 2px rgba(182,255,59,.55)!important}
+.wimg.wme .wscan::before{display:none!important;animation:none!important}
+.wlc:has(.wimg.wme)::after{display:none!important;animation:none!important}
