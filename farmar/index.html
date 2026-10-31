@@ -2238,7 +2238,7 @@ function vFleet(){const F0=STATE.fleet;if(!F0)return `<div class="card"><div cla
   }else if(sec==="fuel"){o+=fswHTML("fuel");const s2=fsub("fuel");o+=s2==="yard"?vYard(F):s2==="cams"?camHTML():banner+(OWNx||!window.can||can("diesel")?naftaBurzaHTML(CO,OWNx):"")+vFuelTab(F,{AX:AXF,FST,perName})}
   else if(sec==="alarm")o+=S.alarm||"";
   else if(sec==="money"){o+=S.perf||"";if(OWNx)o+=vLoss(LOSS,perName);if(OWNx)o+=`<div class="xnote">👷 Mzdy v zisku: ${esc(payIncTxt(F.cfg.pay))}${pay!=null&&FPER==="m"&&payF(curMon)<1?" · základ pomerne k dnešku":""} – prepínač v ⚙️ Nastaveniach. Pevné náklady po skupinách zadáš v ⚙️ Nastaveniach.</div>`}
-  else if(sec==="drv")o+=(S.drv||"")+vDrvIssues(F,AX);
+  else if(sec==="drv")o+=(S.drv||"")+(window.vValkoPay?vValkoPay(F):"")+vDrvIssues(F,AX);
   else if(sec==="veh")o+=S.veh||"";
   else if(sec==="map"){o+=fswHTML("map");const s2=fsub("map");o+=s2==="moves"?(S.moves||""):s2==="places"?PLH:s2==="find"?(S.find||""):(S.map||`<div class="card"><div class="s">Žiadne autá s polohou.</div></div>`)}
   else if(sec==="set"){o+=fswHTML("set");const s2=fsub("set");o+=s2==="cmd"?vCmd(F0):s2==="firm"?vFirm():s2==="notif"?(window.vNotif?vNotif():""):s2==="dom"?(window.vDom?vDom():""):s2==="diag"?((window.vDomCard?vDomCard():"")+(window.vDiag?vDiag():(OWNx?`<div class="aidiag"></div>`:""))):(S.set||"")}
@@ -2343,7 +2343,7 @@ function vFirm(){const T=(STATE.staffcfg&&STATE.staffcfg.valko_team)||[];if(!STA
     <div class="vcerts"><div class="${gmpDays<90?"warn":""}"><b>GMP+ SK24/00000145</b><small>preprava krmív · platí do 4. 10. 2027 · ${gmpDays} dní</small></div><div><b>DIN EN 12642 Code XL</b><small>zaistenie nákladu · 27 000 kg</small></div><div><b>Licencia EÚ</b><small>medzinárodná nákladná doprava</small></div><div><b>Poistenie CMR</b><small>zodpovednosť dopravcu</small></div></div>
     <div class="s">Služby: FTL (13,6 m, do 90 m³, doručenie do 24 h), LTL od 1 palety · návesy: plachtové, štandard, mega, sklápacie · krajiny: SK, CZ, PL, DE, AT, HU, IT, CH, FR, BE, NL, HR</div></div>
   <h2>Tím VALKO</h2><div class="vteam">${T.length?"":`<div class="s">Kontakty tímu sa načítavajú z databázy…</div>`}${T.map(t=>`<div class="vt"><span class="pav">${esc(t[0].split(" ").map(w=>w[0]).slice(0,2).join(""))}</span><div><b>${esc(t[0])}</b><small>${esc(t[1])}</small></div><a class="btn lime" href="tel:${t[2].replace(/\s/g,"")}">📞</a><a class="btn" href="mailto:${t[3]}">✉️</a></div>`).join("")}</div>
-  <div class="s" style="text-align:center">Údaje z valko-logistics.sk · <a class="copy" href="https://www.valko-logistics.sk" target="_blank" rel="noopener">otvoriť web</a></div>`}
+  <div class="s" style="text-align:center">Údaje z valko-logistics.sk · <a class="copy" href="https://www.valko-logistics.sk" target="_blank" rel="noopener">otvoriť web</a></div>`+(window.vValkoKpi?vValkoKpi():"")}
 
 // ================= MZDY VODIČOV (iba majiteľ) =================
 let PMON=(d=>d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0"))(new Date()),PDRV=null;
@@ -2943,6 +2943,7 @@ document.addEventListener("click",e=>{const b=e.target.closest("[data-dfp]");if(
 <script src="spdock.js?v=20261028-2217"></script>
 <script src="odberatel.js?v=20261029-2320"></script>
 <script src="watermark.js?v=20261028-2320"></script>
+<script src="valkopay.js?v=20261031-0620" defer></script>
 <script src="welcome.js?v=20261031-0540"></script>
 <script src="ernmaps.js?v=20261031-0535" defer></script>
 <script src="odb.js?v=20261030-0715"></script>
@@ -2963,7 +2964,7 @@ document.addEventListener("click",e=>{const b=e.target.closest("[data-dfp]");if(
 <script src="dnzmluva.js?v=20261030-1010"></script>
 <script src="danube.js?v=20261029-1240"></script>
 <script src="installapp.js?v=20261031-0540"></script>
-<script src="fndesc.js?v=20261030-2355"></script>
+<script src="fndesc.js?v=20261031-0620"></script>
 <script src="sign.js?v=20261030-0930"></script>
 <script src="outbox.js?v=20261029-0130"></script>
 <script src="invitecard.js?v=20261029-2100"></script>
