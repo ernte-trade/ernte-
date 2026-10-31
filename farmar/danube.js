@@ -30,7 +30,7 @@ function tile(){if(!P.L||!P.L.length)return "";const M=P.L.filter(x=>x.mine||OWN
    ${M.length>4?`<button type="button" class="evmini" data-pall>${P.all?"Menej":"Zobraziť všetky ("+M.length+")"}</button>`:""}</div>`}
 function inject(){const app=document.getElementById("app");if(!app||!isStaff())return;boot();if(P.L===null)return;const old=app.querySelector(".pend");const nav=app.querySelector("nav.tabs");if(!nav)return;
   const h=tile();if(old){if(old.dataset.h===String(h.length))return;old.remove()}if(!h)return;nav.insertAdjacentHTML("afterend",h);const n=app.querySelector(".pend");if(n)n.dataset.h=String(h.length)}
-let q=0;const sched=()=>{if(q)return;q=requestAnimationFrame(()=>{q=0;try{inject()}catch(x){}})};
+let q=0;const sched=()=>{if(q)return;q=(window.ernteSoon||requestAnimationFrame)(()=>{q=0;try{inject()}catch(x){}})};
 function start(){const app=document.getElementById("app");if(!app){setTimeout(start,300);return}new MutationObserver(sched).observe(app,{childList:true,subtree:false});sched()}
 if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",start);else start();
 

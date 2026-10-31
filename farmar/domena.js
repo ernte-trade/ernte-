@@ -76,7 +76,7 @@ function inject(){if(!OWN()||typeof TAB==="undefined"||TAB!=="home")return;css()
   if(!D.s||Date.now()-D.at>300e3)load(false);if(!D.s||done(D.s))return;if(document.getElementById("domHome"))return;
   const d=document.createElement("div");d.innerHTML=card(false);const el=d.firstElementChild;el.id="domHome";
   const anchor=app.querySelector(".hub,.owh");if(anchor)anchor.before(el);else{const nav=app.querySelector("nav.tabs");if(nav)nav.after(el)}}
-let q=0;const sch=()=>{if(q)return;q=requestAnimationFrame(()=>{q=0;try{css();inject()}catch(x){}})};
+let q=0;const sch=()=>{if(q)return;q=(window.ernteSoon||requestAnimationFrame)(()=>{q=0;try{css();inject()}catch(x){}})};
 function boot(){const app=document.getElementById("app");if(!app){setTimeout(boot,500);return}new MutationObserver(sch).observe(app,{childList:true});sch()}
 boot();
 })();

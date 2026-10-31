@@ -23,7 +23,7 @@ document.addEventListener("click",async e=>{const b=e.target.closest&&e.target.c
 {const s=document.createElement("style");s.textContent=`.dropc{border-color:rgba(248,113,113,.65)!important;box-shadow:0 0 0 1px rgba(248,113,113,.35),0 10px 30px -12px rgba(248,113,113,.55);text-align:center}
 .dropc .dropt{display:block;color:#fca5a5;font-size:1.05rem;margin-bottom:6px}.dropr{display:flex;flex-wrap:wrap;justify-content:center;gap:4px 10px;align-items:baseline;padding:6px 0;border-top:1px solid rgba(255,255,255,.08)}
 .dropr em{font-style:normal;color:#fca5a5;font-weight:700}.dropr small{opacity:.65;flex-basis:100%}.dropc .btns{justify-content:center}`;document.head.appendChild(s)}
-let q=0;const sch=()=>{if(q)return;q=requestAnimationFrame(()=>{q=0;if(!ST())return;if(!D.at||Date.now()-D.at>120e3)load();else if(D.L.length&&!document.getElementById("dropCard"))paint()})};
+let q=0;const sch=()=>{if(q)return;q=(window.ernteSoon||requestAnimationFrame)(()=>{q=0;if(!ST())return;if(!D.at||Date.now()-D.at>120e3)load();else if(D.L.length&&!document.getElementById("dropCard"))paint()})};
 function boot(){const app=document.getElementById("app");if(!app){setTimeout(boot,500);return}new MutationObserver(sch).observe(app,{childList:true});sch();
   setInterval(()=>{if(!document.hidden&&ST())load()},120e3);document.addEventListener("visibilitychange",()=>{if(!document.hidden&&ST())load()})}
 if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",boot);else boot();

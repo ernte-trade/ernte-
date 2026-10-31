@@ -131,7 +131,7 @@ document.addEventListener("click",async e=>{const t=e.target.closest&&e.target.c
 .kkr{display:grid;grid-template-columns:minmax(0,1.4fr) minmax(0,1fr) minmax(0,.8fr);gap:8px;align-items:center;padding:6px 0;border-top:1px solid rgba(255,255,255,.07)}
 .kkc,.kkv,.kko{display:flex;flex-direction:column;min-width:0}.kkc small,.kkv small,.kko small{font-size:.74rem;opacity:.75;overflow-wrap:anywhere}.kkv{text-align:right}.kko{text-align:right}
 .kko.up b,.kko.up small:last-child{color:#4ade80}.kko.dn b,.kko.dn small:last-child{color:#f87171}.kkmore{margin-top:8px}.kkg{border-color:rgba(250,204,21,.5)!important}.kkg.ok{border-color:rgba(74,222,128,.35)!important}.kkg>b{display:block;margin-bottom:6px}.kkp{display:grid;gap:6px;padding:8px 0;border-top:1px solid rgba(255,255,255,.08)}.kkp small{display:block;opacity:.75;overflow-wrap:anywhere}.kkw{padding:6px 0;color:#fde68a;overflow-wrap:anywhere}`;document.head.appendChild(s)}
-let q=0;const sch=()=>{if(q)return;q=requestAnimationFrame(()=>{q=0;try{inject()}catch(x){}})};
+let q=0;const sch=()=>{if(q)return;q=(window.ernteSoon||requestAnimationFrame)(()=>{q=0;try{inject()}catch(x){}})};
 function boot(){const app=document.getElementById("app");if(!app){setTimeout(boot,500);return}new MutationObserver(sch).observe(app,{childList:true});sch()}
 if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",boot);else boot();
 })();

@@ -80,7 +80,7 @@ document.addEventListener("click",async e=>{const b=e.target.closest&&e.target.c
 .chv{flex:0 1 auto;text-align:right;font-variant-numeric:tabular-nums;overflow-wrap:anywhere}.chd{display:block;font-size:.8rem;opacity:.85}.chr.up .chd{color:#4ade80}.chr.dn .chd{color:#f87171}
 .chsw{display:flex;align-items:center;gap:10px;margin:4px 0 10px;flex-direction:row}.chsw input{width:22px;min-height:22px;flex-shrink:0}
 .chg{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:8px;margin-bottom:8px}.chg label{display:flex;flex-direction:column;gap:4px;min-width:0}`;document.head.appendChild(s)}
-let q=0;const sch=()=>{if(q)return;q=requestAnimationFrame(()=>{q=0;try{inject()}catch(x){}})};
+let q=0;const sch=()=>{if(q)return;q=(window.ernteSoon||requestAnimationFrame)(()=>{q=0;try{inject()}catch(x){}})};
 function boot(){const app=document.getElementById("app");if(!app){setTimeout(boot,500);return}new MutationObserver(sch).observe(app,{childList:true});sch()}
 if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",boot);else boot();
 window.cennikHist={load,paint};

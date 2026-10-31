@@ -8,7 +8,7 @@ function fix(){q=0;const n=nav();if(!n)return;const cs=getComputedStyle(n);if(cs
   const s=vv.scale||1;if(Math.abs(s-1)<0.02){if(n.style.transform){n.style.transform="";n.style.transformOrigin=""}return}
   const lh=document.documentElement.clientHeight,dy=vv.offsetTop+vv.height-lh,dx=vv.offsetLeft;
   n.style.transformOrigin="0 100%";n.style.transform=`translate(${dx}px,${dy}px) scale(${1/s})`}
-const sch=()=>{if(!q)q=requestAnimationFrame(fix)};
+const sch=()=>{if(!q)q=(window.ernteSoon||requestAnimationFrame)(fix)};
 vv.addEventListener("resize",sch);vv.addEventListener("scroll",sch);window.addEventListener("scroll",sch,{passive:true});
 function boot(){const a=document.getElementById("app");if(!a){setTimeout(boot,500);return}new MutationObserver(sch).observe(a,{childList:true});sch()}
 if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",boot);else boot();

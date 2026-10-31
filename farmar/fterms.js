@@ -113,7 +113,7 @@ function tick(){css();const app=document.getElementById("app");if(!app)return;
   if(isF()){if(MY===null)loadMy();const h=[...app.querySelectorAll("h2")].find(x=>/Výkupné ceny/.test(x.textContent));let card=h&&h.nextElementSibling;while(card&&card.classList.contains("fdesc"))card=card.nextElementSibling;
     if(card&&!app.querySelector("[data-ftc]")){const html=farmerCard();if(html)card.insertAdjacentHTML("afterend",html)}return}
   if(staffOK()&&typeof TAB!=="undefined"&&TAB==="farm"){loadAll(false);deco()}}
-let q=0;const sched=()=>{if(q)return;q=requestAnimationFrame(()=>{q=0;try{tick()}catch(x){}})};
+let q=0;const sched=()=>{if(q)return;q=(window.ernteSoon||requestAnimationFrame)(()=>{q=0;try{tick()}catch(x){}})};
 function start(){const app=document.getElementById("app");if(!app){setTimeout(start,300);return}new MutationObserver(sched).observe(app,{childList:true,subtree:true});sched()}
 if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",start);else start();
 })();

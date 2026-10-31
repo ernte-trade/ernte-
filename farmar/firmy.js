@@ -71,7 +71,7 @@ document.addEventListener("click",e=>{if(e.target.closest&&e.target.closest("[da
 function inject(){if(!CANF()||typeof TAB==="undefined"||TAB!=="farm")return;const app=document.getElementById("app");if(!app||app.querySelector(".fsall"))return;
   const nav=app.querySelector("nav.tabs");const d=document.createElement("div");d.innerHTML=faHTML();const el=d.firstElementChild;
   const first=nav?nav.nextElementSibling:app.firstElementChild;if(first&&first.parentNode)first.parentNode.insertBefore(el,first.nextSibling);else app.prepend(el)}
-let q2=0;const sch=()=>{if(q2)return;q2=requestAnimationFrame(()=>{q2=0;try{inject()}catch(x){}})};
+let q2=0;const sch=()=>{if(q2)return;q2=(window.ernteSoon||requestAnimationFrame)(()=>{q2=0;try{inject()}catch(x){}})};
 function boot(){const app=document.getElementById("app");if(!app){setTimeout(boot,500);return}new MutationObserver(sch).observe(app,{childList:true});sch();
   // raz denne automaticky na pozadí
   let tries=0;const t=setInterval(()=>{tries++;if(tries>60){clearInterval(t);return}if(!CANF()||window.ERNTE_VIEWAS||window.ERNTE_TEST||!(typeof STATE!=="undefined"&&STATE.farmers&&STATE.farmers.length))return;clearInterval(t);

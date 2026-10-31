@@ -36,7 +36,7 @@ document.addEventListener("click",async e=>{const b=e.target.closest&&e.target.c
 .dwcard .cnt{color:#fca5a5}.dwr{padding:10px 0;border-top:1px solid rgba(255,255,255,.08);display:grid;gap:4px}.dwh{display:flex;gap:8px;align-items:center}.dwh span{font-size:1.3rem}
 .dwr.r .dwh b{color:#fca5a5}.dwr.ok .dwh b{color:#86efac}.dwr.al{animation:dwp 1.6s ease-in-out infinite}@keyframes dwp{50%{background:rgba(248,113,113,.08)}}
 .dwm{font-size:.9rem;line-height:1.4;overflow-wrap:anywhere}.dwm small{display:block;opacity:.7}.dwm .up{color:#86efac}.dwm .dn{color:#fca5a5}`;document.head.appendChild(s)}
-let q=0;const sch=()=>{if(q)return;q=requestAnimationFrame(()=>{q=0;try{inject()}catch(x){}})};
+let q=0;const sch=()=>{if(q)return;q=(window.ernteSoon||requestAnimationFrame)(()=>{q=0;try{inject()}catch(x){}})};
 function boot(){const app=document.getElementById("app");if(!app){setTimeout(boot,500);return}new MutationObserver(sch).observe(app,{childList:true});sch();
   setInterval(()=>{if(!document.hidden&&OWN()&&typeof TAB!=="undefined"&&(TAB==="deals"||TAB==="home"))load(true)},120e3)}
 if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",boot);else boot();

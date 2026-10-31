@@ -500,7 +500,7 @@ function hdrBtn(){const app=document.getElementById("app");if(!app)return;const 
   let b=document.querySelector(".emhb");if(!ok||!row){if(b)b.remove();return}if(b&&b.parentNode===row)return;if(b)b.remove();
   b=document.createElement("button");b.type="button";b.className="emhb";b.setAttribute("aria-label","ERNTE Maps – navigácia, čerpacie stanice, reštaurácie");b.title="ERNTE Maps";b.textContent="🗺️";b.onclick=()=>open();
   const bell=row.querySelector(".nbb");if(bell)bell.insertAdjacentElement("beforebegin",b);else row.prepend(b)}
-{let q=0;const sch=()=>{if(q)return;q=requestAnimationFrame(()=>{q=0;try{hdrBtn()}catch(x){}})};const boot=()=>{const app=document.getElementById("app");if(!app){setTimeout(boot,500);return}new MutationObserver(sch).observe(app,{childList:true});sch()};
+{let q=0;const sch=()=>{if(q)return;q=(window.ernteSoon||requestAnimationFrame)(()=>{q=0;try{hdrBtn()}catch(x){}})};const boot=()=>{const app=document.getElementById("app");if(!app){setTimeout(boot,500);return}new MutationObserver(sch).observe(app,{childList:true});sch()};
  if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",boot);else boot()}
 {const s=document.createElement("style");s.textContent=`#emap{position:fixed;inset:0;z-index:31000;display:none;flex-direction:column;background:#05070d;color:#f1f5ff;font-family:"Geist",system-ui,sans-serif}
 #emap.on{display:flex}html.emon{overflow:hidden}

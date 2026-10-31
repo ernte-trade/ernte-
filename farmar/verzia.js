@@ -60,7 +60,7 @@ let tries=0;const chk=setInterval(()=>{tries++;if(tries>60){clearInterval(chk);r
 .vrbt{display:flex;flex-wrap:wrap;gap:8px;margin:12px 0 6px}.vrbt button{flex:1 1 200px;min-height:46px}
 @media(min-width:700px){.vrs{align-items:center}}
 html[data-theme=light] .vrbox{background:#fff;color:#0f172a;border-color:rgba(15,23,42,.12)}`;document.head.appendChild(s)}
-let q=0;const sch=()=>{if(q)return;q=requestAnimationFrame(()=>{q=0;try{paint()}catch(x){}})};
+let q=0;const sch=()=>{if(q)return;q=(window.ernteSoon||requestAnimationFrame)(()=>{q=0;try{paint()}catch(x){}})};
 function boot(){const app=document.getElementById("app");if(!app){setTimeout(boot,500);return}new MutationObserver(sch).observe(app,{childList:true,subtree:false});sch()}
 if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",boot);else boot();
 window.ernteBeta=BETA;

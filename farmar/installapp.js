@@ -40,7 +40,7 @@ function loggedIn(){return (typeof FARMER!=="undefined"&&!!FARMER)||(typeof ROLE
 function inject(){if(std()||done()||later()||!loggedIn())return;const app=document.getElementById("app");if(!app||!app.children.length||app.querySelector(".instc"))return;
   const at=app.querySelector(".hero")||app.querySelector("nav.tabs");if(at)at.insertAdjacentHTML("afterend",card());else app.insertAdjacentHTML("afterbegin",card());shown=true}
 function refresh(){sched()}
-let q=0;function sched(){if(q)return;q=requestAnimationFrame(()=>{q=0;try{inject()}catch(x){}})}
+let q=0;function sched(){if(q)return;q=(window.ernteSoon||requestAnimationFrame)(()=>{q=0;try{inject()}catch(x){}})}
 document.addEventListener("click",async e=>{const t=e.target;if(!t.closest)return;
   const b=t.closest("[data-inst]");
   if(b){const c=b.closest(".instc");

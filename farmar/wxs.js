@@ -131,7 +131,15 @@ function html(){const L=loc(),D=W.d;
 const _card=window.wxCard;
 window.wxCard=function(){if(!W.d||(W.key&&W.key!==loc().lat+","+loc().lon)||Date.now()-W.at>15*60e3)load().then(()=>{try{if(typeof rerender==="function")rerender()}catch(x){}});
   const radar=`<div class="card"><div class="t">🛰️ Radar zrážok</div><div class="rdbox" id="radarBox"></div><div class="s" style="font-size:.7rem">Radar: <a class="copy" style="font-size:.7rem" href="https://www.pocasieradar.sk/" target="_blank" rel="noopener">pocasieradar.sk</a></div></div>`;
-  setTimeout(mountSat,60);setTimeout(mountSat,600);return html()+radar};
+  setTimeout(mountSat,60);setTimeout(mountSat,600);
+  // 31. 10.: pri prekreslení tej istej obrazovky (obnovenie na pozadí) sa počasie NEPREKRESĽUJE – ostane živé (video, fotka, satelit, radar), nič neskáče
+  const h=html()+radar,g=h.replace(/(\d+\.\d)\d+/g,"$1"),o=KP.n;
+  if(o&&o.isConnected&&KP.h===g&&typeof TAB!=="undefined"&&TAB==="wx"){const hs=[...o.children].map(c=>c.offsetHeight);
+    queueMicrotask(()=>{const ph=document.querySelector("[data-wskeep]");if(ph&&!o.isConnected)ph.replaceWith(o)});
+    return `<div data-wskeep style="display:contents">${hs.map(x=>`<div style="height:${x}px"></div>`).join("")}</div>`}
+  KP.h=g;queueMicrotask(()=>{KP.n=document.querySelector("[data-wsk]")});
+  return `<div data-wsk style="display:contents">${h}</div>`};
+const KP={n:null,h:""};
 try{wxCard=window.wxCard}catch(x){}
 const _lw=window.loadWx;if(typeof _lw==="function"){window.loadWx=async function(f){await Promise.all([_lw.apply(this,arguments),load(!!f)])};try{loadWx=window.loadWx}catch(x){}}
 setInterval(()=>{if(!document.hidden&&document.querySelector(".wsx")&&Date.now()-W.at>15*60e3)load(true).then(()=>{if(typeof formBusy==="function"&&formBusy())return;try{rerender()}catch(x){}})},60e3);

@@ -84,7 +84,7 @@ document.addEventListener("submit",e=>{const f=e.target;if(!f.dataset||!f.datase
 .ppreg.ok{background:rgba(182,255,59,.08);border-color:rgba(182,255,59,.35)}.ppreg.w{background:rgba(250,204,21,.1);border-color:rgba(250,204,21,.4)}.ppreg .ppadd{display:block;margin-top:6px;width:100%}
 .ppmiss summary{cursor:pointer;font-size:.85rem;margin-top:6px}
 @media(min-width:800px){.ppmine{grid-template-columns:1fr 1fr}}`;document.head.appendChild(s)}
-let q2=0;const sch=()=>{if(q2)return;q2=requestAnimationFrame(()=>{q2=0;try{inject()}catch(x){}})};
+let q2=0;const sch=()=>{if(q2)return;q2=(window.ernteSoon||requestAnimationFrame)(()=>{q2=0;try{inject()}catch(x){}})};
 function boot(){const app=document.getElementById("app");if(!app){setTimeout(boot,500);return}new MutationObserver(sch).observe(app,{childList:true});sch()}
 if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",boot);else boot();
 window.ppaKey=key;

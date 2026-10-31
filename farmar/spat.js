@@ -33,7 +33,7 @@ document.addEventListener("click",e=>{const b=e.target.closest&&e.target.closest
 // sekcie (secbtn) sa menia bez prekreslenia – skontrolovať aj po ťuknutí
 document.addEventListener("click",()=>setTimeout(()=>{track();bar()},60));
 window.addEventListener("scroll",()=>{if(cur&&ON()&&typeof TAB!=="undefined"&&cur.tab===TAB)cur.y=window.scrollY||0},{passive:true});
-let q=0;const sch=()=>{if(q)return;q=requestAnimationFrame(()=>{q=0;try{track();bar()}catch(x){}})};
+let q=0;const sch=()=>{if(q)return;q=(window.ernteSoon||requestAnimationFrame)(()=>{q=0;try{track();bar()}catch(x){}})};
 function boot(){const app=document.getElementById("app");if(!app){setTimeout(boot,500);return}new MutationObserver(sch).observe(app,{childList:true});sch()}
 if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",boot);else boot();
 {const s=document.createElement("style");s.textContent=`.spatbar{display:flex;justify-content:center;margin:6px 0 10px}

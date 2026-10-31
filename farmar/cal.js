@@ -260,7 +260,7 @@ function css(){if(document.getElementById("clcss"))return;const s=document.creat
 .clu textarea{width:100%;margin-top:6px}
 html[data-theme=light] .clev.stretnutie .clt{color:#0e7490}html[data-theme=light] .clev.blok .clt{color:#b91c1c}`;document.head.appendChild(s)}
 function tick(){css();btn()}
-let q=0;const sched=()=>{if(q)return;q=requestAnimationFrame(()=>{q=0;try{tick()}catch(x){}})};
+let q=0;const sched=()=>{if(q)return;q=(window.ernteSoon||requestAnimationFrame)(()=>{q=0;try{tick()}catch(x){}})};
 function start(){const app=document.getElementById("app");if(!app){setTimeout(start,300);return}new MutationObserver(sched).observe(app,{childList:true});sched();
   setTimeout(()=>{if(MAIN())load(true)},3000);setInterval(()=>{if(MAIN())load(false)},60e3)}
 if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",start);else start();

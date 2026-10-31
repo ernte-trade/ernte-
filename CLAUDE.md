@@ -38,6 +38,8 @@ Spoločné opravy rozloženia patria do `farmar/fit.css` (načítava sa posledn�
   (`Object.keys(o).forEach(k=>{if(!(k in w))w[k]=o[k]})`) – inak sa moduly obaľovali donekonečna (stovky vrstiev, aplikácia sekala).
 - Načítanie dát, ktoré po návrate volá `renderStaff`, nesmie nechať stav `null` (inak nekonečný cyklus) – pri prázdnej odpovedi `{err}` / `{}`.
 - Kým človek píše do políčka, prekreslenie z pozadia počká (`formkeep.js`).
+- **Obrazovka neskáče (31. 10.):** moduly, ktoré po prekreslení vkladajú prvky (popisy `fndesc`, Späť `spat`, dlaždice…), plánujú cez `(window.ernteSoon||requestAnimationFrame)(…)` – `ernteSoon` (inline v `index.html`) = mikroúloha pred vykreslením, poistka 300/úloha. Nové injektory písať rovnako, nie cez holý requestAnimationFrame (reťaz cez viac snímok = skok o ~220 px).
+  Počasie (`wxs.js` → `wxCard`): pri prekreslení tej istej záložky s rovnakými údajmi sa vráti zástupca s výškami a pôvodný DOM (`[data-wsk]`, `KP`) sa vloží späť – video, satelit aj radar bežia ďalej.
 
 ## Bezpečnosť a dáta
 - Žiadne heslá, kľúče, pečiatky ani obchodné dáta v čitateľnej podobe v repozitári – iba zašifrované migrácie.

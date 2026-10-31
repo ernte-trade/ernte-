@@ -150,7 +150,7 @@ document.addEventListener("click",async e=>{const b=e.target.closest&&e.target.c
 button.warn{background:linear-gradient(135deg,#f59e0b,#ef4444)!important;color:#fff!important}`;document.head.appendChild(s)}
 
 // ---------- spúšťanie ----------
-let q=0;const sch=()=>{if(q)return;q=requestAnimationFrame(()=>{q=0;if(!IN())return;
+let q=0;const sch=()=>{if(q)return;q=(window.ernteSoon||requestAnimationFrame)(()=>{q=0;if(!IN())return;
   if(STF()&&(!D.nAt||Date.now()-D.nAt>300e3))loadNud();
   if(MAIN()&&TAB==="team"&&(!D.rAt||Date.now()-D.rAt>120e3))loadRep();
   if(LEADS()&&TAB==="deals"&&(!D.lAt||Date.now()-D.lAt>120e3))loadLd();

@@ -32,7 +32,7 @@ document.addEventListener("click",e=>{const b=e.target.closest&&e.target.closest
 .secbar button{min-height:52px;border-radius:16px;font-weight:700;font-size:.9rem;line-height:1.2;padding:6px 8px;white-space:normal;text-align:center;min-width:0}
 .secbar button[aria-pressed="true"]{background:linear-gradient(135deg,#34d399,#22d3ee)!important;color:#05210f!important;border-color:transparent!important}
 @media(min-width:700px){.secbar{grid-template-columns:repeat(auto-fit,minmax(170px,1fr))}}`;document.head.appendChild(s)}
-let q=0;const sch=()=>{if(q)return;q=requestAnimationFrame(()=>{q=0;try{apply()}catch(x){}})};
+let q=0;const sch=()=>{if(q)return;q=(window.ernteSoon||requestAnimationFrame)(()=>{q=0;try{apply()}catch(x){}})};
 function boot(){const app=document.getElementById("app");if(!app){setTimeout(boot,500);return}new MutationObserver(sch).observe(app,{childList:true});sch()}
 if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",boot);else boot();
 })();

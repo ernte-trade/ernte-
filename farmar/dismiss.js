@@ -46,7 +46,7 @@ document.addEventListener("click",e=>{const t=e.target;if(!t.closest)return;
   const w=t.closest(".dsmw");if(w&&w.dataset.dsmblock){e.preventDefault();e.stopPropagation();return}
   const x=t.closest(".dsmx");if(x){e.preventDefault();e.stopPropagation();const ww=x.closest(".dsmw");go(ww,ww.dataset.dsmk);return}
   const r=t.closest(".dsmr");if(r){e.preventDefault();e.stopPropagation();const p=r.parentNode;const hid=[...p.querySelectorAll(":scope > .dsmw[hidden]")];unhide(hid.map(h=>h.dataset.dsmk));hid.forEach(h=>h.hidden=false);restoreChip(p);return}},true);
-let q=0;const sched=()=>{if(q)return;q=requestAnimationFrame(()=>{q=0;try{tick()}catch(x){}})};
+let q=0;const sched=()=>{if(q)return;q=(window.ernteSoon||requestAnimationFrame)(()=>{q=0;try{tick()}catch(x){}})};
 function start(){const app=document.getElementById("app");if(!app){setTimeout(start,300);return}new MutationObserver(sched).observe(app,{childList:true,subtree:true});sched()}
 {const s=document.createElement("style");s.textContent=`
 .dsmw{position:relative;border-radius:18px;transition:height .25s ease,opacity .25s ease;min-width:0}
