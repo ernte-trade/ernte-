@@ -10,7 +10,7 @@ const pc=!ios&&!/Android|Mobile/i.test(UA)&&matchMedia("(pointer:fine)").matches
 const BR=ios?(/CriOS/.test(UA)?"ios-chrome":/FxiOS/.test(UA)?"ios-firefox":/EdgiOS/.test(UA)?"ios-edge":"ios-safari"):
   pc?(/Edg\//.test(UA)?"pc-edge":/Firefox/.test(UA)?"pc-firefox":/OPR\//.test(UA)?"pc-opera":/Chrome|Chromium|CrOS/.test(UA)?"pc-chrome":/Safari/.test(UA)?"mac-safari":"pc-chrome"):
   /SamsungBrowser/.test(UA)?"samsung":/EdgA|Edg\//.test(UA)?"edge":/Firefox/.test(UA)?"firefox":/OPR|Opera/.test(UA)?"opera":"chrome";
-let ev=null,shown=false;
+let ev=window.__bip||null,shown=false;
 window.addEventListener("beforeinstallprompt",e=>{e.preventDefault();ev=e;refresh()});
 window.addEventListener("appinstalled",()=>{ev=null;try{localStorage.setItem("ernte-inst","1")}catch(x){}rm();if(typeof toast==="function")toast("✓ ERNTE Trade & Logistic je na ploche. Odteraz ju otvárajte z ikony.",6000)});
 const done=()=>{try{return localStorage.getItem("ernte-inst")==="1"}catch(x){return false}};
