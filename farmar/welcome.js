@@ -268,7 +268,13 @@ const BZ=[["matif_repka","MATIF Repka","#facc15","repka","Euronext (MATIF) repka
   ["cbot_soja","CBOT Sója","#a3e635","soja","CBOT sója"],["cbot_kukurica","CBOT Kukurica","#f97316","kukurica","CBoT kukurica"],["cbot_psenica","CBOT Pšenica","#93c5fd","psenica_p","CBoT pšenica"]];
 const BZS={d:null,i:0,user:false};
 async function bzLive(hd,k){const box=hd.querySelector(".wbz");if(k!=="farmar"||!box)return 0;
-  try{const r=await fetch("market.json",{cache:"no-store"});BZS.d=r.ok?await r.json():null}catch(x){BZS.d=null}
+  /* história 90 dní: vetva burza-hist (AHDB, najbližší kontrakt) + posledné dni z bota (market.json má prednosť) */
+  const load=async()=>{const [m,h]=await Promise.all([fetch("market.json",{cache:"no-store"}).then(r=>r.ok?r.json():null).catch(()=>null),
+      fetch("https://raw.githubusercontent.com/ernte-trade/ernte-/burza-hist/hist.json?u="+Math.floor(Date.now()/36e5),{cache:"no-store"}).then(r=>r.ok?r.json():null).catch(()=>null)]);
+    if(!m&&!h)return null;const M=Object.assign({},m||{}),D={};const lim=new Date(Date.now()-90*864e5).toISOString().slice(0,10);
+    for(const r of ((h&&h.d)||[]))if(r.d>=lim)D[r.d]=Object.assign({},r);for(const r of ((m&&m.hist)||[]))D[r.d]=Object.assign(D[r.d]||{},r);
+    M.hist=Object.keys(D).sort().map(k=>D[k]);M.hsrc=h?"AHDB (Euronext, CME)":"";return M};
+  BZS.d=await load();
   const draw=()=>{const M=BZS.d;if(!M||!Array.isArray(M.hist)){box.querySelector(".wbzc").innerHTML=`<span class="whu">Burza sa načítava…</span>`;return}
     const L=BZ.filter(b=>M.hist.some(h=>h[b[0]]>0));if(!L.length)return;const b=L[BZS.i%L.length];
     const pts=M.hist.filter(h=>h[b[0]]>0).map(h=>[Date.parse(h.d+"T12:00:00"),+h[b[0]]]);
@@ -276,11 +282,11 @@ async function bzLive(hd,k){const box=hd.querySelector(".wbz");if(k!=="farmar"||
     box.querySelector(".wbzc").innerHTML=pts.length>1?lineSvg("wbz",[{pts,col:b[2],area:true}],320,92,v=>Math.round(v).toLocaleString("sk-SK")):`<span class="whu">graf sa zbiera…</span>`;
     box.querySelector(".wbzv").innerHTML=`<b style="color:${b[2]}">${E(b[1])} ${cur.toLocaleString("sk-SK",{maximumFractionDigits:2})} €/t</b>${prev!=null?`<em class="${df>0?"wup":df<0?"wdn":""}">${df>0?"▲ +":df<0?"▼ ":"± "}${Math.abs(df).toLocaleString("sk-SK",{maximumFractionDigits:2})}</em>`:""}`;
     box.querySelector(".wbzs").innerHTML=L.map((x,i)=>`<button type="button" data-wbz="${i}" class="${x===b?"on":""}" style="--gc:${x[2]}">${E(x[1])}</button>`).join("");
-    const at=M.updatedAt?new Date(M.updatedAt):null;box.querySelector(".wbzt").textContent=`${row&&row.term?"kontrakt "+row.term+" · ":""}${at?"aktualizované "+at.toLocaleString("sk-SK",{day:"numeric",month:"numeric",hour:"2-digit",minute:"2-digit"}):""} · burza nie je naša výkupná cena`};
+    const at=M.updatedAt?new Date(M.updatedAt):null;box.querySelector(".wbzt").textContent=`${pts.length>1?Math.round((pts[pts.length-1][0]-pts[0][0])/864e5)+" dní · ":""}${row&&row.term?"kontrakt "+row.term+" · ":""}${at?"aktualizované "+at.toLocaleString("sk-SK",{day:"numeric",month:"numeric",hour:"2-digit",minute:"2-digit"}):""}${M.hsrc?" · história "+M.hsrc:""} · burza nie je naša výkupná cena`};
   draw();
   box.addEventListener("click",e=>{const t=e.target.closest&&e.target.closest("[data-wbz]");if(!t)return;e.preventDefault();e.stopPropagation();BZS.user=true;BZS.i=+t.dataset.wbz;draw()});
   const iv=setInterval(()=>{if(document.hidden||!box.isConnected){if(!box.isConnected)clearInterval(iv);return}if(!BZS.user){BZS.i++;draw()}},6500);
-  const iv2=setInterval(async()=>{if(document.hidden||!box.isConnected){if(!box.isConnected)clearInterval(iv2);return}try{const r=await fetch("market.json",{cache:"no-store"});if(r.ok){BZS.d=await r.json();draw()}}catch(x){}},5*60e3);
+  const iv2=setInterval(async()=>{if(document.hidden||!box.isConnected){if(!box.isConnected)clearInterval(iv2);return}try{const d=await load();if(d){BZS.d=d;draw()}}catch(x){}},5*60e3);
   return iv}
 async function ctLive(hd,k){const box=hd.querySelector(".wct .wctl");if(k!=="farmar"||!box||!window.farmContacts)return;const L=await farmContacts();const kr=window.farmKraj?farmKraj(FARMER):null;
   box.innerHTML=L.length?L.slice().sort((a,b)=>(b.k===kr)-(a.k===kr)).map(c=>`<a class="wctr${c.k===kr||L.length===1?" mine":""}" href="tel:${E(String(c.phone).replace(/[^\d+]/g,""))}"><span><small>${E(c.kraj)}</small><b>${E(c.name)}</b></span><i>📞 ${E(c.phone)}</i></a>`).join(""):`<span class="whu">Kontakt: ERNTE</span>`}

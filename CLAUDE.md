@@ -47,6 +47,8 @@ Spoločné opravy rozloženia patria do `farmar/fit.css` (načítava sa posledn�
 - Žiadne heslá, kľúče, pečiatky ani obchodné dáta v čitateľnej podobe v repozitári – iba zašifrované migrácie.
 - Marža, zisk, mzdy a výsledok vidí iba majiteľ. Farmár nikdy nevidí odberateľa, predajné ceny ani iných farmárov.
   **PRÍKAZ MAJITEĽA (31. 10.):** farmár na úvode LIVE VIDÍ verejnú burzu MATIF a CBOT s grafom (`market.json`, s poznámkou „burza nie je naša výkupná cena“).
+  História 90 dní: workflow `burza-hist` (každý prac. deň 21:40 UTC) → vetva `burza-hist`/hist.json z AHDB Futures prices (najbližší kontrakt, € / t; dni z bota majú prednosť).
+  AHDB v súbore uvádza, že ďalšie zverejnenie vyžaduje súhlas poskytovateľov – súhlas zatiaľ nemáme (cereals.mi@ahdb.org.uk).
 - Upozornenia príjemcom odchádzajú až po schválení majiteľom (📤), okrem výslovne povolených automatických správ
   (napr. „objednávka je v spracovaní“).
 
