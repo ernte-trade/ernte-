@@ -21,9 +21,10 @@ def yahoo(sym):
     return {}
 def euronext(code):
     # denné ceny najbližšieho kontraktu z grafu Euronext
-    for url in (f"https://live.euronext.com/en/intraday_chart/getChartData/{code}/max", f"https://live.euronext.com/intraday_chart/getChartData/{code}/max"):
+    for url in (f"https://live.euronext.com/en/intraday_chart/getChartData/{code}/max", f"https://live.euronext.com/en/ajax/getHistoricalPriceForm/{code}", f"https://live.euronext.com/en/product/commodities-futures/{code}"):
         try:
             t = get(url, hdr={"X-Requested-With": "XMLHttpRequest", "Referer": "https://live.euronext.com/"})
+            LOG.append(f"euronext {code} odpoveď: {t[:300]!r}")
             j = json.loads(t)
             out = {}
             for p in j if isinstance(j, list) else j.get("data", []):
@@ -34,11 +35,29 @@ def euronext(code):
         except Exception as e:
             LOG.append(f"euronext {code}: {str(e)[:120]} ({url})")
     return {}
-fx = yahoo("EURUSD=X")
+def stooq(sym):
+    try:
+        t = get(f"https://stooq.com/q/d/l/?s={sym}&i=d", hdr={"Accept": "text/csv,*/*"})
+        out = {}
+        for ln in t.splitlines()[1:]:
+            p = ln.split(",")
+            if len(p) >= 5 and re.match(r"\d{4}-\d{2}-\d{2}", p[0]): out[p[0]] = float(p[4])
+        LOG.append(f"stooq {sym}: {len(out)} dní · {t[:80]!r}"); return out
+    except Exception as e:
+        LOG.append(f"stooq {sym}: {e}"); return {}
+def frank():
+    try:
+        a = (datetime.date.today() - datetime.timedelta(days=200)).isoformat()
+        j = json.loads(get(f"https://api.frankfurter.app/{a}..?from=EUR&to=USD"))
+        out = {d: v["USD"] for d, v in j.get("rates", {}).items()}
+        LOG.append(f"ECB EURUSD (frankfurter): {len(out)} dní"); return out
+    except Exception as e:
+        LOG.append(f"frankfurter: {e}"); return {}
+fx = frank() or yahoo("EURUSD=X")
 BU = {"cbot_soja": ("ZS=F", 36.7437), "cbot_kukurica": ("ZC=F", 39.3679), "cbot_psenica": ("ZW=F", 36.7437)}
 S = {}
 for k, (sym, bu) in BU.items():
-    raw = yahoo(sym); S[k] = {}
+    raw = stooq(sym.replace("=F", ".f").lower()) or yahoo(sym); S[k] = {}
     for d, c in raw.items():
         f = fx.get(d) or (fx[max([x for x in fx if x <= d], default=None)] if any(x <= d for x in fx) else None)
         if f: S[k][d] = round(c / 100 * bu / f, 2)
