@@ -115,7 +115,7 @@ function setPos(x,y,save){const b=btn();if(!b)return;const w=b.offsetWidth||54,h
   if(save)try{localStorage.setItem(POSK,JSON.stringify({x:x/innerWidth,y:y/innerHeight}))}catch(e){}}
 function savedPos(){try{const p=JSON.parse(localStorage.getItem(POSK)||"null");return p&&isFinite(p.x)&&isFinite(p.y)?p:null}catch(e){return null}}
 addEventListener("resize",()=>{const p=savedPos();if(p&&btn())setPos(p.x*innerWidth,p.y*innerHeight,false)});
-function place(){const b=btn(),o=document.getElementById("vaOut");if(!b)return;{const p=savedPos();if(p){setPos(p.x*innerWidth,p.y*innerHeight,false);return}}let off=16;try{const n=document.querySelector("#app nav.tabs");if(n){const r=n.getBoundingClientRect();if(getComputedStyle(n).position==="fixed"&&r.bottom>=innerHeight-2)off=Math.round(r.height)+12}}catch(x){}
+function place(){const b=btn(),o=document.getElementById("vaOut");if(!b)return;{const p=savedPos();if(p){setPos(p.x*innerWidth,p.y*innerHeight,false);return}}let off=16;try{const n=document.querySelector("#app nav.tabs");if(n){const r=n.getBoundingClientRect();if(getComputedStyle(n).position==="fixed"&&r.height>0&&r.top>innerHeight*0.55)off=Math.round(innerHeight-r.top)+12}}catch(x){}
   b.style.bottom=off+"px"}
 {const s=document.createElement("style");s.textContent=`.vabtn{position:fixed;left:14px;z-index:8900;touch-action:none;width:54px;height:54px;border-radius:50%;border:0;font-size:1.5rem;display:grid;place-items:center;padding:0;
  background:linear-gradient(135deg,#a78bfa,#22d3ee);color:#fff;box-shadow:0 8px 24px -6px rgba(124,92,255,.7)}

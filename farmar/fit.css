@@ -214,3 +214,6 @@ html[data-theme=light] .wlc .wlb,html[data-theme=light] .wlc .whc:not(.wlsp .whc
 .wsx,.wsx *,.wsx *::before,.wsx *::after{animation:none!important;transition:none!important}
 .wsx .wsbg{inset:0!important;transform:none!important}
 .wsx .wsvid,.wsx .wsfx,.wsx .wsshine{display:none!important}
+/* 16:05 PRÍKAZ MAJITEĽA: spodná lišta – ikona a názov presne na stred tlačidla, ťuknutie reaguje na celé tlačidlo */
+#app>nav.tabs>button{display:flex!important;flex-direction:column!important;align-items:center!important;justify-content:center!important;text-align:center!important}
+#app>nav.tabs>button>*{pointer-events:none}

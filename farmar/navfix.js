@@ -13,3 +13,11 @@ vv.addEventListener("resize",sch);vv.addEventListener("scroll",sch);window.addEv
 function boot(){const a=document.getElementById("app");if(!a){setTimeout(boot,500);return}new MutationObserver(sch).observe(a,{childList:true});sch()}
 if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",boot);else boot();
 })();
+// 31. 10. (príkaz majiteľa): zvýraznenie vybranej sekcie v spodnej lište vždy presne pod tlačidlom (po vložení „Úvod“ sa posúvalo o jedno tlačidlo)
+(function(){let q=0;
+function sync(){q=0;document.querySelectorAll("#app>nav.tabs,#app nav.vnav").forEach(n=>{const i=n.querySelector(":scope>.ds-ind"),a=n.querySelector(':scope>button[aria-pressed="true"]');if(!i||!a)return;
+  const t=`translate(${a.offsetLeft}px,${a.offsetTop}px)`;if(i.style.transform!==t)i.style.transform=t;const w=a.offsetWidth+"px",h=a.offsetHeight+"px";if(i.style.width!==w)i.style.width=w;if(i.style.height!==h)i.style.height=h})}
+const sch=()=>{if(!q)q=(window.ernteSoon||requestAnimationFrame)(sync)};
+function boot(){const a=document.getElementById("app");if(!a){setTimeout(boot,500);return}new MutationObserver(sch).observe(a,{childList:true,subtree:true});sch()}
+addEventListener("resize",()=>setTimeout(sync,60));if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",boot);else boot();
+})();
