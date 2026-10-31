@@ -215,7 +215,7 @@ function hero(){const c=coins(),lv=LEVEL(c),n=L.filter(l=>done(l.id)).length;
   return `<div class="hero kjh"><small>ERNTE Junior · škola biznisu</small><b>Ahoj, ${E(String(K.name||"").split(" ")[0])}! 👋</b><div class="kjst"><span>${lv[0]} ${E(lv[1])}</span><span>🪙 ${c}</span><span>✅ ${n} / ${L.length}</span></div>
    <button type="button" class="kjen${EN()?" on":""}" data-ken>${EN()?"🇬🇧 English mode ON":"🇬🇧 Zapnúť angličtinu"}</button></div>`}
 function home(){const n=L.filter(l=>done(l.id)).length;
-  return hero()+payCard()+`<h2 class="kjh2">🏢 Rodinný podnik</h2><div class="kjtiles">${L.map((l,i)=>`<button type="button" class="kjt${done(l.id)?" ok":""}" data-kl="${l.id}" style="--i:${i}">${IMG(l.ico)}<b>${E(EN()?l.te:l.t)}</b><small>${E(l.s)}</small>${done(l.id)?'<em>✅ hotovo</em>':""}</button>`).join("")}</div>
+  return hero()+payCard()+`<button type="button" class="kjt big kjinv" data-kinv style="--i:0;width:100%;margin:10px 0">${IMG("chart")}<b>📈 Investujeme s tatinom</b><small>tvoje cvičné portfólio · ozajstné ceny z burzy · listy od Claude</small></button><h2 class="kjh2">🏢 Rodinný podnik</h2><div class="kjtiles">${L.map((l,i)=>`<button type="button" class="kjt${done(l.id)?" ok":""}" data-kl="${l.id}" style="--i:${i}">${IMG(l.ico)}<b>${E(EN()?l.te:l.t)}</b><small>${E(l.s)}</small>${done(l.id)?'<em>✅ hotovo</em>':""}</button>`).join("")}</div>
    <h2 class="kjh2">🎓 Škola · 4. ročník</h2><div class="kjtiles">${Object.keys(PRK).map((k,i)=>{const b=(P()["pr_"+k]||{});return `<button type="button" class="kjt" data-kpr="${k}" style="--i:${i}">${IMG(PRK[k][0])}<b>${E(PRK[k][1])}</b><small>${E(PRK[k][2])}</small>${b.n?`<em>✅ ${b.ok}/${b.n} správne</em>`:""}</button>`}).join("")}</div>
    <h2 class="kjh2">🎮 Hry</h2><div class="kjtiles"><button type="button" class="kjt big" data-kg style="--i:1">${IMG("game")}<b>Obchodný deň</b><small>kúp lacno, predaj draho – 5 dní na burze</small></button>
    <button type="button" class="kjt big kjetf" data-ketf style="--i:2">${IMG("chart")}<b>ETF sporenie · 10 rokov</b><small>uvidíš snehovú guľu aj pád burzy</small></button>
@@ -270,8 +270,8 @@ function etfView(){const e=ETF;
      ${e.ev.map(x=>`<p class="kjev">${E(x)}</p>`).join("")}<div class="kjnav"><button type="button" class="lime" data-ketd="${e.dep}">🔁 Skúsiť znova (iné roky)</button></div>`:""}
    <p class="kjnote">Pamätaj: skutočné investovanie vždy s tatinom. Toto je iba učenie, nie rada, do čoho investovať.</p></div>`}
 function render(){const a=document.getElementById("app");if(!a||!K)return;
-  let h=V==="home"?home():V.startsWith("l:")?lesson():V.startsWith("pr:")?practice():V==="game"?game():V==="etf"?etfView():V==="badges"?badges():V==="pay"?payView():home();
-  if(V!=="home")h=hero()+h;a.innerHTML=h;window.scrollTo({top:0});if(V.startsWith("l:"))chart();const i=a.querySelector("[data-kinp]");if(i&&!i.disabled)setTimeout(()=>i.focus(),60)}
+  let h=V==="home"?home():V.startsWith("l:")?lesson():V.startsWith("pr:")?practice():V==="game"?game():V==="etf"?etfView():V==="badges"?badges():V==="pay"?payView():V==="inv"&&window.vInvestKid?vInvestKid():home();
+  if(V!=="home"&&V!=="inv")h=hero()+h;const keep=V==="inv"&&a.dataset.kv==="inv";a.dataset.kv=V;a.innerHTML=h;if(!keep)window.scrollTo({top:0});if(V.startsWith("l:"))chart();const i=a.querySelector("[data-kinp]");if(i&&!i.disabled)setTimeout(()=>i.focus(),60)}
 async function chart(){const b=document.querySelector(".kjchart");if(!b)return;
   try{const r=await fetch("market.json",{cache:"no-store"});const m=r.ok?await r.json():null;let h=null;try{const x=await fetch("https://raw.githubusercontent.com/ernte-trade/ernte-/burza-hist/hist.json",{cache:"no-store"});h=x.ok?await x.json():null}catch(e){}
     const D={};for(const r2 of ((h&&h.d)||[]))D[r2.d]=r2;for(const r2 of ((m&&m.hist)||[]))D[r2.d]=Object.assign(D[r2.d]||{},r2);
@@ -283,7 +283,7 @@ async function chart(){const b=document.querySelector(".kjchart");if(!b)return;
      <div class="kjcv">Najnižšie ${Math.round(mn)} €, najvyššie ${Math.round(mx)} € – rozdiel ${Math.round(mx-mn)} € na každej tone. Pri jednom kamióne (25 t) je to ${Math.round((mx-mn)*25).toLocaleString("sk-SK")} €!</div>`}catch(x){b.innerHTML=`<div class="kjcv">Burza sa teraz nenačítala.</div>`}}
 function prAnswer(v){const c=PR.cur;if(PR.pick!=null)return;PR.pick=v;const ok=String(v).trim().replace(/\s/g,"")===String(c.a);const st=Object.assign({n:0,ok:0},P()["pr_"+PR.k]||{});st.n++;
   if(ok){PR.ok++;st.ok++;addCoins(2,"škola");earn("q",PRK[PR.k][1])}save("pr_"+PR.k,st);render()}
-document.addEventListener("click",async e=>{if(!K)return;const t=e.target.closest&&e.target.closest("[data-kl],[data-kh],[data-knext],[data-kprev],[data-ksay],[data-ksayen],[data-ka],[data-knq],[data-kre],[data-kg],[data-kgn],[data-kb],[data-kbuy],[data-ken],[data-kpay],[data-kpr],[data-kpo],[data-kchk],[data-kprx],[data-kprn],[data-ksw],[data-ketf],[data-ketd]");if(!t)return;e.preventDefault();
+document.addEventListener("click",async e=>{if(!K)return;const t=e.target.closest&&e.target.closest("[data-kl],[data-kh],[data-knext],[data-kprev],[data-ksay],[data-ksayen],[data-ka],[data-knq],[data-kre],[data-kg],[data-kgn],[data-kb],[data-kbuy],[data-ken],[data-kpay],[data-kpr],[data-kpo],[data-kchk],[data-kprx],[data-kprn],[data-ksw],[data-ketf],[data-ketd],[data-kinv]");if(!t)return;e.preventDefault();
   if(t.dataset.kl){V="l:"+t.dataset.kl;S=0;Q=null;aiFetch(t.dataset.kl,4);render();return}
   if("kh" in t.dataset){V="home";render();return}
   if("kb" in t.dataset){V="badges";render();return}
@@ -292,6 +292,7 @@ document.addEventListener("click",async e=>{if(!K)return;const t=e.target.closes
   if("kg" in t.dataset){V="game";if(!G||G.r>5)gNew();render();return}
   if("kgn" in t.dataset){gNew();render();return}
   if("ketf" in t.dataset){V="etf";render();return}
+  if("kinv" in t.dataset){V="inv";window.K_IN_INV=1;render();return}
   if(t.dataset.ketd){ETF=etfRun(+t.dataset.ketd);const h=Object.assign({n:0},P().etf||{});h.n++;save("etf",h);if(h.n<=3)addCoins(5,"ETF hra");render();return}
   if(t.dataset.kpr){V="pr:"+t.dataset.kpr;PR=null;if(t.dataset.kpr!=="mat"&&t.dataset.kpr!=="vs")aiFetch(t.dataset.kpr,10);render();return}
   if(t.dataset.kpo!=null){prAnswer(t.dataset.kpo);return}
@@ -310,6 +311,7 @@ document.addEventListener("click",async e=>{if(!K)return;const t=e.target.closes
     if(G.r>5){const val=G.cash+G.stock*G.m,prof=val-20000;const h=Object.assign({n:0,best:0},P().hra||{});h.n++;h.best=Math.max(h.best,prof);h.last=prof;save("hra",h);if(prof>0)addCoins(Math.min(50,Math.round(prof/100)),"hra")}render();return}},true);
 document.addEventListener("keydown",e=>{if(e.key==="Enter"&&e.target&&e.target.matches&&e.target.matches("[data-kinp]")){e.preventDefault();const b=document.querySelector("[data-kchk]");if(b)b.click()}});
 window.startKid=async function(){document.documentElement.classList.add("kjon");try{$("hT").textContent="ERNTE Junior";$("hS").textContent=K.name+" · škola biznisu";$("refBtn").hidden=true}catch(x){}V="home";render();await loadPay();if(V==="home")render()};
+window.kidRender=()=>{if(V==="inv")render()};
 window.kidEnter=async function(){try{const r=await sb.rpc("kid_me");if(!r.error&&r.data&&r.data.name){K=r.data;window.ERNTE_KIND="junior";startKid();return true}}catch(x){}return false};
 
 // ---------- 👨 MAJITEĽ: Tím → ERNTE Junior (prihlásenie, pokrok, odmena, vyplatené) ----------

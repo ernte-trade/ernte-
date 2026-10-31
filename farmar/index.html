@@ -1130,6 +1130,11 @@ function padjSet(aj){const d=aj&&!aj.error&&aj.data||{};window.PADJ=ROLE!=="owne
 const fName=id=>{const f=STATE.farmers.find(x=>x.id===id);return f?f.name:"?"};
 // ===== NÁPOVEDA „Ako to funguje“ =====
 const HELP={
+inv:{t:"Investovanie",i:"📈",r:"Investičná akadémia – ty a Timotej sa učíte investovať spolu na cvičných peniazoch so skutočnými cenami.",s:[
+ ["✉️ Listy od Claude","Každý týždeň príde list pre teba a jednoduchší pre Timoteja: čo sa stalo na trhoch, čo z toho plynie a jedna úloha na týždeň. Nové listy majú 🆕."],
+ ["💼 Cvičné portfólio","Máš 10 000 € a Timotej 1 000 € vymyslených peňazí. Zadaj sumu pri fonde a Kúpiť; poplatok 1 € za obchod. Ceny sú skutočné denné uzávierky ETF z burzy Xetra. Tlačidlom Timotej môžeš nakupovať aj za neho."],
+ ["🏆 Kto investuje lepšie","Porovnáva sa percento od štartu, takže rozdielne sumy nevadia."],
+ ["🎓 Lekcie","8 krátkych lekcií: ciele, rezerva, ETF, rozloženie, náklady, pravidelné investovanie, poklesy a dane na Slovensku. Je to vzdelávanie, nie investičné odporúčanie."]]},
 home:{t:"Prehľad",i:"🏠",r:"Ranný prehľad firmy: čo je nové, čo čaká na teba, termíny, upozornenia a počasie.",s:[
  ["☀️ Ranná správa v 💬","Každý deň ráno svieti na 💬 (vpravo dole) bodka. Vnútri: včerajšie nákupy a marža, čo čaká, dnešné jazdy, spokojnosť ľudí, zákazy jázd SK/HU a počasie. Pod tým hotová ranná správa pre každého vodiča s dnešnou jazdou – pošleš ju sám ťuknutím na SMS alebo WhatsApp. Farmári dostávajú v 💬 svoju správu: našu cenu so zmenou oproti včerajšku, počasie ako semafor (zber, postrek), svoje autá a zmeny obchodov."],
  ["🔔 Zvonček v každej sekcii","Hore v každej záložke je 🔔 s počtom. Ukáže iba to, čo patrí do tejto sekcie: „Na vybavenie“ zmizne samo, keď vec vybavíš (prijmeš, odpovieš, zamietneš), a upozornenia z mobilu zmiznú po prečítaní alebo keď v sekcii už nič nečaká. Prečítané platí na všetkých tvojich zariadeniach. Po otvorení sekcie sa jej upozornenia zmažú aj z lišty v telefóne a rovnaké upozornenie už nepípa znova."],
@@ -1428,7 +1433,7 @@ function priceBanner(){const v=((STATE.settings||{}).pricelist||{}).valid;
   if(d<=7)return `<div class="pban w"><b>Cenník platí do ${esc(dSK(v))}, obnov ho</b><span>${d<1?"Platí už len dnes.":d===1?"Platí ešte zajtra.":"Zostáva "+d+" "+(d<5?"dni":"dní")+"."}</span></div>`;
   return ""}
 // ===== DIZAJN „sklo – diamant“: zdieľané pomocné funkcie (iba vzhľad) =====
-const TICO={cal:"📅",test:"🧪",qd:"🤝",pred:"🔮",danube:"🌊",nov:"🆕",evid:"📒",trus:"🐔",agro:"🚜",zuct:"🧾",home:"🏠",req:"📥",price:"💶",trans:"🚚",fleet:"🚛",deals:"🤝",farm:"👨‍🌾",wx:"🌦️",team:"👥",calc:"🧮"};
+const TICO={inv:"📈",cal:"📅",test:"🧪",qd:"🤝",pred:"🔮",danube:"🌊",nov:"🆕",evid:"📒",trus:"🐔",agro:"🚜",zuct:"🧾",home:"🏠",req:"📥",price:"💶",trans:"🚚",fleet:"🚛",deals:"🤝",farm:"👨‍🌾",wx:"🌦️",team:"👥",calc:"🧮"};
 const dsF2=x=>Number.isFinite(+x)?(+x).toLocaleString("sk-SK",{minimumFractionDigits:2,maximumFractionDigits:2}):"–";
 const dsSg=x=>(x>=0?"+":"−")+Math.round(Math.abs(x)).toLocaleString("sk-SK");
 const dsSg2=x=>(x>=0?"+":"−")+dsF2(Math.abs(x));
@@ -1491,11 +1496,11 @@ function renderStaff(){const nNew=STATE.reqs.filter(r=>r.status==="nova").length
   if(ROLE==="invoice")tabs=tabs.filter(t=>t[0]!=="fleet")}
   if(!MAIN_OK())tabs=tabs.filter(t=>t[0]!=="pred"&&t[0]!=="test");
   if(MAIN_OK()&&window.vCal&&!tabs.some(t=>t[0]==="cal")){const n=window.calOpenCount?calOpenCount():0;const i=tabs.findIndex(t=>t[0]==="home");tabs.splice(i>=0?i+1:1,0,["cal",`Kalendár${n?` <span class="cnt">${n}</span>`:""}`])}
-  if(window.vTest&&MAIN_OK()&&!window.ERNTE_TEST&&!window.ERNTE_VIEWAS&&!tabs.some(t=>t[0]==="test"))tabs.push(["test","Test"]);if(window.vQd&&(ROLE==="owner"||(typeof can==="function"&&can("deals")))&&!tabs.some(t=>t[0]==="qd"))tabs.unshift(["qd","Uzatvoriť obchod"]);if(!tabs.some(t=>t[0]===TAB))TAB=tabs[0][0];
+  if(window.vTest&&MAIN_OK()&&!window.ERNTE_TEST&&!window.ERNTE_VIEWAS&&!tabs.some(t=>t[0]==="test"))tabs.push(["test","Test"]);if(window.vInvest&&MAIN_OK()&&!window.ERNTE_TEST&&!window.ERNTE_VIEWAS&&!tabs.some(t=>t[0]==="inv"))tabs.push(["inv","Investovanie"]);if(window.vQd&&(ROLE==="owner"||(typeof can==="function"&&can("deals")))&&!tabs.some(t=>t[0]==="qd"))tabs.unshift(["qd","Uzatvoriť obchod"]);if(!tabs.some(t=>t[0]===TAB))TAB=tabs[0][0];
   let h=`<nav class="tabs" aria-label="Hlavná navigácia">${tabs.map(t=>{const lb=String(t[1]).split(' <span class="cnt">');return `<button type="button" data-tab="${t[0]}" aria-pressed="${TAB===t[0]}"><span class="ti" aria-hidden="true">${TICO[t[0]]||"•"}</span><span class="tl">${lb[0]}</span>${lb[1]?'<span class="cnt">'+lb[1]:""}</button>`}).join("")}</nav>`;
   h+=`<div class="hrow"><button type="button" class="ds-theme" data-dstheme aria-label="Prepnúť svetlý / tmavý režim" title="Svetlý / tmavý režim">${document.documentElement.dataset.theme==="light"?"🌙":"☀️"}</button>${window.bigBtn?bigBtn():""}${helpBtn(TAB)}</div>`;
   if(tabs.some(t=>t[0]==="price")&&(TAB==="price"||TAB==="req"))h+=priceBanner();
-  if(TAB==="wx"&&!WXD)loadWx().then(renderStaff);if(TAB==="fleet"&&!STATE.fleet)loadFleet().then(renderStaff);if(TAB==="team"&&!STATE.staff)loadTeam().then(renderStaff);h+=({req:vReq,price:vPrice,trans:vTrans,deals:vDeals,farm:vFarm,wx:wxCard,fleet:vFleet,team:vTeam,calc:()=>window.vCalc?vCalc():"",home:()=>window.vHome?vHome():"",zuct:()=>window.vZuct?vZuct():"",agro:()=>window.vAgro?vAgro():"",trus:()=>window.vTrus?vTrus():"",evid:()=>window.vEvid?vEvid():"",nov:()=>window.vNovinky?vNovinky():"",danube:()=>window.vDanube?vDanube():"",qd:()=>window.vQd?vQd():"",test:()=>window.vTest?vTest():"",cal:()=>window.vCal?vCal():"",pred:()=>window.vPred?vPred():""})[TAB]();if(TAB==="req")h+=pwCard();$("app").innerHTML=h;mountR();dsAfter()}
+  if(TAB==="wx"&&!WXD)loadWx().then(renderStaff);if(TAB==="fleet"&&!STATE.fleet)loadFleet().then(renderStaff);if(TAB==="team"&&!STATE.staff)loadTeam().then(renderStaff);h+=({req:vReq,price:vPrice,trans:vTrans,deals:vDeals,farm:vFarm,wx:wxCard,fleet:vFleet,team:vTeam,calc:()=>window.vCalc?vCalc():"",home:()=>window.vHome?vHome():"",zuct:()=>window.vZuct?vZuct():"",agro:()=>window.vAgro?vAgro():"",trus:()=>window.vTrus?vTrus():"",evid:()=>window.vEvid?vEvid():"",nov:()=>window.vNovinky?vNovinky():"",danube:()=>window.vDanube?vDanube():"",qd:()=>window.vQd?vQd():"",test:()=>window.vTest?vTest():"",cal:()=>window.vCal?vCal():"",pred:()=>window.vPred?vPred():"",inv:()=>window.vInvest?vInvest():""})[TAB]();if(TAB==="req")h+=pwCard();$("app").innerHTML=h;mountR();dsAfter()}
 function vReq(){const R=ROLE==="owner"||!window.can||can("req")?STATE.reqs:STATE.reqs.filter(r=>r.kind==="transport");if(!R.length)return `<div class="card"><div class="s">Zatiaľ žiadne požiadavky od farmárov.</div></div>`;
   const pri=r=>r.kind==="transport"?(r.deal_id?0:1):0,bySt=st=>R.filter(r=>r.status===st).sort((a,b)=>pri(a)-pri(b)),ord=[...bySt("nova"),...bySt("v_spracovani"),...R.filter(r=>r.status!=="nova"&&r.status!=="v_spracovani")],OWN=ROLE==="owner",RI={sell:"🌾",transport:"🚚",agree:"✍️",message:"💬"};
   return ord.map(r=>{const fr=STATE.farmers.find(x=>x.id===r.farmer_id)||{},d=r.deal_id?STATE.deals.find(x=>x.id===r.deal_id):null;
@@ -2988,7 +2993,7 @@ document.addEventListener("click",e=>{const b=e.target.closest("[data-dfp]");if(
 <script src="danube.js?v=20261031-1120"></script>
 <script src="installapp.js?v=20261031-0700"></script>
 <script src="bio.js?v=20261031-0720"></script>
-<script src="fndesc.js?v=20261031-1120"></script>
+<script src="fndesc.js?v=20261031-1730"></script>
 <script src="sign.js?v=20261030-0930"></script>
 <script src="outbox.js?v=20261029-0130"></script>
 <script src="invitecard.js?v=20261031-1200"></script>
@@ -3014,10 +3019,11 @@ document.addEventListener("click",e=>{const b=e.target.closest("[data-dfp]");if(
 <script src="dropalert.js?v=20261031-0700"></script>
 <script src="timai.js?v=20261031-0915"></script>
 <script src="heslainv.js?v=20261031-1300"></script>
-<script src="ownertabs.js?v=20261031-1140"></script>
+<script src="ownertabs.js?v=20261031-1730"></script>
 <script src="clang.js?v=20261031-1200"></script>
 <script src="farmapp.js?v=20261031-1300"></script>
-<script src="kid.js?v=20261031-1700"></script>
+<script src="kid.js?v=20261031-1730"></script>
+<script src="invest.js?v=20261031-1730"></script>
 <script src="plan.js?v=20261031-1120"></script>
 <script src="voice.js?v=20261031-1650"></script>
 <script src="wxalert.js?v=20261031-1120"></script>

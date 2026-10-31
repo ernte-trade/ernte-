@@ -7,6 +7,7 @@ const isF=()=>typeof FARMER!=="undefined"&&!!FARMER;
 
 // ---- záložky (zamestnanci) ----
 const TABD={
+ inv:"Investičná akadémia pre teba a Timoteja: cvičné portfólio s vymyslenými peniazmi a skutočnými cenami ETF, lekcie a každý týždeň list od Claude. Vzdelávanie, nie investičné odporúčanie.",
  home:"Ranný prehľad firmy na jednom mieste: čo je nové, čo čaká na teba, termíny a upozornenia. Ťukni na dlaždicu a prejdeš rovno tam.",
  req:"Všetko, čo poslali farmári: ponuky na predaj, objednávky odvozu, otázky a súhlasy. Odpovieš, schváliš alebo z toho spravíš obchod.",
  price:"Výkupné ceny, ktoré vidia farmári v aplikácii, a ich platnosť. Vypĺňajú sa automaticky podľa Agro-Somotor a Bunge; tvoje vlastné ceny majú prednosť do dátumu. Pri zmene ceny farmári hneď vidia novú.",
