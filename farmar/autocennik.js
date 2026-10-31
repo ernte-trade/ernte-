@@ -16,6 +16,7 @@ const dk=d=>{const m=String(d||"").match(/^(\d{4})-(\d{2})-(\d{2})/);return m?`$
 const hm=t=>{const d=new Date(t);return d.toLocaleDateString("sk-SK",{day:"numeric",month:"numeric"})+" "+d.toLocaleTimeString("sk-SK",{hour:"2-digit",minute:"2-digit"})};
 const staff=()=>typeof ROLE!=="undefined"&&!!ROLE&&!(typeof FARMER!=="undefined"&&FARMER)&&typeof sb!=="undefined";
 const OWN=()=>staff()&&ROLE==="owner";
+const MAINO=()=>OWN()&&typeof window.MAIN_OK==="function"&&window.MAIN_OK(); // zdroj cien (výkup VSK) vidí iba Martin – príkaz majiteľa 31. 10.
 const CAN=k=>OWN()||(typeof can==="function"&&can(k));
 const ED=()=>staff()&&(OWN()||(CAN("price_edit")&&CAN("calc")));
 const MKL=()=>typeof MK!=="undefined"?MK:[];
@@ -205,12 +206,12 @@ function unseen(){const s=gs(SEEN);return (A.log||[]).filter(x=>x.at>s)}
 function notifyNew(){if(!OWN())return;const U=unseen();if(!U.length)return;
   try{if(document.hidden&&"Notification" in window&&Notification.permission==="granted")new Notification("ERNTE · cenník sa zmenil",{body:U.slice(-6).map(x=>`${nm(x.com)}: ${x.old==null?"–":f0(x.old)} → ${x.new==null?"skryté":f0(x.new)} €/t`).join("\n"),icon:"icon-192.png",tag:"ernte-cennik"})}catch(x){}
   try{navigator.vibrate&&navigator.vibrate([90,60,90])}catch(x){}inject()}
-const srcL=x=>x.src==="auto"?`🤖 automaticky${x.pl?" · "+e(x.pl):""}`:x.src==="mine"?`✍️ ${e(x.by||"ručne")}${x.till?" · platí do "+dk(x.till):""}`:e(x.by||"");
+const srcL=x=>x.src==="auto"?`🤖 automaticky${x.pl&&MAINO()?" · "+e(x.pl):""}`:x.src==="mine"?`✍️ ${e(x.by||"ručne")}${x.till?" · platí do "+dk(x.till):""}`:e(x.by||"");
 function bannerHTML(){if(!OWN()||!A.cfg)return "";let h="";const U=unseen();
   if(U.length){const last={};U.forEach(x=>last[x.com]=Object.assign({},x,{old:last[x.com]?last[x.com].old:x.old}));const L=Object.values(last);
     h+=`<div class="acn-b" role="alert"><div class="acn-bh"><span aria-hidden="true">💶</span><b>Zmena v zverejnenom cenníku${L.length>1?" ("+L.length+")":""}</b></div><ul>${L.map(x=>`<li><b>${e(nm(x.com))}</b> ${x.old==null?"–":f0(x.old)} → <b>${x.new==null?"skryté":f0(x.new)+" €/t"}</b> <small>${x.new!=null&&x.old!=null?(x.new>x.old?"▲ +":"▼ −")+f0(Math.abs(x.new-x.old))+" · ":""}${srcL(x)} · ${hm(x.at)}</small></li>`).join("")}</ul>
     <div class="btns"><button type="button" class="pri" data-acn="seen">✓ Videl som</button>${typeof TAB!=="undefined"&&TAB!=="price"?`<button type="button" data-acn="open">Otvoriť cenník</button>`:""}</div></div>`}
-  const P=Object.entries(A.pend||{});if(P.length)h+=`<div class="acn-b warn" role="alert"><div class="acn-bh"><span aria-hidden="true">⚠️</span><b>📈 Zvýšenie ceny čaká na potvrdenie (zverejní iba Martin)</b></div><ul>${P.map(([c,x])=>`<li><b>${e(nm(c))}</b> ${f0(x.old)} → <b>${f0(x.tgt)} €/t</b> <small>${x.tgt>x.old?"▲":"▼"} ${f0(Math.abs(x.tgt-x.old))} €/t (${f0(Math.abs(x.tgt-x.old)/x.old*100)} %) · ${e(x.pl)}</small> <button type="button" data-acn="allow:${e(c)}">Zverejniť</button></li>`).join("")}</ul><div class="btns"><button type="button" class="pri" data-acn="allowall">✓ Zverejniť všetky</button></div><div class="s">Pokles ceny sa zverejní sám hneď, zvýšenie iba po tvojom potvrdení.</div></div>`;
+  const P=Object.entries(A.pend||{});if(P.length)h+=`<div class="acn-b warn" role="alert"><div class="acn-bh"><span aria-hidden="true">⚠️</span><b>📈 Zvýšenie ceny čaká na potvrdenie (zverejní iba Martin)</b></div><ul>${P.map(([c,x])=>`<li><b>${e(nm(c))}</b> ${f0(x.old)} → <b>${f0(x.tgt)} €/t</b> <small>${x.tgt>x.old?"▲":"▼"} ${f0(Math.abs(x.tgt-x.old))} €/t (${f0(Math.abs(x.tgt-x.old)/x.old*100)} %)${MAINO()&&x.pl?" · "+e(x.pl):""}</small> <button type="button" data-acn="allow:${e(c)}">Zverejniť</button></li>`).join("")}</ul><div class="btns"><button type="button" class="pri" data-acn="allowall">✓ Zverejniť všetky</button></div><div class="s">Pokles ceny sa zverejní sám hneď, zvýšenie iba po tvojom potvrdení.</div></div>`;
   if((A.expired||[]).length)h+=`<div class="acn-b"><div class="acn-bh"><span aria-hidden="true">⏰</span><b>Tvoja cena vypršala – späť na automatickú</b></div><ul>${A.expired.map(x=>`<li><b>${e(nm(x.com))}</b> ${f0(x.price)} €/t platila do ${dk(x.till)}${A.cfg.auto[x.com]?"":" · komodita nemá automatickú cenu, cena zostala"}</li>`).join("")}</ul><div class="btns"><button type="button" data-acn="expok">OK</button></div></div>`;
   // pripomienka: zapíš svoje ceny (raz za X dní)
   const rd=+A.cfg.remindDays||0,lm=Date.parse(A.cfg.lastMineAt||A.cfg.since||"")||0,snz=+gs(SNZ)||0;
@@ -219,7 +220,7 @@ function bannerHTML(){if(!OWN()||!A.cfg)return "";let h="";const U=unseen();
   return h?`<div class="acn-wrap">${h}</div>`:""}
 
 // ---- karta v záložke Cenník ----
-function cardHTML(){if(!OWN())return ""; // zdroj cien vidí iba majiteľ
+function cardHTML(){if(!MAINO())return ""; // zdroj cien vidí iba Martin (MAIN_OK), nie Jana ani obchodníci
 if(!A.cfg)return `<div class="card acn-card"><div class="tdh"><b>🤖 Automatický cenník · Somotor a Bunge</b><small>načítavam…</small></div></div>`;
   const C=A.calc||{},own=OWN(),cur=Object.fromEntries((STATE.prices||[]).map(p=>[p.com,p.price==null?null:+p.price])),t=T();
   const rows=MKL().map(([c,n])=>{const a=C[c],mine=A.cfg.mine[c],mv=mine&&(!mine.till||mine.till>=t),au=!!A.cfg.auto[c],has=AUTO_COMS.includes(c);
@@ -262,7 +263,7 @@ function inject(){const app=document.getElementById("app");if(!app||!staff())ret
   app.querySelectorAll(".acn-wrap,.acn-card").forEach(x=>x.remove());
   if(typeof TAB==="undefined")return;
   if(OWN()&&(TAB==="home"||TAB==="price")){const b=bannerHTML();if(b){const d=document.createElement("div");d.innerHTML=b;const a=app.querySelector("nav.tabs:not(.trtabs)")||app.querySelector(".hero");if(a)a.after(d.firstChild);else app.prepend(d.firstChild)}}
-  if(TAB==="price"&&OWN()){const f=app.querySelector("#fPrice");if(f){const d=document.createElement("div");d.innerHTML=cardHTML();f.before(d.firstChild);
+  if(TAB==="price"&&MAINO()){const f=app.querySelector("#fPrice");if(f){const d=document.createElement("div");d.innerHTML=cardHTML();f.before(d.firstChild);
     if(A.cfg&&A.cfg.on&&!f.querySelector("[name=ac_till]")){const btn=f.querySelector(".btns");const l=document.createElement("label");l.className="w acn-tl";
       l.innerHTML=`Zmenené ceny platia ako tvoje do<input name="ac_till" type="date" value="${e(addD(T(),+A.cfg.mineDays||7))}"><small>Potom sa komodity s 🤖 vrátia na automatickú cenu. Vymazaná cena = komodita sa nezverejní a automatika sa pre ňu vypne.</small>`;if(btn)btn.before(l)}}}}
 function wrap(){const o=window.renderStaff;if(typeof o!=="function"||o.__acn)return;const w=function(){const r=o.apply(this,arguments);try{inject()}catch(x){}return r};w.__acn=1;Object.keys(o).forEach(k=>{try{w[k]=o[k]}catch(x){}});window.renderStaff=w;try{inject()}catch(x){}}

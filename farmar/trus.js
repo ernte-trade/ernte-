@@ -224,7 +224,7 @@ function renderP(){const P=T.P,sup=P.me.kind==="dodavatel",LS=P.orders||[],PM=P.
   let h=`<nav class="tabs trtabs">${tabs.map(t=>`<button type="button" data-trtab="${t[0]}" aria-pressed="${T.psec===t[0]}"><span class="tl">${e(t[1])}</span></button>`).join("")}</nav>
    <div class="hrow trhr"><div class="btns seg2 trlang"><button type="button" data-trlang="sk" aria-pressed="${T.lang!=="hu"}">🇸🇰 SK</button><button type="button" data-trlang="hu" aria-pressed="${T.lang==="hu"}">🇭🇺 HU</button></div><button type="button" class="ztb" data-trpw>🔑 ${tr("Zmeniť heslo")}</button></div><div class="zt trz">`;
   if(sup){const pr=P.price||{};
-    h+=`<div class="hrk">${can("t_price")?`<div class="ps"><small>${tr("Výkupná cena")}</small><b>${f2(pr.buy)} €/t</b></div>`:""}<div><small>${tr("Odberateľ")}</small><b>${e(P.buyer.name)}</b></div><div><small>${tr("Autá")}</small><b>40 t · ~${f2(pr.load_t,0)} t</b></div></div>`;
+    h+=`<div class="hrk">${can("t_price")?`<div class="ps"><small>${tr("Výkupná cena")}</small><b>${f2(pr.buy)} €/t</b></div>`:""}<div><small>${tr("Odberateľ")}</small><b>ERNTE</b></div><div><small>${tr("Autá")}</small><b>40 t · ~${f2(pr.load_t,0)} t</b></div></div>`;
     if(T.psec==="new"){const ed=T.edit?LS.find(o=>o.id===T.edit):null,S=P.sites||[];
       h+=`<form class="card f" id="trNew"><div class="w t">${ed?"✏️ "+tr("Upraviť")+" "+e(ed.no):"➕ "+tr("Nahlásiť vývoz")}</div>
         <label class="w">${tr("Farma")}<select name="site" required>${S.length>1?`<option value="">—</option>`:""}${S.map(s=>`<option value="${e(s.id)}"${ed&&ed.site_id===s.id?" selected":""}>${e(s.name)}</option>`).join("")}</select></label>

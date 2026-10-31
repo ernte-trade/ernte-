@@ -297,7 +297,8 @@ document.addEventListener("submit",async e=>{const f=e.target;if(f.id!=="fOpsA"&
   busy(b,false);if(r.error){toast("Chyba: "+r.error.message,6000);return}OPSA=null;await loadOps();toast("✓ Poznámka uložená.")},true);
 
 // ===== KALKULAČKA ERNTE (z Claude app) =====
-window.vCalc=function(){requestAnimationFrame(calcFit);return (window.susCardHTML?susCardHTML():"")+`<div class="calcw" id="calcW"><iframe class="calcfr" src="kalkulacka.html?v=20261026c" title="ERNTE Kalkulačka nákupnej ceny" allow="clipboard-write"></iframe></div>`};
+/* 31. 10. príkaz majiteľa: Kalkulačka nákupnej ceny (odberatelia, DAP, odpočty = možnosti predaja) iba Martin (MAIN_OK); ostatní tu majú kalkulačku sušenia */
+window.vCalc=function(){const main=typeof window.MAIN_OK==="function"&&window.MAIN_OK();if(main)requestAnimationFrame(calcFit);return (window.susCardHTML?susCardHTML():"")+(main?`<div class="calcw" id="calcW"><iframe class="calcfr" src="kalkulacka.html?v=20261026c" title="ERNTE Kalkulačka nákupnej ceny" allow="clipboard-write"></iframe></div>`:`<div class="card"><div class="s">🔒 Kalkulačku nákupnej ceny (odberatelia a doprava) vidí iba majiteľ. Tu máš kalkulačku sušenia a čistenia.</div></div>`)};
 function calcFit(){const w=document.getElementById("calcW");if(!w)return;const hd=document.querySelector("header.top"),nv=document.querySelector("#app>.tabs,.tabs");
   let top=hd?Math.max(0,hd.getBoundingClientRect().bottom):0,bot=0;if(nv){const r=nv.getBoundingClientRect();if(r.top>innerHeight/2)bot=Math.max(0,innerHeight-r.top);else top=Math.max(top,r.bottom)}w.style.top=top+"px";w.style.bottom=bot+"px"}
 addEventListener("resize",()=>calcFit());addEventListener("orientationchange",()=>setTimeout(calcFit,300));
