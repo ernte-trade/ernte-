@@ -43,6 +43,7 @@ Spoločné opravy rozloženia patria do `farmar/fit.css` (načítava sa posledn�
   Počasie (`wxs.js` → `wxCard`): pri prekreslení tej istej záložky s rovnakými údajmi sa vráti zástupca s výškami a pôvodný DOM (`[data-wsk]`, `KP`) sa vloží späť – video, satelit aj radar bežia ďalej.
 
 ## Bezpečnosť a dáta
+- **PRÍKAZ MAJITEĽA (31. 10.): GDPR – každý prihlásený prečíta a podpíše** (`gdprsign.js`, tabuľka `gdpr_sign`, `gdpr_status`/`gdpr_sign`/`gdpr_list`): pred `enter()` celé poučenie `sukromie.html` (musí doskrolovať na koniec), zaškrtnutie, meno a priezvisko, podpis prstom → uloží sa podpis, verzia `VER`, SHA-256 textu, čas, zariadenie. Nová verzia poučenia = zvýšiť `VER` → podpíšu všetci znova. Majiteľ: Tím → 🛡️ GDPR súhlasy (+ PDF). Pri zmene spracúvania vždy aktualizovať `sukromie.html` (aj HU súhrn).
 - Žiadne heslá, kľúče, pečiatky ani obchodné dáta v čitateľnej podobe v repozitári – iba zašifrované migrácie.
 - Marža, zisk, mzdy a výsledok vidí iba majiteľ. Farmár nikdy nevidí odberateľa, burzu, predajné ceny ani iných farmárov.
 - Upozornenia príjemcom odchádzajú až po schválení majiteľom (📤), okrem výslovne povolených automatických správ
