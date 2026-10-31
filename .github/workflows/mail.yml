@@ -4,7 +4,7 @@ name: ernte-mail
 on:
   repository_dispatch:
     types: [ernte-mail]
-  # databáza (token bez práva na dispatch) → komentár „ernte-mail“ so zašifrovaným ID v technickom vlákne #51
+  # databáza (token bez práva na dispatch) → komentár „ernte-mail <ID>“ v #51; heslo schránky až po overení kódu zverejneného ako github-actions[bot]
   issue_comment:
     types: [created]
 permissions:
@@ -34,16 +34,13 @@ jobs:
         env:
           JOB_ID: ${{ github.event.client_payload.id }}
       - if: github.event_name == 'issue_comment'
-        run: |
-          printf '%s' "$BODY" | sed -n '/BEGIN PGP/,/END PGP/p' > "$RUNNER_TEMP/m.asc"
-          tr -d '\r' < "$RUNNER_TEMP/m.asc" > "$RUNNER_TEMP/m2.asc"
-          ID=$(gpg --batch -q --pinentry-mode loopback --passphrase "$PW" -d "$RUNNER_TEMP/m2.asc" 2>"$RUNNER_TEMP/g.err" | tr -cd '0-9a-f-' | head -c 36)
-          echo "::notice::ID ${#ID} znakov, pgp $(wc -l < "$RUNNER_TEMP/m2.asc") riadkov $(head -c 120 "$RUNNER_TEMP/g.err" | tr -cd 'a-zA-Z :')"
-          JOB_ID="$ID" node send.mjs | sed 's/^/::notice::/'
+        run: node send.mjs | sed 's/^/::notice::/'
         working-directory: .github/mail
         env:
-          BODY: ${{ github.event.comment.body }}
-          PW: ${{ secrets.ERNTE_MIG_PASS }}
+          MODE: comment
+          JOB_ID: ${{ github.event.comment.body }}
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
       - if: always() && github.event_name == 'issue_comment'
         run: gh api -X DELETE repos/${{ github.repository }}/issues/comments/${{ github.event.comment.id }} --silent || true
         env:
