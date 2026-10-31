@@ -1,6 +1,8 @@
 name: burza-probe
 on:
   workflow_dispatch:
+permissions:
+  contents: write
 jobs:
   p:
     runs-on: ubuntu-latest
