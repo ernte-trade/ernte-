@@ -11,7 +11,7 @@ const N=(x,d)=>Number(x).toLocaleString("sk-SK",{minimumFractionDigits:d||0,maxi
 const td=()=>new Date().toLocaleDateString("sv-SE");
 let FV="home";const W={com:null,tons:"",harvest:null,fwd:null,need:true,date:"",time:"08:00",place:"",sent:null,busy:0};
 const T={home:"",predat:"Predať komoditu",hist:"Moje obchody a história",ceny:"Výkupné ceny",odvoz:"Odvoz tovaru",wx:"Počasie",kontakt:"Obchodník a kontakt",sluzby:"Služby strojmi",viac:"Ďalšie"};
-const IC={predat:"money",hist:"deals",ceny:"price",odvoz:"trans",wx:"wx",kontakt:"phone",sluzby:"agro",viac:"scroll"};
+const IC={uvod:"star",predat:"money",hist:"deals",ceny:"price",odvoz:"trans",wx:"wx",kontakt:"phone",sluzby:"agro",viac:"scroll"};
 function secOf(h2){const t=h2.textContent;return /Môj prehľad|požiadavky|Moje obchody/i.test(t)?"hist":/Výkupné ceny/i.test(t)?"ceny":/Počasie/i.test(t)?"wx":/Doprava VALKO|Odvoz/i.test(t)?"odvoz":/Kontakt/i.test(t)?"kontakt":/Žatva|služb|Agro|stroj/i.test(t)?"sluzby":"viac"}
 // ---------- obchodníci (farm_contacts) ----------
 let CT=null;async function loadCT(){if(CT)return CT;try{const r=await sb.rpc("farm_contacts");CT=(!r.error&&Array.isArray(r.data))?r.data:[]}catch(x){CT=[]}return CT}
@@ -27,6 +27,7 @@ function ctHTML(big){const F=F_(),L=CT||[],k=kraj(F);if(!L.length)return `<div c
 function tiles(){const F=F_(),P=(STATE.prices||[]).filter(p=>p.price!=null),top=P.slice().sort((a,b)=>b.price-a.price)[0];
   const nd=(STATE.deals||[]).filter(d=>!/zrus|zaplat/.test(d.status||"")).length,nr=(STATE.reqs||[]).filter(r=>r.status==="nova").length,ntr=(STATE.trips||[]).filter(t=>!["vylozene","zrusena"].includes(t.status)).length;
   const L=[];
+  L.push(["uvod","Úvod","burza, ceny, počasie, obchodník"]);
   if(fc("f_sell")&&P.length)L.push(["predat","Predať komoditu",top?`najvyššia ${E(comName(top.com))} ${N(top.price,0)} €/t`:"",1]);
   if(fc("f_deals")||fc("f_remain"))L.push(["hist","Moje obchody",nd?`${nd} rozbehnuté${nr?` · ${nr} čaká`:""}`:"história a zmluvy"]);
   if(fc("f_transport")||fc("f_trucks"))L.push(["odvoz","Odvoz",ntr?`${ntr} auto naplánované`:"objednať kamión"]);
@@ -98,6 +99,7 @@ addEventListener("popstate",()=>{if(F_()&&FV!=="home"){FV="home";if(typeof rende
 const SELW="[data-fv],[data-fvhome],[data-wcom],[data-wt],[data-wh],[data-wn],[data-wsend]";let PD=null;
 document.addEventListener("pointerdown",e=>{const t=e.target.closest&&e.target.closest(SELW);PD=t?{el:t,t:Date.now()}:null},true);
 document.addEventListener("click",async e=>{if(!F_())return;let t=e.target.closest&&e.target.closest(SELW);if(!t&&PD&&Date.now()-PD.t<900&&PD.el.isConnected&&e.target.closest&&e.target.closest(".fwz,#app"))t=PD.el;PD=null;if(!t)return;e.preventDefault();
+  if(t.dataset.fv==="uvod"){if(window.ernteWelcome)ernteWelcome();return}
   if(t.dataset.fv){go(t.dataset.fv);return}
   if("fvhome" in t.dataset){if(history.state&&history.state.fv){history.back()}else{FV="home";renderFarmer()}return}
   if(t.dataset.wcom){W.com=t.dataset.wcom;W.harvest=null;W.fwd=null;paintWz();next("fs2");return}

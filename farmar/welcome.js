@@ -351,14 +351,14 @@ function goHome(){try{if(typeof FARMER!=="undefined"&&FARMER){if(window.farmGo)f
   if(b){if(typeof TAB!=="undefined"&&TAB===b.dataset.tab){window.scrollTo(0,0);return}b.click()}window.scrollTo(0,0)}catch(x){}}
 /* po návrate do aplikácie (bola na pozadí aspoň 30 s) sa úvod ukáže znova */
 let hidAt=0;document.addEventListener("visibilitychange",()=>{if(document.hidden){hidAt=Date.now();return}
-  if(hidAt&&Date.now()-hidAt>=10*60e3&&kind()&&!document.querySelector(".pinmod,dialog[open],.modal,.ovl")&&!(typeof window.formBusy==="function"&&formBusy())){window.__wlRet=1;show(true)}hidAt=0}); /* úvod pri návrate až po 10 min neprítomnosti; po „Poďme na to“ ostane otvorená tá istá obrazovka (príkaz majiteľa 31. 10.) */
+  hidAt=0}); /* PRÍKAZ MAJITEĽA 31. 10. 12:53: úvod sa pri návrate ani pri otvorení NEUKAZUJE – iba po novom prihlásení, ↻ Obnoviť alebo tlačidlom 🌅 Úvod */ /* úvod pri návrate až po 10 min neprítomnosti; po „Poďme na to“ ostane otvorená tá istá obrazovka (príkaz majiteľa 31. 10.) */
 let AC=null;function honk(chick){try{AC=AC||new (window.AudioContext||window.webkitAudioContext)();const t=AC.currentTime;
   const tone=(f,a,b,type)=>{const o=AC.createOscillator(),g=AC.createGain();o.type=type||"square";o.frequency.setValueAtTime(f,t+a);if(chick)o.frequency.exponentialRampToValueAtTime(f*1.8,t+b);g.gain.setValueAtTime(0,t+a);g.gain.linearRampToValueAtTime(.08,t+a+.02);g.gain.linearRampToValueAtTime(0,t+b);o.connect(g);g.connect(AC.destination);o.start(t+a);o.stop(t+b+.02)};
   if(chick){tone(700,0,.12,"triangle");tone(900,.16,.3,"triangle")}else{tone(392,0,.22);tone(330,.26,.5)}}catch(x){}}
 function confetti(el,x,y){const em=["🌾","🌾","🌻","✨","🟡"];for(let i=0;i<12;i++){const d=document.createElement("span");d.className="wcf";d.textContent=em[i%em.length];d.style.left=x+"px";d.style.top=y+"px";
   d.style.setProperty("--dx",(Math.random()*240-120)+"px");d.style.setProperty("--dy",(-80-Math.random()*160)+"px");el.appendChild(d);setTimeout(()=>d.remove(),1100)}}
 function close(el){if(el._gr)clearInterval(el._gr);if(el._bz)clearInterval(el._bz);if(el._ck)clearInterval(el._ck);if(el._px)clearInterval(el._px);pxSave();el.classList.remove("in");el.classList.add("out");document.documentElement.classList.remove("wlon");setTimeout(()=>el.remove(),380)}
-window.ernteWelcome=()=>show(true);
+window.ernteWelcome=()=>{window.__wlRet=1;show(true)};
 /* poistka: „Poďme na to“ vždy zavrie úvod, aj keby sa niečo pri zobrazení pokazilo */
 const fsGo=ev=>{const b=ev.target&&ev.target.closest&&ev.target.closest("[data-wlgo]");if(!b)return;const w=b.closest(".wlc");if(!w||w._gone)return;ev.preventDefault();ev.stopPropagation();w._gone=1;try{window.opushAuto&&opushAuto(true)}catch(x){}close(w);if(w.dataset.ret!=="1")goHome()};
 document.addEventListener("click",fsGo,true);document.addEventListener("touchend",fsGo,{capture:true,passive:false});
@@ -526,8 +526,15 @@ html.wlon,html.wlon body{overflow:hidden}
 .wlc.por .wjk{text-align:left}.wlc.por .wla{justify-content:center;margin-left:0;margin-right:0}
 .wlc.por .wla{flex-wrap:wrap}.wlc.por .wla>button[data-wlgo]{flex:1 0 auto;min-width:max-content;white-space:nowrap;overflow:visible}.wlc.por .wla>button.wmore{flex:1 1 140px;min-width:0;white-space:normal}`;document.head.appendChild(s)}
 css();
+
+/* 🌅 tlačidlo Úvod – hneď prvé v lište sekcií (tím); farmár ho má ako prvú dlaždicu (farmapp.js) */
+function uvodBtn(){if(!kind()||(typeof FARMER!=="undefined"&&FARMER))return;const nav=document.querySelector("#app nav.tabs");if(!nav)return;let b=nav.querySelector(":scope>.uvodb");
+  if(!b){b=document.createElement("button");b.type="button";b.className="uvodb";b.setAttribute("data-uvod","");b.innerHTML='<span class="ti" aria-hidden="true">'+(nav.classList.contains("otab")?'<img src="img/ico/star.png" alt="" width="34" height="34">':"🌅")+'</span><span class="tl">Úvod</span>';}
+  if(nav.firstElementChild!==b&&!(nav.firstElementChild&&nav.firstElementChild.classList.contains("ds-ind")&&nav.firstElementChild.nextElementSibling===b)){const ind=nav.querySelector(":scope>.ds-ind");if(ind)ind.after(b);else nav.prepend(b)}}
+document.addEventListener("click",e=>{const b=e.target.closest&&e.target.closest("[data-uvod]");if(!b)return;e.preventDefault();e.stopPropagation();window.ernteWelcome()},true);
+{let q2=0;const go2=()=>{const a=document.getElementById("app");if(!a){setTimeout(go2,500);return}new MutationObserver(()=>{if(q2)return;q2=(window.ernteSoon||requestAnimationFrame)(()=>{q2=0;uvodBtn()})}).observe(a,{childList:true,subtree:false});uvodBtn()};go2()}
 let tries=0;const t=setInterval(()=>{tries++;const app=document.getElementById("app");
-  if(kind()&&app&&app.children.length&&!document.querySelector(".pinmod")){clearInterval(t);setTimeout(()=>show(false),600)}
+  if(kind()&&app&&app.children.length&&!document.querySelector(".pinmod")){clearInterval(t);let want=false;try{want=localStorage.getItem("ernte-wl-want")==="1";localStorage.removeItem("ernte-wl-want")}catch(x){}if(want)setTimeout(()=>show(false),600)}
   if(tries>120)clearInterval(t)},500);
 })();
 // 📍 najbližšia čerpacia stanica → hneď navigácia v Google Maps (príkaz majiteľa 30. 10.)

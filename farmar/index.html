@@ -822,6 +822,7 @@ html[data-theme=light] .ftbl th{color:#0f172a}html[data-theme=light] .fdban{colo
 <script>/* prihlasovacie údaje z PDF pozvánky (ťuknutie na kód) – vyplnia sa do prihlásenia, z adresy sa hneď zmažú */
 try{var m=/#prihlas=([A-Za-z0-9_-]+)/.exec(location.hash||"");if(m){var j=JSON.parse(decodeURIComponent(escape(atob(m[1].replace(/-/g,"+").replace(/_/g,"/")))));sessionStorage.setItem("ernte-prefill",JSON.stringify({u:String(j.u||""),k:String(j.k||""),t:Date.now()}));if(j.l&&/^(sk|hu|en|de)$/.test(j.l)){try{if(!localStorage.getItem("ernte-lang"))localStorage.setItem("ernte-lang",j.l)}catch(e){}}history.replaceState(null,"",location.pathname+location.search)}
 var q=JSON.parse(sessionStorage.getItem("ernte-prefill")||"null");if(q&&Date.now()-q.t<15*60e3)window.ERNTE_PREFILL={u:q.u,k:q.k};else sessionStorage.removeItem("ernte-prefill")}catch(e){}</script>
+<script>try{if(/access_token=|token_hash=/.test(location.hash+location.search))localStorage.setItem("ernte-wl-want","1")}catch(x){}</script>
 <script>window.LEAFLET_SRC="leaflet.js"</script>
 <script src="config.js"></script>
 <script src="vendor/supabase-2.45.4.js"></script>
@@ -892,7 +893,7 @@ async function boot(){
 
 // ================= prihlásenie =================
 let LOGIN={email:"",sent:false};
-function showLogin(){$("outBtn").hidden=true;$("refBtn").hidden=true;$("aiBtn").hidden=true;$("hS").textContent="výkup komodít";
+function showLogin(){try{localStorage.setItem("ernte-wl-want","1")}catch(x){} /* úvod LIVE iba po novom prihlásení alebo ↻ Obnoviť (príkaz majiteľa 31. 10.) */$("outBtn").hidden=true;$("refBtn").hidden=true;$("aiBtn").hidden=true;$("hS").textContent="výkup komodít";
   const A=$("app");
   if(!LOGIN.sent){A.innerHTML=`<div class="center"><div class="hero"><small>Vitajte</small><b>Prihlásenie</b><small>Zadajte e-mail alebo telefón a heslo, ktoré vám poslala ERNTE.</small><small lang="hu" style="opacity:.8">🇭🇺 Bejelentkezés: adja meg az e-mail címét vagy telefonszámát és az ERNTE-től kapott jelszót.</small></div>
     <form class="card" id="fEmail"><label>E-mail alebo telefón · E-mail vagy telefon<input name="email" type="text" inputmode="email" autocomplete="username" autocapitalize="off" required value="${esc(LOGIN.email)}" placeholder="meno@firma.sk alebo 0905 123 456"></label><label>Heslo · Jelszó <span style="font-weight:400">(od ERNTE · az ERNTE-től)</span><input name="pw" type="password" autocomplete="current-password"></label><button type="button" class="lgpaste" data-lgpaste>📋 Vložiť skopírované meno a heslo z PDF · Beillesztés</button><button class="pri" type="submit">Prihlásiť / Belépés</button></form>${installHint()}</div>`}
@@ -1258,7 +1259,7 @@ let REFT=0;async function refreshAll(btn){const tb=$("refBtn");if(tb){tb.classLi
   REFT=Date.now();if(tb){tb.classList.remove("spin");tb.disabled=false}renderStaff();toast("Obnovené "+new Date().toLocaleTimeString("sk-SK",{hour:"2-digit",minute:"2-digit"}))}
 // ↻ = obnoviť CELÚ aplikáciu na 100 %: zmaže uložené súbory aplikácie (cache), stiahne najnovšiu verziu
 // a načíta všetko znova – prihlásenie aj otvorená záložka ostanú.
-async function hardRefresh(){const tb=$("refBtn");if(tb){tb.classList.add("spin");tb.disabled=true}
+async function hardRefresh(){try{localStorage.setItem("ernte-wl-want","1")}catch(x){}const tb=$("refBtn");if(tb){tb.classList.add("spin");tb.disabled=true}
   try{toast("Obnovujem celú aplikáciu…",4000)}catch(x){}
   try{if(typeof TAB!=="undefined"&&TAB)sessionStorage.setItem("ernte-tab",TAB)}catch(x){}
   try{if(window.caches){const K=await caches.keys();await Promise.all(K.map(k=>caches.delete(k)))}}catch(x){}
@@ -2965,7 +2966,7 @@ document.addEventListener("click",e=>{const b=e.target.closest("[data-dfp]");if(
 <script src="odberatel.js?v=20261029-2320"></script>
 <script src="watermark.js?v=20261028-2320"></script>
 <script src="valkopay.js?v=20261031-0920" defer></script>
-<script src="welcome.js?v=20261031-1250"></script>
+<script src="welcome.js?v=20261031-1300"></script>
 <script src="ernmaps.js?v=20261031-0700" defer></script>
 <script src="odb.js?v=20261030-0715"></script>
 <script src="zdash.js?v=20261027-1620"></script>
@@ -3014,7 +3015,7 @@ document.addEventListener("click",e=>{const b=e.target.closest("[data-dfp]");if(
 <script src="heslainv.js?v=20261031-1300"></script>
 <script src="ownertabs.js?v=20261031-1140"></script>
 <script src="clang.js?v=20261031-1200"></script>
-<script src="farmapp.js?v=20261031-1200"></script>
+<script src="farmapp.js?v=20261031-1300"></script>
 <script src="kid.js?v=20261031-1300"></script>
 <script src="plan.js?v=20261031-1120"></script>
 <script src="voice.js?v=20261031-1115"></script>
