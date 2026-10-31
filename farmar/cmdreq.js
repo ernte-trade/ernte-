@@ -29,7 +29,7 @@ async function load(){if(!OWN()||C.busy)return;C.busy=true;try{const r=await sb.
   if(typeof TAB!=="undefined"&&TAB==="fleet"&&typeof renderStaff==="function")try{renderStaff()}catch(x){}}
 window.cmdReqHTML=function(){if(!OWN())return "";css();if(!C.s){load();return `<div class="card"><b>✉️ Žiadosť podpore Commandera</b><div class="s">Načítavam…</div></div>`}
   const s=C.s,rf=s.refuel||{},to=C.to!=null?C.to:(s.to||""),sent=s.sent_at,ok=+rf.code===200;
-  const from=s.valko_mail?"zo schránky VALKO":s.ernte_mail?"zo schránky jana.valkova@ernte.sk (VALKO ešte nie je nastavená)":"";
+  const from=s.valko_mail?"zo schránky VALKO":s.ernte_mail?"zo schránky ERNTE (VALKO ešte nie je nastavená)":"";
   let st="";
   if(sent)st=`<div class="box${s.checked_at?(s.ok?"":" w"):""}"><div>📨 Odoslané <b>${E(dd(sent))}</b> na ${E(s.to||"")}. ${s.checked_at?(s.ok?"✅ Kontrola: tankovania už idú (200).":"⚠️ Kontrola "+E(dd(s.checked_at))+": refueling imports stále vracia "+E(s.code||"chybu")+" – pošli pripomienku."):`Kontrola tankovaní <b>${E(dd(s.check_at))}</b> (o 3 pracovné dni).`}</div></div>`;
   return `<details class="card dcw cmdq"${sent&&s.ok?"":" open"}><summary><b>✉️ Žiadosť podpore Commandera o práva API</b><small>${ok?"tankovania ✓ 200":"tankovania "+E(rf.code||"?")}${sent?" · odoslané "+E(dd(sent)):""}</small></summary>

@@ -60,7 +60,7 @@ document.addEventListener("click",e=>{const b=e.target.closest&&e.target.closest
   if(k==="x")close();else if(k==="print")doPrint();else if(k==="pdf")savePdf();else if(k==="share")sendPdf();else if(k==="mail")mailBox();else if(k==="msend")mailDirect();else if(k==="mcfg")mailCfgSave();else if(k==="mx"){const b=document.getElementById("pvMail");if(b)b.remove()}else if(k==="mold"){const b=document.getElementById("pvMail");if(b)b.remove();mailPdf()}});
 // 📧 odoslanie priamo z aplikácie (schránka ERNTE cez databázu → GitHub Actions); bez nastavenia → zdieľanie / pošta
 let MR=null;
-const PRF={ernte:{t:"Zmluvy a zúčtovania – ERNTE",host:"smtp.office365.com",port:587,user:"jana.valkova@ernte.sk",name:"ERNTE spol. s r.o.",kind:"Microsoft 365"},
+const PRF={ernte:{t:"Zmluvy a zúčtovania – ERNTE",host:"smtp.office365.com",port:587,user:"ernte@ernte.sk",name:"ERNTE spol. s r.o.",kind:"Microsoft 365"},
   danube:{t:"Danube Trade – zmluvy",host:"smtp.gmail.com",port:465,user:"danube.commodities.kft@gmail.com",name:"Danube Commodities Kft.",kind:"Gmail – zadaj <b>heslo aplikácie</b>: Google účet → Zabezpečenie → Dvojstupňové overenie → Heslá aplikácií"},
   valko:{t:"VALKO – doprava (CMR, jazdy)",host:"smtp.office365.com",port:587,user:"",ph:"…@valko-logistics.sk",name:"VALKO s.r.o.",kind:"schránka @valko-logistics.sk – server a port uprav podľa poskytovateľa"}};
 const PF=k=>PRF[k]||PRF.ernte;window.ernteMailProfiles=PRF;
