@@ -11,7 +11,7 @@ const base=()=>"https://app.ernte.sk/farmar/";
 const b64=o=>btoa(unescape(encodeURIComponent(JSON.stringify(o)))).replace(/\+/g,"-").replace(/\//g,"_").replace(/=+$/,"");
 const link=r=>base()+"#prihlas="+b64({u:r.login,k:r.pw});
 const first=n=>String(n||"").replace(/^(PD|SHR|AGRO|Ing\.?|Mgr\.?|Bc\.?)\s+/i,"").split(/\s+/)[0]||"";
-const msg=r=>`Dobrý deň${r.k==="tim"&&first(r.name)?" "+first(r.name):""},\n\npripravili sme vám prístup do aplikácie ERNTE${r.k==="farmar"?" – výkupné ceny, vaše zmluvy, odvozy a zúčtovanie":""}.\nStačí ťuknúť na odkaz nižšie – prihlási vás to samo. Potom si nastavíte vlastné heslo.\n\nPrihlasovacie meno: ${r.login}\nHeslo na prvé prihlásenie: ${r.pw}\n\nMartin Vaľko, ERNTE spol. s r.o.\n\n👉 ERNTE Trade & Logistic: ${link(r)}`;
+const msg=r=>typeof inviteText==="function"?inviteText({team:r.k==="tim",who:r.login,pw:r.pw,name:r.name,hu:r.firma==="DANUBE"}):`Prihlasovacie meno: ${r.login}\nHeslo: ${r.pw}\n\n👉 ERNTE Trade & Logistic: ${link(r)}`;
 const tel=p=>String(p||"").replace(/[^\d+]/g,"").replace(/^00/,"+").replace(/^0(\d{9})$/,"+421$1").replace(/^\+/,"");
 
 function html(){const p=D.pend;
@@ -43,8 +43,8 @@ document.addEventListener("click",async e=>{const t=e.target.closest&&e.target.c
   const r=D.res&&D.res[+t.closest("[data-hi]").dataset.hi];if(!r)return;const m=msg(r),a=t.dataset.hia;
   if(a==="wa"){const p=tel(r.phone);window.open((p?"https://wa.me/"+p:"https://wa.me/")+"?text="+encodeURIComponent(m),"_blank","noopener")}
   else if(a==="sms"){location.href="sms:"+(r.phone?String(r.phone).replace(/\s/g,""):"")+"?&body="+encodeURIComponent(m)}
-  else if(a==="mail"){const em=/@/.test(r.login)?r.login:"";location.href="mailto:"+em+"?subject="+encodeURIComponent("Prístup do aplikácie ERNTE")+"&body="+encodeURIComponent(m)}
-  else if(a==="pdf"){if(window.inviteCardSend)window.inviteCardSend({txt:m.replace(/\n\n👉[\s\S]*$/,"").replace("Heslo na prvé prihlásenie:","Heslo:"),pw:r.pw,name:r.name,team:r.k==="tim"},"pdf",t);else tst("PDF pozvánka nie je dostupná.")}
+  else if(a==="mail"){const em=/@/.test(r.login)&&!/@tel\.ernte\.sk$/.test(r.login)?r.login:"";location.href="mailto:"+em+"?subject="+encodeURIComponent(r.firma==="DANUBE"?"Hozzáférés – Danube / ERNTE alkalmazás":"Prístup do aplikácie ERNTE")+"&body="+encodeURIComponent(m)}
+  else if(a==="pdf"){if(window.inviteCardSend)window.inviteCardSend({txt:m.replace(/\n\n👉[\s\S]*$/,"").replace("Heslo na prvé prihlásenie:","Heslo:").replace("Jelszó az első belépéshez:","Jelszó:"),pw:r.pw,name:r.name,team:r.k==="tim"},"pdf",t);else tst("PDF pozvánka nie je dostupná.")}
   else if(a==="cp"){try{await navigator.clipboard.writeText(m);tst("✓ Skopírované – vložte do správy.")}catch(x){prompt("Skopírujte:",m)}}},true);
 
 {const s=document.createElement("style");s.textContent=`.hinv h2{margin:0 0 6px}.hinvp{margin:6px 0;line-height:1.5;opacity:.92}.hinvs{display:grid;gap:6px;margin:10px 0;font-size:.92rem}.hinvs small{opacity:.75}

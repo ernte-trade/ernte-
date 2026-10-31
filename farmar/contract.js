@@ -136,7 +136,7 @@ async function open(id){const d=(STATE.deals||[]).find(x=>x.id===id);if(!d){toas
   const R=await rules();const okI=v=>typeof v==="string"&&/^data:image\/(png|jpeg);base64,[A-Za-z0-9+/=]+$/.test(v)?v:null;let ST=null,FS=null;
   try{const r=await sb.rpc("contract_sigs",{p_deal:d.id});if(!r.error&&r.data){ST=okI(r.data.ernte);if(okI(r.data.farmer))FS={img:okI(r.data.farmer),name:r.data.name,at:r.data.signed_at}}
     else{const q=await sb.rpc("contract_stamp",{p_deal:d.id});if(!q.error)ST=okI(q.data)}}catch(x){}
-  w.document.open();w.document.write(html(d,F,R,ST,FS));w.document.close();setTimeout(()=>{try{w.focus();w.print()}catch(x){}},900)}
+  let H=html(d,F,R,ST,FS);if(window.contractBi){try{H=await window.contractBi(H,d,F,w)}catch(x){}}w.document.open();w.document.write(H);w.document.close();setTimeout(()=>{try{w.focus();w.print()}catch(x){}},900)}
 window.contractPdf=open;window.contractHTML=html;
 // ---------- ARCHÍV ZMLÚV: podľa farmára a komodity, všetky zmluvy aj spätne ----------
 const STN={navrh:"čaká na podpis",podpisany:"podpísaná",odvoz:"odvoz beží",odvezeny:"odvezená",fakturacia:"fakturácia",zaplateny:"zaplatená",zruseny:"zrušená"};

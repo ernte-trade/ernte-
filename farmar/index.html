@@ -820,13 +820,13 @@ html[data-theme=light] .ftbl th{color:#0f172a}html[data-theme=light] .fdban{colo
 <div class="toast" id="toast" role="status"></div>
 
 <script>/* prihlasovacie údaje z PDF pozvánky (ťuknutie na kód) – vyplnia sa do prihlásenia, z adresy sa hneď zmažú */
-try{var m=/#prihlas=([A-Za-z0-9_-]+)/.exec(location.hash||"");if(m){var j=JSON.parse(decodeURIComponent(escape(atob(m[1].replace(/-/g,"+").replace(/_/g,"/")))));sessionStorage.setItem("ernte-prefill",JSON.stringify({u:String(j.u||""),k:String(j.k||""),t:Date.now()}));history.replaceState(null,"",location.pathname+location.search)}
+try{var m=/#prihlas=([A-Za-z0-9_-]+)/.exec(location.hash||"");if(m){var j=JSON.parse(decodeURIComponent(escape(atob(m[1].replace(/-/g,"+").replace(/_/g,"/")))));sessionStorage.setItem("ernte-prefill",JSON.stringify({u:String(j.u||""),k:String(j.k||""),t:Date.now()}));if(j.l&&/^(sk|hu|en|de)$/.test(j.l)){try{if(!localStorage.getItem("ernte-lang"))localStorage.setItem("ernte-lang",j.l)}catch(e){}}history.replaceState(null,"",location.pathname+location.search)}
 var q=JSON.parse(sessionStorage.getItem("ernte-prefill")||"null");if(q&&Date.now()-q.t<15*60e3)window.ERNTE_PREFILL={u:q.u,k:q.k};else sessionStorage.removeItem("ernte-prefill")}catch(e){}</script>
 <script>window.LEAFLET_SRC="leaflet.js"</script>
 <script src="config.js"></script>
 <script src="vendor/supabase-2.45.4.js"></script>
 <script src="pdfview.js?v=20261030-1010"></script>
-<script src="lang.js?v=20261031-1120"></script>
+<script src="lang.js?v=20261031-1200"></script>
 <script src="verzia.js?v=20261031-0700" defer></script>
 <script>
 "use strict";
@@ -907,6 +907,11 @@ function loginId(v){v=String(v||"").trim().toLowerCase();if(v.includes("@"))retu
 function genPw(name){const w=["Klas","Zrno","Pole","Repka","Soja","Raz","Mlyn","Sklad","Brazda","Jacmen"],a=new Uint32Array(3);crypto.getRandomValues(a);
   let m=String(name||"").trim().replace(/^(PD|SHR|AGRO|Ing\.?|Mgr\.?|Bc\.?)\s+/i,"").split(/\s+/)[0].normalize("NFD").replace(/[\u0300-\u036f]/g,"").replace(/[^A-Za-z]/g,"");
   m=m.length>=2?m[0].toUpperCase()+m.slice(1,10).toLowerCase():w[a[0]%w.length];return m+"-"+String(1000+a[1]%9000)+".!?#"[a[2]%4]} // heslo z mena: Meno-1234. – každému iné
+// pozvánka: odkaz s automatickým prihlásením (#prihlas), Danube po maďarsky – príkaz majiteľa 31. 10.
+function inviteLink(u,k,l){let b="";try{b=btoa(unescape(encodeURIComponent(JSON.stringify(l?{u,k,l}:{u,k})))).replace(/\+/g,"-").replace(/\//g,"_").replace(/=+$/,"")}catch(e){}return "https://app.ernte.sk/farmar/"+(b?"#prihlas="+b:"")}
+function inviteText(o){const L=inviteLink(o.who,o.pw,o.hu?"hu":null);
+  if(o.hu)return `Jó napot!${o.team?"":" A Danube Commodities Kft. alkalmazásában láthatja a felvásárlási árakat, szerződéseit és az időjárást."}\n\nFelhasználónév: ${o.who}\nJelszó az első belépéshez: ${o.pw}\n\nKoppintson a linkre – automatikusan belépteti. Utána állítson be saját, erős jelszót.\n\nMartin Vaľko\n\n👉 ERNTE Trade & Logistic: ${L}`;
+  return `Dobrý deň,${o.team?" tu je váš prístup do aplikácie ERNTE Trade & Logistic.":" ERNTE Trade & Logistic má pre vás aplikáciu s výkupnými cenami, vašimi obchodmi a počasím."}\n\nPrihlasovacie meno: ${o.who}\nHeslo na prvé prihlásenie: ${o.pw}\n\nŤuknite na odkaz – prihlási vás to samo. Potom si nastavíte vlastné silné heslo.\nAplikáciu si dajte na plochu (Zdieľať → Pridať na plochu).\n\nMartin Vaľko, ERNTE spol. s r.o.\n\n👉 ERNTE Trade & Logistic: ${L}`}
 function installHint(){if(isStandalone())return "";const ios=/iphone|ipad|ipod/i.test(navigator.userAgent);
   return `<div class="box"><b>Tip: dajte si ERNTE na plochu</b><div>${ios?"V Safari ťuknite dole na <b>Zdieľať</b> (štvorček so šípkou) → <b>Pridať na plochu</b>.":"V prehliadači otvorte ponuku <b>⋮</b> → <b>Pridať na plochu</b> / <b>Inštalovať aplikáciu</b>."} Potom ERNTE otvárate ako aplikáciu.</div></div>`}
 
@@ -2708,7 +2713,7 @@ function inviteBox(I,sms){const t=I.pw?I.txt.split(I.pw).join(PWMASK):I.txt;
 })();
 async function teamLogin(login,name,role){const pw=genPw(name);const r=await sb.rpc("set_staff_login",{login_in:login,name_in:name,role_in:role,pw});if(r.error){toast("Nepodarilo sa: "+r.error.message,7000);return}
   const who=String(r.data).endsWith("@tel.ernte.sk")?login:r.data;const tel=String(r.data).endsWith("@tel.ernte.sk")?String(r.data).split("@")[0]:"";
-  STATE.invite={team:1,name,tel,pw,txt:`Dobrý deň, tu je prístup do aplikácie ERNTE Trade & Logistic (${ROLES[role]}).\n\nPrihlásenie: ${who}\nHeslo: ${pw}\n\nPo prihlásení si ju dajte na plochu.\n\n👉 ERNTE Trade & Logistic: ${APP_URL}`};await loadTeam();renderStaff();window.scrollTo(0,0)}
+  STATE.invite={team:1,name,tel,pw,txt:inviteText({team:1,who,pw,name,hu:/karoczkai|j[oó]zsef/i.test(name)})};await loadTeam();renderStaff();window.scrollTo(0,0)}
 document.addEventListener("change",async e=>{const x=e.target.closest&&e.target.closest("[data-vfsel]");if(!x)return;const fl=x.value;const r=await sb.rpc("set_vehicle_fleet",{vid:x.dataset.vfsel,fl});if(r.error){toast("Chyba: "+r.error.message,6000);return}STATE.fleet=null;renderStaff();toast("Presunuté: "+FLN[fl])});
 document.addEventListener("click",async e=>{if(!ROLE)return;const t=e.target;let x;
   if(x=t.closest("[data-fsec]")){const cm=document.getElementById("camModal");if(cm)cm.hidden=true;fsecGo(x.dataset.fsec);renderStaff();if(camVis())camLoad(true);requestAnimationFrame(()=>{const a=document.getElementById("fsecTop");if(a){const y=a.getBoundingClientRect().top+scrollY-70;window.scrollTo({top:y,behavior:"smooth"})}});return}
@@ -2858,7 +2863,7 @@ document.addEventListener("click",async e=>{if(!ROLE)return;const t=e.target,g=s
     else usePhone=!f.email;
     const pw=genPw(f.name);busy(x,true);const r=await sb.rpc("set_farmer_password",{fid:f.id,pw,use_phone:usePhone});busy(x,false);
     if(r.error){toast("Nepodarilo sa: "+r.error.message,7000);return}
-    const who=usePhone?f.phone:f.email;const txt=`Dobrý deň, ERNTE Trade & Logistic má pre vás aplikáciu s výkupnými cenami, vašimi obchodmi a počasím.\n\nPrihlasovacie meno: ${who}\nJednorazový kód: ${pw}\n\nPo prvom prihlásení si nastavíte vlastný PIN (kód potom prestane platiť). PIN nikomu neposielajte.\nAplikáciu si dajte na plochu (Zdieľať → Pridať na plochu).\n\n👉 ERNTE Trade & Logistic: ${APP_URL}`,pwv=pw;
+    const who=usePhone?f.phone:f.email;const txt=inviteText({who,pw,name:f.name,hu:String(f.firma||"").toUpperCase()==="DANUBE"}),pwv=pw;
     const tel=String(f.phone||"").replace(/\D/g,"").replace(/^00/,"").replace(/^0/,"421");
     STATE.invite={name:f.name,txt,tel,pw:pwv};await loadStaff();renderStaff();window.scrollTo(0,0);return}
   if(x=g("[data-copyinv]")){try{await navigator.clipboard.writeText(STATE.invite.txt);toast("Správa skopírovaná.")}catch(er){toast("Kopírovanie sa nepodarilo – pošli cez WhatsApp/SMS.",4000)}return}
@@ -2933,7 +2938,7 @@ document.addEventListener("input",e=>{if(e.target.id==="dfq"){const h=e.target.f
 document.addEventListener("click",e=>{const b=e.target.closest("[data-dfp]");if(!b)return;const fm=b.closest("form"),f=(STATE.farmers||[]).find(x=>x.id===b.dataset.dfp);if(!fm||!f)return;fm.elements.farmer.value=f.id;document.getElementById("dfq").value=String(f.name).trim();document.getElementById("dfl").innerHTML=`<div class="s">✓ Vybraný: <b>${esc(String(f.name).trim())}</b></div>`});
 </script>
 <script src="ai.js?v=20261029-0010"></script>
-<script src="perms.js?v=20261031-0850"></script>
+<script src="perms.js?v=20261031-1200"></script>
 <script src="gdprsign.js?v=20261031-0855"></script>
 <script src="bonus.js?v=20261028-0110"></script>
 <script src="fterms.js?v=20261031-0700"></script>
@@ -2954,11 +2959,11 @@ document.addEventListener("click",e=>{const b=e.target.closest("[data-dfp]");if(
 <script src="odberatel.js?v=20261029-2320"></script>
 <script src="watermark.js?v=20261028-2320"></script>
 <script src="valkopay.js?v=20261031-0620" defer></script>
-<script src="welcome.js?v=20261031-0540"></script>
+<script src="welcome.js?v=20261031-1200"></script>
 <script src="ernmaps.js?v=20261031-0700" defer></script>
 <script src="odb.js?v=20261030-0715"></script>
 <script src="zdash.js?v=20261027-1620"></script>
-<script src="contract.js?v=20261030-0940"></script>
+<script src="contract.js?v=20261031-1200"></script>
 <script src="agro.js?v=20261029-2150"></script>
 <script src="activity.js?v=20261029-2050"></script>
 <script src="trus.js?v=20261029-0130"></script>
@@ -2978,7 +2983,7 @@ document.addEventListener("click",e=>{const b=e.target.closest("[data-dfp]");if(
 <script src="fndesc.js?v=20261031-1120"></script>
 <script src="sign.js?v=20261030-0930"></script>
 <script src="outbox.js?v=20261029-0130"></script>
-<script src="invitecard.js?v=20261031-1120"></script>
+<script src="invitecard.js?v=20261031-1200"></script>
 <script src="loginalert.js?v=20261027-0950"></script>
 <script src="wxplaces.js?v=20261027-1000"></script>
 <script src="duedoc.js?v=20261027-1600"></script>
@@ -3000,10 +3005,12 @@ document.addEventListener("click",e=>{const b=e.target.closest("[data-dfp]");if(
 <script src="cennikalert.js?v=20261031-0700"></script>
 <script src="dropalert.js?v=20261031-0700"></script>
 <script src="timai.js?v=20261031-0700"></script>
-<script src="heslainv.js?v=20261031-1120"></script>
+<script src="heslainv.js?v=20261031-1200"></script>
 <script src="ownertabs.js?v=20261031-1140"></script>
+<script src="clang.js?v=20261031-1200"></script>
+<script src="farmapp.js?v=20261031-1200"></script>
 <script src="plan.js?v=20261031-1020"></script>
-<script src="voice.js?v=20261031-1030"></script>
+<script src="voice.js?v=20261031-1200"></script>
 <script src="wxalert.js?v=20261031-1050"></script>
 <script src="zisk.js?v=20261030-2340"></script>
 <script src="pushcenter.js?v=20261029-0010"></script>

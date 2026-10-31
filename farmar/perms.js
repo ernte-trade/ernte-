@@ -104,7 +104,7 @@ function pwWeak(a){const m=[];if(a.length<8)m.push("aspoň 8 znakov");if(!/[a-z�
 const GDPR_TXT=`Vaše meno, telefón, e-mail, údaje o obchodoch a doprave spracúva ERNTE spol. s r.o. (doprava VALKO s.r.o.) iba na účely spolupráce, obchodov, zúčtovania a dopravy podľa nariadenia (EÚ) 2016/679 (GDPR) a zákona č. 18/2018 Z. z. Údaje neposkytujeme tretím osobám okrem zákonných povinností a nevyhnutných spracovateľov (hosting, e-mail). Máte právo na prístup, opravu, vymazanie a námietku.`;
 const gdprBox=()=>`<label class="gdprc"><input type="checkbox" name="gdpr"><span class="gdprk" aria-hidden="true">✓</span><span>Prečítal(a) som si <a href="sukromie.html" target="_blank" rel="noopener">Ochranu osobných údajov (GDPR)</a> a súhlasím so spracovaním údajov pre spoluprácu s ERNTE.</span></label><p class="pinlaw">🛡️ ${GDPR_TXT}</p>`;
 function pinModal(){return new Promise(res=>{const d=document.createElement("div");d.className="pinmod";d.setAttribute("role","dialog");d.setAttribute("aria-label","Nastavenie vlastného hesla");
-  const needG=!(window.ERNTE_GDPR_OK);
+  const needG=false; // súhlas GDPR: gdprsign.js (prečítať celé + podpis prstom)
   d.innerHTML=`<form class="pinbox" id="fPin" novalidate><div class="pinic">🔐</div><h2>Nastavte si vlastné heslo</h2><p>Prihlásili ste sa heslom od ERNTE. Kvôli bezpečnosti si teraz vytvorte <b>vlastné silné heslo</b> – odteraz sa budete prihlasovať ním (alebo odtlačkom / Face ID).</p>
    <label>Nové heslo<input name="a" type="password" autocomplete="new-password" minlength="8" required autocapitalize="off" autocorrect="off" spellcheck="false"></label>
    <div class="pwmeter" aria-hidden="true"><i></i></div><div class="pwrules">aspoň 8 znakov · <b>Veľké</b> aj <b>malé</b> písmeno · <b>číslica</b> · <b>znak</b> ako . ! ? #</div>
@@ -146,8 +146,8 @@ async function loadMe(){try{const r=await sb.from("staff").select("*").eq("email
 let MEAT=0;async function meRefresh(){if(typeof ROLE==="undefined"||!ROLE||ROLE==="owner"||!STATE.me||Date.now()-MEAT<60000)return;MEAT=Date.now();const old=JSON.stringify([STATE.me.perms,STATE.me.role]);await loadMe();
   if(JSON.stringify([STATE.me.perms,STATE.me.role])!==old&&typeof renderStaff==="function"){if(typeof TAB!=="undefined"&&typeof tabOK==="function"&&!tabOK(TAB)){try{TAB="home"}catch(e){}}renderStaff();if(typeof toast==="function")toast("Prístupy boli upravené.",3000)}}
 document.addEventListener("visibilitychange",()=>{if(!document.hidden)meRefresh()});setInterval(()=>{if(!document.hidden)meRefresh()},120000);
-const _ss=window.startStaff;window.startStaff=async function(){await loadMe();if(STATE.me&&STATE.me.gdpr_at)window.ERNTE_GDPR_OK=1;if(STATE.me&&STATE.me.must_change&&!window.ERNTE_VIEWAS)await pinModal();if(STATE.me&&!window.ERNTE_GDPR_OK&&!window.ERNTE_VIEWAS&&!window.ERNTE_TEST)await gdprModal();applyBig();if(ROLE!=="owner"&&!can("fleet_all")){try{FFLT=can("fleet_trak")?"traktory":"region"}catch(e){}}return _ss.apply(this,arguments)};
-const _sf=window.startFarmer;window.startFarmer=async function(){if(FARMER&&FARMER.gdpr_at)window.ERNTE_GDPR_OK=1;if(FARMER&&FARMER.must_change&&!window.ERNTE_VIEWAS)await pinModal();if(FARMER&&!window.ERNTE_GDPR_OK&&!window.ERNTE_VIEWAS)await gdprModal();applyBig();return _sf.apply(this,arguments)};
+const _ss=window.startStaff;window.startStaff=async function(){await loadMe();if(window.ernteLangAuto&&STATE.me&&/karoczkai|j[oó]zsef/i.test(String(STATE.me.name||""))&&ernteLangAuto("hu"))return;if(STATE.me&&STATE.me.gdpr_at)window.ERNTE_GDPR_OK=1;if(STATE.me&&STATE.me.must_change&&!window.ERNTE_VIEWAS)await pinModal();applyBig();if(ROLE!=="owner"&&!can("fleet_all")){try{FFLT=can("fleet_trak")?"traktory":"region"}catch(e){}}return _ss.apply(this,arguments)};
+const _sf=window.startFarmer;window.startFarmer=async function(){if(window.ernteLangAuto&&FARMER&&String(FARMER.firma||"").toUpperCase()==="DANUBE"&&ernteLangAuto("hu"))return;if(FARMER&&FARMER.gdpr_at)window.ERNTE_GDPR_OK=1;if(FARMER&&FARMER.must_change&&!window.ERNTE_VIEWAS)await pinModal();applyBig();return _sf.apply(this,arguments)};
 
 // ===== TÍM A PRÍSTUPY (iba majiteľ) =====
 let TOPEN=null,TADD=null,TEDIT=null;
@@ -197,7 +197,7 @@ async function teamCode(login,name,role,extra){const pw=genPw(name);
   const r=await sb.rpc("set_staff_login",{login_in:login,name_in:name,role_in:role,pw});if(r.error){toast("Nepodarilo sa: "+r.error.message,7000);return null}
   if(extra){const q=await sb.rpc("set_staff_profile",{em:r.data,p:extra.p,t:extra.t||"",r:extra.r||"",ph:extra.ph||""});if(q.error)toast("Prístupy sa neuložili: "+q.error.message,6000)}
   const isT=String(r.data).endsWith("@tel.ernte.sk"),who=isT?login:r.data,tel=isT?String(r.data).split("@")[0]:"";
-  STATE.invite={team:1,name,tel,pw,txt:`Dobrý deň, tu je váš prístup do aplikácie ERNTE Trade & Logistic.\n\nPrihlasovacie meno: ${who}\nJednorazový kód: ${pw}\n\nPo prvom prihlásení si nastavíte vlastný PIN (kód potom prestane platiť). PIN nikomu neposielajte.\nAplikáciu si dajte na plochu (Zdieľať → Pridať na plochu).\n\n👉 ERNTE Trade & Logistic: ${APP_URL}`};
+  STATE.invite={team:1,name,tel,pw,txt:(typeof inviteText==="function"?inviteText({team:1,who,pw,name,hu:/karoczkai|j[oó]zsef/i.test(name)}):`Prihlasovacie meno: ${who}\nHeslo: ${pw}\n\n👉 ERNTE Trade & Logistic: ${APP_URL}`)};
   await loadTeam();renderStaff();window.scrollTo(0,0);return r.data}
 const presetObj=k=>Object.fromEntries(PCAT.map(p=>[p[0],PRESET[k].k.includes(p[0])]));
 document.addEventListener("click",async e=>{if(typeof ROLE==="undefined"||ROLE!=="owner")return;const t=e.target;let x;

@@ -45,7 +45,8 @@ Spoločné opravy rozloženia patria do `farmar/fit.css` (načítava sa posledn�
 ## Bezpečnosť a dáta
 - **PRÍKAZ MAJITEĽA (31. 10.): GDPR – každý prihlásený prečíta a podpíše** (`gdprsign.js`, tabuľka `gdpr_sign`, `gdpr_status`/`gdpr_sign`/`gdpr_list`): pred `enter()` celé poučenie `sukromie.html` (musí doskrolovať na koniec), zaškrtnutie, meno a priezvisko, podpis prstom → uloží sa podpis, verzia `VER`, SHA-256 textu, čas, zariadenie. Nová verzia poučenia = zvýšiť `VER` → podpíšu všetci znova. Majiteľ: Tím → 🛡️ GDPR súhlasy (+ PDF). Pri zmene spracúvania vždy aktualizovať `sukromie.html` (aj HU súhrn).
 - Žiadne heslá, kľúče, pečiatky ani obchodné dáta v čitateľnej podobe v repozitári – iba zašifrované migrácie.
-- Marža, zisk, mzdy a výsledok vidí iba majiteľ. Farmár nikdy nevidí odberateľa, burzu, predajné ceny ani iných farmárov.
+- Marža, zisk, mzdy a výsledok vidí iba majiteľ. Farmár nikdy nevidí odberateľa, predajné ceny ani iných farmárov.
+  **PRÍKAZ MAJITEĽA (31. 10.):** farmár na úvode LIVE VIDÍ verejnú burzu MATIF a CBOT s grafom (`market.json`, s poznámkou „burza nie je naša výkupná cena“).
 - Upozornenia príjemcom odchádzajú až po schválení majiteľom (📤), okrem výslovne povolených automatických správ
   (napr. „objednávka je v spracovaní“).
 
@@ -139,6 +140,17 @@ s pripojeným repozitárom `ernte-trade/ernte-`.
   Registrátor: vault `ernte_dns_reg` (`domain_reg_set`, WebSupport/Active24 REST v2 HMAC). Supabase Auth redirect URL nejde nastaviť bez tokenu správy – prihlásenie kódom funguje.
 - **COMMANDER PODPORA** (`commander_podpora.sql`, `cmdreq.js`, ai_state `cmd_support`, pg_cron `commander-podpora`): e-mail o práva API, kontrola main:refuel po 3 prac. dňoch.
 - **Príkaz majiteľa (trvalý):** pracovať na 100 %, bezchybne a rýchlo; nič nepoškodiť (model cenníka, nastavenia, údaje). Pred nasadením otestovať.
+
+- **🌾 FARMÁR JEDNODUCHO (31. 10., `farmapp.js`, migrácia `farmar-jednoducho`):** po úvode LIVE (burza MATIF/CBOT, naše výkupné ceny – `farm_price_hist`, počasie, obchodník – `farm_contacts`:
+  Košický kraj Ing. Galajda +421 902 733 222, Prešovský Mgr. Ceperko +421 940 944 733 podľa PSČ v adrese; DANUBE iba Jozsef Karoczkai) iba veľké dlaždice. Pôvodné sekcie sa ukážu po ťuknutí (h2 → `data-fsec`).
+  Predať = plodina → tony → stará úroda / nová (ceny na neskorší odber) → odvoz deň + čas → kupujúci ERNTE/Danube + jazyk zmluvy → Odoslať (`requests.harvest`, `clang`).
+  Trigger `req_team_push`: push Galajda, Ceperko, Ličko; DANUBE aj Jozsef po maďarsky; `route_emails('obchod_dnb')` pridá Jozsefa do Nevybavených.
+- **🌐 ZMLUVA PODĽA ŠTÁTU (`clang.js`, `farmers.clang`, `set_clang`):** ERNTE: SK/CZ → SK; HU → SK | HU; AT/DE → SK | DE; inde SK | EN (AI preklad cez `i18n_get`, „pri rozpore platí slovenské znenie“).
+  DANUBE vždy SK | HU (dnzmluva.js). Tlačidlo 🌐 pri každej „Zmluva PDF“ (farmár aj tím) prepne jazyk.
+- **🌐 JAZYK APLIKÁCIE (`lang.js`):** SK/HU/EN/DE, preklad AI so spoločnou pamäťou (`i18n_tr`, pg_cron `i18n`). Danube (farmári + Jozsef) prvé prihlásenie po maďarsky (`ernteLangAuto`),
+  pozvánky po maďarsky (`inviteText`, odkaz s `#prihlas` a `l:"hu"`).
+- **🎤 HLAS PRE KAŽDÉ PRIHLÁSENIE (`voice.js`):** ťukni do políčka a diktuj (čísla, dátum, čas, e-mail), „hľadaj …“, „otvor …“, „späť“, „predaj 30 ton repky“; nič neodošle samo.
+- **📊 Martin – lišta sekcií podľa používania (`ownertabs.js`, `tab_use`), 3D ikony `img/ico/` (Microsoft Fluent Emoji 3D, MIT).**
 
 ### Hotové (október 2026)
 - Moderný vzhľad (`ui.css`, písmo Geist), podpora iPhone/iPad/Android/PC, inštalácia na plochu (`installapp.js`, manifest).

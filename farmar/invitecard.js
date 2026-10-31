@@ -9,7 +9,7 @@ function rr(g,x,y,w,h,r){g.beginPath();g.moveTo(x+r,y);g.arcTo(x+w,y,x+w,y+h,r);
 function wrap(g,t,maxW){const out=[];for(const para of String(t).split("\n")){let line="";for(const w of para.split(/\s+/).filter(Boolean)){const tt=line?line+" "+w:w;if(g.measureText(tt).width>maxW&&line){out.push(line);line=w}else line=tt}out.push(line)}return out}
 function diamond(g,cx,cy,s,fill,stroke){g.save();g.translate(cx,cy);g.rotate(Math.PI/4);rr(g,-s/2,-s/2,s,s,s*.14);if(fill){g.fillStyle=fill;g.fill()}if(stroke){g.strokeStyle=stroke;g.lineWidth=4;g.stroke()}g.restore()}
 // údaje z textu pozvánky
-function parse(I){const t=String(I.txt||"");const m=t.match(/Prihlasovacie meno:\s*(.+)/);return {who:m?m[1].trim():"",code:I.pw||"",lead:(t.split(/\n\s*\n/)[0]||"").replace(/^Dobrý deň,\s*/i,"").trim(),farmer:/výkupn/i.test(t),team:!!I.team,name:I.name||""}}
+function parse(I){const t=String(I.txt||"");const m=t.match(/(?:Prihlasovacie meno|Felhasználónév):\s*(.+)/);return {who:m?m[1].trim():"",code:I.pw||"",lead:(t.split(/\n\s*\n/)[0]||"").replace(/^Dobrý deň,\s*/i,"").trim(),farmer:/výkupn/i.test(t),team:!!I.team,name:I.name||""}}
 
 async function draw(I,forPdf){
   try{await Promise.all(['600 80px "Sora"','500 40px "Inter"','700 40px "Inter"','600 60px "IBM Plex Mono"'].map(f=>document.fonts.load(f)))}catch(e){}

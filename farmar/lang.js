@@ -10,6 +10,8 @@ window.ernteLang=()=>L;
 const flag=()=>(LL.find(x=>x[0]===L)||LL[0])[1];
 function setLang(l){try{localStorage.setItem(LS,l)}catch(e){}location.reload()}
 window.ernteSetLang=setLang;
+// Danube (maďarskí partneri): prvé prihlásenie po maďarsky, kým si človek sám nevyberie jazyk
+window.ernteLangAuto=l=>{let st=null;try{st=localStorage.getItem(LS)}catch(e){}if(st||!l||l===L)return false;try{localStorage.setItem(LS,l)}catch(e){return false}location.reload();return true};
 
 // ---------- prepínač ----------
 function btn(){const h=document.querySelector("header.top");if(!h||document.getElementById("langBtn"))return;

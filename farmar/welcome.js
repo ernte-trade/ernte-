@@ -93,7 +93,7 @@ const KT={ja:["Vyvezené","Jazdy · 7 dní"],ceo:["Vyvezené","Jazdy · 7 dní"]
   obchod:["Vyvezené","Požiadavky"],evid:["Tento mesiac",""],mzdy:["Tento mesiac",""],farmar:["Výkupné ceny",""],trus:["Požiadavky",""]};
 function hud(k){return `<div class="whud"><div class="whtop"><span class="wlive"><i></i>LIVE</span><span class="wclk">--:--<small>:--</small></span></div>
   <div class="whrow"><div class="whc whwx"><small>Počasie</small><div class="whv"><span class="wxi">…</span><b class="wxt">--°</b></div><div class="wxs">načítavam</div><svg class="wspk" viewBox="0 0 120 34" preserveAspectRatio="none"></svg></div>
-  <div class="whc whk"><small>${E((KT[k]||KT.tim)[0])}</small><div class="whkb"></div><small class="whk2">${E((KT[k]||KT.tim)[1])}</small><div class="whbars"></div></div></div>${k==="ja"||k==="ceo"||k==="obchod"&&(can_("price_view")||can_("price_edit"))?`<div class="whc whpr"><small>Naše nákupné ceny · €/t</small><div class="whpl"></div></div>`:""}${k==="obchod"?obPanel():GRK(k)?`<div class="whc whgr"><div class="wgrh"><small>📈 Vývoj našich nákupných cien</small><span class="wgrv"></span></div><div class="wgrc"></div><div class="wgrs"></div></div>${DIA(k)}`:spotOK(k)?(radioOff()?radioOnHTML():spot()):""}</div>`}
+  <div class="whc whk"><small>${E((KT[k]||KT.tim)[0])}</small><div class="whkb"></div><small class="whk2">${E((KT[k]||KT.tim)[1])}</small><div class="whbars"></div></div></div>${k==="ja"||k==="ceo"||k==="obchod"&&(can_("price_view")||can_("price_edit"))?`<div class="whc whpr"><small>Naše nákupné ceny · €/t</small><div class="whpl"></div></div>`:""}${k==="farmar"?FARMT():""}${k==="obchod"?obPanel():GRK(k)?`<div class="whc whgr"><div class="wgrh"><small>📈 Vývoj našich nákupných cien</small><span class="wgrv"></span></div><div class="wgrc"></div><div class="wgrs"></div></div>${DIA(k)}`:spotOK(k)?(radioOff()?radioOnHTML():spot()):""}</div>`}
 /* na širokej obrazovke sa „live“ fotka roztiahne nižšie, aby sa zmestili všetky dlaždice (dá sa posúvať) */
 function wfit(el){try{const im=el.querySelector(".wimg"),hd=el.querySelector(".whud");if(!im||!hd||el.classList.contains("por"))return;const need=hd.offsetTop+hd.offsetHeight+48;im.style.minHeight=need>innerHeight?need+"px":""}catch(x){}}
 /* 💎 diamantové dlaždice (príkaz majiteľa 30. 10.) – iba Martin a Jana: ⛽ nafta MOL Group + navigácia, 🤝 graf obchodov */
@@ -140,7 +140,7 @@ const GRK=k=>k==="ja"||k==="ceo";
 const GRC={repka:"#facc15",soja:"#a3e635",kukurica:"#fb923c",psenica_p:"#fde68a",psenica_k:"#f5d0a9",jacmen_k:"#93c5fd",jacmen_s:"#c4b5fd",lo:"#fbbf24",ho:"#f472b6",cirok:"#fca5a5"};
 const GR={d:null,c:null,t:0,user:false};
 async function grLoad(){try{const since=new Date(Date.now()-90*864e5).toISOString();
-    const r=await sb.from("cennik_historia").select("at,com,new_price,old_price").gte("at",since).not("com","is",null).order("at",{ascending:true}).limit(2000);
+    const r=(typeof FARMER!=="undefined"&&FARMER)?await sb.rpc("farm_price_hist"):await sb.from("cennik_historia").select("at,com,new_price,old_price").gte("at",since).not("com","is",null).order("at",{ascending:true}).limit(2000);
     const H=r.error?[]:(r.data||[]),now=Date.now(),S={};
     for(const p of pxList()){const L=H.filter(h=>h.com===p.com&&h.new_price!=null);const pts=[];const t0=now-90*864e5;
       const first=L[0];pts.push([t0,+(first?(first.old_price!=null?first.old_price:first.new_price):p.price)]);
@@ -161,7 +161,7 @@ function grDraw(hd){const box=hd.querySelector(".wgrc"),ch=hd.querySelector(".wg
     <span class="wgmx">max ${Math.round(mx)}</span><span class="wgmn">min ${Math.round(mn)}</span><span class="wgax">pred 90 dňami</span><span class="wgnw">dnes</span>`;
   if(vv)vv.innerHTML=`<b style="color:${col}">${E(nmC(GR.c))} ${Math.round(last[1]).toLocaleString("sk-SK")} €/t</b><em class="${diff>0?"wup":diff<0?"wdn":""}">${diff>0?"▲ +":diff<0?"▼ ":"± "}${Math.round(diff)} za 90 dní</em>`;
   if(ch)ch.innerHTML=C.map(c=>`<button type="button" data-wgc="${c}" class="${c===GR.c?"on":""}" style="--gc:${GRC[c]||"#b6ff3b"}">${E(nmC(c))}</button>`).join("")}
-async function grLive(hd,k){if(!GRK(k)||!hd.querySelector(".whgr"))return 0;await grLoad();grDraw(hd);
+async function grLive(hd,k){if(!(GRK(k)||k==="farmar")||!hd.querySelector(".whgr"))return 0;await grLoad();grDraw(hd);
   hd.addEventListener("click",e=>{const b=e.target.closest&&e.target.closest("[data-wgc]");if(!b)return;e.preventDefault();e.stopPropagation();GR.user=true;GR.c=b.dataset.wgc;grDraw(hd)});
   return setInterval(()=>{if(document.hidden||GR.user||!hd.isConnected)return;const C=Object.keys(GR.d||{}).filter(c=>GR.d[c].length>1);if(C.length<2)return;GR.c=C[(C.indexOf(GR.c)+1)%C.length];grDraw(hd)},7000)}
 /* 🎵 Spotify – Martin, Jana, Galajda, Ličko, Tóth, Tomáš Štofa, Tomáš Vaľko. Vlastný playlist: „Zmeniť“ → vlož odkaz zo Spotify (Zdieľať → Kopírovať odkaz). Uloží sa v tomto zariadení. */
@@ -253,6 +253,31 @@ function pxLive(el,k){if(!el.querySelector(".whpl")&&k!=="farmar")return 0;
   try{if(k!=="farmar"&&window.autoCennik&&!window.ERNTE_VIEWAS&&!window.ERNTE_TEST)autoCennik.run(false)}catch(x){}
   setTimeout(()=>pxRefresh(el,k),4000);return setInterval(()=>{if(!document.hidden)pxRefresh(el,k)},30000)}
 
+
+/* 🌾 FARMÁR (príkaz majiteľa 31. 10.): burza MATIF / CBOT s grafom, naše výkupné ceny s grafom, obchodník podľa kraja */
+const FARMT=()=>`<div class="whc whgr"><div class="wgrh"><small>📈 Naše výkupné ceny · 90 dní</small><span class="wgrv"></span></div><div class="wgrc"></div><div class="wgrs"></div></div>
+  <div class="whc wbz"><div class="wgrh"><small>🌍 Burza · MATIF Paríž a CBOT Chicago</small><span class="wbzv"></span></div><div class="wgrc wbzc"></div><div class="wgrs wbzs"></div><div class="wbzt"></div></div>
+  <div class="whc wct"><small>📞 Váš obchodník</small><div class="wctl"><span class="whu">načítavam…</span></div></div>`;
+const BZ=[["matif_repka","MATIF Repka","#facc15","repka","Euronext (MATIF) repka"],["matif_psenica","MATIF Pšenica","#fde68a","psenica_p","Euronext (MATIF) pšenica potravinárska"],["matif_kukurica","MATIF Kukurica","#fb923c","kukurica","Euronext (MATIF) kukurica"],
+  ["cbot_soja","CBOT Sója","#a3e635","soja","CBOT sója"],["cbot_kukurica","CBOT Kukurica","#f97316","kukurica","CBoT kukurica"],["cbot_psenica","CBOT Pšenica","#93c5fd","psenica_p","CBoT pšenica"]];
+const BZS={d:null,i:0,user:false};
+async function bzLive(hd,k){const box=hd.querySelector(".wbz");if(k!=="farmar"||!box)return 0;
+  try{const r=await fetch("market.json",{cache:"no-store"});BZS.d=r.ok?await r.json():null}catch(x){BZS.d=null}
+  const draw=()=>{const M=BZS.d;if(!M||!Array.isArray(M.hist)){box.querySelector(".wbzc").innerHTML=`<span class="whu">Burza sa načítava…</span>`;return}
+    const L=BZ.filter(b=>M.hist.some(h=>h[b[0]]>0));if(!L.length)return;const b=L[BZS.i%L.length];
+    const pts=M.hist.filter(h=>h[b[0]]>0).map(h=>[Date.parse(h.d+"T12:00:00"),+h[b[0]]]);
+    const row=(M.rows||[]).find(x=>x.market===b[4]),cur=row?+row.price:pts[pts.length-1][1],prev=row&&row.prev!=null?+row.prev:(pts.length>1?pts[pts.length-2][1]:null),df=prev!=null?cur-prev:0;
+    box.querySelector(".wbzc").innerHTML=pts.length>1?lineSvg("wbz",[{pts,col:b[2],area:true}],320,92,v=>Math.round(v).toLocaleString("sk-SK")):`<span class="whu">graf sa zbiera…</span>`;
+    box.querySelector(".wbzv").innerHTML=`<b style="color:${b[2]}">${E(b[1])} ${cur.toLocaleString("sk-SK",{maximumFractionDigits:2})} €/t</b>${prev!=null?`<em class="${df>0?"wup":df<0?"wdn":""}">${df>0?"▲ +":df<0?"▼ ":"± "}${Math.abs(df).toLocaleString("sk-SK",{maximumFractionDigits:2})}</em>`:""}`;
+    box.querySelector(".wbzs").innerHTML=L.map((x,i)=>`<button type="button" data-wbz="${i}" class="${x===b?"on":""}" style="--gc:${x[2]}">${E(x[1])}</button>`).join("");
+    const at=M.updatedAt?new Date(M.updatedAt):null;box.querySelector(".wbzt").textContent=`${row&&row.term?"kontrakt "+row.term+" · ":""}${at?"aktualizované "+at.toLocaleString("sk-SK",{day:"numeric",month:"numeric",hour:"2-digit",minute:"2-digit"}):""} · burza nie je naša výkupná cena`};
+  draw();
+  box.addEventListener("click",e=>{const t=e.target.closest&&e.target.closest("[data-wbz]");if(!t)return;e.preventDefault();e.stopPropagation();BZS.user=true;BZS.i=+t.dataset.wbz;draw()});
+  const iv=setInterval(()=>{if(document.hidden||!box.isConnected){if(!box.isConnected)clearInterval(iv);return}if(!BZS.user){BZS.i++;draw()}},6500);
+  const iv2=setInterval(async()=>{if(document.hidden||!box.isConnected){if(!box.isConnected)clearInterval(iv2);return}try{const r=await fetch("market.json",{cache:"no-store"});if(r.ok){BZS.d=await r.json();draw()}}catch(x){}},5*60e3);
+  return iv}
+async function ctLive(hd,k){const box=hd.querySelector(".wct .wctl");if(k!=="farmar"||!box||!window.farmContacts)return;const L=await farmContacts();const kr=window.farmKraj?farmKraj(FARMER):null;
+  box.innerHTML=L.length?L.slice().sort((a,b)=>(b.k===kr)-(a.k===kr)).map(c=>`<a class="wctr${c.k===kr||L.length===1?" mine":""}" href="tel:${E(String(c.phone).replace(/[^\d+]/g,""))}"><span><small>${E(c.kraj)}</small><b>${E(c.name)}</b></span><i>📞 ${E(c.phone)}</i></a>`).join(""):`<span class="whu">Kontakt: ERNTE</span>`}
 /* ---------- údaje do pozdravu ---------- */
 async function facts(k){const L=[];try{const S=typeof STATE!=="undefined"?STATE:{};const t=today();
   if(k==="ja"||k==="ceo"||k==="obchod"){const n=(S.reqs||[]).filter(r=>r.status==="nova").length;if(n)L.push(`📥 <b>${n}</b> ${n===1?"nová požiadavka":n<5?"nové požiadavky":"nových požiadaviek"}`)}
@@ -276,7 +301,7 @@ async function show(force){const k=kind();if(!k||document.querySelector(".wlc"))
   const POR=()=>innerWidth<1100||innerHeight<640;const por=POR();if(por)el.classList.add("por");
   const rz=()=>{if(!el.isConnected){removeEventListener("resize",rz);return}el.classList.toggle("por",POR())};addEventListener("resize",rz);
   el.innerHTML=`${scene(k,ph,por)}<div class="wlb"><img src="icon-192.png" alt=""><div class="wlt"><small>${E(tag)}</small><b>${g}</b><p>${E(sub)}</p>${joke?`<p class="wjk">💡 <b>Vedeli ste?</b> <span>${E(joke)}</span></p>`:""}<ul class="wlf"></ul>
-   <div class="wla"><button type="button" class="lime" data-wlgo>Poďme na to →</button><button type="button" class="wmore" data-wljoke>💡 Ďalšia zaujímavosť</button></div></div></div>${GRK(k)&&spotOK(k)?`<div class="wlsp">${radioOff()?radioOnHTML():spot()}</div>`:""}
+   <div class="wla"><button type="button" class="lime" data-wlgo>${k==="farmar"?"Pokračovať do aplikácie →":"Poďme na to →"}</button><button type="button" class="wmore" data-wljoke>💡 Ďalšia zaujímavosť</button></div></div></div>${GRK(k)&&spotOK(k)?`<div class="wlsp">${radioOff()?radioOnHTML():spot()}</div>`:""}
    <button type="button" class="wlx" data-wlx hidden tabindex="-1" aria-hidden="true">✕</button><div class="wltap">${new Date().toLocaleDateString("sk-SK",{weekday:"long",day:"numeric",month:"long"})}</div>`;
   document.body.appendChild(el);
   const nextJoke=ev=>{if(ev){ev.preventDefault();ev.stopPropagation()}const now=Date.now();if(nextJoke.t&&now-nextJoke.t<500)return;nextJoke.t=now;
@@ -287,7 +312,7 @@ async function show(force){const k=kind();if(!k||document.querySelector(".wlc"))
   const jb=el.querySelector("[data-wljoke]");if(jb){jb.addEventListener("click",nextJoke);jb.addEventListener("touchend",nextJoke,{passive:false})}
   const go=ev=>{if(ev){ev.preventDefault();ev.stopPropagation()}if(el._gone)return;el._gone=1;try{window.opushAuto&&opushAuto(true)}catch(x){}close(el);goHome()};
   const gb=el.querySelector("[data-wlgo]");if(gb){gb.addEventListener("click",go);gb.addEventListener("touchend",go,{passive:false});gb.addEventListener("pointerup",e=>{if(e.pointerType!=="mouse")go(e)})}document.documentElement.classList.add("wlon");requestAnimationFrame(()=>el.classList.add("in"));
-  const hd=el.querySelector(".whud");let ck=0;if(hd){hd.querySelectorAll(".whc:not(.wdia)").forEach(c=>{c.classList.add("wdia");if(!c.querySelector(":scope>.wdsh"))c.insertAdjacentHTML("afterbegin",'<i class="wdsh"></i>')}); /* 💎 všetky dlaždice sklo · diamant · live (príkaz majiteľa 30. 10.) */ck=clock(hd);el._ck=ck;wx(hd);try{kpis(k,hd)}catch(x){}el._px=pxLive(hd,k);grLive(hd,k).then(t=>{el._gr=t},()=>{});try{fuelLive(hd,k).then(()=>wfit(el));dealsLive(hd,k);wfit(el)}catch(x){}}
+  const hd=el.querySelector(".whud");let ck=0;if(hd){hd.querySelectorAll(".whc:not(.wdia)").forEach(c=>{c.classList.add("wdia");if(!c.querySelector(":scope>.wdsh"))c.insertAdjacentHTML("afterbegin",'<i class="wdsh"></i>')}); /* 💎 všetky dlaždice sklo · diamant · live (príkaz majiteľa 30. 10.) */ck=clock(hd);el._ck=ck;wx(hd);try{kpis(k,hd)}catch(x){}el._px=pxLive(hd,k);grLive(hd,k).then(t=>{el._gr=t},()=>{});try{fuelLive(hd,k).then(()=>wfit(el));dealsLive(hd,k);wfit(el)}catch(x){}try{bzLive(hd,k).then(t=>{el._bz=t});ctLive(hd,k)}catch(x){}}
   const fill=async()=>{const f=await facts(k);const ul=el.querySelector(".wlf");if(ul)ul.innerHTML=f.map(x=>`<li>${x}</li>`).join("")};
   /* údaje sa po otvorení ešte načítavajú – keď prídu, čísla a ceny sa doplnia (najviac 20 s) */
   const ready=()=>{const S=typeof STATE!=="undefined"?STATE:{};return (S.prices&&S.prices.length)||(S.deals&&S.deals.length)};
@@ -309,7 +334,7 @@ async function show(force){const k=kind();if(!k||document.querySelector(".wlc"))
   el.addEventListener("keydown",ev=>{if(ev.key==="Enter"&&!ev.target.closest("button")){ev.preventDefault();if(!el._gone){el._gone=1;close(el);goHome()}}});
   setTimeout(()=>{try{el.querySelector("[data-wlgo]").focus({preventScroll:true})}catch(x){}},400)}
 /* „Poďme na to“ → vždy do pridelených sekcií (Prehľad / prvá záložka používateľa) */
-function goHome(){try{if(typeof FARMER!=="undefined"&&FARMER){window.scrollTo(0,0);return}
+function goHome(){try{if(typeof FARMER!=="undefined"&&FARMER){if(window.farmGo)farmGo("home");window.scrollTo(0,0);return}
   const b=document.querySelector('nav.tabs [data-tab="home"]')||document.querySelector("nav.tabs [data-tab]");
   if(b){if(typeof TAB!=="undefined"&&TAB===b.dataset.tab){window.scrollTo(0,0);return}b.click()}window.scrollTo(0,0)}catch(x){}}
 /* po návrate do aplikácie (bola na pozadí aspoň 30 s) sa úvod ukáže znova */
@@ -320,13 +345,16 @@ let AC=null;function honk(chick){try{AC=AC||new (window.AudioContext||window.web
   if(chick){tone(700,0,.12,"triangle");tone(900,.16,.3,"triangle")}else{tone(392,0,.22);tone(330,.26,.5)}}catch(x){}}
 function confetti(el,x,y){const em=["🌾","🌾","🌻","✨","🟡"];for(let i=0;i<12;i++){const d=document.createElement("span");d.className="wcf";d.textContent=em[i%em.length];d.style.left=x+"px";d.style.top=y+"px";
   d.style.setProperty("--dx",(Math.random()*240-120)+"px");d.style.setProperty("--dy",(-80-Math.random()*160)+"px");el.appendChild(d);setTimeout(()=>d.remove(),1100)}}
-function close(el){if(el._gr)clearInterval(el._gr);if(el._ck)clearInterval(el._ck);if(el._px)clearInterval(el._px);pxSave();el.classList.remove("in");el.classList.add("out");document.documentElement.classList.remove("wlon");setTimeout(()=>el.remove(),380)}
+function close(el){if(el._gr)clearInterval(el._gr);if(el._bz)clearInterval(el._bz);if(el._ck)clearInterval(el._ck);if(el._px)clearInterval(el._px);pxSave();el.classList.remove("in");el.classList.add("out");document.documentElement.classList.remove("wlon");setTimeout(()=>el.remove(),380)}
 window.ernteWelcome=()=>show(true);
 /* poistka: „Poďme na to“ vždy zavrie úvod, aj keby sa niečo pri zobrazení pokazilo */
 const fsGo=ev=>{const b=ev.target&&ev.target.closest&&ev.target.closest("[data-wlgo]");if(!b)return;const w=b.closest(".wlc");if(!w||w._gone)return;ev.preventDefault();ev.stopPropagation();w._gone=1;try{window.opushAuto&&opushAuto(true)}catch(x){}close(w);goHome()};
 document.addEventListener("click",fsGo,true);document.addEventListener("touchend",fsGo,{capture:true,passive:false});
 document.addEventListener("click",e=>{const i=e.target.closest&&e.target.closest("header.top img");if(i&&kind()){e.preventDefault();show(true)}});
-function css(){const s=document.createElement("style");s.textContent=`
+function css(){const s=document.createElement("style");s.textContent=`.wbzs button.on,.wgrs button.on{outline:1px solid var(--gc)}.wbzt{font-size:.7rem;opacity:.7;margin-top:6px;line-height:1.35}
+.wctl{display:grid;gap:8px;margin-top:6px}.wctr{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;padding:10px 12px;border-radius:16px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.18);color:#fff;text-decoration:none}
+.wctr.mine{border-color:rgba(182,255,59,.65);background:rgba(182,255,59,.12)}.wctr span{display:grid;min-width:0}.wctr small{opacity:.75;font-size:.72rem}.wctr b{font-size:1rem}.wctr i{font-style:normal;font-weight:800;color:#d9ff8a;white-space:nowrap}
+
 .wlc{position:fixed;inset:0;z-index:30000;display:flex;flex-direction:column;justify-content:flex-end;background:#0b1020;opacity:0;transition:opacity .35s ease;overflow:hidden}
 .wlc.in{opacity:1}.wlc.out{opacity:0}
 html.wlon,html.wlon body{overflow:hidden}
