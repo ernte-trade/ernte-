@@ -64,7 +64,7 @@ function lead(x){const ed=D.ed[x.id],ln=LN[x.lang]||("v jazyku "+(x.lang||"kraji
    <details class="ldloc"><summary>${FL[x.country]||"🌍"} Text, ktorý odíde ${E(ln)}</summary><div class="ldsub">${E(x.subj_loc||"")}</div><div class="ldb">${E(x.body_loc||"")}</div></details>
    ${st}
    ${can?`<div class="btns"><button type="button" class="${sure?"warn":"lime"}" data-ldsend="${E(x.id)}" ${x.email?"":"disabled"}>${sure?"Naozaj odoslať? Ťukni znova":"✅ Skontrolované – odoslať "+E(ln)}</button>
-     <button type="button" class="ghost" data-lded="${E(x.id)}">✏️ Upraviť</button><button type="button" class="ghost" data-ldrej="${E(x.id)}">🚫 Zamietnuť</button></div>`:""}</div>`}
+     <button type="button" class="ghost" data-lded="${E(x.id)}">✏️ Upraviť</button><button type="button" class="ghost" data-ldrej="${E(x.id)}">🚫 Zamietnuť</button>${x.email?`<button type="button" class="ghost" data-ldopt="${E(x.id)}">🔕 Firma sa odhlásila</button>`:""}</div><div class="s" style="font-size:.74rem">⚖️ Na koniec e-mailu sa pridá poučenie podľa GDPR (čl. 14) v jazyku firmy a možnosť odhlásenia.</div>`:""}</div>`}
 function ldHtml(){const R=D.ld;if(!R)return `<div class="card ldcard" id="ldCard"><h2>🤝 Obchodné návrhy AI</h2><div class="s">Načítavam…</div></div>`;
   const L=R.L||[],O=L.filter(OPEN),H=L.filter(x=>!OPEN(x)),st=R.state||{},run=st.at&&!st.done;
   const hist=H.map(x=>`<div class="ldhi"><span>${FL[x.country]||"🌍"}</span><b>${E(x.company)}</b><small>${x.status==="odoslany"?"✅ odoslané":"🚫 zamietnuté"} ${E(dt(x.decided_at||x.created_at))}</small></div>`).join("");
@@ -91,7 +91,7 @@ function paint(){if(typeof TAB==="undefined")return;
 // ---------- tlačidlá ----------
 function edOf(el){const r=el.closest("[data-lid]");return r?D.ed[r.dataset.lid]:null}
 document.addEventListener("input",e=>{const t=e.target;if(!t.dataset||!t.dataset.lde)return;const ed=edOf(t);if(ed)ed[t.dataset.lde]=t.value},true);
-document.addEventListener("click",async e=>{const b=e.target.closest&&e.target.closest("[data-tnx],[data-tanow],[data-ldsend],[data-lded],[data-ldcancel],[data-ldsave],[data-ldrej],[data-ldnow]");if(!b)return;
+document.addEventListener("click",async e=>{const b=e.target.closest&&e.target.closest("[data-tnx],[data-tanow],[data-ldsend],[data-lded],[data-ldcancel],[data-ldsave],[data-ldrej],[data-ldnow],[data-ldopt]");if(!b)return;
   e.preventDefault();e.stopPropagation();const ds=b.dataset;
   if(ds.tnx){const el=document.getElementById("tnBub");if(el){el.classList.add("out");setTimeout(()=>el.remove(),220)}D.nud=(D.nud||[]).filter(x=>String(x.id)!==ds.tnx);
     try{await sb.rpc("team_nudge_close",{p_id:+ds.tnx})}catch(x){}setTimeout(paintNud,260);return}
@@ -105,6 +105,7 @@ document.addEventListener("click",async e=>{const b=e.target.closest&&e.target.c
   if(ds.ldcancel){delete D.ed[x.id];paint();return}
   if(ds.ldsave){const ed=D.ed[x.id];b.disabled=true;const r=await sb.rpc("sales_lead_save",{p_id:x.id,p_subj:ed.subj,p_body:ed.body,p_email:ed.email});
     if(r.error){b.disabled=false;tst("Nepodarilo sa: "+r.error.message,6000);return}delete D.ed[x.id];tst(r.data==="preklad"?"💾 Uložené – AI prekladá (do minúty).":"💾 Uložené.",4000);loadLd();return}
+  if(ds.ldopt){const x=((D.ld&&D.ld.L)||[]).find(y=>String(y.id)===ds.ldopt);if(!x||!confirm(`Firma ${x.company||""} (${x.email}) si neželá ďalšie e-maily – zapísať do odhlásených?`))return;b.disabled=true;const r=await sb.rpc("mail_optout_add",{p_email:x.email,p_note:"odhlásenie – "+(x.company||"")});if(r.error){b.disabled=false;tst("Nepodarilo sa: "+r.error.message,6000);return}tst("🔕 Odhlásené – túto adresu už neoslovíme.",4000);loadLd();return}
   if(ds.ldrej){b.disabled=true;const r=await sb.rpc("sales_lead_reject",{p_id:x.id});if(r.error){b.disabled=false;tst("Nepodarilo sa: "+r.error.message,6000);return}tst("🚫 Zamietnuté.",3000);loadLd();return}
   if(ds.ldsend){if(D.sure!==x.id){D.sure=x.id;paint();setTimeout(()=>{if(D.sure===x.id){D.sure=0;paint()}},5000);return}
     D.sure=0;b.disabled=true;const r=await sb.rpc("sales_lead_send",{p_id:x.id});if(r.error){b.disabled=false;paint();tst("Neodoslané: "+r.error.message,7000);return}

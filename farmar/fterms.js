@@ -52,7 +52,7 @@ function form(id){const f=(STATE.farmers||[]).find(x=>x.id===id)||{name:"farmár
    <div class="ftrow"><label>Platí od<input type="date" name="bonus_od" value="${E(t.bonus_od||"")}"></label><label>Platí do<input type="date" name="bonus_do" value="${E(t.bonus_do||"")}"></label></div>
    <div class="ftprev" data-ftprev></div></div>
   <div class="ftsec"><div class="ftst">📄 Podmienky obchodu</div>
-   <label>Splatnosť (dni)</label>${chips("splatnost",[[7,"7"],[14,"14"],[30,"30"],[45,"45"],[60,"60"]],t.splatnost)}<input name="splatnost" inputmode="numeric" value="${E(t.splatnost??"")}" placeholder="iný počet dní">
+   <label>Splatnosť (dni)</label>${chips("splatnost",[[7,"7"],[14,"14"],[30,"30"],[45,"45"],[60,"60"]],t.splatnost)}<input name="splatnost" inputmode="numeric" value="${E(t.splatnost??"")}" placeholder="iný počet dní (max 60)">
    <label>Doprava</label>${chips("doprava",Object.entries(DOP).map(([k,v])=>[k,v.replace(/ – v cene$/,"")]),t.doprava)}<input type="hidden" name="doprava" value="${E(t.doprava||"")}">
    <label class="ftodp"${t.doprava==="odpocet"?"":" hidden"}>Odpočet za dopravu (€/t)<input name="doprava_eur" inputmode="decimal" value="${E(t.doprava_eur??"")}"></label>
    <label>Záloha po podpise (%)<input name="zaloha_pct" inputmode="decimal" value="${E(t.zaloha_pct??"")}" placeholder="0"></label>
@@ -78,6 +78,7 @@ document.addEventListener("submit",async e=>{const fm=e.target;if(fm.id!=="fFT")
   if(Object.values(b).some(v=>Math.abs(v)>200)){toast("Bonus vyzerá príliš vysoký (viac ako 200 €/t). Skontroluj.",6000);return}
   const row={farmer_id:id,bonus:b,bonus_od:fm.bonus_od.value||null,bonus_do:fm.bonus_do.value||null,splatnost:N(fm.splatnost.value),doprava:fm.doprava.value||null,
     doprava_eur:N(fm.doprava_eur.value),zaloha_pct:N(fm.zaloha_pct.value),kvalita:fm.kvalita.value.trim()||null,note_farmer:fm.note_farmer.value.trim()||null,note_int:fm.note_int.value.trim()||null};
+  if(row.splatnost!=null&&row.splatnost>60){toast("⚖️ Splatnosť najviac 60 dní – zákon 91/2019 Z. z. a smernica EÚ 2019/633 (pri rýchlo sa kaziacich výrobkoch 30 dní).",7000);return}
   if(row.bonus_od&&row.bonus_do&&row.bonus_do<row.bonus_od){toast("„Platí do“ je skôr ako „Platí od“.",5000);return}
   const btn=fm.querySelector("[type=submit]");btn.disabled=true;
   const r=await sb.from("farmer_terms").upsert(row).select().single();btn.disabled=false;
