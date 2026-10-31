@@ -33,6 +33,9 @@ evidencia, mzdy, trus, farmár) na šírkach **344, 390, 412 px (mobil, Fold zat
 - automatická kontrola: `.github/e2e/uiaudit.js` (prekrytia cez elementFromPoint, orezaný text, šírka stránky).
 - **31. 10. (príkaz majiteľa „aby som ťa nemusel kontrolovať“):** testovať aj **orezaný obsah v kartách** (prvok s `overflow:hidden`, kde `scrollHeight > clientHeight` – `out.cut` v uiaudit.js),
   šírku **690 px** (Fold otvorený so zväčšeným zobrazením) a **väčšie písmo 130 %**; úvod LIVE testovať pre farmára aj tím (`ernte-wl-want`). Zlyhanie = neopustiť, opraviť a znova otestovať.
+- **🩺 SAMOKONTROLA NA TELEFÓNOCH (31. 10. 23:20, `uiwatch.js`, tabuľka `ui_issues`, `ui_report`/`ui_fixed`, sonda `ernte_probe2.ui`):** každý telefón po prekreslení (najviac raz za 4 s, nález sa overí 2× – žiadne prechodné stavy)
+  hlási: stránka širšia ako displej (`sirka`), in-flow obsah vyčnievajúci z prvku s overflow:hidden (`orezane`), orezaný text v tlačidle bez potomkov (`tlacidlo`), chyby skriptov (`chyba`).
+  Ignoruje svg, mapu, zatvorené `<details>`, absolútne dekorácie (lesk), `[data-nocut]`. Strážca pri každej kontrole prejde `ui` zo sondy, opraví a zavolá `ui_fixed(array[k])`.
 Spoločné opravy rozloženia patria do `farmar/fit.css` (načítava sa posledný).
 
 ## Výkon (29. 10.)
