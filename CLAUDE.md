@@ -153,6 +153,10 @@ s pripojeným repozitárom `ernte-trade/ernte-`.
 - **🎤 HLAS PRE KAŽDÉ PRIHLÁSENIE (`voice.js`):** ťukni do políčka a diktuj (čísla, dátum, čas, e-mail), „hľadaj …“, „otvor …“, „späť“, „predaj 30 ton repky“; nič neodošle samo.
 - **📊 Martin – lišta sekcií podľa používania (`ownertabs.js`, `tab_use`), 3D ikony `img/ico/` (Microsoft Fluent Emoji 3D, MIT).**
 
+- **📞 MÔJ PLÁN NA DNES (31. 10., `plan.js`, `plan_ack/plan_log/deal_replace`):** vidia všetci obchodníci (deals/req/price_view alebo Galajda, Ceperko, Ličko, Jozsef). Položka zmizne IBA po vyjadrení
+  (tlačidlá ✔️ Vyjadriť → `plan_say`, odloží pre celý tím na N dní) alebo keď je zmluva dodaná do nuly. Nadodávka nad zmluvu = položka ⚠️ + push (`deal_over_push`) obchodníkom, Martinovi a Jane,
+  kým nie je dodatková zmluva. „Nedodá“ → náhradný nákup (`replace_save`): hodnota nedodaného (zostatok × zmluvná cena) = tony × naša zverejnená cena, tolerancia max(50 €, 1 %), kontroluje databáza.
+
 ### Hotové (október 2026)
 - Moderný vzhľad (`ui.css`, písmo Geist), podpora iPhone/iPad/Android/PC, inštalácia na plochu (`installapp.js`, manifest).
 - Podmienky a bonusy pre každého farmára (`fterms.js`, ⚙️ pri farmárovi).
