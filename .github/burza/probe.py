@@ -1,5 +1,5 @@
 import urllib.request, re, http.cookiejar, datetime, io, subprocess, sys
-subprocess.run([sys.executable,"-m","pip","install","-q","openpyxl"],check=False)
+subprocess.run([sys.executable,"-m","pip","install","-q","--user","--break-system-packages","openpyxl"],check=False);import site,importlib;sys.path.append(site.getusersitepackages());importlib.invalidate_caches()
 import openpyxl
 cj=http.cookiejar.CookieJar();op=urllib.request.build_opener(urllib.request.HTTPCookieProcessor(cj))
 UA={"User-Agent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126 Safari/537.36","Accept-Language":"en-GB,en;q=0.9"}
