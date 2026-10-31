@@ -31,6 +31,8 @@ evidencia, mzdy, trus, farmár) na šírkach **344, 390, 412 px (mobil, Fold zat
 - obsah dlaždíc a hlavičky na stred, dlaždice na celú šírku; nadpisy a popisy čitateľné (popis pod celým riadkom, nie stlačený);
 - okrúhle tlačidlá (✕, obálka, zvonček, ↻ …) presný kruh, nie vajce (`fit.css`, `xround.js`);
 - automatická kontrola: `.github/e2e/uiaudit.js` (prekrytia cez elementFromPoint, orezaný text, šírka stránky).
+- **31. 10. (príkaz majiteľa „aby som ťa nemusel kontrolovať“):** testovať aj **orezaný obsah v kartách** (prvok s `overflow:hidden`, kde `scrollHeight > clientHeight` – `out.cut` v uiaudit.js),
+  šírku **690 px** (Fold otvorený so zväčšeným zobrazením) a **väčšie písmo 130 %**; úvod LIVE testovať pre farmára aj tím (`ernte-wl-want`). Zlyhanie = neopustiť, opraviť a znova otestovať.
 Spoločné opravy rozloženia patria do `farmar/fit.css` (načítava sa posledný).
 
 ## Výkon (29. 10.)
