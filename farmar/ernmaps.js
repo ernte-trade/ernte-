@@ -142,7 +142,7 @@ function navTick(force){const c=S.me,st=S.steps;if(!S.nav||!c||!st.length)return
   liveTick();{const R=S.route,tot=(R&&R.distance)||1,left=Math.max(0,rem*1000),sec=R&&R.duration?R.duration*left/tot:0;const re=$(".emrem");if(re)re.textContent=fd(rem);const et=$(".emeta");if(et&&sec)et.textContent=new Date(Date.now()+sec*1000).toLocaleTimeString("sk-SK",{hour:"2-digit",minute:"2-digit"});hudX(rem,sec)}
   S.dn=dn;$(".emdist").textContent=fd(dn);$(".emins").textContent=txt;$(".emsub").textContent=`zostáva ${fd(rem)}`;{const nv=$(".emnav");nv.classList.toggle("near",dn<0.12);nv.querySelector(".emprog>i").style.width=Math.max(0,Math.min(100,(1-dn/0.5)*100))+"%"}
   mvDraw(nx);if(S.route&&S.route.pts){const R=S.route,n=nearIx(R,c);warnTick(R,cum(R)[n.i])}
-  if(nx.maneuver.type==="via"&&dn<0.05){const v=P.via.find(v=>!v.done&&km(c,v)<0.3);if(v){v.done=true;say("Ste na zastávke "+v.n)}}$(".emarrow").textContent=nx.maneuver.type==="arrive"?"🏁":(ARR[nx.maneuver.modifier]||"⬆️");
+  if(nx.maneuver.type==="via"&&dn<0.05){const v=navStops().find(v=>!v.done&&km(c,v)<0.3);if(v){v.done=true;say("Ste na zastávke "+v.n)}}$(".emarrow").textContent=nx.maneuver.type==="arrive"?"🏁":(ARR[nx.maneuver.modifier]||"⬆️");
   {const sv=nx.say||txt;if(force||(dn<0.2&&S.lastStep!==S.si+"n")||(dn<0.8&&dn>0.5&&S.lastStep!==S.si+"f")){if(dn<0.2)S.lastStep=S.si+"n";else if(dn<0.8&&dn>0.5)S.lastStep=S.si+"f";say((dn<0.2?"":"O "+fd(dn)+", ")+sv)}}
   if(nx.maneuver.type==="arrive"&&dn<0.03){say("Ste v cieli.");navClear();stopNav();status("🏁 Ste v cieli.");return}
     if(distToRoute(c)>0.08&&Date.now()-S.rr>15000){S.rr=Date.now();say("Prepočítavam trasu");if(S.mode==="plan"&&S.replan)S.replan();else{const i=S.st.indexOf(S.dest);if(i>=0)route(i)}}}
@@ -199,9 +199,9 @@ const P={a:null,b:null,via:[],res:null,mk:null,cfg:null,routes:[],ri:0,haz:[],in
 function mkLoad(){if(P.mk)return Promise.resolve(P.mk);return fetch("market.json",{cache:"no-store"}).then(r=>r.ok?r.json():null).catch(()=>null).then(j=>(P.mk=j||{},P.mk))}
 function cfg(){if(P.cfg)return P.cfg;const f=(P.mk&&P.mk.fuel)||{},rf=f.ref||{ekm:1.6,cons:0.32,netL:1.5551},huf=(P.mk&&P.mk.fx&&P.mk.fx.huf)||366;
   let c={};try{c=JSON.parse(localStorage.getItem(PK)||"{}")}catch(x){}
-  P.cfg=Object.assign({mode:"truck",t:25,ret:true,marza:10,tolls:true,hwy:true,pref:"fast",ttKey:"",cons:+(rf.cons*100).toFixed(1),other:+(rf.ekm-rf.cons*rf.netL).toFixed(3),skL:f.sk&&f.sk.netL||rf.netL,huL:f.hu&&f.hu.netL||rf.netL,toll:TOLL0(huf)},c);
+  P.cfg=Object.assign({mode:"truck",trip:"one",t2:null,t:25,ret:true,marza:10,tolls:true,hwy:true,pref:"fast",ttKey:"",cons:+(rf.cons*100).toFixed(1),other:+(rf.ekm-rf.cons*rf.netL).toFixed(3),skL:f.sk&&f.sk.netL||rf.netL,huL:f.hu&&f.hu.netL||rf.netL,toll:TOLL0(huf)},c);
   P.cfg.toll=Object.assign(TOLL0(huf),c.toll||{});return P.cfg}
-function cfgSave(){try{const c=P.cfg,o={mode:c.mode,t:c.t,ret:c.ret,marza:c.marza,tolls:c.tolls,hwy:c.hwy,pref:c.pref,ttKey:c.ttKey,cons:c.cons,other:c.other,toll:c.toll};localStorage.setItem(PK,JSON.stringify(o))}catch(x){}}
+function cfgSave(){try{const c=P.cfg,o={mode:c.mode,trip:c.trip,t2:c.t2,t:c.t,ret:c.ret,marza:c.marza,tolls:c.tolls,hwy:c.hwy,pref:c.pref,ttKey:c.ttKey,cons:c.cons,other:c.other,toll:c.toll};localStorage.setItem(PK,JSON.stringify(o))}catch(x){}}
 const n2=(x,d=2)=>Number.isFinite(x)?x.toLocaleString("sk-SK",{minimumFractionDigits:d,maximumFractionDigits:d}):"–";
 const eur=x=>n2(x,0)+" €";
 function dec6(s){const o=[];let i=0,la=0,ln=0;while(i<s.length){for(const k of [0,1]){let b,sh=0,r=0;do{b=s.charCodeAt(i++)-63;r|=(b&31)<<sh;sh+=5}while(b>=32);const d=r&1?~(r>>1):r>>1;if(k)ln+=d;else la+=d}o.push([la/1e6,ln/1e6])}return o}
@@ -224,8 +224,9 @@ async function geo(q){q=String(q||"").trim();const m=q.match(/^(-?\d+(?:[.,]\d+)
   return []}
 let acT=0,acSeq=0;
 function sug(which,list){const e=$(".emsug");if(!e)return;e.dataset.w=which;e.innerHTML=list.map((s,i)=>`<button type="button" class="emsg" data-emsg="${i}"><b>${E(s.n)}</b>${s.w?`<small>${E(s.w)}</small>`:""}</button>`).join("");P.sl=list}
-const getW=w=>w==="a"?P.a:w==="b"?P.b:P.via[+w.slice(1)];
-function setW(w,v){if(w==="a")P.a=v;else if(w==="b")P.b=v;else P.via[+w.slice(1)]=v}
+const getW=w=>w==="a"?P.a:w==="b"?P.b:w==="c"?P.c:w==="d"?P.d:P.via[+w.slice(1)];
+function setW(w,v){if(w==="a")P.a=v;else if(w==="b")P.b=v;else if(w==="c")P.c=v;else if(w==="d")P.d=v;else P.via[+w.slice(1)]=v}
+const navStops=()=>P.tripStops||P.via||[];
 function planUI(){const c=cfg(),T=c.toll,rows=Object.keys(T).map(k=>`<div class="emtr"><span>${FLAG[k]||"🌍"} ${k==="*"?"ostatné (spoplatnené úseky)":E(CN[k]||k)}</span><input inputmode="decimal" data-emtl="${k}.m" value="${n2(T[k].m,4)}" aria-label="mýto diaľnica ${k}"><input inputmode="decimal" data-emtl="${k}.p" value="${n2(T[k].p,4)}" aria-label="mýto I. trieda ${k}"></div>`).join("");
   const MD=[["truck","🚛 Kamión"],["auto","🚗 Autom"],["pedestrian","🚶 Pešo"]];
   const via=P.via.map((v,i)=>`<label class="emvia"><small>Zastávka ${i+1}</small><span><input data-emf="v${i}" autocomplete="off" placeholder="Zastávka – mesto, adresa" value="${E(v&&v.n||"")}"><button type="button" class="emvx" data-emvx="${i}" aria-label="Odstrániť zastávku">✕</button></span></label>`).join("");
@@ -237,7 +238,12 @@ function planUI(){const c=cfg(),T=c.toll,rows=Object.keys(T).map(k=>`<div class=
    <button type="button" data-emo="tolls" class="${c.tolls?"on":""}">💶 Spoplatnené úseky</button><button type="button" data-emo="hwy" class="${c.hwy?"on":""}">🛣️ Diaľnice</button></div>
   <small class="emnote emnp">Bez poplatkov: vypni 💶 (mýto) a pri aute aj 🛣️ (diaľničná známka SK / CZ / HU / AT).</small>
   <div class="emrw emtk"><label><small>Náklad t</small><input inputmode="decimal" data-emc="t" value="${n2(c.t,0)}"></label><label><small>Marža %</small><input inputmode="decimal" data-emc="marza" value="${n2(c.marza,0)}"></label>
-  <label class="emck"><input type="checkbox" data-emc="ret" ${c.ret?"checked":""}><span>prázdny návrat</span></label></div>
+  <label class="emck emone"><input type="checkbox" data-emc="ret" ${c.ret?"checked":""}><span>prázdny návrat</span></label></div>
+  <div class="emtrip emtk"><button type="button" data-emtrip="one" class="${c.trip!=="back"?"on":""}">↗️ Jedným smerom</button><button type="button" data-emtrip="back" class="${c.trip==="back"?"on":""}">🔁 Tam a späť so spätným nákladom</button></div>
+  <div class="emback emtk"><label><small>📦 Nakládka spätného nákladu <i>(prázdne = hneď vo vykládke)</i></small><input data-emf="c" autocomplete="off" placeholder="napr. Sečovce, Martfű…" value="${E(P.c?P.c.n:"")}"></label>
+   <label><small>🏠 Návrat do <i>(prázdne = späť na štart)</i></small><input data-emf="d" autocomplete="off" placeholder="napr. Zbudza" value="${E(P.d?P.d.n:"")}"></label>
+   <div class="emrw"><label><small>Spätný náklad t</small><input inputmode="decimal" data-emc="t2" value="${n2(c.t2!=null?c.t2:c.t,0)}"></label></div>
+   <small class="emnote">Trasa: štart → vykládka (naložený) → nakládka spätného nákladu (prázdny prejazd) → návrat (naložený). Náklady a cena zvlášť pre cestu tam aj späť; prázdny prejazd sa rozdelí napoly.</small></div>
   <details class="emcfg emtk"><summary>⚙️ Náklady, nafta a mýto</summary><div class="emrw"><label><small>Spotreba l/100</small><input inputmode="decimal" data-emc="cons" value="${n2(c.cons,1)}"></label>
    <label><small>Ostatné €/km</small><input inputmode="decimal" data-emc="other" value="${n2(c.other,3)}"></label></div>
    <div class="emrw"><label><small>Nafta SK €/l bez DPH</small><input inputmode="decimal" data-emc="skL" value="${n2(c.skL,3)}"></label><label><small>Nafta HU €/l bez DPH</small><input inputmode="decimal" data-emc="huL" value="${n2(c.huL,3)}"></label></div>
@@ -250,7 +256,7 @@ function planUI(){const c=cfg(),T=c.toll,rows=Object.keys(T).map(k=>`<div class=
   <button type="button" class="emgo emcalc" data-emcalc>${CL(c.mode)}</button><div class="emres">${resAll()}</div>`}
 function showPlan(on){S.mode=on?"plan":"poi";const o=document.getElementById("emap");if(!o)return;o.classList.toggle("plan",on);
   document.querySelectorAll("#emap [data-emcat]").forEach(b=>b.classList.toggle("on",!on&&b.dataset.emcat===S.cat));const pb=$("[data-emplan]");if(pb)pb.classList.toggle("on",on);
-  let pl=$(".empl");if(on){if(!pl){pl=document.createElement("div");pl.className="empl";$(".emp").prepend(pl)}mkLoad().then(()=>{pl.innerHTML=planUI();pl.dataset.md=cfg().mode});
+  let pl=$(".empl");if(on){if(!pl){pl=document.createElement("div");pl.className="empl";$(".emp").prepend(pl)}mkLoad().then(()=>{pl.innerHTML=planUI();pl.dataset.md=cfg().mode;pl.dataset.trip=cfg().trip||"one"});
     if(S.stL){S.stL.remove();S.stL=null}if(!P.res){S.route=null;S.rL.forEach(l=>l.remove());S.rL=[];stopNav()}}
   else{if(pl)pl.remove();clearLayers();panelMin(false);P.haz=[];P.inc=[];P.res=null;P.routes=[]}}
 function rdNum(v){const x=parseFloat(String(v).replace(/\s/g,"").replace(",","."));return Number.isFinite(x)?x:null}
@@ -263,11 +269,11 @@ function vbody(locs,c,short){const md=c.mode,o={};
   return {locations:locs.map((l,i)=>({lat:l.lat,lon:l.lng,type:i===0||i===locs.length-1?"break":"break_through",name:l.n||""})),costing:md,costing_options:o,language:"sk-SK",units:"kilometers",directions_options:{language:"sk-SK"}}}
 async function vh(body){const r=await fetch(VH+"/route",{method:"POST",body:JSON.stringify(body),headers:{"Content-Type":"application/json"},signal:tmo(30000)});if(!r.ok)throw new Error("route "+r.status);return r.json()}
 function parseTrip(t,md,locs){let pts=[];const steps=[];const nl=t.legs.length;
-  t.legs.forEach((lg,li)=>{const p=dec6(lg.shape),off=pts.length;(lg.maneuvers||[]).forEach(m=>{let ty=VT[m.type]||"turn";if(ty==="depart"&&li>0)return;const via=ty==="arrive"&&li<nl-1;
+  const legR=[];t.legs.forEach((lg,li)=>{const p=dec6(lg.shape),off=pts.length;legR.push({s:off,e:off+p.length-1,km:(lg.summary||{}).length||0,t:(lg.summary||{}).time||0});(lg.maneuvers||[]).forEach(m=>{let ty=VT[m.type]||"turn";if(ty==="depart"&&li>0)return;const via=ty==="arrive"&&li<nl-1;
       const q=p[m.begin_shape_index]||p[p.length-1];const nm=locs&&locs[li+1]&&locs[li+1].n||"";
       steps.push({distance:(m.length||0)*1000,name:(m.street_names||[])[0]||"",txt:via?`📍 Zastávka${nm?": "+nm:""}`:m.instruction,say:via?`Zastávka ${nm}`:(m.verbal_pre_transition_instruction||m.instruction),idx:off+m.begin_shape_index,
         maneuver:{type:via?"via":ty,modifier:VM[m.type]||"straight",location:[q[1],q[0]]}})});pts=pts.concat(p)});
-  return {src:md,pts,distance:t.summary.length*1000,duration:t.summary.time,geometry:{coordinates:pts.map(p=>[p[1],p[0]])},legs:[{steps}],hasToll:t.summary.has_toll,hasHwy:t.summary.has_highway}}
+  return {src:md,pts,distance:t.summary.length*1000,duration:t.summary.time,geometry:{coordinates:pts.map(p=>[p[1],p[0]])},legs:[{steps}],legR,hasToll:t.summary.has_toll,hasHwy:t.summary.has_highway}}
 async function routesFor(locs){const c=cfg(),md=c.mode;let out=[];
   try{const two=locs.length===2&&md!=="pedestrian";const fb=vbody(locs,c,false);if(two)fb.alternates=2;
     const [f,s]=await Promise.all([vh(fb),md==="pedestrian"?Promise.resolve(null):vh(vbody(locs,c,true)).catch(()=>null)]);
@@ -278,7 +284,7 @@ async function routesFor(locs){const c=cfg(),md=c.mode;let out=[];
     const base=md==="pedestrian"?"https://routing.openstreetmap.de/routed-foot/route/v1/driving/":"https://router.project-osrm.org/route/v1/driving/";
     const o=await fetch(`${base}${locs.map(l=>l.lng.toFixed(6)+","+l.lat.toFixed(6)).join(";")}?overview=full&geometries=geojson&steps=true&alternatives=${locs.length===2?"true":"false"}`,{signal:tmo(20000)});
     if(!o.ok)throw new Error("služby trás neodpovedajú");const j=await o.json();(j.routes||[]).forEach((R,i)=>{R.src=md==="pedestrian"?"pedestrian":"car";R.pts=R.geometry.coordinates.map(p=>[p[1],p[0]]);
-      R.legs=[{steps:[].concat(...R.legs.map(l=>l.steps||[]))}];R.lbl=i?"↔️ Alternatíva "+i:"⚡ Najrýchlejšia";out.push(R)})}
+      R.legKm=R.legs.map(l=>(l.distance||0)/1000);R.legs=[{steps:[].concat(...R.legs.map(l=>l.steps||[]))}];R.lbl=i?"↔️ Alternatíva "+i:"⚡ Najrýchlejšia";out.push(R)})}
   if(!out.length)throw new Error("trasa neexistuje");return out}
 async function tollSplit(R){if(R.src!=="truck")return null;if(R.tolls)return R.tolls;
   const r=await fetch(VH+"/trace_attributes",{method:"POST",headers:{"Content-Type":"application/json"},signal:tmo(40000),
@@ -293,16 +299,36 @@ function price(R,C){const c=cfg(),f=c.ret?2:1,D=R.distance/1000,cons=c.cons/100,
     const toll=(x.m*tr.m+x.p*tr.p+x.t*T["*"].m)*f,fuelL=x.km*cons*f,fuel=fuelL*L,tkm=(tr.m?x.m:0)+(tr.p?x.p:0)+x.t;return {k,km:x.km,tkm,toll,fuelL,fuel,L}}).sort((a,b)=>b.km-a.km);
   const fuel=rows.reduce((a,r)=>a+r.fuel,0),toll=rows.reduce((a,r)=>a+r.toll,0),other=D*c.other*f,tot=fuel+toll+other,offer=tot*(1+c.marza/100);
   return {a:P.a.n,b:P.b.n,via:P.via.filter(Boolean).map(v=>v.n),D,dur:R.duration,src:R.src,est,rows,fuel,toll,other,tot,offer,f,t:c.t,marza:c.marza,ret:c.ret,cons:c.cons,oth:c.other}}
+// 🔁 tam a späť so spätným nákladom: úseky naložený tam / prázdny prejazd / naložený späť
+function costOf(C,D){const c=cfg(),cons=c.cons/100,T=c.toll;let est=false;if(!C){C={SK:{km:D,m:0,p:0,t:0}};est=true}
+  const rows=Object.entries(C).filter(([k,x])=>x.km>0.05).map(([k,x])=>{const tr=T[k]||T["*"],L=k==="HU"?c.huL:c.skL;const toll=x.m*tr.m+x.p*tr.p+x.t*T["*"].m,fuelL=x.km*cons,fuel=fuelL*L;return {k,km:x.km,toll,fuelL,fuel}});
+  const fuel=rows.reduce((a,r)=>a+r.fuel,0),toll=rows.reduce((a,r)=>a+r.toll,0),fuelL=rows.reduce((a,r)=>a+r.fuelL,0),other=D*c.other;return {D,fuel,fuelL,toll,other,tot:fuel+toll+other,est,rows}}
+async function priceBack(R,locs){const c=cfg(),nv=P.via.length,hasC=!!P.c,t2=c.t2!=null?c.t2:c.t;
+  const legs=R.legR||(R.legKm||[]).map(k=>({km:k})),seg={out:[],empty:[],back:[]};legs.forEach((l,i)=>{(i<=nv?seg.out:hasC&&i===nv+1?seg.empty:seg.back).push(l)});
+  const one=async L0=>{if(!L0.length)return null;const km=L0.reduce((a,l)=>a+l.km,0),t=L0.reduce((a,l)=>a+(l.t||0),0);let C=null;
+    if(R.src==="truck"&&L0[0].s!=null){try{C=await tollSplit({src:"truck",pts:R.pts.slice(L0[0].s,L0[L0.length-1].e+1)})}catch(x){}}return Object.assign(costOf(C,km),{t})};
+  const [o,e,b]=await Promise.all([one(seg.out),one(seg.empty),one(seg.back)]);const half=e?e.tot/2:0,m=1+c.marza/100;
+  const pOut=(o.tot+half)*m,pBack=b?(b.tot+half)*m:0,tot=o.tot+(e?e.tot:0)+(b?b.tot:0);
+  const solo=2*o.tot+(b?2*b.tot:0); // dve samostatné jazdy s prázdnym návratom
+  return {back:true,a:P.a.n,b:P.b.n,c:P.c?P.c.n:P.b.n,d:(P.d||P.a).n,via:P.via.map(v=>v.n),D:R.distance/1000,dur:R.duration,src:R.src,o,e,bk:b,tot,pOut,pBack,t:c.t,t2,marza:c.marza,solo,save:solo-tot,
+    fuel:o.fuel+(e?e.fuel:0)+(b?b.fuel:0),toll:o.toll+(e?e.toll:0)+(b?b.toll:0),other:o.other+(e?e.other:0)+(b?b.other:0),offer:pOut+pBack}}
 // ---------- výpočet ----------
 async function resolveW(w,inp,need){const cur=getW(w),v=inp?inp.value.trim():"";if(!v)return need?null:undefined;if(cur&&!cur.me&&cur.n===v)return cur;const g=await geo(v);if(!g.length)return null;setW(w,g[0]);inp.value=g[0].n;return g[0]}
 async function calc(){const c=cfg(),btn=$("[data-emcalc]"),out=$(".emres");if(!btn)return;
   const ib=$("[data-emf=b]"),ia=$("[data-emf=a]");
   const b=await resolveW("b",ib,true);if(!b){out.innerHTML=`<div class="emerr">Zadaj cieľ „Kam“ (mesto, adresu alebo GPS) a vyber ho zo zoznamu.</div>`;return}
   for(let i=0;i<P.via.length;i++){const inp=$(`[data-emf=v${i}]`);if(inp&&inp.value.trim()){const r=await resolveW("v"+i,inp,true);if(!r){out.innerHTML=`<div class="emerr">Zastávku ${i+1} som nenašiel.</div>`;return}}else P.via[i]=null}
-  P.via=P.via.filter(Boolean);
+  P.via=P.via.filter(Boolean);const back=c.mode==="truck"&&c.trip==="back";P.tripStops=null;
+  if(back){for(const w of ["c","d"]){const inp=$(`[data-emf=${w}]`);if(inp&&inp.value.trim()){const r=await resolveW(w,inp,true);if(!r){out.innerHTML=`<div class="emerr">Miesto ${w==="c"?"nakládky spätného nákladu":"návratu"} som nenašiel.</div>`;return}}else setW(w,null)}}
   if(ia&&ia.value.trim()){const r=await resolveW("a",ia,true);if(!r){out.innerHTML=`<div class="emerr">Miesto „Odkiaľ“ som nenašiel.</div>`;return}}
   else{if(!S.me){out.innerHTML=`<div class="emerr">📡 Čakám na tvoju GPS polohu – alebo napíš „Odkiaľ“.</div>`;return}P.a={n:"Moja poloha",lat:S.me.lat,lng:S.me.lng,me:true}}
   btn.disabled=true;btn.textContent="🛣️ Počítam trasy…";out.innerHTML="";
+  if(back){btn.disabled=true;btn.textContent="🛣️ Počítam trasu tam a späť…";out.innerHTML="";
+    try{const D=P.d||Object.assign({},P.a,{n:P.a.me?"Štart":P.a.n}),B=Object.assign({},P.b,{n:"📦 Vykládka – "+P.b.n,role:"B"}),Cc=P.c?Object.assign({},P.c,{n:"📦 Nakládka – "+P.c.n,role:"C"}):null;
+      P.tripStops=[...P.via,B,...(Cc?[Cc]:[])];P.d2=Object.assign({},D,{n:"🏠 "+D.n});const locs=[P.a,...P.tripStops,P.d2];
+      const Rs=await routesFor(locs);P.routes=[Rs[0]];P.ri=0;btn.textContent="💶 Počítam mýto a náklady tam aj späť…";P.res=await priceBack(Rs[0],locs);drawPlan(Rs[0]);const o=$(".emres");if(o)o.innerHTML=resAll();panelMin(true);hazards();incidents()}
+    catch(x){out.innerHTML=`<div class="emerr">Trasu sa nepodarilo vypočítať (${E(x.message||x)}). Skús znova o chvíľu.</div>`}
+    btn.disabled=false;btn.textContent=CL(c.mode);return}
   try{P.routes=await routesFor([P.a,...P.via,P.b]);P.ri=Math.max(0,c.pref==="short"?P.routes.findIndex(r=>/najkratšia/i.test(r.lbl)):0);
     await pick(P.ri,btn);panelMin(true);hazards();incidents()}
   catch(x){out.innerHTML=`<div class="emerr">Trasu sa nepodarilo vypočítať (${E(x.message||x)}). Skús znova o chvíľu.</div>`}
@@ -321,7 +347,14 @@ function hazHTML(){const H=P.haz,I=P.inc;if(P.hazBusy)return `<div class="emhz">
 function poiBtns(){const t=cfg().mode==="truck";return `<div class="emalong"><button type="button" data-emp="fuel">⛽ ČS po trase</button><button type="button" data-emp="food">🍽️ Reštaurácie po trase</button>${t?`<button type="button" data-emp="park">🅿️ Parkovanie kamióny</button>`:""}</div><div class="empoi"></div>`}
 function resAll(){return P.res?altHTML()+resHTML(P.res)+hazHTML()+poiBtns():""}
 function viaTxt(X){return X.via&&X.via.length?` → ${X.via.map(E).join(" → ")}`:""}
-function resHTML(X){if(X.simple)return `<div class="emcard emsim"><div class="emhd"><b>${X.mode==="pedestrian"?"🚶":"🚗"} ${E(X.a)}${viaTxt(X)} → ${E(X.b)}</b><small>${fd(X.D)} · ${ft(X.dur)} ${X.mode==="pedestrian"?"pešo":"autom"}</small></div>
+function backHTML(X){const sg=(ic,t,s)=>s?`<div class="emseg"><b>${ic} ${t}</b><small>${fd(s.D)} · ${ft(s.t||0)} · ⛽ ${n2(s.fuelL,0)} l = ${eur(s.fuel)} · 🛣️ mýto ${eur(s.toll)} · 🔧 ${eur(s.other)}${s.est?" · mýto odhad nedostupný":""}</small><span>${eur(s.tot)}</span></div>`:"";
+  return `<div class="emcard"><div class="emhd"><b>🔁 ${E(X.a)}${viaTxt(X)} → ${E(X.b)}${X.c!==X.b?" → "+E(X.c):""} → ${E(X.d)}</b><small>${fd(X.D)} spolu · ${ft(X.dur)} jazdy ${X.src==="truck"?"· kamiónová trasa 40 t":"· ⚠️ záloha osobná trasa"}</small></div>
+  ${sg("🚛","Tam naložený ("+n2(X.t,0)+" t)",X.o)}${sg("↩️","Prázdny prejazd na nakládku",X.e)}${sg("🔁","Späť naložený ("+n2(X.t2,0)+" t)",X.bk)}
+  <div class="emsum"><span class="emtot">Náklady celej jazdy</span><b class="emtot">${eur(X.tot)}</b><span>Dve jazdy s prázdnym návratom by stáli</span><b>${eur(X.solo)}</b><span>💚 Spätný náklad ušetrí</span><b>${eur(X.save)}</b></div>
+  <div class="emoffer"><small>💶 Cena tam (marža ${n2(X.marza,0)} %, ½ prázdneho prejazdu)</small><b>${eur(X.pOut)}</b><span>${n2(X.pOut/X.t)} €/t</span></div>
+  ${X.bk?`<div class="emoffer"><small>💶 Cena spätného nákladu</small><b>${eur(X.pBack)}</b><span>${n2(X.pBack/X.t2)} €/t</span></div>`:""}
+  <div class="embt"><button type="button" class="emgo" data-emgo>▶ Štart navigácie (celá trasa)</button><button type="button" data-emcopy>📋 Kopírovať ceny</button></div></div>`}
+function resHTML(X){if(X.back)return backHTML(X);if(X.simple)return `<div class="emcard emsim"><div class="emhd"><b>${X.mode==="pedestrian"?"🚶":"🚗"} ${E(X.a)}${viaTxt(X)} → ${E(X.b)}</b><small>${fd(X.D)} · ${ft(X.dur)} ${X.mode==="pedestrian"?"pešo":"autom"}</small></div>
   <div class="embt"><button type="button" class="emgo" data-emgo>▶ Štart navigácie</button></div></div>`;
   const fl=X.rows.reduce((a,r)=>a+r.fuelL,0);
   return `<div class="emcard"><div class="emhd"><b>🚛 ${E(X.a)}${viaTxt(X)} → ${E(X.b)}</b><small>${fd(X.D)} · ${ft(X.dur)} ${X.src==="truck"?"· kamiónová trasa 40 t":"· ⚠️ záloha osobná trasa (kamiónová služba neodpovedá)"}${X.ret?` · s prázdnym návratom ${fd(X.D*2)}`:""}</small></div>
@@ -334,18 +367,18 @@ function resHTML(X){if(X.simple)return `<div class="emcard emsim"><div class="em
 const RC=()=>{const md=cfg().mode;return md==="truck"?["#f59e0b","#fde68a"]:md==="auto"?["#22d3ee","#a7f3d0"]:["#a78bfa","#ddd6fe"]};
 function clearLayers(){S.rL.forEach(l=>l.remove());S.rL=[];P.altL.forEach(l=>l.remove());P.altL=[];if(P.hazL){P.hazL.remove();P.hazL=null}if(P.poiL){P.poiL.remove();P.poiL=null}if(S.mvL){S.mvL.forEach(l=>l.remove());S.mvL=null}}
 function drawRouteLines(R){const [c1,c2]=RC();S.rL.slice(0,2).forEach(l=>l.remove());const a=L.polyline(R.pts,{color:c1,weight:12,opacity:.25}).addTo(S.map),b=L.polyline(R.pts,{color:c2,weight:5,opacity:.95,className:"emglow"}).addTo(S.map);S.rL.splice(0,2,a,b)}
-function drawPlan(R){S.route=R;S.steps=R.legs[0].steps||[];S.si=0;S.dest={n:P.b.n,lat:P.b.lat,lng:P.b.lng};S.replan=replan;S.ix=0;
+function drawPlan(R){S.route=R;S.steps=R.legs[0].steps||[];S.si=0;{const fin=P.tripStops&&P.d2?P.d2:P.b;S.dest={n:fin.n,lat:fin.lat,lng:fin.lng}}S.replan=replan;S.ix=0;
   S.rL.forEach(l=>l.remove());S.rL=[];P.altL.forEach(l=>l.remove());P.altL=[];
   P.routes.forEach((A,i)=>{if(i===P.ri)return;const l=L.polyline(A.pts,{color:"#94a3b8",weight:6,opacity:.55,dashArray:"2 8"}).addTo(S.map);l.on("click",()=>pick(i));P.altL.push(l)});
   const [c1,c2]=RC();S.rL=[L.polyline(R.pts,{color:c1,weight:12,opacity:.25}).addTo(S.map),L.polyline(R.pts,{color:c2,weight:5,opacity:.95,className:"emglow"}).addTo(S.map),
     L.marker(R.pts[0],{icon:L.divIcon({className:"emfuel",html:"🅰️",iconSize:[30,30]})}).addTo(S.map),L.marker(R.pts[R.pts.length-1],{icon:L.divIcon({className:"emfuel near",html:"🏁",iconSize:[30,30]})}).addTo(S.map)];
-  P.via.forEach((v,i)=>S.rL.push(L.marker([v.lat,v.lng],{icon:L.divIcon({className:"emfuel",html:String(i+1),iconSize:[30,30]})}).addTo(S.map)));
+  navStops().forEach((v,i)=>S.rL.push(L.marker([v.lat,v.lng],{icon:L.divIcon({className:"emfuel",html:v.role==="B"?"📦":v.role==="C"?"🔁":String(i+1),iconSize:[30,30]})}).addTo(S.map)));
   S.follow=false;fitRoute();const st=$(".emst");if(st)st.innerHTML="";const g=$(".emgg");if(g){g.hidden=false;g.href=`https://www.google.com/maps/dir/?api=1&origin=${P.a.lat},${P.a.lng}&destination=${P.b.lat},${P.b.lng}${P.via.length?"&waypoints="+encodeURIComponent(P.via.map(v=>v.lat+","+v.lng).join("|")):""}&travelmode=${cfg().mode==="pedestrian"?"walking":"driving"}`}
   if(P.haz.length)drawHaz()}
 // pri zídení z trasy počas navigácie: nová trasa z mojej polohy cez zostávajúce zastávky do cieľa (cena sa nemení)
-async function replan(){if(!S.me||!P.b)return;try{const left=P.via.filter(v=>!v.done);const Rs=await routesFor([{lat:S.me.lat,lng:S.me.lng,n:"Moja poloha"},...left,P.b]);const R=Rs[0];
+async function replan(){if(!S.me||!P.b)return;try{const left=navStops().filter(v=>!v.done);const Rs=await routesFor([{lat:S.me.lat,lng:S.me.lng,n:"Moja poloha"},...left,S.dest||P.b]);const R=Rs[0];
   S.route=R;S.steps=R.legs[0].steps||[];S.si=0;S.ix=0;drawRouteLines(R);if(S.mvL){S.mvL.forEach(l=>l.remove());S.mvL=null;S.mvFor=null}navTick(true)}catch(x){}}
-function copyTxt(){const X=P.res;if(!X||X.simple)return;const t=`Preprava ${X.a}${X.via&&X.via.length?" → "+X.via.join(" → "):""} → ${X.b}: ${n2(X.D,0)} km${X.ret?" (+ prázdny návrat)":""}, ${n2(X.t,0)} t. Náklady ${eur(X.tot)} (nafta ${eur(X.fuel)}, mýto ${eur(X.toll)}, ostatné ${eur(X.other)}). Cena ${eur(X.offer)} = ${n2(X.offer/X.t)} €/t.`;
+function copyTxt(){const X=P.res;if(!X||X.simple)return;if(X.back){const t=`Preprava tam a späť: ${X.a} → ${X.b}${X.c!==X.b?" → "+X.c:""} → ${X.d}, spolu ${n2(X.D,0)} km. Tam ${n2(X.t,0)} t: ${eur(X.pOut)} (${n2(X.pOut/X.t)} €/t). ${X.bk?`Spätný náklad ${n2(X.t2,0)} t: ${eur(X.pBack)} (${n2(X.pBack/X.t2)} €/t). `:""}Náklady celej jazdy ${eur(X.tot)}.`;try{navigator.clipboard.writeText(t);if(typeof toast==="function")toast("📋 Skopírované",2500)}catch(x){}return}const t=`Preprava ${X.a}${X.via&&X.via.length?" → "+X.via.join(" → "):""} → ${X.b}: ${n2(X.D,0)} km${X.ret?" (+ prázdny návrat)":""}, ${n2(X.t,0)} t. Náklady ${eur(X.tot)} (nafta ${eur(X.fuel)}, mýto ${eur(X.toll)}, ostatné ${eur(X.other)}). Cena ${eur(X.offer)} = ${n2(X.offer/X.t)} €/t.`;
   try{navigator.clipboard.writeText(t);if(typeof toast==="function")toast("📋 Skopírované",2500)}catch(x){}}
 // ---------- 📷 radary a 🚧 práce na ceste (OpenStreetMap) ----------
 async function ovpAny(q){return Promise.any(OVP.map(u=>fetch(u,{method:"POST",body:"data="+encodeURIComponent(q),headers:{"Content-Type":"application/x-www-form-urlencoded"},signal:tmo(35000)}).then(r=>{if(!r.ok)throw new Error(r.status);return r.json()})))}
@@ -403,11 +436,12 @@ document.addEventListener("input",e=>{const t=e.target;if(!t.closest||!t.closest
   if(t.dataset.emc){const c=cfg(),k=t.dataset.emc;if(k==="ret")c.ret=t.checked;else if(k==="ttKey")c.ttKey=t.value.trim();else{const v=rdNum(t.value);if(v!=null)c[k]=v}cfgSave();return}
   if(t.dataset.emtl){const [k,w]=t.dataset.emtl.split("."),v=rdNum(t.value);if(v!=null){cfg().toll[k][w]=v;cfgSave()}}},true);
 document.addEventListener("change",e=>{const t=e.target;if(t.dataset&&t.dataset.emc==="ret"){cfg().ret=t.checked;cfgSave()}},true);
-document.addEventListener("click",e=>{const t=e.target.closest&&e.target.closest("[data-emplan],[data-emsg],[data-emcalc],[data-emcopy],[data-emmd],[data-emo],[data-emaddv],[data-emvx],[data-emalt],[data-emp],[data-empa],[data-empmin]");if(!t||!t.closest("#emap"))return;e.preventDefault();e.stopPropagation();
+document.addEventListener("click",e=>{const t=e.target.closest&&e.target.closest("[data-emplan],[data-emsg],[data-emcalc],[data-emcopy],[data-emmd],[data-emo],[data-emtrip],[data-emaddv],[data-emvx],[data-emalt],[data-emp],[data-empa],[data-empmin]");if(!t||!t.closest("#emap"))return;e.preventDefault();e.stopPropagation();
   const D=t.dataset;if(D.emplan!==undefined)return showPlan(true);
   if(D.emmd!==undefined){const c=cfg();c.mode=D.emmd;cfgSave();const pl=$(".empl");pl.dataset.md=c.mode;pl.querySelectorAll("[data-emmd]").forEach(b=>b.classList.toggle("on",b===t));$("[data-emcalc]").textContent=CL(c.mode);if(P.b)calc();return}
   if(D.emo!==undefined){const c=cfg();if(D.emo==="pref"){c.pref=D.v;t.parentNode.querySelectorAll("[data-emo=pref]").forEach(b=>b.classList.toggle("on",b===t));if(P.routes.length){const i=c.pref==="short"?P.routes.findIndex(r=>/najkratšia/i.test(r.lbl)):0;if(i>=0)pick(i)}}
     else{c[D.emo]=!c[D.emo];t.classList.toggle("on",c[D.emo]);if(P.b)calc()}cfgSave();return}
+  if(D.emtrip!==undefined){const c=cfg();c.trip=D.emtrip;cfgSave();const pl=$(".empl");pl.dataset.trip=c.trip;pl.querySelectorAll("[data-emtrip]").forEach(b=>b.classList.toggle("on",b===t));if(P.b)calc();return}
   if(D.emaddv!==undefined){P.via.push(null);const pl=$(".empl");pl.innerHTML=planUI();const i=$(`[data-emf=v${P.via.length-1}]`);if(i)i.focus();return}
   if(D.emvx!==undefined){P.via.splice(+D.emvx,1);const pl=$(".empl");pl.innerHTML=planUI();if(P.b&&P.res)calc();return}
   if(D.emalt!==undefined)return pick(+D.emalt);if(D.emcalc!==undefined)return calc();if(D.emcopy!==undefined)return copyTxt();
@@ -420,7 +454,7 @@ const OK=()=>typeof window.MAIN_OK==="function"&&window.MAIN_OK()&&!window.ERNTE
 // ===== 31. 10. (príkaz majiteľa): navigácia vždy pokračuje, dojazd km a čas, nadmorská výška, náklady, strážca trasy =====
 const NK="ernte-nav-live";
 function navSave(){try{if(!S.nav||!S.dest)return;localStorage.setItem(NK,JSON.stringify({dest:{n:S.dest.n,lat:+S.dest.lat,lng:+S.dest.lng},
-  via:(P.via||[]).filter(v=>!v.done).map(v=>({n:v.n,lat:+v.lat,lng:+v.lng})),rate:P.res&&P.res.D>0?P.res.tot/P.res.D:((navSaved()||{}).rate||null),at:Date.now()}))}catch(x){}}
+  via:navStops().filter(v=>!v.done).map(v=>({n:v.n,lat:+v.lat,lng:+v.lng})),rate:P.res&&P.res.D>0?P.res.tot/P.res.D:((navSaved()||{}).rate||null),at:Date.now()}))}catch(x){}}
 function navClear(){try{localStorage.removeItem(NK)}catch(x){}fixHide();if(S.fixT){clearInterval(S.fixT);S.fixT=null}}
 function navSaved(){try{const o=JSON.parse(localStorage.getItem(NK)||"null");if(o&&o.dest&&Date.now()-o.at<12*36e5)return o}catch(x){}return null}
 const fdur=s=>{const m=Math.max(0,Math.round(s/60));return m<60?m+" min":Math.floor(m/60)+" h "+String(m%60).padStart(2,"0")};
@@ -435,7 +469,7 @@ function hudX(rem,sec){{const hd=$(".emhud"),o=document.getElementById("emap");i
 function fixHide(){const f=$(".emfix");if(f){f.hidden=true;f.innerHTML=""}S.fixR=null}
 function fixStart(){if(S.fixT)clearInterval(S.fixT);S.fixT=setInterval(()=>{if(S.nav&&!document.hidden)fixCheck()},180000);setTimeout(()=>{if(S.nav)fixCheck()},45000)}
 async function fixCheck(){if(S.fixBusy||!S.nav||!S.me||!S.dest||!S.route||cfg().mode==="pedestrian")return;S.fixBusy=true;
-  try{const left=(P.via||[]).filter(v=>!v.done);const Rs=await routesFor([{lat:S.me.lat,lng:S.me.lng,n:"Moja poloha"},...left,S.dest]);if(!Rs.length||!S.nav)return;
+  try{const left=navStops().filter(v=>!v.done);const Rs=await routesFor([{lat:S.me.lat,lng:S.me.lng,n:"Moja poloha"},...left,S.dest]);if(!Rs.length||!S.nav)return;
     const keep=P.routes,keepRi=P.ri;P.routes=Rs.concat([S.route]);try{await incidents()}catch(x){}P.routes=keep;P.ri=keepRi;
     const R=S.route,C=cum(R),T=C[C.length-1]||1,ni=nearIx(R,S.me),frac=Math.max(0,1-C[ni.i]/T),dCur=delayOf(R),cur=R.duration*frac+dCur;
     let best=null;for(const A of Rs){const t=A.duration+delayOf(A);if(!best||t<best.t)best={A,t}}
@@ -538,7 +572,9 @@ function hdrBtn(){const app=document.getElementById("app");if(!app)return;const 
 
 #emap.plan .emp>.emst,#emap.plan .emp>.emlist,#emap.plan .emp>.embt>[data-emgo]{display:none!important}#emap.plan .emp{max-height:62vh}#emap.plan.navon .emp{max-height:22vh}#emap.navon .empl{display:none!important}
 .emplb{background:linear-gradient(135deg,#f59e0b,#fde68a)!important;color:#1a1204!important;border:0!important}.emplb.on{box-shadow:0 0 14px rgba(245,158,11,.7)}
-.empl{display:grid;gap:8px}.empl:not([data-md=truck]) .emtk{display:none!important}
+.empl{display:grid;gap:8px}.emtrip{display:grid;grid-template-columns:1fr 1fr;gap:6px}.emtrip button{min-height:44px;border-radius:14px;font-weight:800;font-size:.85rem;padding:4px 8px}.emtrip button.on{background:linear-gradient(135deg,#f59e0b,#fde68a)!important;color:#1a1204!important;border-color:transparent!important}
+.empl:not([data-trip=back]) .emback,.empl[data-trip=back] .emone{display:none!important}.emback{display:grid;gap:8px;padding:10px;border-radius:14px;border:1px dashed rgba(245,158,11,.6)}.emback small i{opacity:.7;font-style:normal}
+.emseg{display:grid;grid-template-columns:1fr auto;gap:2px 10px;padding:8px 10px;border-radius:12px;background:rgba(255,255,255,.05)}.emseg small{grid-column:1/-1;opacity:.8;font-size:.78rem}.emseg span{grid-row:1;grid-column:2;font-weight:800}.empl:not([data-md=truck]) .emtk{display:none!important}
 .emmd{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}.emmd button{min-height:44px;border-radius:999px;font-weight:800;padding:4px 6px;white-space:nowrap}.emmd button.on{background:linear-gradient(135deg,#f59e0b,#fde68a)!important;color:#1a1204!important;border-color:transparent!important;box-shadow:0 0 12px rgba(245,158,11,.6)}
 .emab{display:grid;gap:6px}.empl label{display:grid;gap:2px;min-width:0}.empl label small{opacity:.7;font-size:.72rem;font-weight:600}
 .empl input:not([type=checkbox]){width:100%;min-height:44px;box-sizing:border-box;font-size:16px}.emrw{display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:8px;align-items:end}
