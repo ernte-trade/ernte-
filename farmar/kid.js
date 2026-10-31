@@ -2,9 +2,10 @@
 // Prihlásenie Junior (tabuľka kids) NIE JE tím ani farmár → nevidí žiadne obchodné údaje (ceny, marže, farmárov, odberateľov).
 //  • Lekcie: rodinný podnik (firma, B2B, burza s ozajstným grafom, doprava, zmluva, peniaze, riziko, kurací trus, vedenie ľudí,
 //    rozhodovanie, rodinný podnik, investovanie a ETF) – po slovensky aj po anglicky (🇬🇧 English mode, výslovnosť).
-//  • Škola 4. ročník: matematika (nekonečné príklady), vybrané slová, vlastiveda Slovenska, angličtina.
+//  • Škola 4. ročník: matematika (nekonečné príklady), vybrané slová, vlastiveda, prírodoveda, angličtina.
+//  • 🔁 Otázky sa neopakujú (31. 10.): balíčky bez opakovania (deck), AI dopĺňa nové do kid_qbank (kid_quiz_get vráti iba nevidené), kvíz lekcie = 2 AI + 2 pevné + obchodný príklad.
 //  • Hry: Obchodný deň, ETF sporenie (vymyslené čísla).
-//  • 💶 Skutočná odmena od otca: za správnu odpoveď (predvolene 0,10 €), za lekciu (+1 €), max 10 € denne a 100 € mesačne –
+//  • 💶 Skutočná odmena od otca: za správnu odpoveď (predvolene 0,10 €), za lekciu (+1 €), max 10 € denne a 200 € mesačne –
 //    sadzby a stropy drží databáza (kid_earn_add), otec ich mení a označuje Vyplatené v Tíme.
 (function(){
 const E=s=>String(s==null?"":s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
@@ -103,14 +104,66 @@ const L=[
 const R=(a,b)=>a+Math.floor(Math.random()*(b-a+1));
 const shuf=a=>{a=a.slice();for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a};
 const VS=[["r_ba","y"],["s_n","y"],["m_dlo","y"],["b_strý","y"],["v_soký","y"],["jaz_k","y"],["kob_la","y"],["m_š","y"],["s_r","y"],["hm_z","y"],["r_s","y"],["kop_to","y"],["v_dra","y"],["náb_tok","y"],["ob_čaj","y"],["s_pať","y"],["kor_tnačka","y"],["b_k (zviera)","ý"],["p_tať sa","ý"],["r_chly","ý"],["s_ty","ý"],["v_r (sova)","ý"],["m_liť sa","ý"],["p_cha","ý"],
-  ["z_ma","i"],["p_esok","i"],["b_cykel","i"],["s_la","i"],["r_adok","i"],["m_nca","i"],["v_dlička","i"],["p_la","i"],["p_sať","í"],["s_dlo","í"],["z_vať","í"],["v_no","í"]];
+  ["z_ma","i"],["p_esok","i"],["b_cykel","i"],["s_la","i"],["r_adok","i"],["m_nca","i"],["v_dlička","i"],["p_la","i"],["p_sať","í"],["s_dlo","í"],["z_vať","í"],["v_no","í"],
+  ["b_lina","y"],["ob_vateľ","y"],["príb_tok","y"],["kob_lka","y"],["m_slieť","y"],["m_lný","y"],["m_kať","y"],["m_to (poplatok)","ý"],["m_seľ","y"],["p_šný","y"],["p_sk","y"],["slep_š","ý"],
+  ["r_tier","y"],["r_ža","y"],["hr_zť","y"],["r_dzi","ý"],["r_ľ","ý"],["r_tmus","y"],["r_čať","y"],["r_šavý","y"],["s_čať","y"],["s_rový","y"],["s_seľ","y"],["s_pký","y"],
+  ["v_chova","ý"],["v_skať","ý"],["v_hňa","y"],["v_ža","y"],["v_let","ý"],["v_hra","ý"],["v_drž","y"],["b_dlisko","y"],["b_valý","ý"],  ["b_č","i"],["m_lovať","i"],["p_vo","i"],["s_lný","i"],["b_tka","i"],["m_sa","i"],["r_ziko","i"],["v_ťaz","í"],["s_to (na múku)","i"],["v_era","i"],["kr_k","i"],["m_núta","i"],["p_ť (vodu)","i"],["b_ť (udrieť)","i"],["m_lý","i"],["l_sť","i"],["c_tron","i"],["d_vadlo","i"],["l_pa","i"],["c_cka","i"]];
 const KR=[["Bratislavský","Bratislava"],["Trnavský","Trnava"],["Nitriansky","Nitra"],["Trenčiansky","Trenčín"],["Žilinský","Žilina"],["Banskobystrický","Banská Bystrica"],["Prešovský","Prešov"],["Košický","Košice"]];
 const VL=[["Hlavné mesto Slovenska je…","Bratislava",["Košice","Žilina"]],["Najdlhšia rieka na Slovensku je…","Váh",["Hron","Hornád"]],["Cez Bratislavu tečie rieka…","Dunaj",["Váh","Bodrog"]],["Najvyšší štít Slovenska je…","Gerlachovský štít",["Kriváň","Lomnický štít"]],
   ["V ktorom kraji sú Michalovce (aj tatinova firma pri Zbudzi)?","Košický",["Prešovský","Žilinský"]],["Koľko krajov má Slovensko?","8",["5","12"]],["Ktorý štát NIE JE náš sused?","Nemecko",["Maďarsko","Poľsko"]],["Najvyššie pohorie Slovenska sú…","Vysoké Tatry",["Malé Karpaty","Vihorlat"]],
-  ["Ktorá rieka tečie cez Košice?","Hornád",["Dunaj","Morava"]],["S ktorým štátom hraničí Slovensko na východe?","Ukrajina",["Rakúsko","Česko"]]];
-const EV=[["farmár","farmer"],["pšenica","wheat"],["kukurica","corn"],["kamión","truck"],["cena","price"],["peniaze","money"],["predať","to sell"],["kúpiť","to buy"],["pole","field"],["žatva","harvest"],["zmluva","contract"],["zisk","profit"],["náklady","costs"],["krava","cow"],["sliepka","chicken"],["traktor","tractor"],["počasie","weather"],["dážď","rain"],["slnko","sun"],["firma","company"],["šéf","boss"],["vodič","driver"],["sklad","warehouse"],["burza","exchange"],["obchod","trade / shop"],["otec","father / dad"],["syn","son"],["rodina","family"],["škola","school"],["dvadsaťpäť","twenty-five"],["sto","one hundred"],["tisíc","one thousand"],["pondelok","Monday"],["piatok","Friday"],["zelená","green"],["žltá","yellow"],["mesiac","month"],["týždeň","week"],["ďakujem","thank you"],["prosím","please"]];
+  ["Ktorá rieka tečie cez Košice?","Hornád",["Dunaj","Morava"]],["S ktorým štátom hraničí Slovensko na východe?","Ukrajina",["Rakúsko","Česko"]],
+  ["Ktorá rieka tečie cez Prešov?","Torysa",["Hron","Morava"]],["Cez Michalovce tečie rieka…","Laborec",["Torysa","Váh"]],["Veľká vodná nádrž pri Michalovciach je…","Zemplínska šírava",["Liptovská Mara","Oravská priehrada"]],
+  ["Hlavné mesto Maďarska je…","Budapešť",["Viedeň","Praha"]],["Hlavné mesto Česka je…","Praha",["Brno","Varšava"]],["Hlavné mesto Rakúska je…","Viedeň",["Salzburg","Budapešť"]],["Hlavné mesto Poľska je…","Varšava",["Krakov","Budapešť"]],["Hlavné mesto Ukrajiny je…","Kyjev",["Užhorod","Ľvov"]],
+  ["Na štátnom znaku Slovenska je…","biely dvojkríž na troch modrých vrchoch",["zlatý lev a orol","slnko a mesiac"]],["Farby slovenskej vlajky sú…","biela, modrá, červená",["zelená, biela, červená","čierna, červená, žltá"]],
+  ["Slovenská republika vznikla 1. januára roku…","1993",["1989","2004"]],["Platidlo na Slovensku je…","euro",["koruna","forint"]],["Do Európskej únie vstúpilo Slovensko v roku…","2004",["1993","2010"]],
+  ["Pohorie pri Michalovciach a Sobranciach je…","Vihorlat",["Malá Fatra","Malé Karpaty"]],["Jeden z najväčších hradov v strednej Európe je…","Spišský hrad",["Bratislavský hrad","Trenčiansky hrad"]],
+  ["Ktorá jaskyňa je ľadová?","Dobšinská",["Domica","Ochtinská aragonitová"]],["Cez Banskú Bystricu tečie rieka…","Hron",["Hornád","Ondava"]],["Ktoré mesto je krajské?","Žilina",["Poprad","Michalovce"]],
+  ["Ktoré mesto NIE JE krajské?","Michalovce",["Nitra","Trenčín"]],["Slnko ráno vychádza na…","východe",["západe","severe"]],["Na mape je sever…","hore",["dole","vľavo"]],["Najväčšie mesto východného Slovenska je…","Košice",["Prešov","Poprad"]],
+  ["Najvyšší štít Slovenska meria asi…","2 655 m",["1 200 m","4 800 m"]],["Ktorý štát je náš sused na juhu?","Maďarsko",["Poľsko","Ukrajina"]],["Ktorý štát je náš sused na severe?","Poľsko",["Maďarsko","Rakúsko"]],["Aké mesto leží pri Vysokých Tatrách?","Poprad",["Komárno","Michalovce"]]];
+const PRV=[["Ktorá časť rastliny prijíma vodu z pôdy?","koreň",["list","kvet"]],["Rastlina si vyrába potravu zo svetla hlavne v…","listoch",["koreňoch","semenách"]],["Z čoho sa melie múka na chlieb?","zo zrna pšenice",["z repky","zo slnečnice"]],
+  ["Z repky sa vyrába hlavne…","olej",["múka","cukor"]],["Kukurica na zrno sa zbiera najčastejšie…","na jeseň",["v zime","na jar"]],["Ozimná pšenica sa seje…","na jeseň",["v lete","v zime"]],["Voda pri 0 °C…","zamŕza",["vrie","zmizne"]],
+  ["Voda vrie pri teplote…","100 °C",["50 °C","0 °C"]],["Para je voda v skupenstve…","plynnom",["pevnom","kvapalnom"]],["Ľad je voda v skupenstve…","pevnom",["plynnom","kvapalnom"]],["Koľko ročných období má rok?","4",["3","12"]],
+  ["Ktorý plyn potrebujeme na dýchanie?","kyslík",["oxid uhličitý","hélium"]],["Srdce v tele…","pumpuje krv",["trávi jedlo","vidí"]],["Pľúca slúžia na…","dýchanie",["trávenie","počúvanie"]],["Koľko nôh má hmyz?","6",["8","4"]],
+  ["Koľko nôh má pavúk?","8",["6","4"]],["Sliepka je…","vták",["cicavec","plaz"]],["Krava je…","cicavec",["vták","ryba"]],["Včely sú pre polia dôležité, lebo…","opeľujú kvety",["jedia buriny","orú pôdu"]],
+  ["Dážďovky v pôde…","kypria ju a robia úrodnou",["ničia korene","zmrazia ju"]],["Hnojivo dáva rastlinám…","živiny",["farbu","vôňu"]],["Strelka kompasu ukazuje na…","sever",["juh","západ"]],["Slnko je…","hviezda",["planéta","mesiac"]],
+  ["Zem obehne okolo Slnka za…","1 rok",["1 deň","1 mesiac"]],["Zem sa otočí okolo svojej osi za…","1 deň",["1 rok","1 hodinu"]],["Teplotu meriame…","teplomerom",["váhou","metrom"]],["Čo rastie na strome?","jablko",["zemiak","mrkva"]],
+  ["Zemiak je…","hľuza pod zemou",["ovocie zo stromu","semeno"]],["Slnečnica sa otáča za…","slnkom",["vetrom","mesiacom"]],["Koľko dní má rok (nie prestupný)?","365",["300","400"]]];
+const EV=[["farmár","farmer"],["pšenica","wheat"],["kukurica","corn"],["kamión","truck"],["cena","price"],["peniaze","money"],["predať","to sell"],["kúpiť","to buy"],["pole","field"],["žatva","harvest"],["zmluva","contract"],["zisk","profit"],["náklady","costs"],["krava","cow"],["sliepka","chicken"],["traktor","tractor"],["počasie","weather"],["dážď","rain"],["slnko","sun"],["firma","company"],["šéf","boss"],["vodič","driver"],["sklad","warehouse"],["burza","exchange"],["obchod","trade / shop"],["otec","father / dad"],["syn","son"],["rodina","family"],["škola","school"],["dvadsaťpäť","twenty-five"],["sto","one hundred"],["tisíc","one thousand"],["pondelok","Monday"],["piatok","Friday"],["zelená","green"],["žltá","yellow"],["mesiac","month"],["týždeň","week"],["ďakujem","thank you"],["prosím","please"],
+  ["kôň","horse"],["prasa","pig"],["ovca","sheep"],["pes","dog"],["mačka","cat"],["jačmeň","barley"],["slnečnica","sunflower"],["repka","rapeseed"],["sója","soybean"],["semeno","seed"],["múka","flour"],["chlieb","bread"],["mlyn","mill"],["váha","scale"],
+  ["cesta","road"],["mapa","map"],["nafta","diesel"],["koleso","wheel"],["červená","red"],["modrá","blue"],["čierna","black"],["biela","white"],["január","January"],["leto","summer"],["zima","winter"],["jar","spring"],["jeseň","autumn"],["sobota","Saturday"],["nedeľa","Sunday"],
+  ["mama","mother / mum"],["sestra","sister"],["brat","brother"],["starý otec","grandfather"],["učiteľ","teacher"],["kniha","book"],["ceruzka","pencil"],["jablko","apple"],["voda","water"],["mlieko","milk"],["vajce","egg"],["veľký","big"],["malý","small"],["rýchly","fast"],["pomalý","slow"],
+  ["lacný","cheap"],["drahý","expensive"],["kupujúci","buyer"],["predávajúci","seller"],["faktúra","invoice"],["banka","bank"],["kancelária","office"],["dovidenia","goodbye"],["dobré ráno","good morning"],["desať","ten"],["päťdesiat","fifty"],["polovica","half"]];
+// bez opakovania: zamiešaný balíček indexov pre každú tému (prejde všetky, až potom znova)
+function deck(key,n){const k="ernte-kid-dk-"+key;let d=null;try{d=JSON.parse(localStorage.getItem(k)||"null")}catch(x){}if(!d||d.n!==n||!Array.isArray(d.a)||!d.a.length)d={n,a:shuf([...Array(n).keys()])};const i=d.a.pop();try{localStorage.setItem(k,JSON.stringify(d))}catch(x){}return i}
+// 🔁 nové otázky od AI z databázy (kid_quiz_get vráti iba tie, ktoré ešte nevidel)
+const AIQ={},AIB={};
+async function aiFetch(t,n){if(AIB[t])return;AIB[t]=1;try{const r=await sb.rpc("kid_quiz_get",{p_topic:t,p_n:n||5});if(!r.error&&Array.isArray(r.data))(AIQ[t]||(AIQ[t]=[])).push(...r.data.filter(x=>x&&x.q&&Array.isArray(x.o)&&x.o.length===3&&new Set(x.o).size===3&&x.o[x.a]!=null))}catch(x){}AIB[t]=0}
+function aiTake(t){const a=AIQ[t]||[];const x=a.shift();if(a.length<3)aiFetch(t,8);return x||null}
+// 🔢 obchodné príklady – vždy nové čísla
+function BQ(){const t=R(0,6),f=v=>v.toLocaleString("sk-SK");let q,qe,a,u="€";
+  if(t===0){const tn=[2,3,4,5,10][R(0,4)],p1=R(16,22)*10,d=R(1,4)*5;a=tn*d;q=`Kúpime ${tn} t obilia za ${p1} €/t a predáme za ${p1+d} €/t. Koľko zarobíme?`;qe=`We buy ${tn} t of grain at €${p1}/t and sell at €${p1+d}/t. How much do we earn?`}
+  else if(t===1){const n=R(2,8);a=n*25;u="t";q=`Jeden kamión vezie 25 t. Koľko ton odvezie ${n} kamiónov?`;qe=`One truck carries 25 t. How many tonnes do ${n} trucks carry?`}
+  else if(t===2){const tr=R(8,20)*100,nk=R(3,7)*100;a=tr-nk;q=`Tržba je ${f(tr)} €, náklady ${f(nk)} €. Aký je zisk?`;qe=`Revenue is €${tr}, costs are €${nk}. What is the profit?`}
+  else if(t===3){const km=R(1,5)*50,c=R(1,2);a=km*c;q=`Jazda kamiónom stojí ${c} € za každý km. Koľko stojí ${km} km?`;qe=`A truck trip costs €${c} per km. How much do ${km} km cost?`}
+  else if(t===4){const d=[5,10,20][R(0,2)],m=[6,12][R(0,1)];a=d*m;q=`Odkladáš si ${d} € každý mesiac. Koľko budeš mať po ${m} mesiacoch?`;qe=`You save €${d} every month. How much will you have after ${m} months?`}
+  else if(t===5){const b=R(2,9)*100;a=b/10;q=`Koľko je 10 % z ${f(b)} €?`;qe=`What is 10% of €${b}?`}
+  else{const tn=R(2,6)*100;a=tn/25;u="";q=`Koľko kamiónov po 25 t treba na ${tn} t repky?`;qe=`How many 25-t trucks are needed for ${tn} t of rapeseed?`}
+  const st=a>=100?Math.max(10,Math.round(a/10/5)*5):Math.max(1,Math.round(a/4))||1,o=[a];for(const c of shuf([a+st,a-st,a*2,a+2*st,Math.round(a/2)]))if(c>0&&!o.includes(c)&&o.length<3)o.push(c);while(o.length<3)o.push(a+o.length*st);
+  const L2=o.map(v=>f(v)+(u?" "+u:"")),ord=shuf([0,1,2]);return [q,ord.map(i=>L2[i]),ord.indexOf(0),qe,ord.map(i=>L2[i])]}
+// kvíz lekcie: zakaždým iný – pevné otázky bez opakovania + nové od AI + obchodný príklad
+function mkQuiz(l){const out=[],seen=new Set();const add=x=>{if(x&&!seen.has(x[0])){seen.add(x[0]);out.push(x)}};
+  for(let i=0;i<2;i++){const x=aiTake(l.id);if(x)add([x.q,x.o,+x.a,x.qe||"",(Array.isArray(x.oe)&&x.oe.length===3)?x.oe:null])}
+  let g=0;while(out.length<4&&g++<10)add(l.q[deck("l_"+l.id,l.q.length)]);
+  add(BQ());while(out.length<5)add(BQ());return shuf(out).map(x=>x[3]&&!x[4]?[x[0],x[1],x[2]]:x)}
 function genQ(kind){
-  if(kind==="mat"){const t=R(0,6);
+  if(kind==="mat"){const t=R(0,13);
+    if(t===7){const a=R(3,15),b=R(2,12);return {q:`Pole má tvar obdĺžnika ${a} m × ${b} m. Aký má obvod?`,a:2*(a+b),num:1,u:"m"}}
+    if(t===8){const h=R(2,9);return {q:`Koľko minút sú ${h} hodiny?`,a:h*60,num:1,u:"min"}}
+    if(t===9){const a=R(12,99),b=R(2,9);return {q:`${a} × ${b} = ?`,a:a*b,num:1}}
+    if(t===10){const c=R(500,9999),a=R(100,c-1);return {q:`${a.toLocaleString("sk-SK")} + ? = ${c.toLocaleString("sk-SK")}`,a:c-a,num:1}}
+    if(t===11){const a=R(101,9989);return {q:`Zaokrúhli ${a.toLocaleString("sk-SK")} na desiatky.`,a:Math.round(a/10)*10,num:1}}
+    if(t===12){const a=R(2,9)*R(2,9)*2;return {q:`Polovica z ${a} je?`,a:a/2,num:1}}
+    if(t===13){const n=R(5,9),ha=R(4,12);return {q:`Farmár má ${n} polí, každé má ${ha} ha. Koľko hektárov má spolu?`,a:n*ha,num:1,u:"ha"}}
     if(t===0){const a=R(2,10),b=R(2,10);return {q:`${a} × ${b} = ?`,a:a*b,num:1}}
     if(t===1){const b=R(2,10),c=R(2,10);return {q:`${b*c} : ${b} = ?`,a:c,num:1}}
     if(t===2){const a=R(1000,6000),b=R(100,3999);return {q:`${a.toLocaleString("sk-SK")} + ${b.toLocaleString("sk-SK")} = ?`,a:a+b,num:1}}
@@ -118,12 +171,15 @@ function genQ(kind){
     if(t===4){const n=R(2,8);return {q:`Kamión vezie 25 t obilia. Koľko ton odvezie ${n} kamiónov?`,a:25*n,num:1,u:"t"}}
     if(t===5){const t2=R(2,9);return {q:`Koľko kilogramov je ${t2} ton? (1 t = 1 000 kg)`,a:t2*1000,num:1,u:"kg"}}
     const p=R(15,25)*10,k=R(2,4);return {q:`Tona pšenice stojí ${p} €. Koľko stoja ${k} tony?`,a:p*k,num:1,u:"€"}}
-  if(kind==="vs"){const w=VS[R(0,VS.length-1)];return {q:`Doplň písmeno: <b class="kjvs">${E(w[0]).replace("_","<u>_</u>")}</b>`,a:w[1],opts:["i","í","y","ý"]}}
-  if(kind==="vl"){if(Math.random()<.45){const k=KR[R(0,7)],o=shuf(KR.filter(x=>x!==k)).slice(0,2).map(x=>x[1]);return {q:`Krajské mesto kraja <b>${E(k[0])}</b> je…`,a:k[1],opts:shuf([k[1]].concat(o))}}
-    const v=VL[R(0,VL.length-1)];return {q:E(v[0]),a:v[1],opts:shuf([v[1]].concat(v[2]))}}
-  if(kind==="en"){const w=EV[R(0,EV.length-1)],o=shuf(EV.filter(x=>x!==w)).slice(0,2),dir=Math.random()<.5;
+  if(kind==="vs"){const w=VS[deck("vs",VS.length)];return {q:`Doplň písmeno: <b class="kjvs">${E(w[0]).replace("_","<u>_</u>")}</b>`,a:w[1],opts:["i","í","y","ý"]}}
+  const ai=(kind==="vl"||kind==="en"||kind==="pr")&&Math.random()<(kind==="pr"?.5:.35)?aiTake(kind):null;
+  if(ai)return {q:E(ai.q),a:ai.o[ai.a],opts:shuf(ai.o.slice())};
+  if(kind==="pr"){const v=PRV[deck("pr",PRV.length)];return {q:E(v[0]),a:v[1],opts:shuf([v[1]].concat(v[2]))}}
+  if(kind==="vl"){if(Math.random()<.3){const k=KR[R(0,7)],o=shuf(KR.filter(x=>x!==k)).slice(0,2).map(x=>x[1]);return {q:`Krajské mesto kraja <b>${E(k[0])}</b> je…`,a:k[1],opts:shuf([k[1]].concat(o))}}
+    const v=VL[deck("vl",VL.length)];return {q:E(v[0]),a:v[1],opts:shuf([v[1]].concat(v[2]))}}
+  if(kind==="en"){const w=EV[deck("en",EV.length)],o=shuf(EV.filter(x=>x!==w)).slice(0,2),dir=Math.random()<.5;
     return dir?{q:`Ako sa povie po anglicky: <b>${E(w[0])}</b>?`,a:w[1],opts:shuf([w[1]].concat(o.map(x=>x[1]))),say:null}:{q:`What does <b>${E(w[1])}</b> mean?`,a:w[0],opts:shuf([w[0]].concat(o.map(x=>x[0]))),say:w[1]}}}
-const PRK={mat:["calc","Matematika","násobilka, delenie, do 10 000, slovné úlohy"],vs:["scroll","Vybrané slová","i, í, y, ý – slovenčina"],vl:["globe","Vlastiveda","Slovensko: kraje, mestá, rieky, hory"],en:["grad","Angličtina","slovíčka – aj z našej firmy"]};
+const PRK={mat:["calc","Matematika","násobilka, delenie, do 10 000, slovné úlohy"],vs:["scroll","Vybrané slová","i, í, y, ý – slovenčina"],vl:["globe","Vlastiveda","Slovensko: kraje, mestá, rieky, hory"],pr:["bulb","Prírodoveda","rastliny, zvieratá, voda, telo, vesmír"],en:["grad","Angličtina","slovíčka – aj z našej firmy"]};
 
 // ---------- HRA: OBCHODNÝ DEŇ (vymyslené čísla) ----------
 function gNew(){G={r:1,cash:20000,stock:0,log:[],m:200+Math.round(Math.random()*20)};gTurn()}
@@ -156,15 +212,16 @@ function lesson(){const l=L.find(x=>x.id===V.slice(2));if(!l)return home();const
    <div class="kjcard"><div class="kjem">${c[0]}</div><h2>${E(c[1])}</h2><p>${c[2]}</p>${EN()?`<div class="kjenb"><b>🇬🇧 ${E(c[3])}</b><p>${c[4]}</p><button type="button" data-ksayen>🔊 Read in English</button></div>`:""}
    ${l.chart&&S===2?`<div class="kjchart"><div class="kjcv">Načítavam burzu…</div></div>`:""}
    <div class="kjnav"><button type="button" data-ksay>🔊 Prečítaj mi</button>${S>0?`<button type="button" data-kprev>←</button>`:""}<button type="button" class="lime" data-knext>${S===l.c.length-1?"Kvíz! 🎯":"Ďalej →"}</button></div></div>`;
-  const qi=S-l.c.length,q=l.q[qi];if(!q)return result(l);const en=EN()&&q[3];
-  if(!Q||Q.qi!==qi||!Q.ord)Q=Object.assign(Q||{ok:0},{qi,ord:shuf(q[1].map((_,i)=>i)),pick:null});
+  if(!Q||!Q.list)Q={ok:0,list:mkQuiz(l)};const QS=Q.list;
+  const qi=S-l.c.length,q=QS[qi];if(!q)return result(l);const en=EN()&&q[3]&&q[4];
+  if(Q.qi!==qi||!Q.ord)Object.assign(Q,{qi,ord:shuf(q[1].map((_,i)=>i)),pick:null});
   const opts=en?q[4]:q[1];
-  return `<div class="kjbar"><button type="button" data-kh>← Späť</button><b>🎯 ${en?"Quiz":"Kvíz"} · ${E(en?l.te:l.t)}</b><span>${qi+1} / ${l.q.length}</span></div>
+  return `<div class="kjbar"><button type="button" data-kh>← Späť</button><b>🎯 ${en?"Quiz":"Kvíz"} · ${E(en?l.te:l.t)}</b><span>${qi+1} / ${QS.length}</span></div>
    <div class="kjcard"><h2>${E(en?q[3]:q[0])}</h2>${en?`<small class="kjsk">🇸🇰 ${E(q[0])}</small>`:""}<div class="kjans">${Q.ord.map(i=>`<button type="button" data-ka="${i}"${Q.pick!=null?" disabled":""} class="${Q.pick!=null?(i===q[2]?"ok":i===Q.pick?"bad":""):""}">${E(opts[i])}</button>`).join("")}</div>
    ${Q.pick!=null?`<p class="kjfb">${Q.pick===q[2]?(en?"🎉 Correct!":"🎉 Správne!"):(en?"🙂 Almost! Correct: <b>":"🙂 Skoro! Správne je: <b>")+(Q.pick===q[2]?"":E(opts[q[2]])+"</b>")}</p><div class="kjnav"><button type="button" class="lime" data-knq>${en?"Next →":"Ďalej →"}</button></div>`:""}</div>`}
-function result(l){const tot=l.q.length,ok=Q?Q.ok:0,pass=ok>=Math.ceil(tot*0.6);
+function result(l){const tot=(Q&&Q.list||l.q).length,ok=Q?Q.ok:0,pass=ok>=Math.ceil(tot*0.6);
   return `<div class="kjbar"><button type="button" data-kh>← Späť</button><b>${E(l.t)}</b></div><div class="kjcard kjres">${IMG(pass?"trophy":"bulb",96)}<h2>${pass?"Super, lekcia hotová!":"Skús to ešte raz"}</h2><p>Správne: <b>${ok} z ${tot}</b>${pass?` · +20 🪙 a odznak`:""}</p>
-   <div class="kjnav"><button type="button" data-kre>🔁 Znova</button><button type="button" class="lime" data-kh>Domov</button></div></div>`}
+   <div class="kjnav"><button type="button" data-kre>🔁 Nové otázky</button><button type="button" class="lime" data-kh>Domov</button></div></div>`}
 function practice(){const k=V.slice(3),info=PRK[k];if(!PR||PR.k!==k)PR={k,i:0,ok:0,cur:genQ(k),pick:null,inp:""};const c=PR.cur;
   if(PR.i>=10){const st=P()["pr_"+k]||{n:0,ok:0};return `<div class="kjbar"><button type="button" data-kh>← Späť</button><b>${E(info[1])}</b></div><div class="kjcard kjres">${IMG(PR.ok>=7?"trophy":"bulb",96)}<h2>${PR.ok} z 10 správne ${PR.ok>=9?"🏆":PR.ok>=7?"👏":"💪"}</h2><p>Spolu v tejto téme: ${st.ok} správne z ${st.n}.</p><div class="kjnav"><button type="button" class="lime" data-kprn>🔁 Ďalších 10</button><button type="button" data-kh>Domov</button></div></div>`}
   const ans=PR.pick!=null,ok=ans&&String(PR.pick).trim().replace(/\s/g,"")===String(c.a);
@@ -213,7 +270,7 @@ async function chart(){const b=document.querySelector(".kjchart");if(!b)return;
 function prAnswer(v){const c=PR.cur;if(PR.pick!=null)return;PR.pick=v;const ok=String(v).trim().replace(/\s/g,"")===String(c.a);const st=Object.assign({n:0,ok:0},P()["pr_"+PR.k]||{});st.n++;
   if(ok){PR.ok++;st.ok++;addCoins(2,"škola");earn("q",PRK[PR.k][1])}save("pr_"+PR.k,st);render()}
 document.addEventListener("click",async e=>{if(!K)return;const t=e.target.closest&&e.target.closest("[data-kl],[data-kh],[data-knext],[data-kprev],[data-ksay],[data-ksayen],[data-ka],[data-knq],[data-kre],[data-kg],[data-kgn],[data-kb],[data-kbuy],[data-ken],[data-kpay],[data-kpr],[data-kpo],[data-kchk],[data-kprx],[data-kprn],[data-ksw],[data-ketf],[data-ketd]");if(!t)return;e.preventDefault();
-  if(t.dataset.kl){V="l:"+t.dataset.kl;S=0;Q=null;render();return}
+  if(t.dataset.kl){V="l:"+t.dataset.kl;S=0;Q=null;aiFetch(t.dataset.kl,4);render();return}
   if("kh" in t.dataset){V="home";render();return}
   if("kb" in t.dataset){V="badges";render();return}
   if("kpay" in t.dataset){V="pay";await loadPay();render();return}
@@ -222,19 +279,19 @@ document.addEventListener("click",async e=>{if(!K)return;const t=e.target.closes
   if("kgn" in t.dataset){gNew();render();return}
   if("ketf" in t.dataset){V="etf";render();return}
   if(t.dataset.ketd){ETF=etfRun(+t.dataset.ketd);const h=Object.assign({n:0},P().etf||{});h.n++;save("etf",h);if(h.n<=3)addCoins(5,"ETF hra");render();return}
-  if(t.dataset.kpr){V="pr:"+t.dataset.kpr;PR=null;render();return}
+  if(t.dataset.kpr){V="pr:"+t.dataset.kpr;PR=null;if(t.dataset.kpr!=="mat"&&t.dataset.kpr!=="vs")aiFetch(t.dataset.kpr,10);render();return}
   if(t.dataset.kpo!=null){prAnswer(t.dataset.kpo);return}
   if("kchk" in t.dataset){const i=document.querySelector("[data-kinp]");const v=(i&&i.value||"").replace(/\s/g,"");if(!v){toast("Napíš číslo.");return}PR.inp=v;prAnswer(v);return}
-  if("kprx" in t.dataset){PR.i++;PR.cur=genQ(PR.k);PR.pick=null;PR.inp="";render();return}
+  if("kprx" in t.dataset){PR.i++;const o=PR.cur&&PR.cur.q;let n2=genQ(PR.k),g=0;while(n2.q===o&&g++<5)n2=genQ(PR.k);PR.cur=n2;PR.pick=null;PR.inp="";render();return}
   if("kprn" in t.dataset){PR=null;render();return}
   if(t.dataset.ksw){say(t.dataset.ksw,"en-GB");return}
   if("ksay" in t.dataset){const c=document.querySelector(".kjcard");if(c)say((c.querySelector("h2")||{}).textContent+". "+(c.querySelector(":scope>p")||{}).textContent);return}
   if("ksayen" in t.dataset){const b=document.querySelector(".kjenb");if(b)say(b.querySelector("b").textContent.replace("🇬🇧","")+". "+b.querySelector("p").textContent,"en-GB");return}
   if("knext" in t.dataset){S++;Q=null;render();return}
   if("kprev" in t.dataset){S=Math.max(0,S-1);render();return}
-  if(t.dataset.ka!=null){const l=L.find(x=>x.id===V.slice(2)),q=l.q[Q.qi];if(Q.pick!=null)return;Q.pick=+t.dataset.ka;if(Q.pick===q[2]){Q.ok++;addCoins(5,"kvíz "+l.t);earn("q",l.t)}render();return}
-  if("knq" in t.dataset){const l=L.find(x=>x.id===V.slice(2));Q.pick=null;Q.ord=null;S++;if(S-l.c.length>=l.q.length){const pass=Q.ok>=Math.ceil(l.q.length*0.6);const was=done(l.id);save("l_"+l.id,{ok:pass||was,best:Math.max(Q.ok,(P()["l_"+l.id]||{}).best||0),at:Date.now()});if(pass&&!was)addCoins(20,"lekcia "+l.t);if(pass)earn("l",l.id)}render();return}
-  if("kre" in t.dataset){S=0;Q=null;render();return}
+  if(t.dataset.ka!=null){const l=L.find(x=>x.id===V.slice(2)),q=Q.list[Q.qi];if(Q.pick!=null)return;Q.pick=+t.dataset.ka;if(Q.pick===q[2]){Q.ok++;addCoins(5,"kvíz "+l.t);earn("q",l.t)}render();return}
+  if("knq" in t.dataset){const l=L.find(x=>x.id===V.slice(2));Q.pick=null;Q.ord=null;S++;if(S-l.c.length>=Q.list.length){const pass=Q.ok>=Math.ceil(Q.list.length*0.6);const was=done(l.id);save("l_"+l.id,{ok:pass||was,best:Math.max(Q.ok,(P()["l_"+l.id]||{}).best||0),at:Date.now()});if(pass&&!was)addCoins(20,"lekcia "+l.t);if(pass)earn("l",l.id)}render();return}
+  if("kre" in t.dataset){const l=L.find(x=>x.id===V.slice(2));S=l?l.c.length:0;Q=null;render();return}
   if(t.dataset.kbuy!=null){const sell=!!(document.querySelector("[data-ksell]")||{}).checked;const m=gStep(+t.dataset.kbuy,sell);G.log.push(...m);
     if(G.r>5){const val=G.cash+G.stock*G.m,prof=val-20000;const h=Object.assign({n:0,best:0},P().hra||{});h.n++;h.best=Math.max(h.best,prof);h.last=prof;save("hra",h);if(prof>0)addCoins(Math.min(50,Math.round(prof/100)),"hra")}render();return}},true);
 document.addEventListener("keydown",e=>{if(e.key==="Enter"&&e.target&&e.target.matches&&e.target.matches("[data-kinp]")){e.preventDefault();const b=document.querySelector("[data-kchk]");if(b)b.click()}});
