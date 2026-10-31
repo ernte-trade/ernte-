@@ -100,14 +100,18 @@ function mount(){if(!IN()){const b=btn();if(b)b.remove();const o=document.getEle
   if(btn())return;const b=document.createElement("button");b.type="button";b.id="vaBtn";b.className="vabtn";b.setAttribute("aria-label","Hlasový asistent");b.textContent="🎤";document.body.appendChild(b);
   const o=document.createElement("div");o.id="vaOut";o.className="vaout";o.hidden=true;o.setAttribute("role","status");document.body.appendChild(o);
   // 31. 10. (príkaz majiteľa): tlačidlo mikrofónu sa dá presunúť – potiahni ho prstom kamkoľvek, poloha sa zapamätá
-  b.title="Ťukni = hovor · potiahni = presuň";let dg=null,mv=false;
-  b.addEventListener("click",e=>{if(mv){e.preventDefault();e.stopImmediatePropagation();mv=false}},true);
-  b.addEventListener("pointerdown",e=>{if(fldOK())e.preventDefault();const r=b.getBoundingClientRect();dg={x:e.clientX,y:e.clientY,l:r.left,t:r.top,id:e.pointerId};mv=false;try{b.setPointerCapture(e.pointerId)}catch(x){}});
-  b.addEventListener("pointermove",e=>{if(!dg)return;const dx=e.clientX-dg.x,dy=e.clientY-dg.y;if(!mv&&Math.hypot(dx,dy)<10)return;
-    if(!mv){mv=true;b.classList.add("vadrag")}e.preventDefault();setPos(dg.l+dx,dg.t+dy,false)});
-  const end=()=>{if(dg&&mv){b.classList.remove("vadrag");const r=b.getBoundingClientRect();setPos(r.left,r.top,true)}dg=null};
-  b.addEventListener("pointerup",end);b.addEventListener("pointercancel",end);
-  b.addEventListener("mousedown",e=>{if(fldOK())e.preventDefault()});b.addEventListener("click",listen);place()}
+  b.title="Ťukni = hovor · potiahni = presuň";let dg=null,mv=false,lastTap=0;
+  // ťuknutie spustí mikrofón priamo z pointerup (spoľahlivé aj na iPhone); natívny click už nič nerobí, aby sa nespustil dvakrát
+  const mvH=e=>{if(!dg||e.pointerId!==dg.id)return;const dx=e.clientX-dg.x,dy=e.clientY-dg.y;if(!mv&&Math.hypot(dx,dy)<12)return;
+    if(!mv){mv=true;b.classList.add("vadrag")}e.preventDefault();setPos(dg.l+dx,dg.t+dy,false)};
+  const upH=e=>{if(!dg||e.pointerId!==dg.id)return;removeEventListener("pointermove",mvH);removeEventListener("pointerup",upH);removeEventListener("pointercancel",upH);
+    const was=mv,ok=e.type==="pointerup";dg=null;mv=false;
+    if(was){b.classList.remove("vadrag");const r=b.getBoundingClientRect();setPos(r.left,r.top,true);return}
+    if(ok){lastTap=Date.now();try{listen()}catch(x){}}};
+  b.addEventListener("pointerdown",e=>{if(fldOK())e.preventDefault();const r=b.getBoundingClientRect();dg={x:e.clientX,y:e.clientY,l:r.left,t:r.top,id:e.pointerId};mv=false;
+    addEventListener("pointermove",mvH,{passive:false});addEventListener("pointerup",upH);addEventListener("pointercancel",upH)});
+  b.addEventListener("click",e=>{e.preventDefault();if(Date.now()-lastTap>700&&!e.pointerType&&e.detail===0){try{listen()}catch(x){}}});
+  b.addEventListener("mousedown",e=>{if(fldOK())e.preventDefault()});place()}
 const POSK="ernte-va-pos";
 function setPos(x,y,save){const b=btn();if(!b)return;const w=b.offsetWidth||54,h=b.offsetHeight||54;
   x=Math.max(6,Math.min(innerWidth-w-6,x));y=Math.max(6,Math.min(innerHeight-h-6,y));
