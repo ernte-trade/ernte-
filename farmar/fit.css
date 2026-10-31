@@ -154,3 +154,6 @@ html[data-theme=light] .wlc .wlb,html[data-theme=light] .wlc .whc:not(.wlsp .whc
 @keyframes wclDust{from{transform:translate3d(-4%,0,0) scale(1);opacity:.55}to{transform:translate3d(5%,0,0) scale(1.1);opacity:.9}}
 @media (prefers-reduced-motion:reduce){.wclaas .wbgmv,.wclaas .wchaff,.wclaas .wdust{animation:none}}
 .wimg.wclaas.wtruck{background-position:68% 0!important}
+/* 11:15 PRÍKAZ MAJITEĽA: pevná fotka aj Martinovi – pozadie úvodu sa nehýbe u nikoho (živé ostávajú iba údaje) */
+.wimg::before,.wimg .wscan{animation:none!important;transform:none!important}
+.wimg .wscan{display:none!important}

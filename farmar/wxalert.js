@@ -47,7 +47,7 @@ document.addEventListener("click",e=>{const t=e.target;if(!t.closest)return;
 .wxar{display:grid;grid-template-columns:auto minmax(0,1fr);gap:10px;align-items:center;padding:8px 0;border-top:1px solid rgba(255,255,255,.08)}.wxar span{font-size:1.5rem}.wxar b{overflow-wrap:anywhere}
 .wxab{margin-top:6px;padding:10px 12px;border-radius:14px;background:rgba(253,224,71,.1);border:1px solid rgba(253,224,71,.35);overflow-wrap:anywhere}
 .wxa .btns{justify-content:center;margin-top:8px}`;document.head.appendChild(s)}
-let q=0;const sch=()=>{if(q)return;q=requestAnimationFrame(()=>{q=0;if(!IN())return;if(!D.at||Date.now()-D.at>15*60e3)load();else paint()})};
+let q=0;const sch=()=>{if(q)return;q=(window.ernteSoon||requestAnimationFrame)(()=>{q=0;if(!IN())return;if(!D.at||Date.now()-D.at>15*60e3)load();else paint()})};
 function boot(){const app=document.getElementById("app");if(!app){setTimeout(boot,500);return}new MutationObserver(sch).observe(app,{childList:true});sch();
   document.addEventListener("visibilitychange",()=>{if(!document.hidden&&IN()&&Date.now()-D.at>5*60e3)load()})}
 if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",boot);else boot();

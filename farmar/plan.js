@@ -117,7 +117,7 @@ document.addEventListener("click",e=>{const b=e.target.closest&&e.target.closest
 @media(max-width:420px){.plrr{grid-template-columns:1fr 1fr}.plrr select{grid-column:1/-1}}.plb a{width:44px;height:44px;border-radius:50%;display:grid;place-items:center;text-decoration:none;font-size:1.15rem;border:1px solid rgba(255,255,255,.2);background:rgba(255,255,255,.06)}
 .plb .plc{background:linear-gradient(135deg,#b6ff3b,#22d3ee);border:0}.plno{opacity:.5;font-size:.72rem;max-width:60px;text-align:right}.pln .btns{justify-content:center}
 @media(max-width:460px){.plr{grid-template-columns:auto minmax(0,1fr)}.plb{grid-column:2;justify-content:flex-start}.plb a{width:auto;min-width:96px;border-radius:12px;padding:0 12px;font-size:.95rem;gap:6px;display:flex;align-items:center;justify-content:center}.plb .plc::after{content:"Volať";font-weight:800;color:#06110a;font-size:.9rem}.plb .plw::after{content:"Napísať";font-weight:700;font-size:.9rem;color:#eef2f7}}`;document.head.appendChild(s)}
-let q=0;const sch=()=>{if(q)return;q=requestAnimationFrame(()=>{q=0;paint()})};
+let q=0;const sch=()=>{if(q)return;q=(window.ernteSoon||requestAnimationFrame)(()=>{q=0;paint()})};
 function boot(){const app=document.getElementById("app");if(!app){setTimeout(boot,500);return}new MutationObserver(sch).observe(app,{childList:true});sch();setInterval(()=>{if(!document.hidden&&OK()){D.tgAt=0;loadTg()}},300000);setInterval(()=>{if(!document.hidden&&OK())loadSt()},120000)}
 if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",boot);else boot();
 })();
