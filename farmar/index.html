@@ -903,7 +903,7 @@ function showLogin(){$("outBtn").hidden=true;$("refBtn").hidden=true;$("aiBtn").
 }
 function pwCard(){return `<div class="card"><div class="t">Heslo na rýchle prihlásenie</div><div class="s">S rýchlym heslom sa prihlásiš e-mailom a heslom – bez čakania na e-mail. Funguje aj v ikone na ploche.</div>
   <button type="button" class="pwg" data-pwg="own" aria-label="Rýchle heslo – ťuknutím vytvoríš a skopíruješ, podržaním zobrazíš na 5 sekúnd"><span class="pwi">🔑</span><span class="pwt"><span class="pwv">${STATE.qpw?PWMASK:"Rýchle heslo"}</span><small>${STATE.qpw?"ťukni = kopírovať · podrž = ukázať 5 s":"ťukni = vytvoriť a skopírovať · podrž = ukázať"}</small></span></button></div>`}
-function loginId(v){v=String(v||"").trim().toLowerCase();if(v.includes("@"))return v;let d=v.replace(/\D/g,"");if(d.startsWith("00"))d=d.slice(2);else if(d.startsWith("0"))d="421"+d.slice(1);return d?d+"@tel.ernte.sk":v}
+function loginId(v){v=String(v||"").trim().toLowerCase();if(v.includes("@"))return v;let d=v.replace(/\D/g,"");if(d.startsWith("00"))d=d.slice(2);else if(d.startsWith("0"))d="421"+d.slice(1);return d?d+"@tel.ernte.sk":(/^[a-z][a-z._-]{1,29}$/.test(v)?v+"@junior.ernte.sk":v)}
 function genPw(name){const w=["Klas","Zrno","Pole","Repka","Soja","Raz","Mlyn","Sklad","Brazda","Jacmen"],a=new Uint32Array(3);crypto.getRandomValues(a);
   let m=String(name||"").trim().replace(/^(PD|SHR|AGRO|Ing\.?|Mgr\.?|Bc\.?)\s+/i,"").split(/\s+/)[0].normalize("NFD").replace(/[\u0300-\u036f]/g,"").replace(/[^A-Za-z]/g,"");
   m=m.length>=2?m[0].toUpperCase()+m.slice(1,10).toLowerCase():w[a[0]%w.length];return m+"-"+String(1000+a[1]%9000)+".!?#"[a[2]%4]} // heslo z mena: Meno-1234. – každému iné
@@ -939,6 +939,7 @@ async function enter(user){ME=user;$("outBtn").hidden=false;
   const fr=await sb.from("farmers").select("*").limit(1).maybeSingle();
   if(fr.data){FARMER=fr.data;$("hS").textContent=fr.data.name;startFarmer();return}
   if(window.startBuyer){const bu=await sb.from("odb_buyers").select("*").limit(1).maybeSingle();if(bu.data){window.BUYER=bu.data;$("hS").textContent=bu.data.name;$("hT").textContent="ERNTE Trade & Logistic";startBuyer();return}}
+  if(window.kidEnter&&await kidEnter())return; // 🧒 ERNTE Junior – škola biznisu (kid.js)
   if(window.trusPortal){$("refBtn").hidden=true;if(await trusPortal()){window.ERNTE_KIND="trus";$("refBtn").hidden=false;return}}
   $("app").innerHTML=`<div class="card"><div class="t">Váš e-mail ešte nemá prístup</div><div class="s">${esc(user.email)} zatiaľ nie je v zozname dodávateľov ERNTE. Zavolajte nám a zapíšeme vás.</div><div class="btns"><a class="btn pri" href="tel:+421918449991">Zavolať ERNTE</a></div></div>`}
 
@@ -2939,7 +2940,7 @@ document.addEventListener("click",e=>{const b=e.target.closest("[data-dfp]");if(
 </script>
 <script src="ai.js?v=20261029-0010"></script>
 <script src="perms.js?v=20261031-0930c"></script>
-<script src="gdprsign.js?v=20261031-0855"></script>
+<script src="gdprsign.js?v=20261031-1310"></script>
 <script src="bonus.js?v=20261028-0110"></script>
 <script src="fterms.js?v=20261031-0915"></script>
 <script src="hub.js?v=20261028-2150"></script>
@@ -3010,6 +3011,7 @@ document.addEventListener("click",e=>{const b=e.target.closest("[data-dfp]");if(
 <script src="ownertabs.js?v=20261031-1140"></script>
 <script src="clang.js?v=20261031-1200"></script>
 <script src="farmapp.js?v=20261031-1200"></script>
+<script src="kid.js?v=20261031-1320"></script>
 <script src="plan.js?v=20261031-1120"></script>
 <script src="voice.js?v=20261031-1115"></script>
 <script src="wxalert.js?v=20261031-1120"></script>

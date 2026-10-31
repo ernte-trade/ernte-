@@ -160,6 +160,10 @@ s pripojeným repozitárom `ernte-trade/ernte-`.
   (tlačidlá ✔️ Vyjadriť → `plan_say`, odloží pre celý tím na N dní) alebo keď je zmluva dodaná do nuly. Nadodávka nad zmluvu = položka ⚠️ + push (`deal_over_push`) obchodníkom, Martinovi a Jane,
   kým nie je dodatková zmluva. „Nedodá“ → náhradný nákup (`replace_save`): hodnota nedodaného (zostatok × zmluvná cena) = tony × naša zverejnená cena, tolerancia max(50 €, 1 %), kontroluje databáza.
 
+- **🧒 ERNTE JUNIOR (31. 10., `kid.js`, tabuľky `kids`/`kid_progress`, `kid_me`/`kid_save`/`kid_create`/`kid_list`):** prihlásenie pre syna majiteľa (meno@junior.ernte.sk, na prihlásení stačí meno).
+  NIE je tím ani farmár → žiadne obchodné údaje. 8 lekcií (firma, B2B, burza s ozajstným grafom, doprava, zmluva, peniaze, riziko, kurací trus), kvízy, mince, odznaky, hra „Obchodný deň“ (vymyslené čísla).
+  GDPR za dieťa rodič (`gdpr_status` → `{kid:true}`). Majiteľ: Tím → 🧒 ERNTE Junior (vytvorenie, pokrok).
+
 ### Hotové (október 2026)
 - Moderný vzhľad (`ui.css`, písmo Geist), podpora iPhone/iPad/Android/PC, inštalácia na plochu (`installapp.js`, manifest).
 - Podmienky a bonusy pre každého farmára (`fterms.js`, ⚙️ pri farmárovi).

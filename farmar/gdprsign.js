@@ -74,7 +74,7 @@ function modal(user){return new Promise(async res=>{
 async function gate(user){if(done||skip()||!user)return;if(busy)return busy;
   busy=(async()=>{try{const r=await sb.rpc("gdpr_status");
       if(r.error){if(nofn(r.error.message))return}
-      else if(r.data&&r.data.ver===VER){done=true;window.ERNTE_GDPR_OK=1;return}
+      else if(r.data&&(r.data.ver===VER||r.data.kid)){done=true;window.ERNTE_GDPR_OK=1;return}
       await modal(user)}catch(x){}finally{busy=null}})();
   return busy}
 window.ernteGdpr={gate,VER,text};
