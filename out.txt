@@ -1,0 +1,15 @@
+pages: 301 0.112630s
+sw:  301 
+auth health: 200 0.733086s
+rest prices: 200 0.550769s
+rest root: 401 0.086866s
+pages: 301 0.048199s
+sw:  301 
+auth health: 200 0.239730s
+rest prices: 200 0.591350s
+rest root: 401 0.099625s
+pages: 301 0.053262s
+sw:  301 
+auth health: 200 0.196806s
+rest prices: 200 0.234998s
+rest root: 401 0.076182s
