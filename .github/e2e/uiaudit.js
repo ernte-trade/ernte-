@@ -12,5 +12,9 @@ for(let y=0;y<total;y+=Math.floor(H*0.7)){scrollTo(0,y);await new Promise(r=>set
 scrollTo(0,0);
 app.querySelectorAll("button,h1,h2,h3,b,.t,label,a").forEach(e=>{if(isFixed(e)||!e.offsetParent)return;const cs=getComputedStyle(e);if(cs.textOverflow==="ellipsis")return;
   if(e.scrollWidth>e.clientWidth+2&&e.clientWidth>0&&(cs.overflowX!=="visible"))out.clip.push((e.className||e.tagName)+": "+e.textContent.trim().slice(0,40))});
+// 31. 10.: orezaný obsah (karta s overflow:hidden, v ktorej sa tlačidlá / graf nezmestia – úvod „Naše výkupné ceny“)
+out.cut=[];[app,...document.querySelectorAll(".wlc")].forEach(root=>root&&root.querySelectorAll("*").forEach(e=>{if(e.closest("svg")||!e.offsetParent||!e.children.length)return;const cs=getComputedStyle(e);
+  if((cs.overflowY==="hidden"||cs.overflowY==="clip")&&e.scrollHeight>e.clientHeight+3&&e.clientHeight>0&&!e.closest(".leaflet-container"))out.cut.push((e.className||e.tagName).toString().slice(0,40)+" "+e.scrollHeight+">"+e.clientHeight)}));
+out.cut=[...new Set(out.cut)].slice(0,10);
 if(document.documentElement.scrollWidth>W+1)out.wide.push("page "+document.documentElement.scrollWidth);
 out.ov=[...new Set(out.ov)].slice(0,10);out.clip=[...new Set(out.clip)].slice(0,10);return out}
