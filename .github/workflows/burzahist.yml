@@ -1,4 +1,4 @@
-# 📈 História burzy MATIF / CBOT za 90 dní pre graf na úvode (farmár) – vetva burza-hist / hist.json, raz denne po uzávierke
+# 📈 História burzy MATIF / CBOT (~100 dní, AHDB + bot) pre graf na úvode (farmár) – vetva burza-hist / hist.json, každý pracovný deň po uzávierke
 name: burza-hist
 on:
   schedule:
@@ -16,10 +16,13 @@ jobs:
       - uses: actions/checkout@v4
         with:
           ref: main
-          sparse-checkout: .github/burza
+          sparse-checkout: |
+            .github/burza
+            farmar/market.json
+          sparse-checkout-cone-mode: false
       - name: Stiahnuť históriu burzy
         run: |
-          mkdir -p o && cd o && python3 ../.github/burza/hist.py
+          python3 .github/burza/hist.py && mkdir -p o && mv hist.json o/ && cd o
           test -s hist.json
           git init -q; git checkout -q -b burza-hist
           git config user.name bot; git config user.email bot@users.noreply.github.com
