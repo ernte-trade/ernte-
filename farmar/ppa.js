@@ -6,6 +6,7 @@
 (function(){
 const E=s=>String(s==null?"":s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const OK=()=>typeof ROLE!=="undefined"&&ROLE==="owner"&&!(typeof FARMER!=="undefined"&&FARMER)&&typeof sb!=="undefined";
+const OKV=()=>!(typeof FARMER!=="undefined"&&FARMER)&&typeof sb!=="undefined"&&typeof ROLE!=="undefined"&&(ROLE==="owner"||(typeof can==="function"&&can("ppa")))&&!window.ERNTE_VIEWAS_FARMER;
 const LG=new Set("spol s r o a sro as druzstvo pd pol v k ltd kft gmbh ing mgr bc mvdr ph d phd rndr judr shr zs zsr p st ml zh agro".split(" "));
 const key=s=>String(s||"").normalize("NFD").replace(/[̀-ͯ]/g,"").toLowerCase().replace(/[^a-z0-9]+/g," ").trim().split(" ").filter(w=>w&&!LG.has(w)).sort().join("");
 const n0=v=>v==null?"–":Math.round(+v).toLocaleString("sk-SK");
@@ -14,10 +15,30 @@ const P={open:false,mine:null,list:null,busy:false,km:60,ha:100,q:"",reg:{},err:
 try{const s=JSON.parse(localStorage.getItem("ernte-ppa")||"{}");if(s.km)P.km=s.km;if(s.ha!=null)P.ha=s.ha}catch(x){}
 const COLS="id,n,k,ha,orna,ttp,lok,nlok,sidlo,spsc,sokres,okres,kraj,km,e25,e24,mat,ico";
 const farmers=()=>((typeof STATE!=="undefined"&&STATE.farmers)||[]).filter(f=>f&&f.id);
-async function loadMine(){const F=farmers();const ks=[...new Set(F.map(f=>key(f.name)).filter(Boolean))];if(!ks.length){P.mine=[];return}
+const icoN=v=>String(v||"").replace(/\D/g,"");
+async function loadMine(){const F=farmers();const ks=[...new Set(F.map(f=>key(f.name)).filter(Boolean))],is=[...new Set(F.map(f=>icoN(f.ico)).filter(x=>x.length>=6))];if(!ks.length&&!is.length){P.mine=[];return}
   const out=[];for(let i=0;i<ks.length;i+=150){const r=await sb.from("ppa_farms").select(COLS).in("k",ks.slice(i,i+150));if(r.error)throw r.error;out.push(...(r.data||[]))}
-  const by={};out.forEach(x=>{(by[x.k]=by[x.k]||[]).push(x)});
-  P.mine=F.map(f=>({f,p:(by[key(f.name)]||[]).sort((a,b)=>b.ha-a.ha)[0]||null}))}
+  for(let i=0;i<is.length;i+=150){const r=await sb.from("ppa_farms").select(COLS).in("ico",is.slice(i,i+150));if(!r.error)out.push(...(r.data||[]))}
+  const by={},bi={};out.forEach(x=>{(by[x.k]=by[x.k]||[]).push(x);if(x.ico)(bi[icoN(x.ico)]=bi[icoN(x.ico)]||[]).push(x)});
+  const best=L=>(L||[]).sort((a,b)=>(+b.ha||0)-(+a.ha||0))[0]||null;
+  P.mine=F.map(f=>({f,p:best(bi[icoN(f.ico)])||best(by[key(f.name)])}));P.at=Date.now()}
+// ---- 🌾 ku každému farmárovi: výmera a dotácie z PPA (majiteľ + obchodníci ERNTE s prístupom „ppa“) ----
+let fcBusy=false;
+function fcHTML(x){if(!x)return `<div class="ppfc no">🌾 PPA: podľa mena / IČO sa nenašiel <small>(SHR alebo iné meno v PPA – skús v „🌾 Pôda z PPA“)</small></div>`;
+  const tot=(+x.orna||0)+(+x.ttp||0);
+  return `<div class="ppfc"><div class="ppfh">🌾 <b>PPA 2025</b>${x.n&&key(x.n)!==""?` <small>· ${E(x.n)}</small>`:""}</div>
+   <div class="ppn"><span><b>${n0(x.orna)}</b> ha orná</span>${+x.ttp?`<span><b>${n0(x.ttp)}</b> ha TTP</span>`:""}<span>spolu <b>${n0(x.ha!=null?x.ha:tot)}</b> ha</span>${x.km!=null?`<span>📍 ${x.km} km od Zbudze</span>`:""}</div>
+   <div class="ppn"><span>💶 dotácie 2025: <b>${eur(x.e25)}</b></span><span>2024: <b>${eur(x.e24)}</b></span>${x.mat?`<span>skupina: ${E(x.mat)}</span>`:""}</div>
+   <div class="pps">🌾 ${E(x.lok||"–")}${x.nlok>4?` … (${x.nlok} lokalít)`:""}${x.okres?` · okres ${E(x.okres)}`:""}${x.kraj?` · ${E(x.kraj)}`:""}</div>
+   ${x.sidlo?`<div class="pps">🏠 sídlo podľa PPA: ${E(x.sidlo)}${x.spsc?" "+E(String(x.spsc).slice(0,3)+" "+String(x.spsc).slice(3)):""}${x.sokres?", okres "+E(x.sokres):""}</div>`:""}
+   <div class="pps">Zdroj: verejné údaje PPA (užívané plochy 2025, prijímatelia dotácií 2024/2025) · vidí iba majiteľ a obchodníci ERNTE</div></div>`}
+function fcInject(){if(!OKV()||typeof TAB==="undefined"||TAB!=="farm")return;const app=document.getElementById("app");if(!app)return;
+  const cards=app.querySelectorAll(".ds-fc");if(!cards.length)return;
+  if(!P.mine||Date.now()-(P.at||0)>10*60e3||(P.mine.length!==farmers().length)){if(!fcBusy){fcBusy=true;loadMine().catch(()=>{P.mine=P.mine||[]}).finally(()=>{fcBusy=false;P.at=P.at||Date.now();fcInject()})}if(!P.mine)return}
+  const M={};(P.mine||[]).forEach(m=>{M[m.f.id]=m.p});
+  cards.forEach(c=>{if(c.querySelector(".ppfc"))return;const b=c.querySelector("[data-fedit]");if(!b)return;const id=b.dataset.fedit;if(!(id in M))return;
+    const meta=c.querySelector(".ds-meta");const w=document.createElement("div");w.innerHTML=fcHTML(M[id]);const el=w.firstElementChild;
+    if(meta&&meta.parentNode)meta.parentNode.insertBefore(el,meta.nextSibling);else c.appendChild(el)})}
 async function loadList(){let q=sb.from("ppa_farms").select(COLS).gte("orna",+P.ha||0).order("orna",{ascending:false}).limit(60);
   if(P.km)q=q.lte("km",+P.km);if(P.q.trim())q=q.or(`n.ilike.%${P.q.trim().replace(/[%,()]/g," ")}%,lok.ilike.%${P.q.trim().replace(/[%,()]/g," ")}%`);
   const r=await q;if(r.error)throw r.error;const mine=new Set(farmers().map(f=>key(f.name)));P.list=(r.data||[]).map(x=>Object.assign(x,{our:mine.has(x.k)}))}
@@ -83,8 +104,11 @@ document.addEventListener("submit",e=>{const f=e.target;if(!f.dataset||!f.datase
 .ppreg{margin-top:6px;padding:7px 9px;border-radius:10px;font-size:.82rem;background:rgba(56,189,248,.1);border:1px solid rgba(56,189,248,.3);overflow-wrap:anywhere}
 .ppreg.ok{background:rgba(182,255,59,.08);border-color:rgba(182,255,59,.35)}.ppreg.w{background:rgba(250,204,21,.1);border-color:rgba(250,204,21,.4)}.ppreg .ppadd{display:block;margin-top:6px;width:100%}
 .ppmiss summary{cursor:pointer;font-size:.85rem;margin-top:6px}
+.ppfc{margin:8px 0 2px;padding:9px 11px;border-radius:14px;background:rgba(182,255,59,.07);border:1px solid rgba(182,255,59,.28);min-width:0;display:grid;gap:3px;text-align:left}
+.ppfc.no{background:rgba(255,255,255,.03);border-color:rgba(255,255,255,.1);font-size:.8rem;opacity:.8}.ppfc.no small{opacity:.8}
+.ppfh{font-size:.88rem;overflow-wrap:anywhere}.ppfh small{opacity:.7}.ppfc .ppn{font-size:.85rem}
 @media(min-width:800px){.ppmine{grid-template-columns:1fr 1fr}}`;document.head.appendChild(s)}
-let q2=0;const sch=()=>{if(q2)return;q2=(window.ernteSoon||requestAnimationFrame)(()=>{q2=0;try{inject()}catch(x){}})};
+let q2=0;const sch=()=>{if(q2)return;q2=(window.ernteSoon||requestAnimationFrame)(()=>{q2=0;try{inject()}catch(x){}try{fcInject()}catch(x){}})};
 function boot(){const app=document.getElementById("app");if(!app){setTimeout(boot,500);return}new MutationObserver(sch).observe(app,{childList:true});sch()}
 if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",boot);else boot();
 window.ppaKey=key;

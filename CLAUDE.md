@@ -9,7 +9,7 @@ Platí pre Claude aj ERNTE AI pri každej novej sekcii, záložke, funkcii alebo
    systémové okno inštalácie, inak presný návod pre prehliadač.
 2. **ℹ️ Popis funkcie** – nová záložka dostane popis v `TABD`, nová sekcia s dlaždicami v `SECD`, dôležitý nadpis v `H2`
    (`farmar/fndesc.js`). Nová záložka dostane aj návod `HELP` v `index.html` (tlačidlo „Ako to funguje“).
-3. **🆕 Novinky** – každá zmena sa zapíše do `app_novinky` (zašifrovaná migrácia v `farmar/supabase/auto/`):
+3. **🆕 Novinky** – každá zmena sa zapíše do `app_novinky` (`aud` je POLE: `array['all']`, `array['owner']` – reťazec 'all' migráciu zhodí) (zašifrovaná migrácia v `farmar/supabase/auto/`):
    dátum, názov, kde to nájsť, kto to vidí, `aud` (owner / staff / farmer / all / kľúč prístupu) a krátky popis.
    Pri novom dni aj `app_dni` (krátke a podrobné zhrnutie dňa, vidí iba majiteľ).
 4. **Prístupy** – nová funkcia má kľúč v `PCAT` (`perms.js`), záložka v `TABP`, a ochranu aj v databáze (RLS / `has_perm`).
@@ -111,6 +111,7 @@ s pripojeným repozitárom `ernte-trade/ernte-`.
   Nové problémy → push majiteľovi; Claude ich pri pravidelnej kontrole (naplánovaná správa v rozhovore) opraví. Predikcia (`pred.js`) ráta s `sellOpts` (Kde predať) a otvorenými nákupmi (`deal_watch_list`).
 - **PÔDA Z PPA** (`ppa.js`, tabuľka `ppa_farms`, iba majiteľ, záložka Farmári): verejné údaje PPA – užívané plochy 2025 (13 549 užívateľov, orná/TTP, lokality)
   + prijímatelia dotácií FY2024/2025 (sídlo, sumy) + obce z Wikidata (okres, PSČ, súradnice; km vzdušne od Zbudze). Párovanie s farmármi podľa mena (`ppaKey`).
+  **31. 10.:** pri KAŽDOM farmárovi karta 🌾 PPA (`fcInject`: orná/TTP/spolu, km, dotácie 2025/2024, lokality, sídlo; párovanie IČO, inak meno) – vidí majiteľ + obchodníci s kľúčom `ppa` (Galajda, Ceperko, Ličko; RLS `is_owner() or (is_staff() and has_perm('ppa'))`). Zoznam potenciálnych farmárov ostáva iba majiteľovi.
   IČO a sídlo podľa mena z RPO (`fullName`, CORS OK). Telefóny/e-maily verejne nie sú. Nové dáta: workflow `ppa.yml` → vetva `ppa-results` (zašifrované).
 - **Oprava lístka odberateľa** (`odb.js`, `buyer_ticket_edit`, stĺpce `deliveries.fix/edited_at/edit_log`): hľadanie lístka / zákazníka vo všetkých obdobiach, ✏️ úprava,
   prepočet zmlúv farmára (`buyer_realloc`); `buyer_import` ručné opravy po nahratí Excelu znova použije (neprepíše ich).

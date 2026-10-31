@@ -11,6 +11,7 @@ const PCAT=[
  ["farm_login","Vytvárať prihlásenia farmárom","Obchod",""],
  ["farm_terms","⚙️ Podmienky a bonusy farmárov","Obchod","individuálny bonus, splatnosť, doprava"],
  ["firmy","🔎 Firmy podľa IČO – automatické vyplnenie z registra, FinStat","Obchod","po zadaní IČO / odfotení pečiatky"],
+ ["ppa","🌾 Pôda a dotácie z PPA pri farmároch","Obchod","výmera, lokality, dotácie – iba obchodníci ERNTE"],
  ["calc","Kalkulačka nákupnej ceny ERNTE","Obchod","odberatelia, doprava, burza"],
  ["market","Burza a trh (MATIF, CBOT)","Obchod",""],
  ["agro","Agro služby – objednávky a cenník","Obchod","bez nákladov a marže"],
