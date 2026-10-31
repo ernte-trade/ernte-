@@ -46,7 +46,7 @@ const numOf=t=>{const n=N(t).replace(/(\d)[ .](\d{3})/g,"$1$2");const m=n.match(
   for(const w of n.split(/\s+/))if(W[w]!=null)return W[w];return null};
 const CN=c=>typeof comName==="function"?comName(c):c;
 const fmt0=n=>(+n).toLocaleString("sk-SK",{maximumFractionDigits:2});
-function say(t){try{speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(t);u.lang=(HU()||HUNOW)?"hu-HU":"sk-SK";u.rate=1.02;speechSynthesis.speak(u)}catch(x){}show(t)}
+function say(t){const lg=(HU()||HUNOW)?"hu-HU":"sk-SK";if(window.ernteSay)ernteSay(t,lg,{rate:1.02,quiet:true});else{try{const u=new SpeechSynthesisUtterance(t);u.lang=lg;speechSynthesis.speak(u)}catch(x){}}show(t)}
 function show(t,h){const b=document.getElementById("vaOut");if(!b)return;b.innerHTML=h||E(t);b.hidden=false;clearTimeout(show.t);show.t=setTimeout(()=>{b.hidden=true},12000)}
 function priceOf(c){const p=((typeof STATE!=="undefined"&&STATE.prices)||[]).find(x=>x.com===c&&x.price!=null);return p?+p.price:null}
 let HUNOW=false;

@@ -18,7 +18,7 @@ const done=id=>!!(P()["l_"+id]&&P()["l_"+id].ok);
 async function save(k,v){(K.p||(K.p={}))[k]=v;try{await sb.rpc("kid_save",{p_key:k,p_val:v})}catch(x){}}
 function addCoins(n,why){const st=Object.assign({c:0,log:[]},P().stav||{});st.c=Math.max(0,(+st.c||0)+n);st.log=[{t:Date.now(),n,why}].concat(st.log||[]).slice(0,20);save("stav",st)}
 const LEVEL=c=>c>=600?["👑","Obchodný majster"]:c>=300?["🚛","Šéf dopravy"]:c>=150?["📈","Burzový žralok"]:c>=60?["🌾","Výkupca"]:["🌱","Učeň"];
-function say(t,lang){try{speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(String(t).replace(/<[^>]+>/g,"").replace(/[\u{1F300}-\u{1FAFF}☀-➿]/gu,""));u.lang=lang||"sk-SK";u.rate=lang==="en-GB"?.9:.95;speechSynthesis.speak(u)}catch(x){}}
+function say(t,lang){if(window.ernteSay)return ernteSay(t,lang||"sk-SK",{toggle:true});try{const u=new SpeechSynthesisUtterance(String(t).replace(/<[^>]+>/g,""));u.lang=lang||"sk-SK";speechSynthesis.speak(u)}catch(x){}}
 // 💶 skutočná odmena – databáza rozhodne, koľko pripíše (sadzba, denný a mesačný strop)
 async function earn(kind,what){try{const r=await sb.rpc("kid_earn_add",{p_kind:kind,p_what:what});if(r.error||!r.data)return;PAY=Object.assign(PAY||{},{month:r.data.month,max:r.data.max,today:r.data.today,day:r.data.day});
   if(+r.data.eur>0)pop("+"+EUR(r.data.eur));else if(+r.data.month>=+r.data.max)pop("Tento mesiac už máš maximum 🎉");else if(+r.data.today>=+r.data.day)pop("Dnes už máš denné maximum – pokračuj zajtra 😉");
