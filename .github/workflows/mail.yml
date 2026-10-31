@@ -4,10 +4,17 @@ name: ernte-mail
 on:
   repository_dispatch:
     types: [ernte-mail]
+  # databáza (token bez práva na dispatch) → komentár „ernte-mail“ so zašifrovaným ID v technickom vlákne #51
+  issue_comment:
+    types: [created]
 permissions:
   contents: read
+  issues: write
 jobs:
   send:
+    if: >-
+      github.event_name == 'repository_dispatch' ||
+      (github.event.issue.number == 51 && github.event.comment.user.login == 'ernte-trade' && startsWith(github.event.comment.body, 'ernte-mail'))
     runs-on: ubuntu-latest
     timeout-minutes: 4
     steps:
@@ -21,7 +28,20 @@ jobs:
           node-version: 22
       - run: npm i --no-save --silent nodemailer@6.9.16 || (sleep 5 && npm i --no-save --silent nodemailer@6.9.16)
         working-directory: .github/mail
-      - run: node send.mjs
+      - if: github.event_name == 'repository_dispatch'
+        run: node send.mjs
         working-directory: .github/mail
         env:
           JOB_ID: ${{ github.event.client_payload.id }}
+      - if: github.event_name == 'issue_comment'
+        run: |
+          printf '%s' "$BODY" | sed -n '/BEGIN PGP/,/END PGP/p' > "$RUNNER_TEMP/m.asc"
+          JOB_ID=$(gpg --batch -q --pinentry-mode loopback --passphrase "$PW" -d "$RUNNER_TEMP/m.asc" 2>/dev/null | tr -cd '0-9a-f-' | head -c 36) node send.mjs
+        working-directory: .github/mail
+        env:
+          BODY: ${{ github.event.comment.body }}
+          PW: ${{ secrets.ERNTE_MIG_PASS }}
+      - if: always() && github.event_name == 'issue_comment'
+        run: gh api -X DELETE repos/${{ github.repository }}/issues/comments/${{ github.event.comment.id }} --silent || true
+        env:
+          GH_TOKEN: ${{ github.token }}
