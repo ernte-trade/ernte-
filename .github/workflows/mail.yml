@@ -29,14 +29,17 @@ jobs:
       - run: npm i --no-save --silent nodemailer@6.9.16 || (sleep 5 && npm i --no-save --silent nodemailer@6.9.16)
         working-directory: .github/mail
       - if: github.event_name == 'repository_dispatch'
-        run: node send.mjs
+        run: node send.mjs | sed 's/^/::notice::/'
         working-directory: .github/mail
         env:
           JOB_ID: ${{ github.event.client_payload.id }}
       - if: github.event_name == 'issue_comment'
         run: |
           printf '%s' "$BODY" | sed -n '/BEGIN PGP/,/END PGP/p' > "$RUNNER_TEMP/m.asc"
-          JOB_ID=$(gpg --batch -q --pinentry-mode loopback --passphrase "$PW" -d "$RUNNER_TEMP/m.asc" 2>/dev/null | tr -cd '0-9a-f-' | head -c 36) node send.mjs
+          tr -d '\r' < "$RUNNER_TEMP/m.asc" > "$RUNNER_TEMP/m2.asc"
+          ID=$(gpg --batch -q --pinentry-mode loopback --passphrase "$PW" -d "$RUNNER_TEMP/m2.asc" 2>"$RUNNER_TEMP/g.err" | tr -cd '0-9a-f-' | head -c 36)
+          echo "::notice::ID ${#ID} znakov, pgp $(wc -l < "$RUNNER_TEMP/m2.asc") riadkov $(head -c 120 "$RUNNER_TEMP/g.err" | tr -cd 'a-zA-Z :')"
+          JOB_ID="$ID" node send.mjs | sed 's/^/::notice::/'
         working-directory: .github/mail
         env:
           BODY: ${{ github.event.comment.body }}
