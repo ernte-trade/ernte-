@@ -88,13 +88,14 @@ function act(txt){const n=N(txt),c=comOf(txt),q=numOf(txt),hu=HU()||/elad|tonna|
   say(hu?"Nem értettem. Mondja például: eladok 30 tonna repcét, vagy: mikor jön az autó.":isF()?"Nerozumela som. Skúste: predaj tridsať ton repky, za koľko je kukurica, alebo kedy príde auto.":"Nerozumela som. Skúste: otvor cenník, cena repky, alebo zavolaj Novák.")}
 let rec=null,on=false;
 async function listen(){if(on){try{rec.stop()}catch(x){}return}
-  try{if(window.micReady&&!(await micReady()))return}catch(x){}
+  // 31. 10.: rozpoznávanie sa spúšťa HNEĎ v ťuknutí (iPhone inak po čakaní na povolenie zablokuje štart); povolenie si vypýta samo, pri zákaze ukáže návod
   rec=new SR();rec.lang=LG();rec.interimResults=true;rec.maxAlternatives=3;let fin="";
   rec.onstart=()=>{on=true;btn().classList.add("on");show(fldOK()?(HU()?"✍️ Diktáljon – beírom a mezőbe…":"✍️ Diktujte – zapíšem to do políčka…"):(HU()?"🎤 Hallgatom…":"🎤 Počúvam… napr. „otvor obchody“, „hľadaj Novák“, „predaj 30 ton repky“ · ťuknite do políčka a diktujte"))};
   rec.onresult=e=>{let t="";for(const r of e.results){t+=r[0].transcript;if(r.isFinal)fin=t}show("„"+t+"“")};
-  rec.onerror=e=>{on=false;btn().classList.remove("on");if(e.error!=="aborted"&&e.error!=="no-speech")show(window.srErr?srErr(e):"Mikrofón nefunguje ("+e.error+").")};
+  rec.onerror=e=>{on=false;btn().classList.remove("on");if(e.error==="not-allowed"&&window.micReady){micReady().then(ok=>{if(ok)show(HU()?"Mikrofon engedélyezve – koppintson újra 🎤":"Mikrofón je povolený – ťukni znova na 🎤")}).catch(()=>{});return}
+    if(e.error!=="aborted"&&e.error!=="no-speech")show(window.srErr?(srErr(e.error)||srErr(e)||("Mikrofón nefunguje ("+e.error+").")):"Mikrofón nefunguje ("+e.error+").")};
   rec.onend=()=>{on=false;btn().classList.remove("on");if(fin)act(fin)};
-  try{rec.start()}catch(x){show("Mikrofón sa nepodarilo spustiť.")}}
+  try{rec.start();show(HU()?"🎤 Indul…":"🎤 Spúšťam…")}catch(x){show("Mikrofón sa nepodarilo spustiť ("+(x&&x.message||x)+").")}}
 const btn=()=>document.getElementById("vaBtn");
 function mount(){if(!IN()){const b=btn();if(b)b.remove();const o=document.getElementById("vaOut");if(o)o.remove();return}
   if(btn())return;const b=document.createElement("button");b.type="button";b.id="vaBtn";b.className="vabtn";b.setAttribute("aria-label","Hlasový asistent");b.textContent="🎤";document.body.appendChild(b);
@@ -110,7 +111,7 @@ function mount(){if(!IN()){const b=btn();if(b)b.remove();const o=document.getEle
     if(ok){lastTap=Date.now();try{listen()}catch(x){}}};
   b.addEventListener("pointerdown",e=>{if(fldOK())e.preventDefault();const r=b.getBoundingClientRect();dg={x:e.clientX,y:e.clientY,l:r.left,t:r.top,id:e.pointerId};mv=false;
     addEventListener("pointermove",mvH,{passive:false});addEventListener("pointerup",upH);addEventListener("pointercancel",upH)});
-  b.addEventListener("click",e=>{e.preventDefault();if(Date.now()-lastTap>700&&!e.pointerType&&e.detail===0){try{listen()}catch(x){}}});
+  b.addEventListener("click",e=>{e.preventDefault();if(Date.now()-lastTap>700&&!b.classList.contains("vadrag")){lastTap=Date.now();try{listen()}catch(x){}}});
   b.addEventListener("mousedown",e=>{if(fldOK())e.preventDefault()});place()}
 const POSK="ernte-va-pos";
 function setPos(x,y,save){const b=btn();if(!b)return;const w=b.offsetWidth||54,h=b.offsetHeight||54;
