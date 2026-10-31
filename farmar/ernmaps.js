@@ -108,13 +108,19 @@ function liveView(on){const m=document.getElementById("emMap"),h=$(".emhud"),nb=
   if(S.acc)S.acc.setStyle({opacity:on?0:1,fillOpacity:on?0:.08});
   setTimeout(()=>{try{S.map.invalidateSize(false);if(on&&S.me){S.zl=17;S.map.setView([S.me.lat,S.me.lng],17,{animate:false})}}catch(x){}},60)}
 window.addEventListener("resize",()=>{if(S.nav&&!S.ov){sizeNav();setTimeout(()=>{try{S.map.invalidateSize(false)}catch(x){}},80)}});
+// 31. 10. 18:46 príkaz majiteľa: kurzor navádzania a trasa v STREDE voľnej plochy displeja (medzi pokynom hore a HUD dole)
+function navMid(m){const h=m.clientHeight||600,mr=m.getBoundingClientRect();let top=0,bot=h;
+  const nv=document.querySelector("#emap .emnav"),hd=document.querySelector("#emap .emhud");
+  if(nv&&!nv.hidden&&nv.offsetHeight){const r=nv.getBoundingClientRect();if(r.bottom-mr.top<h*0.6)top=Math.max(0,r.bottom-mr.top)}
+  if(hd&&!hd.hidden&&hd.offsetHeight){const r=hd.getBoundingClientRect();if(r.top-mr.top>h*0.4)bot=Math.min(h,r.top-mr.top)}
+  return Math.round(h/2-(top+bot)/2)}
 function liveTick(){const c=S.me,m=document.getElementById("emMap");if(!c||!m||!m.classList.contains("navmap")||S.ov)return;
   const r=onRoute(c),pos=r?r.p:[c.lat,c.lng],tgt=r?r.b:S.gpsB;
   if(tgt!=null){if(S.brg==null)S.brg=tgt;else{const d=((tgt-S.brg)%360+540)%360-180;if(Math.abs(d)>4)S.brg+=d*0.6}}
   const i=document.querySelector("#emap .emme i");if(i)i.style.transform=`rotate(${S.brg||0}deg)`;if(S.meM)S.meM.setLatLng(pos);
   const v=(S.spd!=null&&S.spd>=0?S.spd:0)*3.6,dn=S.dn==null?9:S.dn,want=dn<0.2?18:v>80?16:17;
   if(want!==S.zl){S.zc=(S.zc||0)+1;if(S.zc>=2||S.zl==null){S.zl=want;S.zc=0}}else S.zc=0;
-  const lc=S.lastC;if(!lc||km({lat:lc[0],lng:lc[1]},{lat:pos[0],lng:pos[1]})>0.004||S.map.getZoom()!==S.zl){S.lastC=pos;const h=(m.clientHeight||600),cp=S.map.unproject(S.map.project(pos,S.zl).subtract(L.point(0,h*0.17)),S.zl);S.map.setView(cp,S.zl,{animate:true,duration:.9,easeLinearity:1})}
+  const lc=S.lastC;if(!lc||km({lat:lc[0],lng:lc[1]},{lat:pos[0],lng:pos[1]})>0.004||S.map.getZoom()!==S.zl){S.lastC=pos;const cp=S.map.unproject(S.map.project(pos,S.zl).add(L.point(0,navMid(m))),S.zl);S.map.setView(cp,S.zl,{animate:true,duration:.9,easeLinearity:1})}
   const sp=$(".emspd");if(sp)sp.textContent=Math.round(v)}
 // 🔷 manéver ako v aute: zvýraznený úsek križovatky so šípkou a bežiacimi šípkami (štýl Mercedes MBUX)
 function mvDraw(nx){const R=S.route;if(!R||!R.pts||!S.map)return;const key=S.si+":"+(nx&&nx.maneuver.location.join());if(S.mvFor===key)return;S.mvFor=key;if(S.mvL){S.mvL.forEach(l=>l.remove());S.mvL=null}
