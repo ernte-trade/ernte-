@@ -165,3 +165,27 @@ html[data-theme=light] .wlc .wlb,html[data-theme=light] .wlc .whc:not(.wlsp .whc
 .wimg.wclaas::before{display:none!important}
 /* 11:25 PRÍKAZ MAJITEĽA: skener (zelená línia) na úvode Martina beží stále; fotka ostáva pevná */
 .wimg.wme .wscan{display:block!important;animation:wscan 5.5s cubic-bezier(.45,0,.55,1) infinite!important;will-change:transform}
+/* 11:27 PRÍKAZ MAJITEĽA: úvod stlačený – údaje sa zmestia na fotku (jedna obrazovka), bez dlhých zoznamov a veľkých grafov */
+.wlc .whud{gap:6px!important}
+.wlc .whc{padding:8px 10px!important}
+.wlc .whwx svg,.wlc .whk .whbars{max-height:22px!important}
+.wlc .whwx .wxs{display:none!important}
+.wlc .whgr .wgrc{height:58px!important;max-height:58px!important;overflow:hidden}
+.wlc .whgr .wgrc svg{height:58px!important}
+.wlc .whgr .wgrs{max-height:30px;overflow-x:auto;overflow-y:hidden;flex-wrap:nowrap!important;white-space:nowrap}
+.wlc .wfuel .wfc,.wlc .wfuel .wfl,.wlc .wfuel .wfsrc{display:none!important}
+.wlc .wfuel .wfnav{margin-top:4px!important}
+.wlc .wfuel .wfnav a,.wlc .wfuel .wfnav button{min-height:38px!important;padding:6px 12px!important}
+.wlc .wdeal .wdc{display:none!important}
+.wlc .wlb .wjk{display:none!important}
+.wlc .wlb{padding-top:10px!important;padding-bottom:10px!important}
+.wlc .wlb .wlt p{margin:2px 0!important}
+@media (min-width:700px){
+  .wlc .whud{display:grid!important;grid-template-columns:1fr 1fr;align-items:start}
+  .wlc .whud>.whtop,.wlc .whud>.whrow,.wlc .whud>.whpr{grid-column:1/-1}
+}
+/* 11:28 PRÍKAZ MAJITEĽA: skener ešte krikľavejší a žiarivejší (iba Martin) */
+.wimg.wme .wscan{height:130px!important;z-index:4!important;
+  background:linear-gradient(180deg,transparent 0%,rgba(182,255,59,.10) 45%,rgba(190,255,60,.38) 82%,rgba(225,255,120,.95) 97%,#f7ffd6 100%)!important;
+  filter:drop-shadow(0 0 10px rgba(182,255,59,.95)) drop-shadow(0 0 26px rgba(132,255,40,.75))}
+.wimg.wme .wscan::after{content:"";position:absolute;left:0;right:0;bottom:-2px;height:4px;background:#fbffe6;box-shadow:0 0 12px 4px rgba(200,255,80,1),0 0 40px 12px rgba(150,255,40,.85),0 0 90px 24px rgba(120,255,30,.5)}
