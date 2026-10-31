@@ -164,7 +164,7 @@ document.addEventListener("submit",async ev=>{if(!ev.target||ev.target.id!=="fQd
     if(r.error)throw r.error;const D=Object.assign({com:Q.com,tons:String(tons).replace(".",","),price:String(price).replace(".",",")},r.data);
     // farmár bez prihlásenia: vytvorí sa mu prihlásenie (telefón alebo e-mail) a pošle sa v správe
     let cred="";if(!D.has_login&&(D.phone||D.email)&&(ROLE==="owner"||(typeof can==="function"&&can("farm_login")))&&typeof genPw==="function"){
-      const pw=genPw(),usePhone=!!D.phone;const s=await sb.rpc("set_farmer_password",{fid:D.farmer_id,pw,use_phone:usePhone});
+      const pw=genPw(D.farmer||""),usePhone=!!D.phone;const s=await sb.rpc("set_farmer_password",{fid:D.farmer_id,pw,use_phone:usePhone});
       if(!s.error){D.login=usePhone?D.phone:D.email;cred=`\n\nPrihlasovacie meno: ${D.login}\nJednorazový kód: ${pw}\nPo prvom prihlásení si nastavíte vlastný PIN (kód potom prestane platiť).`}}
     const c=COMS.find(x=>x[0]===Q.com),me=(typeof ME!=="undefined"&&ME&&ME.staffName)||"ERNTE";
     D.msg=`Dobrý deň, ERNTE vám posiela na podpis kúpnu zmluvu ${D.no}: ${c?c[2].toLowerCase():Q.com} ${D.tons} t za ${D.price} €/t${D.term?", vývoz "+D.term:""}.\nOtvorte aplikáciu ERNTE – hore ťuknite „Podpísať teraz“. Podpis prstom trvá 30 sekúnd.${cred}\n\nĎakujeme, ${me} · ERNTE\n\n👉 ERNTE Trade & Logistic: ${typeof APP_URL!=="undefined"?APP_URL:location.href.split("#")[0]}`;

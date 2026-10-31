@@ -96,33 +96,57 @@ document.addEventListener("click",e=>{const b=e.target.closest("[data-bigui]");i
   if(typeof FARMER!=="undefined"&&FARMER)renderFarmer();else if(typeof renderStaff==="function")renderStaff()});
 
 // ===== PIN pri prvom prihlásení + ochrana údajov =====
-function pinModal(){return new Promise(res=>{const d=document.createElement("div");d.className="pinmod";d.setAttribute("role","dialog");d.setAttribute("aria-label","Nastavenie vlastného PINu");
-  d.innerHTML=`<form class="pinbox" id="fPin"><div class="pinic">🔐</div><h2>Nastavte si vlastný PIN</h2><p>Prihlásili ste sa kódom od ERNTE. Kvôli bezpečnosti si teraz vytvorte <b>vlastný PIN</b> – odteraz sa budete prihlasovať ním.</p>
-   <label>Nový PIN (aspoň 6 číslic alebo znakov)<input name="a" type="password" inputmode="numeric" autocomplete="new-password" minlength="6" required></label>
-   <label>Zopakujte PIN<input name="b" type="password" inputmode="numeric" autocomplete="new-password" minlength="6" required></label>
-   <div class="pinerr" role="alert" aria-live="assertive"></div><button class="pri" type="submit">Uložiť môj PIN</button>
-   <p class="pinlaw">🛡️ Ochrana osobných údajov: vaše meno, telefón a e-mail spracúva ERNTE spol. s r.o. (doprava VALKO s.r.o.) iba na účely spolupráce, obchodov a dopravy podľa nariadenia GDPR a zákona č. 18/2018 Z. z. PIN nikomu neprezrádzajte – ERNTE ho nikdy nepozná ani si ho nepýta.</p></form>`;
+// silné heslo: aspoň 8 znakov, veľké aj malé písmeno, číslica a znak (. ! ? # - _ …) – príkaz majiteľa 31. 10.
+function pwWeak(a){const m=[];if(a.length<8)m.push("aspoň 8 znakov");if(!/[a-záäčďéíĺľňóôŕšťúýž]/.test(a))m.push("malé písmeno");if(!/[A-ZÁÄČĎÉÍĹĽŇÓÔŔŠŤÚÝŽ]/.test(a))m.push("VEĽKÉ písmeno");
+  if(!/\d/.test(a))m.push("číslicu");if(!/[^A-Za-z0-9áäčďéíĺľňóôŕšťúýžÁÄČĎÉÍĹĽŇÓÔŔŠŤÚÝŽ]/.test(a))m.push("znak, napr. . ! ? #");
+  if(/^(.)\1+$/.test(a)||/(heslo|password|ernte|12345|qwert)/i.test(a))m.push("menej jednoduché (nie heslo, 12345, ernte…)");return m}
+const GDPR_TXT=`Vaše meno, telefón, e-mail, údaje o obchodoch a doprave spracúva ERNTE spol. s r.o. (doprava VALKO s.r.o.) iba na účely spolupráce, obchodov, zúčtovania a dopravy podľa nariadenia (EÚ) 2016/679 (GDPR) a zákona č. 18/2018 Z. z. Údaje neposkytujeme tretím osobám okrem zákonných povinností a nevyhnutných spracovateľov (hosting, e-mail). Máte právo na prístup, opravu, vymazanie a námietku.`;
+const gdprBox=()=>`<label class="gdprc"><input type="checkbox" name="gdpr"><span class="gdprk" aria-hidden="true">✓</span><span>Prečítal(a) som si <a href="sukromie.html" target="_blank" rel="noopener">Ochranu osobných údajov (GDPR)</a> a súhlasím so spracovaním údajov pre spoluprácu s ERNTE.</span></label><p class="pinlaw">🛡️ ${GDPR_TXT}</p>`;
+function pinModal(){return new Promise(res=>{const d=document.createElement("div");d.className="pinmod";d.setAttribute("role","dialog");d.setAttribute("aria-label","Nastavenie vlastného hesla");
+  const needG=!(window.ERNTE_GDPR_OK);
+  d.innerHTML=`<form class="pinbox" id="fPin" novalidate><div class="pinic">🔐</div><h2>Nastavte si vlastné heslo</h2><p>Prihlásili ste sa heslom od ERNTE. Kvôli bezpečnosti si teraz vytvorte <b>vlastné silné heslo</b> – odteraz sa budete prihlasovať ním (alebo odtlačkom / Face ID).</p>
+   <label>Nové heslo<input name="a" type="password" autocomplete="new-password" minlength="8" required autocapitalize="off" autocorrect="off" spellcheck="false"></label>
+   <div class="pwmeter" aria-hidden="true"><i></i></div><div class="pwrules">aspoň 8 znakov · <b>Veľké</b> aj <b>malé</b> písmeno · <b>číslica</b> · <b>znak</b> ako . ! ? #</div>
+   <label>Zopakujte heslo<input name="b" type="password" autocomplete="new-password" minlength="8" required autocapitalize="off" autocorrect="off" spellcheck="false"></label>
+   ${needG?gdprBox():""}
+   <div class="pinerr" role="alert" aria-live="assertive"></div><button class="pri" type="submit">Uložiť moje heslo</button></form>`;
   document.body.appendChild(d);setTimeout(()=>{const i=d.querySelector("input");if(i)i.focus()},100);
-  const er=d.querySelector(".pinerr"),bad=m=>{er.textContent="⚠️ "+m;er.classList.add("on");try{navigator.vibrate&&navigator.vibrate(120)}catch(x){}};
-  d.querySelector("form").addEventListener("input",()=>{er.textContent="";er.classList.remove("on")});
-  d.querySelector("form").addEventListener("submit",async e=>{e.preventDefault();const f=new FormData(e.target),a=String(f.get("a")).trim(),b=String(f.get("b")).trim();
-    if(a.length<6){bad("PIN musí mať aspoň 6 číslic alebo znakov.");return}if(a!==b){bad("PIN sa nezhoduje – zadajte ho dvakrát rovnako.");return}
-    if(/^(\d)\1+$/.test(a)||["123456","654321","000000","111111","123123","012345","234567","987654"].includes(a)){bad("Príliš jednoduchý PIN (napr. 123456 alebo 111111) – zvoľte iný.");return}
-    const bt=e.target.querySelector("button");bt.disabled=true;bt.textContent="Ukladám…";
+  const er=d.querySelector(".pinerr"),bad=m=>{er.innerHTML="⚠️ "+m;er.classList.add("on");try{er.scrollIntoView({block:"nearest",behavior:"smooth"})}catch(x){}try{navigator.vibrate&&navigator.vibrate(120)}catch(x){}};
+  const fm=d.querySelector("form"),mt=d.querySelector(".pwmeter i");
+  fm.addEventListener("input",()=>{er.textContent="";er.classList.remove("on");const a=fm.a.value,w=pwWeak(a),sc=Math.max(0,5-w.length);mt.style.width=(sc*20)+"%";mt.className=sc>=5?"ok":sc>=3?"mid":"low"});
+  fm.addEventListener("submit",async e=>{e.preventDefault();const f=new FormData(e.target),a=String(f.get("a")),b=String(f.get("b"));
+    const w=pwWeak(a);if(w.length){bad("<b>Na toto prihlásenie použite silnejšie heslo.</b> Doplňte: "+w.join(", ")+". Napríklad: <b>Zrno.Pole-2026!</b>");return}
+    if(a!==b){bad("Heslá sa nezhodujú – zadajte ho dvakrát rovnako.");return}
+    if(needG&&!f.get("gdpr")){bad("Zaškrtnite, že ste si prečítali ochranu osobných údajov.");return}
+    const bt=e.target.querySelector("button[type=submit]");bt.disabled=true;bt.textContent="Ukladám…";
     let r;try{r=await sb.auth.updateUser({password:a})}catch(x){r={error:{message:String(x&&x.message||x)}}}
-    if(r.error){bt.disabled=false;bt.textContent="Uložiť môj PIN";const m=String(r.error.message||""),c=String(r.error.code||"");
-      bad(/same|different from the old/i.test(m+c)?"Nový PIN musí byť iný ako kód, ktorý ste dostali od ERNTE. Zvoľte iný PIN.":
-        /weak|pwned|leaked|characters|too short/i.test(m+c)?"Tento PIN je príliš slabý alebo známy z únikov hesiel. Zvoľte iný – napr. 8 číslic, nie po sebe idúcich.":
-        /reauth|recent|session|jwt|expired|not authenticated/i.test(m+c)?"Prihlásenie vypršalo. Zavrite stránku, prihláste sa znova kódom od ERNTE a hneď nastavte PIN.":
-        /fetch|network|failed/i.test(m)?"Nie je internet alebo je slabý signál. Skúste to znova o chvíľu.":"Nepodarilo sa uložiť PIN ("+m+"). Skúste iný PIN alebo zavolajte ERNTE.");return}
-    try{await sb.rpc("pin_done")}catch(x){}d.remove();toast("✓ Váš PIN je uložený. Odteraz sa prihlasujete ním.",5000);res()})})}
+    if(r.error){bt.disabled=false;bt.textContent="Uložiť moje heslo";const m=String(r.error.message||""),c=String(r.error.code||"");
+      bad(/same|different from the old/i.test(m+c)?"Nové heslo musí byť iné ako heslo od ERNTE.":
+        /weak|pwned|leaked|characters|too short/i.test(m+c)?"<b>Na toto prihlásenie použite silnejšie heslo</b> – toto je známe z únikov hesiel. Skúste iné, napr. Klas.Repka-7428!":
+        /reauth|recent|session|jwt|expired|not authenticated/i.test(m+c)?"Prihlásenie vypršalo. Otvorte znova odkaz z pozvánky a hneď nastavte heslo.":
+        /fetch|network|failed/i.test(m)?"Nie je internet alebo je slabý signál. Skúste to znova o chvíľu.":"Nepodarilo sa uložiť heslo ("+E2(m)+"). Skúste iné alebo zavolajte ERNTE.");return}
+    try{await sb.rpc("pin_done")}catch(x){}if(needG){try{await sb.rpc("gdpr_ok");window.ERNTE_GDPR_OK=1}catch(x){}}
+    d.remove();toast("✓ Vaše heslo je uložené. Odteraz sa prihlasujete ním.",5000);res()})})}
+const E2=s=>String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+// súhlas GDPR pre každého, kto ho ešte nemá (okienko → zelená fajka)
+function gdprModal(){return new Promise(res=>{const d=document.createElement("div");d.className="pinmod";d.setAttribute("role","dialog");d.setAttribute("aria-label","Ochrana osobných údajov");
+  d.innerHTML=`<form class="pinbox" id="fGdpr" novalidate><div class="pinic">🛡️</div><h2>Ochrana osobných údajov</h2>${gdprBox()}<div class="pinerr" role="alert"></div><button class="pri" type="submit">Pokračovať</button></form>`;
+  document.body.appendChild(d);const fm=d.querySelector("form");
+  fm.addEventListener("submit",async e=>{e.preventDefault();if(!fm.gdpr.checked){const er=d.querySelector(".pinerr");er.textContent="⚠️ Zaškrtnite políčko – ťuknite naň.";er.classList.add("on");return}
+    const bt=fm.querySelector("button");bt.disabled=true;try{await sb.rpc("gdpr_ok")}catch(x){}window.ERNTE_GDPR_OK=1;d.remove();res()})})}
+{const st=document.createElement("style");st.textContent=`.gdprc{display:grid!important;grid-template-columns:auto 1fr;gap:12px;align-items:start;text-align:left;cursor:pointer;padding:12px;border-radius:14px;border:1px solid rgba(255,255,255,.18);background:rgba(255,255,255,.04)}
+.gdprc{position:relative}.gdprc input{position:absolute!important;opacity:0;width:1px!important;height:1px!important;min-height:0!important;padding:0!important}.pinbox input[type=password]{letter-spacing:.06em;font-size:1.15rem}.pinerr.on{background:rgba(239,68,68,.16);border:1px solid rgba(239,68,68,.5);border-radius:14px;padding:10px 12px;color:#fecaca;text-align:left;line-height:1.45}.gdprk{width:34px;height:34px;border-radius:10px;border:2px solid rgba(255,255,255,.4);display:grid;place-items:center;font:900 1.2rem/1 system-ui;color:transparent;transition:.2s}
+.gdprc input:checked+.gdprk{background:#22c55e;border-color:#22c55e;color:#fff;box-shadow:0 0 16px rgba(34,197,94,.6);transform:scale(1.06)}
+.gdprc input:focus-visible+.gdprk{outline:3px solid #b6ff3b}.gdprc a{color:#b6ff3b}
+.pwmeter{height:6px;border-radius:3px;background:rgba(255,255,255,.12);overflow:hidden;margin-top:-4px}.pwmeter i{display:block;height:100%;width:0;transition:.25s;background:#ef4444}.pwmeter i.mid{background:#f59e0b}.pwmeter i.ok{background:#22c55e}
+.pwrules{font-size:.78rem;opacity:.8;text-align:left}`;document.head.appendChild(st)}
 async function loadMe(){try{const r=await sb.from("staff").select("*").eq("email",String(ME.email).toLowerCase()).maybeSingle();STATE.me=r.data||{role:ROLE,perms:{}}}catch(e){STATE.me={role:ROLE,perms:{}}}}
 // zmena prístupov od majiteľa sa prejaví bez odhlásenia: pri návrate do aplikácie a každé 2 minúty
 let MEAT=0;async function meRefresh(){if(typeof ROLE==="undefined"||!ROLE||ROLE==="owner"||!STATE.me||Date.now()-MEAT<60000)return;MEAT=Date.now();const old=JSON.stringify([STATE.me.perms,STATE.me.role]);await loadMe();
   if(JSON.stringify([STATE.me.perms,STATE.me.role])!==old&&typeof renderStaff==="function"){if(typeof TAB!=="undefined"&&typeof tabOK==="function"&&!tabOK(TAB)){try{TAB="home"}catch(e){}}renderStaff();if(typeof toast==="function")toast("Prístupy boli upravené.",3000)}}
 document.addEventListener("visibilitychange",()=>{if(!document.hidden)meRefresh()});setInterval(()=>{if(!document.hidden)meRefresh()},120000);
-const _ss=window.startStaff;window.startStaff=async function(){await loadMe();if(STATE.me&&STATE.me.must_change&&!window.ERNTE_VIEWAS)await pinModal();applyBig();if(ROLE!=="owner"&&!can("fleet_all")){try{FFLT=can("fleet_trak")?"traktory":"region"}catch(e){}}return _ss.apply(this,arguments)};
-const _sf=window.startFarmer;window.startFarmer=async function(){if(FARMER&&FARMER.must_change&&!window.ERNTE_VIEWAS)await pinModal();applyBig();return _sf.apply(this,arguments)};
+const _ss=window.startStaff;window.startStaff=async function(){await loadMe();if(STATE.me&&STATE.me.gdpr_at)window.ERNTE_GDPR_OK=1;if(STATE.me&&STATE.me.must_change&&!window.ERNTE_VIEWAS)await pinModal();if(STATE.me&&!window.ERNTE_GDPR_OK&&!window.ERNTE_VIEWAS&&!window.ERNTE_TEST)await gdprModal();applyBig();if(ROLE!=="owner"&&!can("fleet_all")){try{FFLT=can("fleet_trak")?"traktory":"region"}catch(e){}}return _ss.apply(this,arguments)};
+const _sf=window.startFarmer;window.startFarmer=async function(){if(FARMER&&FARMER.gdpr_at)window.ERNTE_GDPR_OK=1;if(FARMER&&FARMER.must_change&&!window.ERNTE_VIEWAS)await pinModal();if(FARMER&&!window.ERNTE_GDPR_OK&&!window.ERNTE_VIEWAS)await gdprModal();applyBig();return _sf.apply(this,arguments)};
 
 // ===== TÍM A PRÍSTUPY (iba majiteľ) =====
 let TOPEN=null,TADD=null,TEDIT=null;
@@ -168,7 +192,7 @@ window.vTeam=function(){const L=STATE.staff;if(!L)return `<div class="card"><div
   h+=`<details class="card tmmore" id="tmAdd"${TADD?" open":""}><summary>➕ Pridať zamestnanca</summary>${addForm()}</details>`;
   if(own.length)h+=`<details class="tmown"><summary>👑 Majitelia (${own.length})</summary><div class="ds-team">${own.map(staffCard).join("")}</div></details>`;
   return h};
-async function teamCode(login,name,role,extra){const pw=genPw()+"-"+String(10+((crypto.getRandomValues(new Uint32Array(1))[0])%90));
+async function teamCode(login,name,role,extra){const pw=genPw(name);
   const r=await sb.rpc("set_staff_login",{login_in:login,name_in:name,role_in:role,pw});if(r.error){toast("Nepodarilo sa: "+r.error.message,7000);return null}
   if(extra){const q=await sb.rpc("set_staff_profile",{em:r.data,p:extra.p,t:extra.t||"",r:extra.r||"",ph:extra.ph||""});if(q.error)toast("Prístupy sa neuložili: "+q.error.message,6000)}
   const isT=String(r.data).endsWith("@tel.ernte.sk"),who=isT?login:r.data,tel=isT?String(r.data).split("@")[0]:"";

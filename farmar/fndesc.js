@@ -50,6 +50,7 @@ const SECD={
  "agro:cat":"Katalóg prác a strojov, z ktorého sa skladá cenník."};
 // ---- nadpisy (farmár aj zamestnanci) ----
 const H2=[
+ ["🔑 Nové heslá pre neprihlásených","Kto sa ešte neprihlásil, dostane nové heslo Meno-1234. (každý iné) a pozvánku s odkazom app.ernte.sk – ťukne a prihlási sa sám. Do aplikácie ho pustí až po vlastnom silnom hesle a súhlase GDPR. Heslá vidíte iba raz."],
  ["💶 Výplaty na účet · VALKO-HUB","Výplata vodiča na účet podľa modelu VALKO-HUB: cieľ = denné sadzby z jázd, diéty = MAX(minimum Commandera; cieľ − čistá mzda z pásky), zrážky len z diét nad minimom s prenosom, vrátenia výdavkov, bonus za skóre Valko-Hub do mzdy, export pre MRP (CSV). Vidí iba majiteľ."],
  ["📊 KPI a bonusy tímu VALKO","5 KPI s váhami pre každú pozíciu, skóre → pásmo 100 / 70 / 40 / 0 % max. bonusu, kritický gate, krátenie iba bonusu so zdokumentovaným dôvodom, stavy Navrhnuté → Skontrolované → Schválené → Uzamknuté s audit logom, semafor flotily (autá bez vodiča, využitie). Vidí iba majiteľ."],
  ["🌐 Doména app.ernte.sk","Presný DNS záznam pre vlastnú adresu aplikácie (Kopírovať), stav overenia DNS a HTTPS certifikátu. Kontrola každých 15 min; po overení sa doména zapne sama a stará adresa sa presmeruje. Registrátor s API kľúčom vytvorí záznam sám."],

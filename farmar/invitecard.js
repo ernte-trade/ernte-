@@ -123,7 +123,7 @@ document.addEventListener("click",async e=>{const b=e.target.closest&&e.target.c
   if(mm)f.email.value=mm[1].trim();const one=t.trim().split(/\s+/).length===1?t.trim():"",isLogin=/@|^\+?\d[\d ]{8,}$/.test(one);if(!mm&&!mk&&one&&isLogin){f.email.value=one;say("✓ Meno vložené – teraz skopírujte a vložte kód. · Név beillesztve.",5000);f.pw.focus();return}
   const k=mk?mk[1]:one;
   if(k){f.pw.value=k.trim();say("✓ Vložené – ťuknite Prihlásiť. · Beillesztve.",4000)}else say("V schránke nie je kód. · A vágólapon nincs kód.",5000)},true);
-window.inviteCardDraw=draw;window.inviteCardPdf=pdf;
+window.inviteCardDraw=draw;window.inviteCardPdf=pdf;window.inviteCardSend=send;
 document.addEventListener("click",e=>{const b=e.target.closest&&e.target.closest("[data-invcard]");if(!b)return;e.preventDefault();e.stopPropagation();
   const I=(typeof STATE!=="undefined"&&STATE.invite)||null;if(!I){say("Najprv vytvorte prihlásenie.");return}send(I,b.dataset.invcard,b)},true);
 })();

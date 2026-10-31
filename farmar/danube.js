@@ -183,7 +183,7 @@ document.addEventListener("submit",async ev=>{const f=ev.target;
   if(f.id==="dnNF"){ev.preventDefault();const d=new FormData(f),b=f.querySelector("button.lime"),row={firma:"DANUBE",active:true};["name","email","phone","addr","ico","dic"].forEach(k=>{const v=String(d.get(k)||"").trim();row[k]=v||null});
     if(row.email)row.email=row.email.toLowerCase();if(!row.name){tst(T("Zadaj meno.","Adja meg a nevet."));return}busy(b,true);
     const r=await sb.from("farmers").insert(row).select().single();if(r.error){busy(b,false);tst(r.error.code==="23505"?T("Tento e-mail už má iný farmár.","Ez az e-mail már másik termelőé."):"⚠️ "+r.error.message,6000);return}
-    if(d.get("login")==="on"&&(row.email||row.phone)){const usePhone=!row.email,pw=typeof genPw==="function"?genPw():Math.random().toString(36).slice(2,10);
+    if(d.get("login")==="on"&&(row.email||row.phone)){const usePhone=!row.email,pw=typeof genPw==="function"?genPw(row.name):Math.random().toString(36).slice(2,10);
       const q=await sb.rpc("set_farmer_password",{fid:r.data.id,pw,use_phone:usePhone});busy(b,false);if(q.error){tst("⚠️ "+q.error.message,7000)}
       else D.inv={name:row.name,tel:row.phone?telN(row.phone):"",txt:invTxt(d.get("lang")==="hu",usePhone?row.phone:row.email,pw,"f")}}else busy(b,false);
     tst(T("✓ Farmár pridaný do Danube.","✓ Termelő hozzáadva (Danube)."));D.d=null;if(typeof loadStaff==="function")loadStaff();rr();window.scrollTo({top:0});return}
