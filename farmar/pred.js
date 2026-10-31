@@ -38,7 +38,29 @@ const lock=()=>{try{sessionStorage.removeItem(LK)}catch(x){}};
 const fails=()=>{try{return JSON.parse(localStorage.getItem(FK)||'{"n":0,"t":0}')}catch(x){return{n:0,t:0}}};
 const setFails=v=>{try{localStorage.setItem(FK,JSON.stringify(v))}catch(x){}};
 const hex=b=>[...new Uint8Array(b)].map(x=>x.toString(16).padStart(2,"0")).join("");
-async function pbk(pin,salt){const k=await crypto.subtle.importKey("raw",new TextEncoder().encode(pin),"PBKDF2",false,["deriveBits"]);
+// PBKDF2-SHA256 aj bez crypto.subtle (napr. app.ernte.sk ešte cez http, kým GitHub nevydá certifikát) – rovnaký výsledok ako subtle
+const PBK_JS=(()=>{const K=new Int32Array([0x428a2f98,0x71374491,0xb5c0fbcf,0xe9b5dba5,0x3956c25b,0x59f111f1,0x923f82a4,0xab1c5ed5,0xd807aa98,0x12835b01,0x243185be,0x550c7dc3,0x72be5d74,0x80deb1fe,0x9bdc06a7,0xc19bf174,0xe49b69c1,0xefbe4786,0x0fc19dc6,0x240ca1cc,0x2de92c6f,0x4a7484aa,0x5cb0a9dc,0x76f988da,0x983e5152,0xa831c66d,0xb00327c8,0xbf597fc7,0xc6e00bf3,0xd5a79147,0x06ca6351,0x14292967,0x27b70a85,0x2e1b2138,0x4d2c6dfc,0x53380d13,0x650a7354,0x766a0abb,0x81c2c92e,0x92722c85,0xa2bfe8a1,0xa81a664b,0xc24b8b70,0xc76c51a3,0xd192e819,0xd6990624,0xf40e3585,0x106aa070,0x19a4c116,0x1e376c08,0x2748774c,0x34b0bcb5,0x391c0cb3,0x4ed8aa4a,0x5b9cca4f,0x682e6ff3,0x748f82ee,0x78a5636f,0x84c87814,0x8cc70208,0x90befffa,0xa4506ceb,0xbef9a3f7,0xc67178f2]);
+ const IV=[0x6a09e667,0xbb67ae85,0x3c6ef372,0xa54ff53a,0x510e527f,0x9b05688c,0x1f83d9ab,0x5be0cd19],w=new Int32Array(64);
+ function comp(H,W16){for(let i=0;i<16;i++)w[i]=W16[i];for(let i=16;i<64;i++){const x=w[i-15],y=w[i-2];w[i]=(w[i-16]+(((x>>>7)|(x<<25))^((x>>>18)|(x<<14))^(x>>>3))+w[i-7]+(((y>>>17)|(y<<15))^((y>>>19)|(y<<13))^(y>>>10)))|0}
+  let a=H[0],b=H[1],c=H[2],d=H[3],e=H[4],f=H[5],g=H[6],h=H[7];
+  for(let i=0;i<64;i++){const t1=(h+(((e>>>6)|(e<<26))^((e>>>11)|(e<<21))^((e>>>25)|(e<<7)))+((e&f)^(~e&g))+K[i]+w[i])|0,t2=((((a>>>2)|(a<<30))^((a>>>13)|(a<<19))^((a>>>22)|(a<<10)))+((a&b)^(a&c)^(b&c)))|0;h=g;g=f;f=e;e=(d+t1)|0;d=c;c=b;b=a;a=(t1+t2)|0}
+  return [(H[0]+a)|0,(H[1]+b)|0,(H[2]+c)|0,(H[3]+d)|0,(H[4]+e)|0,(H[5]+f)|0,(H[6]+g)|0,(H[7]+h)|0]}
+ const words=(u8,o)=>{const W=new Int32Array(16);for(let i=0;i<16;i++)W[i]=(u8[o+i*4]<<24)|(u8[o+i*4+1]<<16)|(u8[o+i*4+2]<<8)|u8[o+i*4+3];return W};
+ function sha(m){const l=m.length,nb=((l+9+63)>>6)<<6,b=new Uint8Array(nb);b.set(m);b[l]=0x80;const bl=l*8;for(let i=0;i<4;i++)b[nb-1-i]=(bl>>>(8*i))&255;let H=IV.slice();for(let o=0;o<nb;o+=64)H=comp(H,words(b,o));return H}
+ const toB=H=>{const o=new Uint8Array(32);H.forEach((v,i)=>{o[i*4]=v>>>24;o[i*4+1]=v>>>16;o[i*4+2]=v>>>8;o[i*4+3]=v});return o};
+ return function(pass,salt,it){let k=pass;if(k.length>64)k=toB(sha(k));const ip=new Uint8Array(64).fill(0x36),op=new Uint8Array(64).fill(0x5c);for(let i=0;i<k.length;i++){ip[i]^=k[i];op[i]^=k[i]}
+  const Hi=comp(IV,words(ip,0)),Ho=comp(IV,words(op,0));
+  // prvé kolo: HMAC(salt||INT(1))
+  const s=new Uint8Array(salt.length+4);s.set(salt);s[salt.length+3]=1;
+  const ib=new Uint8Array(64+s.length);ib.set(ip);ib.set(s,64);const nb=((ib.length+9+63)>>6)<<6,bb=new Uint8Array(nb);bb.set(ib);bb[ib.length]=0x80;{const bl=ib.length*8;for(let i=0;i<4;i++)bb[nb-1-i]=(bl>>>(8*i))&255}
+  let I=Hi;for(let o=64;o<nb;o+=64)I=comp(I,words(bb,o));
+  const P=new Int32Array(16);P[8]=0x80000000|0;P[15]=(64+32)*8;
+  const fin=Hs=>{for(let i=0;i<8;i++)P[i]=Hs[i];return comp(Ho,P)};
+  let U=fin(I);const T=U.slice();
+  for(let r=1;r<it;r++){for(let i=0;i<8;i++)P[i]=U[i];const In=comp(Hi,P);U=fin(In);for(let j=0;j<8;j++)T[j]^=U[j]}
+  return toB(T)}})();
+async function pbk(pin,salt){if(!(window.crypto&&crypto.subtle&&window.isSecureContext!==false))return hex(PBK_JS(new TextEncoder().encode(pin),new TextEncoder().encode(salt),150000));
+  const k=await crypto.subtle.importKey("raw",new TextEncoder().encode(pin),"PBKDF2",false,["deriveBits"]);
   return hex(await crypto.subtle.deriveBits({name:"PBKDF2",hash:"SHA-256",salt:new TextEncoder().encode(salt),iterations:150000},k,256))}
 async function stSet(key,value){const r=await sb.from("ai_state").upsert({key,value,updated_at:new Date().toISOString()});if(r.error)throw r.error}
 async function stGet(keys){const r=await sb.from("ai_state").select("key,value").in("key",keys);if(r.error)throw r.error;return Object.fromEntries((r.data||[]).map(x=>[x.key,x.value]))}
@@ -416,7 +438,6 @@ document.addEventListener("click",async ev=>{if(!OWN())return;const t=ev.target;
 document.addEventListener("submit",async ev=>{const f=ev.target;if(!OWN()||!["fPrdPin","fPrdQ","fPrdC","fPrdN"].includes(f.id))return;ev.preventDefault();ev.stopPropagation();
   const d=new FormData(f),b=f.querySelector("button[type=submit]");
   if(f.id==="fPrdPin"){const pin=String(d.get("pin")||"");if(!/^\d{4,8}$/.test(pin)){S.pinErr="PIN musí mať 4 až 8 číslic.";rr();return}
-    if(!crypto||!crypto.subtle){S.pinErr="Prehliadač nepodporuje bezpečné overenie PIN.";rr();return}
     if(!S.pin||S.pinMode==="new"){if(pin!==String(d.get("pin2")||"")){S.pinErr="PIN-y sa nezhodujú.";rr();return}
       const salt=hex(crypto.getRandomValues(new Uint8Array(16)));const v={salt,h:await pbk(pin,salt),at:new Date().toISOString()};
       try{await stSet("pred_pin",v);S.pin=v;S.pinMode=null;S.pinErr="";sessionStorage.setItem(LK,String(Date.now()));S.at=0;rr();tst("PIN uložený.")}catch(er){S.pinErr="Neuložené: "+er.message;rr()}return}
