@@ -1,0 +1,25 @@
+<!doctype html><html lang="sk"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex,nofollow"><meta name="referrer" content="no-referrer">
+<title>Správa – VALKO</title><link rel="stylesheet" href="fonts/fonts.css?v=1"><link rel="icon" type="image/png" href="icon-192.png">
+<style>:root{--bg:#f4f6f1;--fg:#0f172a;--mu:#475569;--line:rgba(15,23,42,.14);--acc:#1e2f8a}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--fg);font:17px/1.6 Inter,system-ui,sans-serif;padding:18px 16px 60px}
+.w{max-width:720px;margin:0 auto;display:grid;gap:14px}.hd{display:flex;gap:12px;align-items:center;border-bottom:2px solid var(--acc);padding-bottom:10px}.hd img{height:40px}.hd small{display:block;color:var(--mu);font-size:.8rem}
+.c{background:#fff;border:1px solid var(--line);border-radius:18px;padding:18px}.c h1,.c h2,.c h3{line-height:1.25;margin:10px 0 6px}.c h1{font-size:1.4rem}.c h2{font-size:1.2rem}.c p{margin:8px 0}
+table{border-collapse:collapse;width:100%;font-size:.9rem}td,th{border:1px solid #cbd5e1;padding:6px}.tw{overflow-x:auto}
+button{font:700 1.05rem Inter,system-ui;min-height:56px;border:0;border-radius:16px;background:#16a34a;color:#fff;width:100%}.ok{padding:14px;border-radius:16px;background:#dcfce7;border:1px solid #86efac;font-weight:600}.s{color:var(--mu);font-size:.85rem}</style></head>
+<body><div class="w"><div class="hd"><img src="valko-logo.png" alt="VALKO"><div><b>VALKO s.r.o.</b><small>Zbudza 141, 072 23 · IČO 53 365 241</small></div></div><div id="m" class="c">Načítavam správu…</div><div id="a"></div>
+<div class="s">Správa je určená iba vám. <a href="sukromie.html">Ochrana osobných údajov</a></div></div>
+<script src="config.js"></script>
+<script>
+const t=(new URLSearchParams(location.search).get("t")||"").replace(/[^0-9a-f]/g,"").slice(0,32),C=window.ERNTE_CONFIG||{};
+const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+function md(s){const L=String(s||"").split("\n");let h="",tb=[];const fl=()=>{if(tb.length){h+='<div class="tw"><table>'+tb.filter(r=>!/^\s*\|?\s*-{2,}/.test(r)).map(r=>"<tr>"+r.replace(/^\s*\||\|\s*$/g,"").split("|").map(c=>"<td>"+inl(c.trim())+"</td>").join("")+"</tr>").join("")+"</table></div>";tb=[]}};
+  const inl=x=>esc(x).replace(/\*\*(.+?)\*\*/g,"<b>$1</b>");
+  for(const l of L){if(/^\s*\|/.test(l)){tb.push(l);continue}fl();const m=l.match(/^(#{1,3})\s+(.*)/);if(m)h+=`<h${m[1].length}>${inl(m[2])}</h${m[1].length}>`;else if(/^\s*[-*]\s+/.test(l))h+="<p>• "+inl(l.replace(/^\s*[-*]\s+/,""))+"</p>";else if(l.trim())h+="<p>"+inl(l)+"</p>"}fl();return h}
+async function rpc(n,a){const r=await fetch(C.SUPABASE_URL+"/rest/v1/rpc/"+n,{method:"POST",headers:{"apikey":C.SUPABASE_KEY,"Authorization":"Bearer "+C.SUPABASE_KEY,"Content-Type":"application/json"},body:JSON.stringify(a)});if(!r.ok)throw new Error(r.status);return r.json()}
+(async()=>{const M=document.getElementById("m"),A=document.getElementById("a");if(t.length!==32){M.textContent="Odkaz je neplatný.";return}
+  try{const d=await rpc("msg_by_token",{t});if(!d){M.textContent="Správa sa nenašla alebo už neplatí.";return}
+    M.innerHTML=(d.name?`<div class="s">Pre: <b>${esc(d.name)}</b> · ${esc(new Date(d.sent_at).toLocaleString("sk-SK"))}</div>`:"")+md(d.body);
+    const done=x=>{A.innerHTML=`<div class="ok">✓ Potvrdené ${esc(new Date(x).toLocaleString("sk-SK"))}. Ďakujeme.</div>`};
+    if(d.read_at)done(d.read_at);else{A.innerHTML=`<button type="button" id="ack">✓ Prečítal som si správu</button>`;document.getElementById("ack").onclick=async()=>{try{const r=await rpc("msg_ack",{t});done(r||new Date())}catch(x){alert("Nepodarilo sa potvrdiť, skúste znova.")}}}
+  }catch(x){M.textContent="Správu sa nepodarilo načítať. Skúste neskôr."}})();
+</script></body></html>

@@ -1,0 +1,51 @@
+name: icotest
+on:
+  repository_dispatch:
+    types: [ernte-icotest]
+permissions:
+  contents: write
+jobs:
+  t:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - name: Test verejných registrov (iba verejné údaje firiem)
+        run: |
+          set +e
+          ICO="${{ github.event.client_payload.ico || '52341356' }}"
+          O=-H; H="Origin: https://ernte-trade.github.io"
+          {
+          NM="${{ github.event.client_payload.name || 'ABG Trebišov' }}"; NE=$(python3 -c "import urllib.parse,sys;print(urllib.parse.quote(sys.argv[1]))" "$NM")
+          echo "== RPO fullName"; curl -s -m 20 -D - -H "$H" "https://api.statistics.sk/rpo/v1/search?fullName=$NE&onlyActive=true" | head -c 5000; echo
+          echo "== FUEL raw"; curl -s -m 20 -D - -o /dev/null -H "$H" "https://raw.githubusercontent.com/ernte-trade/ernte-/fuel-data/fuel.json" | grep -i "^HTTP\|access-control-allow-origin\|content-type"
+          echo "== OVERPASS"; Q='[out:json][timeout:12];nwr["amenity"="fuel"][~"^(brand|name|operator)$"~"Slovnaft",i](around:20000,48.7547,21.9195);out center 5;'
+          for U in https://overpass-api.de/api/interpreter https://overpass.kumi.systems/api/interpreter https://overpass.private.coffee/api/interpreter https://maps.mail.ru/osm/tools/overpass/api/interpreter; do
+            echo "-- $U"; curl -s -m 25 -D - -A "Mozilla/5.0 (Linux; Android 14) Chrome/130 Mobile" -H "Origin: https://ernte-trade.github.io" --data-urlencode "data=$Q" "$U" | grep -i "^HTTP\|access-control-allow-origin\|\"brand\"\|\"lat\"" | head -6
+          done
+          echo "== NOMINATIM"; curl -s -m 20 -D - -A "Mozilla/5.0 (Linux; Android 14) Chrome/130 Mobile" -H "Origin: https://ernte-trade.github.io" -H "Referer: https://ernte-trade.github.io/" "https://nominatim.openstreetmap.org/search?amenity=fuel&format=jsonv2&limit=20&bounded=1&viewbox=21.7,48.9,22.1,48.6" | grep -io "^HTTP.*\|access-control-allow-origin.*\|\"name\":\"[^\"]*\"" | head -8
+          echo "== PHOTON"; curl -s -m 20 -D - -A "Mozilla/5.0 (Linux; Android 14) Chrome/130 Mobile" -H "Origin: https://ernte-trade.github.io" "https://photon.komoot.io/api/?q=fuel&lat=48.7547&lon=21.9195&osm_tag=amenity:fuel&limit=10" | grep -io "^HTTP.*\|access-control-allow-origin.*\|\"name\":\"[^\"]*\"" | head -8
+          echo "== OVP GET"; curl -s -m 25 -D - -A "Mozilla/5.0 (Linux; Android 14) Chrome/130 Mobile" -H "Origin: https://ernte-trade.github.io" -H "Referer: https://ernte-trade.github.io/" -G --data-urlencode "data=$Q" https://overpass-api.de/api/interpreter | grep -i "^HTTP\|access-control-allow-origin\|\"brand\"" | head -6
+          echo "== DOMENA ernte.sk"; for u in http://ernte.sk https://ernte.sk http://www.ernte.sk https://www.ernte.sk http://app.ernte.sk https://app.ernte.sk; do echo "-- $u"; curl -s -m 15 -o /dev/null -w "%{http_code} -> %{redirect_url}\n" "$u"; done
+          dig +short A ernte.sk; dig +short CNAME www.ernte.sk; dig +short A www.ernte.sk; dig +short NS ernte.sk
+          echo "== VALHALLA"; VJ='{"locations":[{"lat":48.7547,"lon":21.9195},{"lat":47.0167,"lon":20.2833}],"costing":"truck","costing_options":{"truck":{"height":4,"width":2.55,"length":16.5,"weight":40,"axle_load":11.5,"axle_count":5}},"language":"sk-SK","units":"kilometers"}'
+          curl -s -m 40 -D vh.txt -A "Mozilla/5.0 (Linux; Android 14) Chrome/130 Mobile" -H "Origin: https://ernte-trade.github.io" -H "Content-Type: application/json" -d "$VJ" https://valhalla1.openstreetmap.de/route > vr.json; grep -i "^HTTP\|access-control" vh.txt
+          jq -c '{s:.trip.summary,n:(.trip.legs[0].maneuvers|length),m:[.trip.legs[0].maneuvers[0:4][]|{i:.instruction,v:.verbal_pre_transition_instruction,t:.type,l:.length,toll,highway,sn:.street_names}]}' vr.json | head -c 2500; echo
+          SH=$(jq -r '.trip.legs[0].shape' vr.json); jq -n --arg s "$SH" '{encoded_polyline:$s,costing:"truck",shape_match:"edge_walk",filters:{attributes:["edge.length","edge.road_class","edge.toll","edge.use","node.admin_index","admin.country_code","admin.country_text","edge.begin_shape_index","edge.end_shape_index"],action:"include"}}' > ta.json
+          curl -s -m 60 -D th.txt -H "Origin: https://ernte-trade.github.io" -H "Content-Type: application/json" -d @ta.json https://valhalla1.openstreetmap.de/trace_attributes > tr.json; grep -i "^HTTP\|access-control" th.txt
+          jq -c '{a:.admins,n:(.edges|length),e:.edges[0:5],tot:([.edges[]|{k:("\(.end_node.admin_index)|\(.road_class)|\(.toll)"),l:.length}]|group_by(.k)|map({k:.[0].k,km:(map(.l)|add)}))}' tr.json | head -c 3000; echo
+          echo "== GIBS"; D=$(date -u -d yesterday +%F); for U in "https://gibs.earthdata.nasa.gov/wmts/epsg3857/best/VIIRS_NOAA20_CorrectedReflectance_TrueColor/default/$D/GoogleMapsCompatible_Level9/6/22/35.jpg" "https://gibs.earthdata.nasa.gov/wmts/epsg3857/best/Reference_Labels_15m/default/default/GoogleMapsCompatible_Level13/6/22/35.png" "https://gibs.earthdata.nasa.gov/wmts/epsg3857/best/MODIS_Terra_CorrectedReflectance_TrueColor/default/$D/GoogleMapsCompatible_Level9/6/22/35.jpg"; do echo "$(curl -s -o /tmp/g -w '%{http_code} %{content_type} %{size_download}' -H 'Origin: https://ernte-trade.github.io' "$U") $U"; done
+          echo "== MX"; dig +short MX ernte.sk; dig +short TXT ernte.sk | head -5; dig +short autodiscover.ernte.sk; dig +short CNAME autoconfig.ernte.sk; dig +short A mail.ernte.sk; dig +short A smtp.ernte.sk
+          echo "== LIVE zmeny"; curl -s -m 20 "https://ernte-trade.github.io/ernte-/farmar/zmeny.json?u=$RANDOM" | head -c 400; echo; curl -s -m 20 -o /dev/null -w "%{http_code}\n" "https://ernte-trade.github.io/ernte-/farmar/beta/verzia.js"
+          echo "== RPO search"; curl -s -m 20 -D - -H "$H" "https://api.statistics.sk/rpo/v1/search?identifier=$ICO" | head -c 6000; echo
+          echo "== RUZ list"; curl -s -m 20 -D - -H "$H" "https://www.registeruz.sk/cruz-public/api/uctovne-jednotky?zmenene-od=2000-01-01&ico=$ICO" | head -c 3000; echo
+          ID=$(curl -s -m 20 "https://www.registeruz.sk/cruz-public/api/uctovne-jednotky?zmenene-od=2000-01-01&ico=$ICO" | grep -o '"id":\[[0-9]*' | grep -o '[0-9]*$' | head -1)
+          echo "== RUZ detail $ID"; curl -s -m 20 -D - -H "$H" "https://www.registeruz.sk/cruz-public/api/uctovna-jednotka?id=$ID" | head -c 4000; echo
+          RID=$(curl -s -m 20 "https://api.statistics.sk/rpo/v1/search?identifier=$ICO" | grep -o '"id":[0-9]*' | head -1 | grep -o '[0-9]*')
+          echo "== RPO entity $RID"; curl -s -m 20 -D - -H "$H" "https://api.statistics.sk/rpo/v1/entity/$RID?showHistoricalData=false&showOrganizationUnits=false" | head -c 6000; echo
+          K="sb_publishable_AOel6p4QZFP_-t4sSoziAA_ESUooutQ"; U="https://cflliscddsgleyeykzje.supabase.co"
+          echo "== novinky anon"; curl -s -m 20 -H "apikey: $K" "$U/rest/v1/app_novinky?select=titul,d&order=d.desc&limit=3"; echo
+          echo "== FinStat api detail (bez kľúča)"; curl -s -m 20 -D - -H "$H" -X POST "https://www.finstat.sk/api/detail" -d "ico=$ICO" | head -c 1500; echo
+          } > out.txt 2>&1
+          git config user.name bot; git config user.email bot@users.noreply.github.com
+          git checkout --orphan ico-results; git rm -rfq . >/dev/null; git add out.txt; git commit -qm ico; git push -fq origin ico-results

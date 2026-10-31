@@ -1,0 +1,38 @@
+# Upozornenia majiteľovi (Web Push). Spúšťa ich databáza ERNTE komentárom „ernte-push <ID>“ v technickom vlákne #51
+# (iba účet ernte-trade). Úloha obsahuje len náhodné ID; obsah si skript vyzdvihne jednorazovo z databázy (push_job_take).
+# Po odoslaní sa komentár zmaže. Nič sa nevypisuje do logu.
+name: ernte-push
+on:
+  issue_comment:
+    types: [created]
+  repository_dispatch:
+    types: [ernte-push]
+permissions:
+  contents: read
+  issues: write
+jobs:
+  send:
+    if: >-
+      github.event_name == 'repository_dispatch' ||
+      (github.event.issue.number == 51 && github.event.comment.user.login == 'ernte-trade' && startsWith(github.event.comment.body, 'ernte-push '))
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            .github/push
+            farmar/config.js
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: npm i --no-save --silent web-push@3.6.7 || (sleep 5 && npm i --no-save --silent web-push@3.6.7)
+        working-directory: .github/push
+      - run: node send.mjs
+        working-directory: .github/push
+        env:
+          JOB_ID: ${{ github.event.client_payload.id || github.event.comment.body }}
+      - if: always() && github.event_name == 'issue_comment'
+        run: gh api -X DELETE repos/${{ github.repository }}/issues/comments/${{ github.event.comment.id }} --silent || true
+        env:
+          GH_TOKEN: ${{ github.token }}

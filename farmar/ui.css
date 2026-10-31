@@ -1,0 +1,121 @@
+/* ===== ERNTE UI 2026 – moderná vrstva nad dizajnom „sklo · diamant“ =====
+   Farby ostávajú. Mení sa písmo (Geist), jemnejšie sklo a tiene, plávajúca spodná lišta na mobile,
+   väčšie dotykové plochy, iPhone bez priblíženia pri písaní, plynulé ovládanie na Android / iOS / PC. */
+@font-face{font-family:"Geist";src:url(fonts/geist.woff2) format("woff2");font-weight:100 900;font-style:normal;font-display:swap}
+@font-face{font-family:"Geist Mono";src:url(fonts/geistmono.woff2) format("woff2");font-weight:100 900;font-style:normal;font-display:swap}
+:root{
+  --f-head:"Geist","Inter",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  --f-ui:"Geist","Inter",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  --f-num:"Geist","Inter",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  --f-mono:"Geist Mono",ui-monospace,Menlo,Consolas,monospace;
+  --ds-r:22px;--ds-r-sm:14px;
+  --ds-edge:rgba(255,255,255,.13);
+  --ds-shadow:0 1px 2px rgba(2,6,23,.25),0 18px 44px -18px rgba(2,6,23,.75);
+  --ui-ease:cubic-bezier(.2,.8,.2,1);
+}
+html{-webkit-text-size-adjust:100%;text-size-adjust:100%;scroll-padding-top:12px}
+body{letter-spacing:-.006em;-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;text-rendering:optimizeLegibility;
+  font-feature-settings:"tnum" 1,"ss01" 0;-webkit-tap-highlight-color:transparent}
+::selection{background:rgba(34,211,238,.32);color:#fff}
+img,svg,video,canvas{max-width:100%}
+code,kbd,pre,samp{font-family:var(--f-mono)}
+b,strong{font-weight:700}
+
+/* --- typografia --- */
+header.top h1{font-weight:700;letter-spacing:-.035em}
+header.top small{letter-spacing:0}
+.hubt,.hero b,.ds-h1,.vh1{letter-spacing:-.035em!important;font-weight:700!important}
+.hero b{font-weight:700}
+h2{font-weight:700;letter-spacing:.14em}
+h3{letter-spacing:-.02em}
+.card .t,.prow .t,.pnm b,.xdn b{font-weight:650;letter-spacing:-.015em}
+.ds-kpi>b,.kb b,.vd b,.xvk b,.vk b{font-weight:700;letter-spacing:-.035em}
+.ds-kpi>small,.ds-chip small{font-weight:600;letter-spacing:.08em}
+.muted,.s,small{letter-spacing:0}
+
+/* --- karty: jemnejšie sklo, mäkší tieň --- */
+.card,.kb,.vd,.xv,.xd,.pyc,.xc,.xmap,.xtl,.vfirm,.vt,.ds-g,.ds-kpi,.ds-tile,.ds-trow,.ds-fc{
+  border-color:var(--ds-edge);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.16),var(--ds-shadow)}
+.card::before,.kb::before,.vd::before,.xv::before,.xd::before,.pyc::before,.xc::before,.xmap::before,.xtl::before,.vfirm::before,.vt::before,.ds-g::before,.ds-kpi::before,.ds-tile::before,.ds-trow::before,.ds-fc::before{opacity:.55}
+.card .card,.card .xd,.card .xv,.card .vt,.card .kb{box-shadow:inset 0 1px 0 rgba(255,255,255,.08)}
+
+/* --- tlačidlá --- */
+button,.btn,[role=button],a.btn{font-weight:650;letter-spacing:-.01em;touch-action:manipulation;
+  transition:transform .14s var(--ui-ease),box-shadow .2s ease,border-color .2s ease,background-color .2s ease,color .2s ease}
+button:active:not(:disabled),.btn:active{transform:scale(.97)}
+button:disabled,.btn[aria-disabled=true]{opacity:.5;cursor:not-allowed}
+button.pri,.btn.pri,button.lime,.btn.lime{font-weight:700}
+
+/* --- vstupy --- */
+input,select,textarea{font-family:var(--f-ui);letter-spacing:-.005em;transition:border-color .2s ease,box-shadow .2s ease}
+input[type=number],input[inputmode=decimal],input[inputmode=numeric]{font-variant-numeric:tabular-nums}
+
+/* --- dotykové zariadenia (Android, iPhone, iPad) --- */
+@media (pointer:coarse),(hover:none),(max-width:760px){
+  button,.btn,[role=button],select{min-height:44px}
+  .tabs button{min-height:52px}
+  input:not([type=checkbox]):not([type=radio]):not([type=range]):not([type=color]),select,textarea{font-size:16px!important}
+  input:not([type=checkbox]):not([type=radio]):not([type=range]):not([type=color]),select{min-height:46px}
+  input[type=checkbox],input[type=radio]{width:22px;height:22px}
+  .copy,.pill,.ds-chip,.cnt{min-height:0}
+  a,button,label,summary{-webkit-touch-callout:none}
+  .ds-meta a,.ds-meta>span{min-height:40px;display:inline-flex;align-items:center}
+  .fdmore{min-height:36px!important;padding:6px 10px!important;margin:-6px 0}
+  a.copy{display:inline-flex;align-items:center;min-height:36px}
+  summary{min-height:40px;display:flex;align-items:center}
+}
+/* menu sa dá posúvať – jemné stmavnutie na okraji naznačí, že sú ďalšie záložky */
+@media (max-width:1023px){
+  nav.tabs{-webkit-mask-image:linear-gradient(90deg,#000 0,#000 calc(100% - 28px),rgba(0,0,0,.35) 100%);mask-image:linear-gradient(90deg,#000 0,#000 calc(100% - 28px),rgba(0,0,0,.35) 100%)}
+}
+
+/* --- mobil: plávajúca spodná lišta --- */
+@media (max-width:760px){
+  .tabs{left:10px;right:10px;bottom:calc(8px + env(safe-area-inset-bottom,0px));border-radius:26px;border:1px solid rgba(255,255,255,.16);
+    padding:6px;background:linear-gradient(180deg,rgba(255,255,255,.10),rgba(255,255,255,.03)),rgba(11,16,32,.74);
+    -webkit-backdrop-filter:blur(24px) saturate(180%);backdrop-filter:blur(24px) saturate(180%);
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.22),0 18px 40px rgba(2,6,23,.6)}
+  .tabs button{font-size:.66rem;font-weight:600;letter-spacing:0;border-radius:20px}
+  .tabs .ti{font-size:1.25rem}
+  .ds-ind{border-radius:20px}
+  body.ds-bn{padding-bottom:calc(104px + env(safe-area-inset-bottom,0px))}
+  body.ds-bn .toast{bottom:calc(108px + env(safe-area-inset-bottom,0px))}
+  .card,.kb,.ds-g{border-radius:20px}
+}
+html[data-theme=light] .tabs{background:rgba(255,255,255,.72)}
+
+/* --- tabuľky: na úzkej obrazovke sa posúvajú v karte, nie celá stránka --- */
+.card table,.ds-g table{max-width:100%}
+.ui-tw{overflow-x:auto;-webkit-overflow-scrolling:touch;overscroll-behavior-x:contain;max-width:100%;scrollbar-width:thin}
+table{font-variant-numeric:tabular-nums}
+
+/* --- PC: tenké moderné posuvníky --- */
+@media (hover:hover) and (pointer:fine){
+  *{scrollbar-width:thin;scrollbar-color:rgba(167,177,198,.35) transparent}
+  ::-webkit-scrollbar{width:10px;height:10px}
+  ::-webkit-scrollbar-thumb{background:rgba(167,177,198,.3);border-radius:10px;border:3px solid transparent;background-clip:padding-box}
+  ::-webkit-scrollbar-thumb:hover{background:rgba(167,177,198,.5);background-clip:padding-box;border:3px solid transparent}
+  ::-webkit-scrollbar-track{background:transparent}
+}
+
+/* --- menej pohybu, keď to používateľ chce --- */
+@media (prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.01ms!important;transition-duration:.01ms!important}}
+
+/* --- Prehľad: dlaždice s ikonou v štvorčeku, veľké číslo --- */
+.hubh{align-items:flex-start}.hubh .fdesc.fh2{margin-top:8px}.hubh .hubr{margin-top:4px}
+.hbt{grid-template-columns:minmax(0,1fr)!important;justify-content:stretch!important;align-content:start!important;gap:3px!important;padding:16px!important;min-height:132px}
+.hbt .hbi{width:40px;height:40px;display:grid;place-items:center;border-radius:13px;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.1);font-size:1.2rem;line-height:1;margin-bottom:8px}
+.hbt .hbl{font-weight:600;font-size:.8rem;color:var(--ink);opacity:.78;letter-spacing:-.005em}
+.hbt .hbv{font-size:2rem;font-weight:700;letter-spacing:-.045em;line-height:1.05}
+html[data-theme=light] .hbt .hbi{background:rgba(15,23,42,.05);border-color:rgba(15,23,42,.08)}
+
+/* ===== Rýchlosť (29. 10.): rozmazanie pozadia (sklo) iba na vonkajšej karte. Vnorené prvky v karte rozmazávali
+   to isté pozadie druhý a tretí raz – na mobile to pri posúvaní sekalo. Vzhľad sa prakticky nemení. ===== */
+.card .card,.card .kb,.card .vd,.card .xv,.card .xd,.card .pyc,.card .xc,.card .xtl,.card .vfirm,.card .vt,.card .ds-g,.card .ds-kpi,.card .ds-tile,.card .ds-trow,.card .ds-fc,
+.card .pban,.card .xprof>div,.card .vnav button,.card .vlive div,.ds-tile .ds-tile,.ds-g .ds-tile,.ds-g .ds-kpi{-webkit-backdrop-filter:none!important;backdrop-filter:none!important}
+@media (hover:none) and (pointer:coarse){
+  /* na telefóne menší polomer rozmazania = rovnaký dojem, menej práce pre grafiku */
+  .card,.kb,.vd,.xv,.xd,.pyc,.xc,.xmap,.xtl,.vfirm,.vt,.ds-g,.ds-kpi,.ds-tile,.ds-trow,.ds-fc{--ds-blur:blur(10px) saturate(150%)}
+  .card,.ds-fc,.ds-g{transition:none}
+}

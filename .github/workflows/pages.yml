@@ -1,0 +1,109 @@
+# Zverejnenie aplikácie na GitHub Pages v dvoch verziách:
+#   farmar/       = STARÁ (overená) verzia – vidí ju celý tím, farmári aj ostatní (commit v súbore farmar/STABLE)
+#   farmar/beta/  = NOVÁ verzia (posledný main) – iba majiteľ (Martin, ERNTE spol.) cez tlačidlo 🧪 pri zvončeku
+# Novú verziu všetkým zverejní majiteľ tlačidlom „✅ Zverejniť všetkým“ (databáza → repository_dispatch ernte-release),
+# vtedy sa do farmar/STABLE zapíše aktuálny main. market.json (bot Trhové ceny) je vždy čerstvý v oboch verziách.
+name: ernte-pages
+on:
+  push:
+    branches: [main]
+  schedule:
+    - cron: "7,37 * * * *"
+  workflow_dispatch:
+  repository_dispatch:
+    types: [ernte-release, ernte-pages]
+permissions:
+  contents: write
+  pages: write
+concurrency:
+  group: ernte-pages
+  cancel-in-progress: false
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+      - name: Zverejniť novú verziu všetkým (iba na príkaz majiteľa)
+        if: github.event_name == 'repository_dispatch' && github.event.action == 'ernte-release'
+        run: |
+          set -e
+          git config user.name "ERNTE Trade"; git config user.email "report.valko@gmail.com"
+          for i in 1 2 3; do
+            git pull -q --rebase origin main || true
+            git rev-parse HEAD > farmar/STABLE
+            git add farmar/STABLE
+            git -c user.name=Claude -c user.email=noreply@anthropic.com commit -qm "Zverejnená nová verzia aplikácie pre všetkých ($(cut -c1-7 farmar/STABLE))" --author="ERNTE Trade <report.valko@gmail.com>" || exit 0
+            git push -q origin HEAD:main && break
+            sleep 3
+          done
+      - name: Zostaviť stránku (stará + nová verzia)
+        run: |
+          set -e
+          git pull -q --rebase origin main || true
+          ST=$(tr -d ' \n\r' < farmar/STABLE 2>/dev/null || true)
+          if [ -z "$ST" ] || ! git cat-file -e "$ST^{commit}" 2>/dev/null; then ST=$(git rev-parse HEAD); fi
+          HEADC=$(git rev-parse HEAD)
+          rm -rf /tmp/site && mkdir -p /tmp/site
+          # celý repozitár z main (index.html v koreni, CLAUDE.md, .nojekyll …)
+          git archive HEAD | tar -x -C /tmp/site
+          # stará verzia aplikácie do farmar/ (supabase/auto a dáta ostávajú z main)
+          rm -rf /tmp/old && mkdir -p /tmp/old && git archive "$ST" farmar | tar -x -C /tmp/old
+          find /tmp/site/farmar -mindepth 1 -maxdepth 1 ! -name supabase ! -name market.json -exec rm -rf {} +
+          (cd /tmp/old/farmar && find . -mindepth 1 -maxdepth 1 ! -name supabase ! -name market.json -exec cp -r {} /tmp/site/farmar/ \;)
+          # nová verzia do farmar/beta/
+          mkdir -p /tmp/site/farmar/beta
+          rm -rf /tmp/new && mkdir -p /tmp/new && git archive HEAD farmar | tar -x -C /tmp/new
+          (cd /tmp/new/farmar && find . -mindepth 1 -maxdepth 1 ! -name supabase -exec cp -r {} /tmp/site/farmar/beta/ \;)
+          # zoznam zmien medzi starou a novou verziou (bez automatických commitov)
+          python3 - "$ST" "$HEADC" <<'PY'
+          import json,subprocess,sys,datetime
+          st,hd=sys.argv[1],sys.argv[2]
+          out=subprocess.run(["git","log","--no-merges","--format=%h%x1f%cI%x1f%s",f"{st}..{hd}","--","farmar",":(exclude)farmar/market.json",":(exclude)farmar/supabase/auto"],capture_output=True,text=True).stdout
+          L=[]
+          for ln in out.splitlines():
+            h,d,s=ln.split("\x1f",2)
+            if s.startswith(("Trhové ceny","Diagnostika","Zmazať dočasnú","icotest","Zverejnená nová verzia","Stará verzia pre všetkých","K2026/7")):continue
+            L.append({"h":h,"d":d,"s":s})
+          z={"stable":st[:7],"beta":hd[:7],"same":st==hd,"n":len(L),"list":L[:80],"at":datetime.datetime.utcnow().isoformat()+"Z"}
+          for p in ("/tmp/site/farmar/beta/zmeny.json","/tmp/site/farmar/zmeny.json"):
+            open(p,"w").write(json.dumps(z,ensure_ascii=False))
+          PY
+          touch /tmp/site/.nojekyll
+      - name: Vlastná doména app.ernte.sk (iba keď DNS už ukazuje na GitHub)
+        run: |
+          # bez DNS záznamu sa doména NEZAPÍNA – inak by GitHub presmeroval starú adresu na nefunkčnú
+          D=app.ernte.sk
+          C=$(dig +short "$D" CNAME @8.8.8.8 2>/dev/null | tr 'A-Z' 'a-z' || true)
+          A=$(dig +short "$D" A @8.8.8.8 2>/dev/null || true)
+          if echo "$C" | grep -qx 'ernte-trade\.github\.io\.\?' || echo "$A" | grep -qE '^185\.199\.(108|109|110|111)\.153$'; then
+            echo "$D" > /tmp/site/CNAME; echo "DNS $D OK → CNAME"
+          else
+            echo "DNS $D ešte neukazuje na GitHub ($C $A) – doména sa nezapína"
+          fi
+      - name: Nahrať na gh-pages (iba pri zmene)
+        run: |
+          set -e
+          cd /tmp/site
+          git init -q && git checkout -q -b gh-pages
+          git -c user.name=Claude -c user.email=noreply@anthropic.com add -A
+          git remote add origin "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git"
+          git fetch -q --depth=1 origin gh-pages || true
+          if git rev-parse -q --verify origin/gh-pages >/dev/null && [ -z "$(git diff --cached --name-only origin/gh-pages -- . ':(exclude)farmar/zmeny.json' ':(exclude)farmar/beta/zmeny.json')" ]; then echo "bez zmeny"; exit 0; fi
+          git -c user.name=Claude -c user.email=noreply@anthropic.com commit -qm "Stránka: stará $(python3 -c 'import json;print(json.load(open("farmar/zmeny.json"))["stable"])') · nová $(python3 -c 'import json;print(json.load(open("farmar/zmeny.json"))["beta"])')" --author="ERNTE Trade <report.valko@gmail.com>"
+          git push -q -f origin gh-pages
+      - name: Doména – nastavenie GitHub Pages a HTTPS (ak to token dovolí)
+        if: always()
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          [ -f /tmp/site/CNAME ] || exit 0
+          API=https://api.github.com/repos/${{ github.repository }}/pages
+          H=(-H "Authorization: Bearer $GH_TOKEN" -H "Accept: application/vnd.github+json" -H "X-GitHub-Api-Version: 2022-11-28")
+          curl -s "${H[@]}" "$API" | grep -E '"(cname|https_enforced|status)"' || true
+          curl -s -o /dev/null -w "cname %{http_code}\n" -X PUT "${H[@]}" "$API" -d '{"cname":"app.ernte.sk"}' || true
+          curl -s -o /dev/null -w "https %{http_code}\n" -X PUT "${H[@]}" "$API" -d '{"https_enforced":true}' || true

@@ -1,0 +1,42 @@
+# Týždenný list Investičnej akadémie (naplánovaná úloha Claude, nedeľa večer).
+# Claude pošle SQL (iba INSERT do invest_notes, base64) → workflow ho zašifruje heslom migrácií
+# (tajomstvo ERNTE_MIG_PASS, zadáva iba majiteľ v GitHub → Settings → Secrets) a uloží do farmar/supabase/auto/.
+name: invest-list
+on:
+  workflow_dispatch:
+    inputs:
+      sql_b64:
+        description: "SQL (base64) – iba insert into invest_notes"
+        required: true
+permissions:
+  contents: write
+jobs:
+  w:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - name: Zašifrovať a uložiť
+        env:
+          P: ${{ secrets.ERNTE_MIG_PASS }}
+          S: ${{ inputs.sql_b64 }}
+        run: |
+          set -e
+          if [ -z "$P" ]; then echo "::error::Chýba tajomstvo ERNTE_MIG_PASS (heslo migrácií) – zadá ho majiteľ v Settings → Secrets → Actions."; exit 1; fi
+          echo "$S" | base64 -d > /tmp/l.sql
+          # poistka: iba vloženie listov, nič iné
+          python3 - <<'E'
+          import re,sys
+          s=open('/tmp/l.sql',encoding='utf-8').read().strip()
+          if not re.match(r'(?is)^insert\s+into\s+invest_notes\s*\(\s*who\s*,\s*title\s*,\s*body\s*\)\s*values\s',s): sys.exit("SQL nie je insert do invest_notes")
+          body=re.sub(r'\$([tb])\$.*?\$\1\$','',s,flags=re.S)
+          if ';' in body.rstrip().rstrip(';'): sys.exit("viac príkazov nie je povolené")
+          E
+          F="farmar/supabase/auto/$(date -u +%Y%m%d-%H%M)-invest-list.sql.asc"
+          gpg -q --batch --yes -c --cipher-algo AES256 -a --passphrase "$P" -o "$F" /tmp/l.sql
+          rm -f /tmp/l.sql
+          git config user.name "ERNTE Trade"; git config user.email report.valko@gmail.com
+          git add "$F"; git commit -qm "📈 Investičná akadémia: týždenný list"
+          for i in 1 2 3; do git push -q origin HEAD:main && exit 0; git pull -q --rebase origin main; done; exit 1

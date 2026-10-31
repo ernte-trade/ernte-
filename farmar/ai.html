@@ -1,0 +1,31 @@
+<!doctype html><html lang="sk"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="color-scheme" content="dark">
+<title>ERNTE – zapnutie AI Podpory</title>
+<style>body{margin:0;background:radial-gradient(80% 50% at 100% 0%,rgba(124,92,255,.25),transparent),radial-gradient(70% 50% at 0% 100%,rgba(182,255,59,.14),transparent),#05070a;color:#f2f5ff;font:16px/1.5 -apple-system,system-ui,sans-serif;padding:20px;min-height:100vh}.w{max-width:600px;margin:0 auto;display:grid;gap:14px}
+label{display:grid;gap:6px;color:#9aa3b8;font-size:.85rem}input{font:500 1rem system-ui;color:#fff;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.2);border-radius:14px;padding:12px;min-height:50px}
+button,a.b{display:flex;align-items:center;justify-content:center;font:700 1.1rem system-ui;min-height:62px;border-radius:16px;border:0;background:linear-gradient(135deg,#7c5cff,#22d3ee);color:#fff;text-decoration:none}
+button.ok{background:linear-gradient(135deg,#b6ff3b,#5eead4);color:#06110a}a.b{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.2)}ol,.n{color:#9aa3b8;margin:0}ol{padding-left:22px}
+.box{border:1px solid rgba(255,255,255,.14);border-radius:20px;padding:14px;background:rgba(255,255,255,.04);display:grid;gap:10px}.box h2{margin:0;font-size:1rem}a{color:#b6ff3b}</style></head>
+<body><div class="w"><h1 style="margin:0">✦ Zapnutie AI Podpory</h1>
+<p class="n">Kľúče zostanú iba v tvojom telefóne a v trezore tvojej databázy. Nikam inam sa neposielajú.</p>
+<div class="box"><h2>1 · Kľúč Claude (povinné)</h2>
+<ol><li>Otvor <a href="https://console.anthropic.com/settings/keys" target="_blank">console.anthropic.com → API Keys</a> a prihlás sa.</li><li><b>Billing</b> → pridaj kartu a kredit (napr. 20 $).</li><li><b>Create Key</b> → názov „ERNTE“ → skopíruj kľúč (začína <code>sk-ant-</code>).</li></ol>
+<label>Claude API kľúč<input id="k" type="password" autocomplete="off" placeholder="sk-ant-…"></label></div>
+<div class="box"><h2>2 · Úpravy aplikácie cez AI</h2>
+<ol><li>Otvor <a href="https://github.com/settings/personal-access-tokens/new" target="_blank">GitHub → nový token</a>.</li><li>Názov „ERNTE AI“, Expiration <b>No expiration</b>. <b>Resource owner</b> → <b>ernte-trade</b>. <b>Repository access</b> → Only select → <b>ernte-trade/ernte-</b>.</li><li><b>Permissions</b> → <b>+</b> → <b>Contents</b> → <b>Read-only</b> a <b>+</b> → <b>Issues</b> → <b>Read and write</b> → Generate token → ťukni ikonku kopírovať a <b>hneď</b> vlož sem (nič iné medzitým nekopíruj).</li></ol>
+<label>GitHub token<input id="g" type="password" autocomplete="off" placeholder="github_pat_…"></label>
+<label>AI kľúč (dostal si ho v chate)<input id="s" autocomplete="off" autocapitalize="off" placeholder="ernte-…"></label></div>
+<button id="c">Kopírovať SQL</button>
+<a class="b" href="https://supabase.com/dashboard/project/cflliscddsgleyeykzje/sql/new" target="_blank">Otvoriť SQL Editor</a>
+<ol><li>Ťukni do prázdneho poľa, podrž prst → <b>Vložiť</b> → <b>Run</b>.</li><li>Potom otvor aplikáciu → hore <b>✦ Podpora</b>.</li></ol>
+<a class="b" href="index.html">Otvoriť aplikáciu</a></div>
+<script>let T="";fetch("supabase/ai.sql?"+Date.now()).then(r=>r.text()).then(t=>T=t);
+const q=s=>"'"+String(s).replace(/'/g,"''")+"'";
+const sec=(n,v)=>`do $$ begin if exists(select 1 from vault.secrets where name='${n}') then perform vault.update_secret((select id from vault.secrets where name='${n}'),${q(v)}); else perform vault.create_secret(${q(v)},'${n}'); end if; end $$;`;
+c.onclick=()=>{const K=k.value.trim(),G=g.value.trim(),S=s.value.trim();
+ if(!T){alert("Ešte sa načítava, skús o sekundu.");return}
+ if(K&&!/^sk-ant-[A-Za-z0-9_-]{20,}$/.test(K)){alert("Claude kľúč má začínať sk-ant- a byť celý (bez medzier). Vložilo sa: „"+K.slice(0,14)+"…“ – asi si mal v schránke niečo iné.");return}
+ if(G&&!/^(github_pat_|ghp_)[A-Za-z0-9_]{20,}$/.test(G)){alert("GitHub token má začínať github_pat_ (alebo ghp_) a byť celý. Vložilo sa: „"+G.slice(0,14)+"…“ – skopíruj token znova ikonkou kopírovať.");return}
+ if(S&&!/^ernte-[0-9a-f]{24}$/.test(S)){alert("AI kľúč má tvar ernte- a 24 znakov (z chatu).");return}
+ let x=T+"\n\n";if(K)x+=sec("anthropic_key",K)+"\n";if(G)x+=sec("github_token",G)+"\n";if(S)x+=sec("ai_pass",S)+"\n";
+ x+="select 'ok' as hotovo;";
+ navigator.clipboard.writeText(x).then(()=>{c.textContent="Skopírované ✓";c.className="ok";k.value="";g.value=""}).catch(e=>alert("Nevyšlo: "+e.message))}</script></body></html>

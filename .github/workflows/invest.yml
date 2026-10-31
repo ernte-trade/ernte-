@@ -1,0 +1,53 @@
+# 📈 Investičná akadémia – denné ceny vybraných ETF (Xetra, EUR) pre cvičné portfólio Martina a Timoteja.
+#   Zdroj: Yahoo Finance chart API (záloha Stooq). Výsledok: vetva invest-data / invest.json (číta ho invest.js).
+name: invest
+on:
+  schedule:
+    - cron: "47 17 * * 1-5"
+  workflow_dispatch:
+  repository_dispatch:
+    types: [ernte-invest]
+permissions:
+  contents: write
+jobs:
+  p:
+    runs-on: ubuntu-latest
+    timeout-minutes: 6
+    steps:
+      - name: Stiahnuť ceny
+        run: |
+          set +e
+          mkdir -p o && cd o
+          python3 - <<'PY'
+          import json,datetime,urllib.request,csv,io
+          F=[("VWCE.DE","Celý svet (Vanguard FTSE All-World)","akcie · ~3 700 firiem z 50 krajín"),
+             ("EUNL.DE","Vyspelý svet (iShares Core MSCI World)","akcie · ~1 400 firiem z 23 krajín"),
+             ("SXR8.DE","USA 500 (iShares Core S&P 500)","akcie · 500 najväčších firiem USA"),
+             ("IS3N.DE","Rozvíjajúce sa trhy (iShares Core MSCI EM IMI)","akcie · Čína, India, Brazília…"),
+             ("EXS1.DE","Nemecko (iShares Core DAX)","akcie · 40 najväčších nemeckých firiem"),
+             ("VAGF.DE","Dlhopisy svet (Vanguard Global Aggregate Bond, EUR hedged)","dlhopisy · pokojnejšie, menší výnos"),
+             ("4GLD.DE","Zlato (Xetra-Gold)","zlato · ochrana pri krízach")]
+          def get(u):
+            r=urllib.request.Request(u,headers={"User-Agent":"Mozilla/5.0 ERNTE-invest"})
+            return urllib.request.urlopen(r,timeout=25).read()
+          out={"at":datetime.datetime.utcnow().isoformat()+"Z","src":"Yahoo Finance / Stooq – denné uzávierky Xetra, EUR","f":[]}
+          for s,n,d in F:
+            pts=[]
+            try:
+              j=json.loads(get(f"https://query1.finance.yahoo.com/v8/finance/chart/{s}?range=2y&interval=1d"))
+              r=j["chart"]["result"][0];ts=r["timestamp"];cl=r["indicators"]["quote"][0]["close"]
+              pts=[[datetime.datetime.utcfromtimestamp(t).strftime("%Y-%m-%d"),round(c,3)] for t,c in zip(ts,cl) if c]
+            except Exception as e:
+              try:
+                t=get(f"https://stooq.com/q/d/l/?s={s.lower()}&i=d").decode()
+                rows=list(csv.DictReader(io.StringIO(t)))[-520:]
+                pts=[[x["Date"],round(float(x["Close"]),3)] for x in rows if x.get("Close")]
+              except Exception as e2: print("chyba",s,e,e2)
+            if pts: out["f"].append({"s":s,"n":n,"d":d,"px":pts[-1][1],"dt":pts[-1][0],"h":pts})
+          json.dump(out,open("invest.json","w"),ensure_ascii=False)
+          print(json.dumps({"at":out["at"],"n":len(out["f"]),"f":[(x["s"],x["px"],x["dt"],len(x["h"])) for x in out["f"]]}))
+          PY
+          git init -q; git checkout -q -b invest-data
+          git config user.name bot; git config user.email bot@users.noreply.github.com
+          git add invest.json; git commit -qm "ceny $(date -u +%F)"
+          git push -fq "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git" invest-data
