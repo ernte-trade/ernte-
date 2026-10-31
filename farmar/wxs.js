@@ -36,7 +36,7 @@ async function load(force){const L=loc(),k=L.lat+","+L.lon;if(!force&&W.d&&W.key
     const [f,a]=await Promise.all([
       fetch(`https://api.open-meteo.com/v1/forecast?${q}&current=temperature_2m,apparent_temperature,relative_humidity_2m,dew_point_2m,pressure_msl,wind_speed_10m,wind_direction_10m,visibility,uv_index,weather_code,is_day&hourly=temperature_2m,precipitation_probability,precipitation,weather_code,is_day,relative_humidity_2m,pressure_msl&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max,precipitation_sum,sunrise,sunset,uv_index_max,wind_speed_10m_max&past_days=1&forecast_days=10`).then(r=>r.json()),
       fetch(`https://air-quality-api.open-meteo.com/v1/air-quality?${q}&current=european_aqi,alder_pollen,birch_pollen,grass_pollen,ragweed_pollen,mugwort_pollen&hourly=birch_pollen,grass_pollen,ragweed_pollen&forecast_days=2`).then(r=>r.json()).catch(()=>null)]);
-    if(f&&f.current){W.d=f;W.a=a;W.at=Date.now();W.key=k}else if(!W.d)W.d={err:1}}catch(x){if(!W.d)W.d={err:1}}finally{W.busy=null}})();return W.busy}
+    if(f&&f.current){W.d=f;W.a=a;W.at=Date.now();W.key=k}else{if(!W.d)W.d={err:1};W.at=Date.now()-14*60e3;W.key=k}}catch(x){if(!W.d)W.d={err:1};W.at=Date.now()-14*60e3;W.key=k}finally{W.busy=null}})();return W.busy} // 31. 10.: pri chybe skúsiť znova až o minútu – inak nekonečné prekresľovanie (aplikácia sekala, keď počasie nešlo načítať)
 // ---- pomocné výpočty ----
 function moon(d=new Date()){const syn=29.530588853,ref=Date.UTC(2000,0,6,18,14)/864e5,age=((d.getTime()/864e5-ref)%syn+syn)%syn,f=age/syn;
   const ill=Math.round((1-Math.cos(2*Math.PI*f))/2*100);

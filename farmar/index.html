@@ -809,7 +809,7 @@ html[data-theme=light] .ftbl th{color:#0f172a}html[data-theme=light] .fdban{colo
 <link rel="stylesheet" href="trus.css?v=20261027-0140">
 <link rel="stylesheet" href="ev.css?v=20261027-1600">
 <link rel="stylesheet" href="ui.css?v=20261029-0030">
-<link rel="stylesheet" href="fit.css?v=20261030-2255">
+<link rel="stylesheet" href="fit.css?v=20261031-0950">
 </head>
 <body>
 <div class="wrap">
@@ -831,6 +831,9 @@ var q=JSON.parse(sessionStorage.getItem("ernte-prefill")||"null");if(q&&Date.now
 "use strict";
 const MK=[["repka","Repka"],["lo","LO slnečnica"],["ho","HO slnečnica"],["soja","Sója"],["psenica_p","Pšenica potravinárska"],["psenica_k","Pšenica kŕmna"],["jacmen_k","Jačmeň kŕmny"],["jacmen_s","Jačmeň sladovnícky"],["kukurica","Kukurica"],["cirok","Cirok"]];
 const SPEC={kukurica:[14,2,1],soja:[12,2,1],psenica_k:[13,2],psenica_p:[14,2],jacmen_s:[14.5,2],jacmen_k:[14,2],repka:[8,2],lo:[9,2],ho:[9,2],cirok:[14,2]};
+const DSTEP=[["navrh","📝","Zmluva"],["podpisany","✍️","Podpis"],["odvoz","🚛","Odvoz"],["odvezeny","📦","Dodané"],["fakturacia","🧾","Faktúra"],["zaplateny","💶","Platba"]];
+function dealSteps(st){if(st==="zruseny")return "";const i=Math.max(0,DSTEP.findIndex(x=>x[0]===st));
+  return `<div class="dstep" role="list" aria-label="Stav obchodu">${DSTEP.map((x,k)=>`<div class="dsi${k<i?" done":k===i?" now":""}" role="listitem"><span>${k<i?"✓":x[1]}</span><small>${x[2]}</small></div>`).join("")}</div>`}
 const DST={navrh:["čaká na podpis","g"],podpisany:["podpísaný",""],odvoz:["odvoz beží","b"],odvezeny:["odvezený",""],fakturacia:["fakturácia","w"],zaplateny:["zaplatený",""],zruseny:["zrušený","r"]};
 const RST={nova:["čaká na ERNTE","w"],v_spracovani:["v spracovaní","b"],vybavena:["vybavené",""],zamietnuta:["zamietnuté","r"]};
 const TST={naplanovana:["naplánovaná","b"],na_ceste:["auto na ceste","w"],nakladka:["na nakládke","w"],nalozene:["naložené",""],vylozene:["vyložené · zvážené",""],zrusena:["zrušená","r"]};
@@ -1047,7 +1050,7 @@ function renderFarmer(){const F=FARMER,P=MK.map(m=>STATE.prices.find(x=>x.com===
   if((!window.fcan||fcan("f_prices"))){h+=`<h2>Výkupné ceny · FCA farma, bez DPH</h2>`;
   h+=P.length?`<div class="card">${P.map(p=>`<div class="prow">${comImg(p.com)}<div><div class="t">${esc(comName(p.com))}</div><div class="s">${esc(specLine(p.com))}</div></div><b class="num">${fmt(p.price)} €/t</b>${window.fwdLine?fwdLine(p.com):""}
       ${SELL===p.com||expired||(window.fcan&&!fcan("f_sell"))?"":`<button type="button" class="lime sell" data-sell="${esc(p.com)}">Predať</button>`}
-      ${SELL===p.com?`<form class="f sub" id="fSell"><div class="w"><b>Predať ${esc(comName(p.com))} za ${fmt(p.price)} €/t</b></div><label>Koľko ton?<input name="tons" inputmode="decimal" required placeholder="napr. 100"></label><label>Odkedy môžeme odviezť?<input name="date" type="date" min="${today()}"></label><label class="w">Poznámka (nepovinné)<input name="note" placeholder="napr. vlhkosť, miesto skladu"></label><div class="w btns"><button class="pri" type="submit">Odoslať ERNTE</button><button type="button" data-sell="">Zrušiť</button></div></form>`:""}${window.bonusRow?bonusRow(p):""}</div>`).join("")}
+      ${SELL===p.com?`<form class="f sub" id="fSell"><div class="w"><b>Predať ${esc(comName(p.com))} za ${fmt(p.price)} €/t</b></div><div class="w qtons"><small>Ťuknite na množstvo – hneď odošleme:</small><div>${[25,50,100,200].map(t=>`<button type="button" class="lime" data-qt="${t}">${t} t${t===25?" · 1 kamión":""}</button>`).join("")}</div><small>alebo napíšte presne:</small></div><label>Koľko ton?<input name="tons" inputmode="decimal" required placeholder="napr. 100"></label><label>Odkedy môžeme odviezť?<input name="date" type="date" min="${today()}"></label><label class="w">Poznámka (nepovinné)<input name="note" placeholder="napr. vlhkosť, miesto skladu"></label><div class="w btns"><button class="pri" type="submit">Odoslať ERNTE</button><button type="button" data-sell="">Zrušiť</button></div></form>`:""}${window.bonusRow?bonusRow(p):""}</div>`).join("")}
       ${expired?`<div class="box w"><b>Cenník sa práve aktualizuje.</b> Nové ceny tu budú čoskoro – predaj je zatiaľ pozastavený. Zavolajte ERNTE.</div>`:""}<div class="s">${valid&&!expired?`Ceny platia do ${esc(dSK(valid))}. `:""}Ťuknite na <b>Predať</b>, napíšte tony a odošlite. ERNTE sa vám ozve.</div><div class="s" style="font-size:.66rem;opacity:.7">Ilustračné fotografie: Wikimedia Commons</div></div>`
     :`<div class="card"><div class="s">Cenník práve pripravujeme.</div></div>`;}
   const R=STATE.reqs;
@@ -1059,6 +1062,7 @@ function renderFarmer(){const F=FARMER,P=MK.map(m=>STATE.prices.find(x=>x.com===
   h+=STATE.deals.length?STATE.deals.map(d=>{const left=Math.max(0,(+d.tons||0)-(+d.delivered_t||0));const waitAgree=STATE.reqs.some(r=>r.kind==="agree"&&r.deal_id===d.id&&r.status==="nova");
     return `<div class="card">${comImg(d.com,"cban")}<div class="row"><span class="t">${esc(comName(d.com))}</span>${pill(DST[d.status]||[d.status])}</div>
       <div class="s">Zmluva ${esc(d.no)}${(!window.fcan||fcan("f_deals"))?` · ${fmt(d.price)} €/t FCA`:""}${d.term?" · do "+esc(d.term):""}</div>
+      ${dealSteps(d.status)}
       <div class="kpis"><div class="kpi"><small>Dohodnuté</small><b>${fmt(d.tons)} t</b></div><div class="kpi"><small>Odvezené</small><b>${fmt(d.delivered_t)} t</b></div><div class="kpi"><small>Zostáva</small><b>${fmt(left)} t</b></div></div>
       ${d.note?`<div class="s">Pozn.: ${esc(d.note)}</div>`:""}
       ${(STATE.trips||[]).filter(t=>t.deal_id===d.id).length?`<details class="trips"><summary>Jazdy (${(STATE.trips||[]).filter(t=>t.deal_id===d.id).length})</summary>${(STATE.trips||[]).filter(t=>t.deal_id===d.id).map(tripRow).join("")}</details>`:""}
@@ -1073,6 +1077,7 @@ function renderFarmer(){const F=FARMER,P=MK.map(m=>STATE.prices.find(x=>x.com===
   $("app").innerHTML=h;mountR()}
 
 document.addEventListener("click",async e=>{if(!FARMER)return;const t=e.target;
+  const qt=t.closest("[data-qt]");if(qt){const f=document.getElementById("fSell");if(f){f.tons.value=qt.dataset.qt;qt.disabled=true;f.requestSubmit?f.requestSubmit():f.dispatchEvent(new Event("submit",{cancelable:true,bubbles:true}))}return}
   const s=t.closest("[data-sell]");if(s){SELL=s.dataset.sell||null;renderFarmer();if(SELL)setTimeout(()=>{const i=document.querySelector("#fSell input[name=tons]");if(i)i.focus()},50);return}
   const o=t.closest("[data-order]");if(o){ORDER=o.dataset.order||null;renderFarmer();return}
   const a=t.closest("[data-agree]");if(a){if(!confirm("Potvrdiť súhlas s podmienkami zmluvy?"))return;busy(a,true);
@@ -2980,7 +2985,7 @@ document.addEventListener("click",e=>{const b=e.target.closest("[data-dfp]");if(
 <script src="ranna.js?v=20261029-0800"></script>
 <script src="cancel.js?v=20261029-0130"></script>
 <script src="autocennik.js?v=20261030-0920"></script>
-<script src="wxs.js?v=20261031-0700"></script>
+<script src="wxs.js?v=20261031-0935"></script>
 <script src="xround.js?v=20261029-0655"></script>
 <script src="navfix.js?v=20261031-0700"></script>
 <script src="fwd.js?v=20261029-0930"></script>

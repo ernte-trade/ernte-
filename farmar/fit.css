@@ -96,3 +96,19 @@ html[data-theme=light] .zlcg .zlcs b{color:#3f6212}
 header.top>[hidden],#app .hrow>button[hidden]{display:none!important}
 /* Odhlásiť v kruhu hlavičky: iba ikona ⏻ (text sa do kruhu nezmestil), názov ostáva v aria-label / title */
 header.top>.out .oi{display:inline!important;font-size:1.05rem;line-height:1}header.top>.out .ot{display:none!important}
+
+/* 31. 10.: farmár – predaj na 2 ťuknutia (rýchle množstvá) a stav obchodu ako balík */
+.qtons{display:grid;gap:6px}.qtons small{opacity:.75}.qtons>div{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+@media(min-width:600px){.qtons>div{grid-template-columns:repeat(4,minmax(0,1fr))}}
+.qtons button{min-height:52px;font-size:1.05rem!important;font-weight:800;white-space:normal}
+.dstep{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:2px;margin:10px 0 6px;position:relative}
+.dstep::before{content:"";position:absolute;left:8%;right:8%;top:17px;height:3px;border-radius:2px;background:rgba(255,255,255,.12);z-index:0}
+.dsi{display:grid;justify-items:center;gap:3px;position:relative;z-index:1;min-width:0}
+.dsi span{width:34px;height:34px;border-radius:50%;display:grid;place-items:center;font-size:.95rem;background:#1b2232;border:2px solid rgba(255,255,255,.18)}
+.dsi small{font-size:.62rem;opacity:.6;text-align:center;line-height:1.1;overflow-wrap:anywhere}
+.dsi.done span{background:rgba(182,255,59,.2);border-color:#b6ff3b;color:#b6ff3b;font-weight:800}.dsi.done small{opacity:.85}
+.dsi.now span{background:linear-gradient(135deg,#b6ff3b,#22d3ee);border-color:transparent;box-shadow:0 0 14px rgba(182,255,59,.55)}.dsi.now small{opacity:1;font-weight:700;color:#d9ff9e}
+html[data-theme=light] .dsi span{background:#fff;border-color:#cbd5e1}
+.dsi small{white-space:nowrap;overflow-wrap:normal;word-break:keep-all;font-size:.6rem}
+@media(max-width:420px){.prow>b.num{font-size:1.02rem!important;white-space:nowrap}.prow .t{overflow-wrap:normal;word-break:keep-all}}
+@media(max-width:460px){.dsi small{visibility:hidden}.dsi.now small{visibility:visible;font-size:.7rem}}
