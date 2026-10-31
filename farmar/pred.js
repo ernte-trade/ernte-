@@ -305,11 +305,24 @@ function review(){const T=today(),old=S.log.filter(l=>dAgo(l.d)>=7&&l.bz!=null);
     return `<div class="row"><span><b>${e(CN(l.c))}</b> · ${e(l.d.split("-").reverse().join(". "))}: burza ${f0(l.bz)} → ${f0(now)} (${sg(d)})${l.hold!=null?` · odporúčanie: ${l.hold?"držať":"predať"}`:""}</span>${ok==null?"":`<span class="pill ${ok?"":"w"}">${ok?"sedelo":"nesedelo"}</span>`}</div>`}).join("");
   return `<div class="card"><b>🔁 Prehodnotenie minulých odporúčaní</b><div class="s">Porovnanie s burzou o 7 a viac dní neskôr. Pomáha upraviť skladovanie a bázu v nastaveniach.</div>${L}</div>`}
 
+// 🔐 odomknutie Algomancie odtlačkom / Face ID (WebAuthn, overenie používateľa v telefóne; kľúč iba v tomto zariadení)
+const BK="ernte-prd-bio";
+const bioAvail=()=>!!(window.PublicKeyCredential&&navigator.credentials&&window.isSecureContext);
+const bioId=()=>{try{return localStorage.getItem(BK)||""}catch(x){return ""}};
+const bb64=u=>btoa(String.fromCharCode(...new Uint8Array(u))).replace(/\+/g,"-").replace(/\//g,"_").replace(/=+$/,"");
+const bub64=x=>Uint8Array.from(atob(String(x).replace(/-/g,"+").replace(/_/g,"/")+"===".slice((String(x).length+3)%4)),c=>c.charCodeAt(0));
+document.addEventListener("click",async ev=>{const b=ev.target.closest&&ev.target.closest("[data-prdbio],[data-prdbioset]");if(!b||!OWN())return;ev.preventDefault();ev.stopPropagation();
+  try{if(b.dataset.prdbioset!==undefined){const c=await navigator.credentials.create({publicKey:{rp:{name:"ERNTE Algomancia",id:location.hostname},user:{id:crypto.getRandomValues(new Uint8Array(16)),name:"algomancia",displayName:"ERNTE Algomancia"},
+        challenge:crypto.getRandomValues(new Uint8Array(32)),pubKeyCredParams:[{type:"public-key",alg:-7},{type:"public-key",alg:-257}],authenticatorSelection:{authenticatorAttachment:"platform",userVerification:"required",residentKey:"discouraged"},timeout:60000,attestation:"none"}});
+      localStorage.setItem(BK,bb64(c.rawId));touch();rr();tst("✅ Nabudúce Algomanciu odomkneš odtlačkom / Face ID.",5000);return}
+    const a=await navigator.credentials.get({publicKey:{challenge:crypto.getRandomValues(new Uint8Array(32)),rpId:location.hostname,allowCredentials:[{type:"public-key",id:bub64(bioId())}],userVerification:"required",timeout:60000}});
+    if(a){setFails({n:0,t:0});S.pinErr="";sessionStorage.setItem(LK,String(Date.now()));S.at=0;rr()}}
+  catch(x){if(x&&x.name==="NotAllowedError")return;if(b.dataset.prdbio!==undefined&&x&&x.name==="InvalidStateError"){}tst("Odtlačok nefungoval: "+(x&&x.message||x)+" – zadaj PIN.",6000)}},true);
 function pinView(){const f=fails(),wait=f.n>=5&&Date.now()-f.t<5*6e4?Math.ceil((5*6e4-(Date.now()-f.t))/6e4):0,setup=!S.pin||S.pinMode==="new";
   return `<div class="card prd-pin"><b>🔒 Algomancia · AI veštenie obchodu</b><div class="s">${setup?"Nastav si PIN (4–8 číslic). Sekciu vidíš iba ty ako majiteľ a otvoríš ju len s PIN-om.":"Zadaj PIN. Po 15 minútach nečinnosti sa sekcia znova zamkne."}</div>
    ${wait?`<div class="prd-w">Priveľa nesprávnych pokusov. Skús o ${wait} min.</div>`:`<form class="f" id="fPrdPin"><label class="w">PIN<input name="pin" type="password" inputmode="numeric" pattern="[0-9]*" autocomplete="off" maxlength="8" required autofocus></label>
    ${setup?`<label class="w">PIN znova<input name="pin2" type="password" inputmode="numeric" pattern="[0-9]*" autocomplete="off" maxlength="8" required></label>`:""}
-   ${S.pinErr?`<div class="w prd-w">${e(S.pinErr)}</div>`:""}<div class="w btns"><button class="pri" type="submit">${setup?"Uložiť PIN":"Odomknúť"}</button>${!setup?`<button type="button" data-prdforgot>Zabudol som PIN</button>`:""}</div></form>`}</div>`}
+   ${S.pinErr?`<div class="w prd-w">${e(S.pinErr)}</div>`:""}<div class="w btns"><button class="pri" type="submit">${setup?"Uložiť PIN":"Odomknúť"}</button>${!setup?`<button type="button" data-prdforgot>Zabudol som PIN</button>`:""}</div></form>${!setup&&bioAvail()&&bioId()?`<div class="btns" style="justify-content:center;margin-top:10px"><button type="button" class="lime" data-prdbio style="min-height:56px;font-size:1.05rem">🔐 Odomknúť odtlačkom / Face ID</button></div>`:""}`}</div>`}
 
 // ---------- 🤖 AI VEŠTBA (algomancia) – Claude prečíta čísla + oblohu + karty a vynesie verdikt ----------
 const AI={d:null,at:0,busy:false};
@@ -416,7 +429,7 @@ window.vPred=function(){if(!OWN())return "";
   if(!unlocked()||S.pinMode==="new")return pinView();
   touch();if(!S.at&&!S.busy){load(true);return `<div class="card"><div class="s">Počítam…</div></div>`}
   const all=coms().map(evalCom),sel=S.sel;
-  let h=`<div class="card prd-top"><div class="row"><b>🔮 Algomancia · AI veštenie obchodu</b><span class="btns"><button type="button" class="copy" data-prdref>↻</button><button type="button" class="copy" data-prdpin>Zmeniť PIN</button><button type="button" class="copy" data-prdlock>🔒 Zamknúť</button></span></div>
+  let h=`<div class="card prd-top"><div class="row"><b>🔮 Algomancia · AI veštenie obchodu</b><span class="btns"><button type="button" class="copy" data-prdref>↻</button><button type="button" class="copy" data-prdpin>Zmeniť PIN</button>${bioAvail()&&!bioId()?`<button type="button" class="copy" data-prdbioset>🔐 Odomykať odtlačkom</button>`:""}<button type="button" class="copy" data-prdlock>🔒 Zamknúť</button></span></div>
    <div class="s">Kde kúpiť, kam predať a kedy – z ponúk farmárov, tvojho cenníka, trhov (HU, SK, UA hranica), burzy, ponúk a zmlúv odberateľov a nákladov dopravy.${S.mj&&S.mj.updatedAt?` Trhy: ${e(new Date(S.mj.updatedAt).toLocaleDateString("sk-SK"))}.`:""}</div>${S.err?`<div class="prd-w">⚠️ ${e(S.err)}</div>`:""}</div>`;
   h+=aiCard(all)+tarotCard();
   h+=msg(all);
