@@ -159,6 +159,7 @@ s pripojeným repozitárom `ernte-trade/ernte-`.
 - **🌐 JAZYK APLIKÁCIE (`lang.js`):** SK/HU/EN/DE, preklad AI so spoločnou pamäťou (`i18n_tr`, pg_cron `i18n`). Danube (farmári + Jozsef) prvé prihlásenie po maďarsky (`ernteLangAuto`),
   pozvánky po maďarsky (`inviteText`, odkaz s `#prihlas` a `l:"hu"`).
 - **🎤 HLAS PRE KAŽDÉ PRIHLÁSENIE (`voice.js`):** ťukni do políčka a diktuj (čísla, dátum, čas, e-mail), „hľadaj …“, „otvor …“, „späť“, „predaj 30 ton repky“; nič neodošle samo.
+- **📈 TÝŽDENNÝ LIST INVESTIČNEJ AKADÉMIE (31. 10., workflow `invest-list`, `.github/workflows/investlist.yml`):** naplánovaná úloha nemá heslo migrácií → SQL (`insert into invest_notes(who,title,body) values …`, base64) pošle cez workflow_dispatch (input `sql_b64`); workflow ho zašifruje tajomstvom `ERNTE_MIG_PASS` a commitne do `farmar/supabase/auto/`. Povolený je iba INSERT do invest_notes. **Tajomstvo `ERNTE_MIG_PASS` musí majiteľ raz zadať v GitHub → Settings → Secrets → Actions** (31. 10. ešte chýbalo – List č. 1 nevložený).
 - **📊 Martin – lišta sekcií podľa používania (`ownertabs.js`, `tab_use`), 3D ikony `img/ico/` (Microsoft Fluent Emoji 3D, MIT).**
 
 - **📞 MÔJ PLÁN NA DNES (31. 10., `plan.js`, `plan_ack/plan_log/deal_replace`):** vidia všetci obchodníci (deals/req/price_view alebo Galajda, Ceperko, Ličko, Jozsef). Položka zmizne IBA po vyjadrení
