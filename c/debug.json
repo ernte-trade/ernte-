@@ -1,1 +1,120 @@
-[]
+[
+ {
+  "q": "CLAAS Lexion 8700 TT",
+  "keys": [
+   "batchcomplete"
+  ],
+  "n": 0,
+  "lic": []
+ },
+ {
+  "q": "CLAAS Lexion 8700",
+  "keys": [
+   "batchcomplete",
+   "query"
+  ],
+  "n": 11,
+  "lic": [
+   [
+    "CC BY-SA 4.0",
+    4032,
+    2268,
+    "ent=original"
+   ],
+   [
+    "CC BY-SA 4.0",
+    1150,
+    647,
+    "ent=original"
+   ],
+   [
+    "CC BY-SA 4.0",
+    6000,
+    4000,
+    "ent=original"
+   ],
+   [
+    "CC BY-SA 4.0",
+    5400,
+    3600,
+    "ent=original"
+   ],
+   [
+    "CC BY-SA 4.0",
+    6000,
+    4000,
+    "ent=original"
+   ],
+   [
+    "CC BY-SA 4.0",
+    4032,
+    2268,
+    "ent=original"
+   ]
+  ]
+ },
+ {
+  "q": "CLAAS Lexion 8800",
+  "keys": [
+   "batchcomplete",
+   "query"
+  ],
+  "n": 2,
+  "lic": [
+   [
+    "CC BY-SA 4.0",
+    6151,
+    4101,
+    "ent=original"
+   ],
+   [
+    "CC BY-SA 4.0",
+    6224,
+    3501,
+    "ent=original"
+   ]
+  ]
+ },
+ {
+  "q": "CLAAS Lexion 8900",
+  "keys": [
+   "batchcomplete",
+   "query"
+  ],
+  "n": 4,
+  "lic": [
+   [
+    "CC BY-SA 4.0",
+    6218,
+    3499,
+    "ent=original"
+   ],
+   [
+    "CC BY-SA 4.0",
+    4608,
+    3456,
+    "ent=original"
+   ],
+   [
+    "CC BY-SA 2.0",
+    1600,
+    1200,
+    "ent=original"
+   ],
+   [
+    "CC BY-SA 2.0",
+    1600,
+    1200,
+    "ent=original"
+   ]
+  ]
+ },
+ {
+  "q": "Lexion 8700TT",
+  "keys": [
+   "batchcomplete"
+  ],
+  "n": 0,
+  "lic": []
+ }
+]
