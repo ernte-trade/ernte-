@@ -34,6 +34,9 @@ evidencia, mzdy, trus, farmár) na šírkach **344, 390, 412 px (mobil, Fold zat
 Spoločné opravy rozloženia patria do `farmar/fit.css` (načítava sa posledný).
 
 ## Výkon (29. 10.)
+- **OPRAVA 31. 10. 12:50 („stále ma vyhadzuje“):** automatická aktualizácia v `index.html` počítala podpis verzie skôr, než sa načítali skripty pod ňou → podpis sa nikdy nezhodoval
+  a aplikácia sa obnovila (úvod LIVE → Prehľad) pri KAŽDOM návrate z inej aplikácie. Teraz podpis až po `load`; nová verzia sa načíta iba po neprítomnosti ≥ 10 min a ostane tá istá záložka (`ernte-tab`, `ernte-wl-ret`).
+  Úvod LIVE pri návrate až po ≥ 10 min (predtým 30 s) a po „Poďme na to“ ostane otvorená tá istá obrazovka (`__wlRet`). Vytvorené heslá (Junior, Nové heslá) prežijú prepnutie do WhatsAppu (sessionStorage 30 min).
 - Kto obaľuje `renderStaff` / `renderFarmer`, MUSÍ skopírovať značky z pôvodnej funkcie
   (`Object.keys(o).forEach(k=>{if(!(k in w))w[k]=o[k]})`) – inak sa moduly obaľovali donekonečna (stovky vrstiev, aplikácia sekala).
 - Načítanie dát, ktoré po návrate volá `renderStaff`, nesmie nechať stav `null` (inak nekonečný cyklus) – pri prázdnej odpovedi `{err}` / `{}`.

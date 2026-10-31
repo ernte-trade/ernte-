@@ -303,7 +303,7 @@ async function facts(k){const L=[];try{const S=typeof STATE!=="undefined"?STATE:
  }catch(x){}return L}
 
 /* ---------- zobrazenie ---------- */
-async function show(force){const k=kind();if(!k||document.querySelector(".wlc"))return;if(sGet("ernte-welcome-skip"))return;
+async function show(force){const k=kind();if(!k||document.querySelector(".wlc"))return;if(sGet("ernte-welcome-skip"))return;if(sGet("ernte-wl-ret")){window.__wlRet=1;try{sessionStorage.removeItem("ernte-wl-ret")}catch(x){}}
   const ph=phase();const nm=k==="farmar"?(FARMER.name||""):k==="trus"?"":firstName((typeof ME!=="undefined"&&ME&&ME.staffName)||"");
   const who=k==="ja"?"Martin":nm;const g=`${GREET[ph]}${who?", "+E(who):""}!`;
   const FL=FUN[k]||FUN.tim;let ji=Math.floor(Date.now()/864e5)%FL.length;
@@ -322,7 +322,7 @@ async function show(force){const k=kind();if(!k||document.querySelector(".wlc"))
     w.querySelector("span").textContent=jt;w.classList.remove("pop");void w.offsetWidth;w.classList.add("pop");
     try{w.scrollIntoView({block:"nearest",behavior:"smooth"})}catch(x){}if(navigator.vibrate)try{navigator.vibrate(15)}catch(x){}};
   const jb=el.querySelector("[data-wljoke]");if(jb){jb.addEventListener("click",nextJoke);jb.addEventListener("touchend",nextJoke,{passive:false})}
-  const go=ev=>{if(ev){ev.preventDefault();ev.stopPropagation()}if(el._gone)return;el._gone=1;try{window.opushAuto&&opushAuto(true)}catch(x){}close(el);goHome()};
+  const ret=!!window.__wlRet;window.__wlRet=0;if(ret)el.dataset.ret="1";const go=ev=>{if(ev){ev.preventDefault();ev.stopPropagation()}if(el._gone)return;el._gone=1;try{window.opushAuto&&opushAuto(true)}catch(x){}close(el);if(!ret)goHome()};
   const gb=el.querySelector("[data-wlgo]");if(gb){gb.addEventListener("click",go);gb.addEventListener("touchend",go,{passive:false});gb.addEventListener("pointerup",e=>{if(e.pointerType!=="mouse")go(e)})}document.documentElement.classList.add("wlon");requestAnimationFrame(()=>el.classList.add("in"));
   const hd=el.querySelector(".whud");let ck=0;if(hd){hd.querySelectorAll(".whc:not(.wdia)").forEach(c=>{c.classList.add("wdia");if(!c.querySelector(":scope>.wdsh"))c.insertAdjacentHTML("afterbegin",'<i class="wdsh"></i>')}); /* 💎 všetky dlaždice sklo · diamant · live (príkaz majiteľa 30. 10.) */ck=clock(hd);el._ck=ck;wx(hd);try{kpis(k,hd)}catch(x){}el._px=pxLive(hd,k);grLive(hd,k).then(t=>{el._gr=t},()=>{});try{fuelLive(hd,k).then(()=>wfit(el));dealsLive(hd,k);wfit(el)}catch(x){}try{bzLive(hd,k).then(t=>{el._bz=t});ctLive(hd,k)}catch(x){}}
   const fill=async()=>{const f=await facts(k);const ul=el.querySelector(".wlf");if(ul)ul.innerHTML=f.map(x=>`<li>${x}</li>`).join("")};
@@ -351,7 +351,7 @@ function goHome(){try{if(typeof FARMER!=="undefined"&&FARMER){if(window.farmGo)f
   if(b){if(typeof TAB!=="undefined"&&TAB===b.dataset.tab){window.scrollTo(0,0);return}b.click()}window.scrollTo(0,0)}catch(x){}}
 /* po návrate do aplikácie (bola na pozadí aspoň 30 s) sa úvod ukáže znova */
 let hidAt=0;document.addEventListener("visibilitychange",()=>{if(document.hidden){hidAt=Date.now();return}
-  if(hidAt&&Date.now()-hidAt>=30000&&kind()&&!document.querySelector(".pinmod,dialog[open],.modal,.ovl")&&!(typeof window.formBusy==="function"&&formBusy()))show(true);hidAt=0});
+  if(hidAt&&Date.now()-hidAt>=10*60e3&&kind()&&!document.querySelector(".pinmod,dialog[open],.modal,.ovl")&&!(typeof window.formBusy==="function"&&formBusy())){window.__wlRet=1;show(true)}hidAt=0}); /* úvod pri návrate až po 10 min neprítomnosti; po „Poďme na to“ ostane otvorená tá istá obrazovka (príkaz majiteľa 31. 10.) */
 let AC=null;function honk(chick){try{AC=AC||new (window.AudioContext||window.webkitAudioContext)();const t=AC.currentTime;
   const tone=(f,a,b,type)=>{const o=AC.createOscillator(),g=AC.createGain();o.type=type||"square";o.frequency.setValueAtTime(f,t+a);if(chick)o.frequency.exponentialRampToValueAtTime(f*1.8,t+b);g.gain.setValueAtTime(0,t+a);g.gain.linearRampToValueAtTime(.08,t+a+.02);g.gain.linearRampToValueAtTime(0,t+b);o.connect(g);g.connect(AC.destination);o.start(t+a);o.stop(t+b+.02)};
   if(chick){tone(700,0,.12,"triangle");tone(900,.16,.3,"triangle")}else{tone(392,0,.22);tone(330,.26,.5)}}catch(x){}}
@@ -360,9 +360,9 @@ function confetti(el,x,y){const em=["🌾","🌾","🌻","✨","🟡"];for(let i
 function close(el){if(el._gr)clearInterval(el._gr);if(el._bz)clearInterval(el._bz);if(el._ck)clearInterval(el._ck);if(el._px)clearInterval(el._px);pxSave();el.classList.remove("in");el.classList.add("out");document.documentElement.classList.remove("wlon");setTimeout(()=>el.remove(),380)}
 window.ernteWelcome=()=>show(true);
 /* poistka: „Poďme na to“ vždy zavrie úvod, aj keby sa niečo pri zobrazení pokazilo */
-const fsGo=ev=>{const b=ev.target&&ev.target.closest&&ev.target.closest("[data-wlgo]");if(!b)return;const w=b.closest(".wlc");if(!w||w._gone)return;ev.preventDefault();ev.stopPropagation();w._gone=1;try{window.opushAuto&&opushAuto(true)}catch(x){}close(w);goHome()};
+const fsGo=ev=>{const b=ev.target&&ev.target.closest&&ev.target.closest("[data-wlgo]");if(!b)return;const w=b.closest(".wlc");if(!w||w._gone)return;ev.preventDefault();ev.stopPropagation();w._gone=1;try{window.opushAuto&&opushAuto(true)}catch(x){}close(w);if(w.dataset.ret!=="1")goHome()};
 document.addEventListener("click",fsGo,true);document.addEventListener("touchend",fsGo,{capture:true,passive:false});
-document.addEventListener("click",e=>{const i=e.target.closest&&e.target.closest("header.top img");if(i&&kind()){e.preventDefault();show(true)}});
+document.addEventListener("click",e=>{const i=e.target.closest&&e.target.closest("header.top img");if(i&&kind()){e.preventDefault();window.__wlRet=1;show(true)}});
 function css(){const s=document.createElement("style");s.textContent=`.wbzs button.on,.wgrs button.on{outline:1px solid var(--gc)}.wbzt{font-size:.7rem;opacity:.7;margin-top:6px;line-height:1.35}
 .wctl{display:grid;gap:8px;margin-top:6px}.wctr{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;padding:10px 12px;border-radius:16px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.18);color:#fff;text-decoration:none}
 .wctr.mine{border-color:rgba(182,255,59,.65);background:rgba(182,255,59,.12)}.wctr span{display:grid;min-width:0}.wctr small{opacity:.75;font-size:.72rem}.wctr b{font-size:1rem}.wctr i{font-style:normal;font-weight:800;color:#d9ff8a;white-space:nowrap}

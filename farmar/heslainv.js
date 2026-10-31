@@ -7,6 +7,7 @@ const E=s=>String(s==null?"":s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;","
 const tst=(t,ms)=>typeof toast==="function"?toast(t,ms||4000):alert(t);
 const OWN=()=>typeof ROLE!=="undefined"&&ROLE==="owner"&&!(typeof FARMER!=="undefined"&&FARMER)&&!window.ERNTE_VIEWAS&&!window.ERNTE_TEST;
 const D={pend:null,at:0,res:null,busy:0,names:"Tímk"};
+try{const x=JSON.parse(sessionStorage.getItem("ernte-hinv-res")||"null");if(x&&Date.now()-x.t<30*60e3)D.res=x.r}catch(e){}
 const base=()=>"https://app.ernte.sk/farmar/";
 const b64=o=>btoa(unescape(encodeURIComponent(JSON.stringify(o)))).replace(/\+/g,"-").replace(/\//g,"_").replace(/=+$/,"");
 const link=r=>base()+"#prihlas="+b64({u:r.login,k:r.pw});
@@ -38,10 +39,10 @@ document.addEventListener("click",async e=>{const t=e.target.closest&&e.target.c
   if("hinvgo" in t.dataset){const names=D.names.split(",").map(s=>s.trim()).filter(s=>s.length>=3);
     const n=(D.pend&&D.pend.tim?D.pend.tim.length:0)+(+(D.pend&&D.pend.farmar)||0);
     if(!confirm(`Vygenerovať nové heslá? Týka sa to ${n} neprihlásených${names.length?" + "+names.join(", "):""}. Ich staré heslá prestanú platiť.`))return;
-    D.busy=1;put();try{const r=await sb.rpc("invite_reset",{p_names:names.length?names:null});if(r.error)throw r.error;D.res=r.data||[];tst(`✓ Nové heslá: ${D.res.length}. Pošlite pozvánky.`,5000)}
+    D.busy=1;put();try{const r=await sb.rpc("invite_reset",{p_names:names.length?names:null});if(r.error)throw r.error;D.res=r.data||[];try{sessionStorage.setItem("ernte-hinv-res",JSON.stringify({t:Date.now(),r:D.res}))}catch(e){}tst(`✓ Nové heslá: ${D.res.length}. Pošlite pozvánky.`,5000)}
     catch(x){tst("Nepodarilo sa: "+(x&&x.message||x),6000)}D.busy=0;put();load();return}
   const r=D.res&&D.res[+t.closest("[data-hi]").dataset.hi];if(!r)return;const m=msg(r),a=t.dataset.hia;
-  if(a==="wa"){const p=tel(r.phone);window.open((p?"https://wa.me/"+p:"https://wa.me/")+"?text="+encodeURIComponent(m),"_blank","noopener")}
+  if(a==="wa"){const p=tel(r.phone),u=(p?"https://wa.me/"+p:"https://wa.me/")+"?text="+encodeURIComponent(m);const w=window.open(u,"_blank");if(w){try{w.opener=null}catch(x){}}else location.href=u}
   else if(a==="sms"){location.href="sms:"+(r.phone?String(r.phone).replace(/\s/g,""):"")+"?&body="+encodeURIComponent(m)}
   else if(a==="mail"){const em=/@/.test(r.login)&&!/@tel\.ernte\.sk$/.test(r.login)?r.login:"";location.href="mailto:"+em+"?subject="+encodeURIComponent(r.firma==="DANUBE"?"Hozzáférés – Danube / ERNTE alkalmazás":"Prístup do aplikácie ERNTE")+"&body="+encodeURIComponent(m)}
   else if(a==="pdf"){if(window.inviteCardSend)window.inviteCardSend({txt:m.replace(/\n\n👉[\s\S]*$/,"").replace("Heslo na prvé prihlásenie:","Heslo:").replace("Jelszó az első belépéshez:","Jelszó:"),pw:r.pw,name:r.name,team:r.k==="tim"},"pdf",t);else tst("PDF pozvánka nie je dostupná.")}

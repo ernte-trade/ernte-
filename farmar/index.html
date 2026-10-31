@@ -2919,14 +2919,18 @@ document.addEventListener("submit",async e=>{if(!ROLE)return;const f=e.target,fd
 if("serviceWorker" in navigator&&location.protocol==="https:"&&!/\/beta\//.test(location.pathname))navigator.serviceWorker.register("sw.js").catch(()=>{});
 // automatická aktualizácia: keď vyjde nová verzia aplikácie, po návrate do aplikácie sa sama obnoví; počas práce ukáže dlaždicu „Obnoviť“
 (function(){const sig=t=>[...String(t).matchAll(/<script src="([^"]+\?v=[^"]+)"/g)].map(m=>m[1]).sort().join("|");
-  const cur=[...document.scripts].map(x=>x.getAttribute("src")||"").filter(x=>/\?v=/.test(x)).sort().join("|");let pend=false;
+  /* OPRAVA 31. 10. („stále ma vyhadzuje“): podpis verzie sa počíta až po načítaní CELEJ stránky – predtým chýbali skripty pod týmto miestom,
+     podpis sa nikdy nezhodoval a aplikácia sa obnovila (úvod, Prehľad) pri KAŽDOM návrate z inej aplikácie */
+  let cur="";const mine=()=>[...document.scripts].map(x=>x.getAttribute("src")||"").filter(x=>/\?v=/.test(x)).sort().join("|");
+  if(document.readyState==="complete")cur=mine();else window.addEventListener("load",()=>{cur=mine()});let pend=false;
   const busyUI=()=>!!document.querySelector("form :focus,#sgMod,#obMod,#caMod,#aiSheet:not([hidden]),.cammod:not([hidden])");
   function tile(){if(document.getElementById("updTile"))return;const b=document.createElement("button");b.id="updTile";b.type="button";b.textContent="💎 Nová verzia aplikácie – ťuknite pre obnovenie";
     b.style.cssText="position:fixed;left:50%;transform:translateX(-50%);top:calc(env(safe-area-inset-top) + 10px);z-index:10050;max-width:92vw;padding:12px 18px;border:0;border-radius:18px;font:800 .95rem system-ui;color:#fff;background:linear-gradient(135deg,#ff3d9a,#7c5cff 50%,#22d3ee);box-shadow:0 0 0 2px rgba(255,255,255,.6),0 0 30px rgba(255,61,154,.6)";
     b.onclick=()=>location.reload();document.body.appendChild(b)}
   async function chk(fromVis){if(!cur)return;try{const t=await (await fetch("index.html?u="+Date.now(),{cache:"no-store"})).text(),n=sig(t);if(n&&n!==cur){pend=true;if(fromVis&&!busyUI())location.reload()}}catch(e){}} /* bez ružového pásu – nová verzia sa načíta sama pri návrate do aplikácie (príkaz majiteľa 30. 10.) */
   setTimeout(()=>chk(false),8000);setInterval(()=>{if(!document.hidden)chk(false)},120e3);
-  document.addEventListener("visibilitychange",()=>{if(!document.hidden)chk(true)})})();
+  /* PRÍKAZ MAJITEĽA 31. 10. („stále ma vyhadzuje“): nová verzia sa načíta iba po dlhšej neprítomnosti (≥ 10 min), nie po krátkom prepnutí do inej aplikácie; ostane otvorená tá istá záložka */
+  let hid=0;document.addEventListener("visibilitychange",()=>{if(document.hidden){hid=Date.now();return}const away=hid?Date.now()-hid:0;hid=0;if(away>=10*60e3){try{if(typeof TAB!=="undefined"&&TAB){sessionStorage.setItem("ernte-tab",TAB);sessionStorage.setItem("ernte-wl-ret","1")}}catch(x){}chk(true)}})})();
 if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",()=>boot());else boot();
 
 // výber farmára v Novom obchode (vyhľadávanie namiesto dlhého zoznamu)
@@ -2961,7 +2965,7 @@ document.addEventListener("click",e=>{const b=e.target.closest("[data-dfp]");if(
 <script src="odberatel.js?v=20261029-2320"></script>
 <script src="watermark.js?v=20261028-2320"></script>
 <script src="valkopay.js?v=20261031-0920" defer></script>
-<script src="welcome.js?v=20261031-1130"></script>
+<script src="welcome.js?v=20261031-1250"></script>
 <script src="ernmaps.js?v=20261031-0700" defer></script>
 <script src="odb.js?v=20261030-0715"></script>
 <script src="zdash.js?v=20261027-1620"></script>
@@ -3007,11 +3011,11 @@ document.addEventListener("click",e=>{const b=e.target.closest("[data-dfp]");if(
 <script src="cennikalert.js?v=20261031-0700"></script>
 <script src="dropalert.js?v=20261031-0700"></script>
 <script src="timai.js?v=20261031-0915"></script>
-<script src="heslainv.js?v=20261031-1200"></script>
+<script src="heslainv.js?v=20261031-1300"></script>
 <script src="ownertabs.js?v=20261031-1140"></script>
 <script src="clang.js?v=20261031-1200"></script>
 <script src="farmapp.js?v=20261031-1200"></script>
-<script src="kid.js?v=20261031-1400"></script>
+<script src="kid.js?v=20261031-1300"></script>
 <script src="plan.js?v=20261031-1120"></script>
 <script src="voice.js?v=20261031-1115"></script>
 <script src="wxalert.js?v=20261031-1120"></script>

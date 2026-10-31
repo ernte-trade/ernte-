@@ -244,6 +244,9 @@ window.kidEnter=async function(){try{const r=await sb.rpc("kid_me");if(!r.error&
 // ---------- 👨 MAJITEĽ: Tím → ERNTE Junior (prihlásenie, pokrok, odmena, vyplatené) ----------
 const OWN=()=>typeof ROLE!=="undefined"&&ROLE==="owner"&&!(typeof FARMER!=="undefined"&&FARMER)&&!window.ERNTE_VIEWAS&&!window.ERNTE_TEST;
 const O={L:null,at:0,res:null};
+// vytvorené prihlásenie prežije prepnutie do WhatsAppu aj obnovenie aplikácie (30 min, iba v tomto okne)
+try{const x=JSON.parse(sessionStorage.getItem("ernte-kjo-res")||"null");if(x&&Date.now()-x.t<30*60e3)O.res=x.r}catch(e){}
+const keepRes=()=>{try{sessionStorage.setItem("ernte-kjo-res",JSON.stringify({t:Date.now(),r:O.res}))}catch(e){}};
 function oHtml(){const L2=O.L||[];
   return `<section class="card kjo" id="kjoCard"><h2>🧒 ERNTE Junior – škola biznisu</h2>
    ${L2.map(k=>{const p=k.p||{},n=L.filter(l=>p["l_"+l.id]&&p["l_"+l.id].ok).length,c=+(p.stav&&p.stav.c)||0,ev=k.earn||{},ms=ev.months||[],cur=ms.find(m=>m.m===ev.now),cf=k.cfg||{};
@@ -257,7 +260,7 @@ function oHtml(){const L2=O.L||[];
       <div class="kjcfg" data-kjcfg="${E(k.email)}"><label>€ za správnu odpoveď<input data-c="rate" inputmode="decimal" value="${E(cf.rate??0.1)}"></label><label>€ za lekciu<input data-c="lesson" inputmode="decimal" value="${E(cf.lesson??1)}"></label><label>max € za deň<input data-c="day" inputmode="decimal" value="${E(cf.day??10)}"></label><label>max € za mesiac<input data-c="max" inputmode="decimal" value="${E(cf.max??100)}"></label><button type="button" data-kjcfgsave="${E(k.email)}">💾 Uložiť pravidlá</button></div></div></div>`}).join("")}
    <div class="kjof"><label>Meno syna<input data-kjo="name" placeholder="napr. Matej Vaľko" autocomplete="off"></label><label>Prihlasovacie meno<input data-kjo="login" placeholder="napr. matej" autocomplete="off" autocapitalize="off"></label>
    <button type="button" class="pri" data-kjocreate>${L2.length?"🔑 Nové prihlásenie / nové heslo":"🧒 Vytvoriť prihlásenie"}</button></div>
-   ${O.res?`<div class="kjores"><p>⚠️ Heslo vidíš <b>iba teraz</b>. Prihlásenie: <b>${E(O.res.login.replace(/@junior\.ernte\.sk$/,""))}</b> · heslo: <b class="kjopw">${E(O.res.pw)}</b></p><div class="btns"><button type="button" data-kjocp>📋 Kopírovať odkaz s prihlásením</button><button type="button" data-kjowa>💬 WhatsApp</button></div><small>Ťuknutím na odkaz sa prihlási sám. Na prihlasovacej obrazovke stačí napísať iba meno (bez @).</small></div>`:""}
+   ${O.res?`<div class="kjores"><p>⚠️ Heslo vidíš <b>iba teraz</b>. Prihlásenie: <b>${E(O.res.login.replace(/@junior\.ernte\.sk$/,""))}</b> · heslo: <b class="kjopw">${E(O.res.pw)}</b></p><div class="btns"><button type="button" data-kjowa>💬 WhatsApp</button><button type="button" data-kjosms>📱 SMS</button><button type="button" data-kjocp>📋 Kopírovať</button><button type="button" data-kjoshare>📤 Zdieľať</button></div><small>Ťuknutím na odkaz sa prihlási sám. Na prihlasovacej obrazovke stačí napísať iba meno (bez @).</small></div>`:""}
    <p class="kjnote">Junior nevidí žiadne naše ceny, marže, farmárov ani odberateľov. Odmenu za správne odpovede počíta a stráži databáza (sadzba, denný a mesačný strop); vyplácaš ty.</p></section>`}
 function oPut(){const app=document.getElementById("app");if(!app)return;const old=document.getElementById("kjoCard");const show=OWN()&&typeof TAB!=="undefined"&&TAB==="team";
   if(!show){if(old)old.remove();return}if(old&&old.contains(document.activeElement)&&document.activeElement.tagName==="INPUT")return;
@@ -267,12 +270,14 @@ function oPut(){const app=document.getElementById("app");if(!app)return;const ol
 async function oLoad(){O.at=Date.now();try{const r=await sb.rpc("kid_list");if(!r.error)O.L=r.data||[]}catch(x){}oPut()}
 const kLink=()=>typeof inviteLink==="function"?inviteLink(O.res.login,O.res.pw):"https://app.ernte.sk/farmar/";
 const kMsg=()=>`Ahoj! Tu je tvoje prihlásenie do ERNTE Junior – škola biznisu od tatina. 🌾📈🚛\n\nMeno: ${O.res.login.replace(/@junior\.ernte\.sk$/,"")}\nHeslo: ${O.res.pw}\n\nŤukni na odkaz a prihlási ťa to samo.\n\n👉 ERNTE Trade & Logistic: ${kLink()}`;
-document.addEventListener("click",async e=>{const t=e.target.closest&&e.target.closest("[data-kjocreate],[data-kjocp],[data-kjowa],[data-kjpaid],[data-kjcfgsave]");if(!t||!OWN())return;e.preventDefault();
+document.addEventListener("click",async e=>{const t=e.target.closest&&e.target.closest("[data-kjocreate],[data-kjocp],[data-kjowa],[data-kjosms],[data-kjoshare],[data-kjpaid],[data-kjcfgsave]");if(!t||!OWN())return;e.preventDefault();
   if("kjocreate" in t.dataset){const nm=(document.querySelector('[data-kjo="name"]')||{}).value||"",lg=(document.querySelector('[data-kjo="login"]')||{}).value||"";
     if(nm.trim().length<2||lg.trim().length<2){toast("Napíšte meno aj prihlasovacie meno.");return}t.disabled=true;
-    try{const r=await sb.rpc("kid_create",{p_name:nm,p_login:lg});if(r.error)throw r.error;O.res=r.data;toast("✓ Prihlásenie pre Juniora je pripravené.",4000);oLoad()}catch(x){t.disabled=false;toast("Nepodarilo sa: "+(x&&x.message||x),6000)}return}
+    try{const r=await sb.rpc("kid_create",{p_name:nm,p_login:lg});if(r.error)throw r.error;O.res=r.data;keepRes();toast("✓ Prihlásenie pre Juniora je pripravené.",4000);oLoad()}catch(x){t.disabled=false;toast("Nepodarilo sa: "+(x&&x.message||x),6000)}return}
   if("kjocp" in t.dataset){try{await navigator.clipboard.writeText(kMsg());toast("✓ Skopírované.")}catch(x){prompt("Skopírujte:",kMsg())}return}
-  if("kjowa" in t.dataset){window.open("https://wa.me/?text="+encodeURIComponent(kMsg()),"_blank","noopener");return}
+  if("kjowa" in t.dataset){const u="https://wa.me/?text="+encodeURIComponent(kMsg());const w=window.open(u,"_blank");if(w){try{w.opener=null}catch(x){}}else location.href=u;return}
+  if("kjosms" in t.dataset){location.href="sms:?&body="+encodeURIComponent(kMsg());return}
+  if("kjoshare" in t.dataset){if(navigator.share){try{await navigator.share({title:"ERNTE Junior",text:kMsg()})}catch(x){}}else{try{await navigator.clipboard.writeText(kMsg());toast("✓ Skopírované – vlož do správy.")}catch(x){prompt("Skopírujte:",kMsg())}}return}
   if(t.dataset.kjpaid){if(!confirm(`Označiť mesiac ${t.dataset.m} ako vyplatený?`))return;try{const r=await sb.rpc("kid_pay",{p_email:t.dataset.kjpaid,p_month:t.dataset.m});if(r.error)throw r.error;toast("✓ Vyplatené.");oLoad()}catch(x){toast("Nepodarilo sa: "+(x&&x.message||x),5000)}return}
   if(t.dataset.kjcfgsave){const box=t.closest("[data-kjcfg]"),c={};box.querySelectorAll("[data-c]").forEach(i=>c[i.dataset.c]=parseFloat(String(i.value).replace(",","."))||0);
     try{const r=await sb.rpc("kid_cfg_set",{p_email:t.dataset.kjcfgsave,p_cfg:c});if(r.error)throw r.error;toast("✓ Pravidlá odmeny uložené.");oLoad()}catch(x){toast("Nepodarilo sa: "+(x&&x.message||x),5000)}}},true);
