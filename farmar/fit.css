@@ -157,3 +157,9 @@ html[data-theme=light] .wlc .wlb,html[data-theme=light] .wlc .whc:not(.wlsp .whc
 /* 11:15 PRÍKAZ MAJITEĽA: pevná fotka aj Martinovi – pozadie úvodu sa nehýbe u nikoho (živé ostávajú iba údaje) */
 .wimg::before,.wimg .wscan{animation:none!important;transform:none!important}
 .wimg .wscan{display:none!important}
+/* 11:23 PRÍKAZ MAJITEĽA: fotka roztiahnutá na celú obrazovku (bez čierneho pásu hore), PEVNÁ pre každého – pri posúvaní panelov stojí na mieste
+   (fotka je pozadím posúvacieho okna .wlc, nie dlhého obsahu .wimg) */
+.wlc:has(.wimg.wclaas){background:#0b1020 url(img/claas-uvod.jpg) center 40%/cover no-repeat!important}
+.wlc:has(.wimg.wtruck){background:#0b1020 url(img/scania-uvod.jpg) 68% center/cover no-repeat!important}
+.wimg.wclaas{background-image:none!important;background-color:transparent!important}
+.wimg.wclaas::before{display:none!important}
