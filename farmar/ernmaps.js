@@ -101,26 +101,29 @@ function onRoute(c){const R=S.route;if(!R||!R.pts||R.pts.length<2)return null;co
   let best=null;for(const k of [n.i-1,n.i]){if(k<0||k+1>=P0.length)continue;const A=P0[k],B=P0[k+1],ax=(B[1]-A[1])*cl,ay=B[0]-A[0],px=(c.lng-A[1])*cl,py=c.lat-A[0],L2=ax*ax+ay*ay;
     let t=L2?(px*ax+py*ay)/L2:0;t=Math.max(0,Math.min(1,t));const q=[A[0]+ay*t,A[1]+(B[1]-A[1])*t],d=km(c,{lat:q[0],lng:q[1]});if(!best||d<best.d)best={d,q,k}}
   if(!best)return null;const C=cum(R);let j=best.k+1;while(j<P0.length-1&&C[j]-C[best.k]<0.05)j++;return {p:best.q,b:brgOf(best.q,P0[j])}}
-function sizeNav(){/* 31. 10.: mapa sa už neotáča – veľká otočená vrstva sa v telefóne (Fold) nevykreslila, trasa nebola vidno */}
-function unsizeNav(){const m=document.getElementById("emMap");if(m)["width","height","left","top","right","bottom"].forEach(k=>m.style.removeProperty(k))}
+// 31. 10. 18:51 PRÍKAZ MAJITEĽA: navigátor vždy v strede obrazovky a smer jazdy HORE (mapa sa otáča).
+// Otáča sa štvorec so stredom presne v kurzore (stred voľnej plochy medzi pokynom a HUD), veľký len toľko, aby pokryl rohy displeja;
+// bez will-change a bez CSS filtrov na trase (ranné zlyhanie na Folde: obrovská vrstva s filtrom sa nevykreslila).
+function navBox(){const m=document.getElementById("emMap"),o=m&&m.parentNode;if(!o)return null;const w=o.clientWidth,h=o.clientHeight;let top=0,bot=h;
+  const X=document.getElementById("emap")||document,nv=X.querySelector(".emnav"),hd=X.querySelector(".emhud"),orr=o.getBoundingClientRect();
+  if(nv&&!nv.hidden&&nv.offsetHeight){const r=nv.getBoundingClientRect();if(r.bottom-orr.top<h*0.6)top=Math.max(0,r.bottom-orr.top)}
+  if(hd&&!hd.hidden&&hd.offsetHeight){const r=hd.getBoundingClientRect();if(r.top-orr.top>h*0.4)bot=Math.min(h,r.top-orr.top)}
+  const cx=w/2,cy=(top+bot)/2,R=Math.ceil(Math.max(Math.hypot(cx,cy),Math.hypot(cx,h-cy))+12);return {w,h,cx,cy,R,k:[w,h,Math.round(cy)].join()}}
+function sizeNav(){const m=document.getElementById("emMap");if(!m||!m.classList.contains("navmap"))return false;const b=navBox();if(!b)return false;if(S.nbK===b.k&&m.style.width)return false;S.nbK=b.k;
+  Object.assign(m.style,{width:2*b.R+"px",height:2*b.R+"px",left:Math.round(b.cx-b.R)+"px",top:Math.round(b.cy-b.R)+"px",right:"auto",bottom:"auto"});return true}
+function unsizeNav(){S.nbK=null;const m=document.getElementById("emMap");if(m)["width","height","left","top","right","bottom"].forEach(k=>m.style.removeProperty(k))}
 function liveView(on){const m=document.getElementById("emMap"),h=$(".emhud"),nb=$(".emnbt");if(!m)return;m.classList.toggle("navmap",on);if(h)h.hidden=!on;if(nb)nb.hidden=!on;
   if(on)sizeNav();else{unsizeNav();m.style.removeProperty("--rot");const i=document.querySelector("#emap .emme i");if(i)i.style.transform="";S.zl=null}
   if(S.acc)S.acc.setStyle({opacity:on?0:1,fillOpacity:on?0:.08});
   setTimeout(()=>{try{S.map.invalidateSize(false);if(on&&S.me){S.zl=17;S.map.setView([S.me.lat,S.me.lng],17,{animate:false})}}catch(x){}},60)}
-window.addEventListener("resize",()=>{if(S.nav&&!S.ov){sizeNav();setTimeout(()=>{try{S.map.invalidateSize(false)}catch(x){}},80)}});
-// 31. 10. 18:46 príkaz majiteľa: kurzor navádzania a trasa v STREDE voľnej plochy displeja (medzi pokynom hore a HUD dole)
-function navMid(m){const h=m.clientHeight||600,mr=m.getBoundingClientRect();let top=0,bot=h;
-  const nv=document.querySelector("#emap .emnav"),hd=document.querySelector("#emap .emhud");
-  if(nv&&!nv.hidden&&nv.offsetHeight){const r=nv.getBoundingClientRect();if(r.bottom-mr.top<h*0.6)top=Math.max(0,r.bottom-mr.top)}
-  if(hd&&!hd.hidden&&hd.offsetHeight){const r=hd.getBoundingClientRect();if(r.top-mr.top>h*0.4)bot=Math.min(h,r.top-mr.top)}
-  return Math.round(h/2-(top+bot)/2)}
+window.addEventListener("resize",()=>{if(S.nav&&!S.ov){sizeNav();setTimeout(()=>{try{S.map.invalidateSize(false);S.lastC=null;liveTick()}catch(x){}},80)}});
 function liveTick(){const c=S.me,m=document.getElementById("emMap");if(!c||!m||!m.classList.contains("navmap")||S.ov)return;
   const r=onRoute(c),pos=r?r.p:[c.lat,c.lng],tgt=r?r.b:S.gpsB;
   if(tgt!=null){if(S.brg==null)S.brg=tgt;else{const d=((tgt-S.brg)%360+540)%360-180;if(Math.abs(d)>4)S.brg+=d*0.6}}
-  const i=document.querySelector("#emap .emme i");if(i)i.style.transform=`rotate(${S.brg||0}deg)`;if(S.meM)S.meM.setLatLng(pos);
+  if(sizeNav()){try{S.map.invalidateSize(false)}catch(x){}S.lastC=null}m.style.setProperty("--rot",(-(S.brg||0))+"deg");const i=document.querySelector("#emap .emme i");if(i)i.style.transform=`rotate(${S.brg||0}deg)`;if(S.meM)S.meM.setLatLng(pos);
   const v=(S.spd!=null&&S.spd>=0?S.spd:0)*3.6,dn=S.dn==null?9:S.dn,want=dn<0.2?18:v>80?16:17;
   if(want!==S.zl){S.zc=(S.zc||0)+1;if(S.zc>=2||S.zl==null){S.zl=want;S.zc=0}}else S.zc=0;
-  const lc=S.lastC;if(!lc||km({lat:lc[0],lng:lc[1]},{lat:pos[0],lng:pos[1]})>0.004||S.map.getZoom()!==S.zl){S.lastC=pos;const cp=S.map.unproject(S.map.project(pos,S.zl).add(L.point(0,navMid(m))),S.zl);S.map.setView(cp,S.zl,{animate:true,duration:.9,easeLinearity:1})}
+  const lc=S.lastC;if(!lc||km({lat:lc[0],lng:lc[1]},{lat:pos[0],lng:pos[1]})>0.004||S.map.getZoom()!==S.zl){S.lastC=pos;S.map.setView(pos,S.zl,{animate:true,duration:.9,easeLinearity:1})}
   const sp=$(".emspd");if(sp)sp.textContent=Math.round(v)}
 // 🔷 manéver ako v aute: zvýraznený úsek križovatky so šípkou a bežiacimi šípkami (štýl Mercedes MBUX)
 function mvDraw(nx){const R=S.route;if(!R||!R.pts||!S.map)return;const key=S.si+":"+(nx&&nx.maneuver.location.join());if(S.mvFor===key)return;S.mvFor=key;if(S.mvL){S.mvL.forEach(l=>l.remove());S.mvL=null}
@@ -515,7 +518,7 @@ function hdrBtn(){const app=document.getElementById("app");if(!app)return;const 
 .emx{width:44px;height:44px;min-width:44px;border-radius:50%!important;padding:0!important;display:grid;place-items:center;font-size:1.1rem}
 .emm{flex:1 1 auto;min-height:200px}
 .emm{position:relative;overflow:hidden;background:radial-gradient(120% 60% at 50% 0%,#1e3a8a 0%,#0b1020 55%,#05070d 100%)}#emMap{position:absolute;inset:0}
-#emMap.navmap{pointer-events:none}
+#emMap.navmap{pointer-events:none;position:absolute;transform:rotate(var(--rot,0deg));transform-origin:50% 50%;transition:transform .8s linear}#emMap.navmap path{filter:none!important}
 #emap>.emnav{left:10px!important;right:10px!important;width:auto!important;max-width:none!important;transform:none!important;margin:0!important}
 #emMap.navmap .leaflet-control-container,#emap.navon .leaflet-control-container{display:none}
 #emap.navon .emme i{width:0;height:0;border-radius:0;background:none;border:none;box-shadow:none;border-left:14px solid transparent;border-right:14px solid transparent;border-bottom:30px solid #38bdf8;filter:drop-shadow(0 0 10px rgba(56,189,248,.95)) drop-shadow(0 0 2px #fff);margin:-6px 0 0 -3px;transition:transform .9s linear}
