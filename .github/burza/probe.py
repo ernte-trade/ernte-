@@ -5,10 +5,7 @@ def g(u,h=None):
     r=urllib.request.Request(u,headers=dict(UA,**(h or {})))
     with op.open(r,timeout=30) as x: return x.status, x.read().decode("utf-8","replace")
 s,t=g("https://ahdb.org.uk/cereals-oilseeds/futures-prices")
-i=t.find("FuturesCustomReport")
-for m in re.finditer(r"FuturesCustomReport",t):
-    print("---",t[max(0,m.start()-300):m.start()+500].replace("\n"," ")[:800])
-    break
-for sel in re.findall(r'<select[^>]*>.*?</select>',t,re.S)[:4]: print("SEL",re.sub(r"\s+"," ",sel)[:1500])
-print("SCRIPTS",[x for x in re.findall(r'<script[^>]+src="([^"]+)"',t)][:40])
-print("URLS",sorted(set(re.findall(r'["\'](/[A-Za-z0-9_/\-]*(?:Report|report|Export|export|Download|download|Futures|futures)[A-Za-z0-9_/\-\.]*)["\']',t)))[:60])
+i=t.find("FuturesCustomReportPart_DatePickerFilterStart")
+print("FORM",re.sub(r"\s+"," ",t[i:i+4000]))
+for sc in re.findall(r'<script(?![^>]*src)[^>]*>(.*?)</script>',t,re.S):
+    if re.search(r'Futures|Report|ajax|Download|\.post\(|\.get\(|fetch\(',sc): print("JS",re.sub(r"\s+"," ",sc)[:3000])
