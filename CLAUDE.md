@@ -167,7 +167,7 @@ s pripojeným repozitárom `ernte-trade/ernte-`.
 - **🧒 ERNTE JUNIOR (31. 10., `kid.js`, tabuľky `kids`/`kid_progress`, `kid_me`/`kid_save`/`kid_create`/`kid_list`):** prihlásenie pre syna majiteľa (meno@junior.ernte.sk, na prihlásení stačí meno).
   NIE je tím ani farmár → žiadne obchodné údaje. 8 lekcií (firma, B2B, burza s ozajstným grafom, doprava, zmluva, peniaze, riziko, kurací trus), kvízy, mince, odznaky, hra „Obchodný deň“ (vymyslené čísla).
   GDPR za dieťa rodič (`gdpr_status` → `{kid:true}`). Majiteľ: Tím → 🧒 ERNTE Junior (vytvorenie, pokrok).
-  **14:00:** 💶 skutočná odmena od otca (`kid_earn`, `kid_paid`, `kids.cfg` rate 0,10 € / lekcia 1 € / deň 10 € / mesiac 200 € (15:24 príkaz majiteľa: 200 €); `kid_earn_add` drží sadzby, stropy a 3 s odstup; `kid_pay` Vyplatené, `kid_cfg_set`),
+  **14:00:** 💶 skutočná odmena od otca (`kid_earn`, `kid_paid`, `kids.cfg` rate 0,10 € / lekcia 1 € / deň 30 € (15:44 príkaz majiteľa) / mesiac 200 € (15:24 príkaz majiteľa: 200 €); `kid_earn_add` drží sadzby, stropy a 3 s odstup; `kid_pay` Vyplatené, `kid_cfg_set`),
   🇬🇧 English mode (lekcie a kvízy SK + EN, výslovnosť en-GB), škola 4. ročník (matematika, vybrané slová, vlastiveda, angličtina – nekonečné cvičenia), lekcie Šéf a tím, Rozhodovanie, Rodinný podnik, Investovanie a ETF + hra ETF sporenie.
   **16:10 PRÍKAZ MAJITEĽA: otázky sa NEOPAKUJÚ** – AI na pozadí dopĺňa zásobník `kid_qbank` (pg_cron `kid-qgen`, `kid_qgen_run/collect`, témy = id lekcií + `vl`, `pr`, `en`, do ≥ 60 na tému), `kid_quiz_get` vráti iba nevidené (`kid_qseen`); v klientovi balíčky bez opakovania (`deck()`, localStorage `ernte-kid-dk-*`), kvíz lekcie = 2 AI + 2 pevné + obchodný príklad (`BQ`), škola + 🔬 Prírodoveda.
 

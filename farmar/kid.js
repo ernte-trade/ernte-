@@ -5,7 +5,7 @@
 //  • Škola 4. ročník: matematika (nekonečné príklady), vybrané slová, vlastiveda, prírodoveda, angličtina.
 //  • 🔁 Otázky sa neopakujú (31. 10.): balíčky bez opakovania (deck), AI dopĺňa nové do kid_qbank (kid_quiz_get vráti iba nevidené), kvíz lekcie = 2 AI + 2 pevné + obchodný príklad.
 //  • Hry: Obchodný deň, ETF sporenie (vymyslené čísla).
-//  • 💶 Skutočná odmena od otca: za správnu odpoveď (predvolene 0,10 €), za lekciu (+1 €), max 10 € denne a 200 € mesačne –
+//  • 💶 Skutočná odmena od otca: za správnu odpoveď (predvolene 0,10 €), za lekciu (+1 €), max 30 € denne a 200 € mesačne –
 //    sadzby a stropy drží databáza (kid_earn_add), otec ich mení a označuje Vyplatené v Tíme.
 (function(){
 const E=s=>String(s==null?"":s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
@@ -25,11 +25,11 @@ async function earn(kind,what){try{const r=await sb.rpc("kid_earn_add",{p_kind:k
   if(+r.data.eur>0)pop("+"+EUR(r.data.eur));else if(+r.data.month>=+r.data.max)pop("Tento mesiac už máš maximum 🎉");else if(+r.data.today>=+r.data.day)pop("Dnes už máš denné maximum – pokračuj zajtra 😉");
   const b=document.querySelector(".kjpay");if(b)b.outerHTML=payCard()}catch(x){}}
 function pop(t){const d=document.createElement("div");d.className="kjpop";d.textContent=t;document.body.appendChild(d);setTimeout(()=>d.remove(),1800);try{navigator.vibrate&&navigator.vibrate(30)}catch(x){}}
-async function loadPay(){try{const r=await sb.rpc("kid_earn_view");if(!r.error&&r.data){const d=r.data,cur=(d.months||[]).find(m=>m.m===d.now);PAY=Object.assign({},PAY||{},{v:d,month:cur?+cur.eur:0,max:+(d.cfg&&d.cfg.max)||100,day:+(d.cfg&&d.cfg.day)||10,rate:+(d.cfg&&d.cfg.rate)||0.1,lesson:+(d.cfg&&d.cfg.lesson)||1});
+async function loadPay(){try{const r=await sb.rpc("kid_earn_view");if(!r.error&&r.data){const d=r.data,cur=(d.months||[]).find(m=>m.m===d.now);PAY=Object.assign({},PAY||{},{v:d,month:cur?+cur.eur:0,max:+(d.cfg&&d.cfg.max)||100,day:+(d.cfg&&d.cfg.day)||30,rate:+(d.cfg&&d.cfg.rate)||0.1,lesson:+(d.cfg&&d.cfg.lesson)||1});
   if(PAY.today==null){const t=new Date().toLocaleDateString("sv-SE");PAY.today=(d.last||[]).filter(x=>new Date(x.at).toLocaleDateString("sv-SE")===t).reduce((a,x)=>a+(+x.eur),0)}}}catch(x){}}
 function payCard(){const p=PAY||{month:0,max:200},pct=Math.min(100,(+p.month||0)/(+p.max||200)*100);
   return `<button type="button" class="kjpay" data-kpay><div class="kjpt">${IMG("money",44)}<div><small>💶 Moje zarobené od tatina · tento mesiac</small><b>${EUR(p.month)} <i>z ${EUR(p.max)}</i></b></div></div>
-   <div class="kjpb"><i style="width:${pct.toFixed(1)}%"></i></div><small>${p.rate?`za správnu odpoveď ${EUR(p.rate)} · lekcia ${EUR(p.lesson)} · `:""}dnes ${EUR(p.today||0)} z ${EUR(p.day||10)} · ťukni pre prehľad</small></button>`}
+   <div class="kjpb"><i style="width:${pct.toFixed(1)}%"></i></div><small>${p.rate?`za správnu odpoveď ${EUR(p.rate)} · lekcia ${EUR(p.lesson)} · `:""}dnes ${EUR(p.today||0)} z ${EUR(p.day||30)} · ťukni pre prehľad</small></button>`}
 
 // ---------- LEKCIE (SK + EN) ----------  karta: [emoji, nadpis SK, text SK, title EN, text EN] · kvíz: [otázka SK, [možnosti SK], správna, question EN, [options EN]]
 const L=[
@@ -237,7 +237,7 @@ function payView(){const v=PAY&&PAY.v;const ms=(v&&v.months)||[];
   return `<div class="kjbar"><button type="button" data-kh>← Späť</button><b>💶 Moje zarobené</b></div>${payCard()}
    <div class="kjcard"><h2>Po mesiacoch</h2>${ms.length?ms.map(m=>`<div class="kjrow"><span>${E(m.m.split("-").reverse().join(". "))}</span><b>${EUR(m.eur)}</b><em>${m.paid!=null?"✅ vyplatené":"⏳ čaká na tatina"}</em></div>`).join(""):`<p>Zatiaľ nič – odpovedz správne v lekciách alebo v škole a začneš zarábať!</p>`}</div>
    <div class="kjcard"><h2>Posledné odmeny</h2>${((v&&v.last)||[]).slice(0,15).map(x=>`<div class="kjrow"><span>${E(new Date(x.at).toLocaleString("sk-SK",{day:"numeric",month:"numeric",hour:"2-digit",minute:"2-digit"}))}</span><b>+${EUR(x.eur)}</b><em>${E(x.w||"")}</em></div>`).join("")||"<p>–</p>"}
-   <p class="kjnote">Pravidlá od tatina: každá správna odpoveď ${EUR(PAY&&PAY.rate||0.1)}, hotová lekcia ${EUR(PAY&&PAY.lesson||1)}, najviac ${EUR(PAY&&PAY.day||10)} za deň a ${EUR(PAY&&PAY.max||200)} za mesiac. Tip: časť si odlož – ako v lekcii o ETF! 🐷</p></div>`}
+   <p class="kjnote">Pravidlá od tatina: každá správna odpoveď ${EUR(PAY&&PAY.rate||0.1)}, hotová lekcia ${EUR(PAY&&PAY.lesson||1)}, najviac ${EUR(PAY&&PAY.day||30)} za deň a ${EUR(PAY&&PAY.max||200)} za mesiac. Tip: časť si odlož – ako v lekcii o ETF! 🐷</p></div>`}
 function game(){if(!G)gNew();const end=G.r>5,val=G.cash+G.stock*G.m;
   if(end){const prof=val-20000;return `<div class="kjbar"><button type="button" data-kh>← Späť</button><b>🎮 Obchodný deň · koniec</b></div><div class="kjcard kjres">${IMG(prof>0?"trophy":"bulb",96)}<h2>${prof>0?"Zarobil si "+prof.toLocaleString("sk-SK")+" €! 🎉":prof<0?"Tentoraz strata "+(-prof).toLocaleString("sk-SK")+" €":"Vyšiel si na nulu"}</h2>
    <p>${prof>0?"Kúpil si lacnejšie, predal drahšie a doprava ťa nezjedla. Takto rozmýšľa obchodník!":"Aj veľkí obchodníci niekedy stratia. Dôležité je pochopiť prečo."}</p>
@@ -314,7 +314,7 @@ function oHtml(){const L2=O.L||[];
      <div class="kjol">${L.map(l=>`<i title="${E(l.t)}" class="${p["l_"+l.id]&&p["l_"+l.id].ok?"ok":""}">${IMG(l.ico,30)}</i>`).join("")}</div>
      <div class="kjopay"><b>💶 Tento mesiac zarobil: ${EUR(cur?cur.eur:0)} z ${EUR(cf.max||200)}</b>
       ${ms.map(m=>`<div class="kjrow"><span>${E(m.m)}</span><b>${EUR(m.eur)}</b>${m.paid!=null?`<em>✅ vyplatené ${EUR(m.paid)}</em>`:`<button type="button" data-kjpaid="${E(k.email)}" data-m="${E(m.m)}">💸 Vyplatené</button>`}</div>`).join("")}
-      <div class="kjcfg" data-kjcfg="${E(k.email)}"><label>€ za správnu odpoveď<input data-c="rate" inputmode="decimal" value="${E(cf.rate??0.1)}"></label><label>€ za lekciu<input data-c="lesson" inputmode="decimal" value="${E(cf.lesson??1)}"></label><label>max € za deň<input data-c="day" inputmode="decimal" value="${E(cf.day??10)}"></label><label>max € za mesiac<input data-c="max" inputmode="decimal" value="${E(cf.max??200)}"></label><button type="button" data-kjcfgsave="${E(k.email)}">💾 Uložiť pravidlá</button></div></div></div>`}).join("")}
+      <div class="kjcfg" data-kjcfg="${E(k.email)}"><label>€ za správnu odpoveď<input data-c="rate" inputmode="decimal" value="${E(cf.rate??0.1)}"></label><label>€ za lekciu<input data-c="lesson" inputmode="decimal" value="${E(cf.lesson??1)}"></label><label>max € za deň<input data-c="day" inputmode="decimal" value="${E(cf.day??30)}"></label><label>max € za mesiac<input data-c="max" inputmode="decimal" value="${E(cf.max??200)}"></label><button type="button" data-kjcfgsave="${E(k.email)}">💾 Uložiť pravidlá</button></div></div></div>`}).join("")}
    <div class="kjof"><label>Meno syna<input data-kjo="name" placeholder="napr. Matej Vaľko" autocomplete="off"></label><label>Prihlasovacie meno<input data-kjo="login" placeholder="napr. matej" autocomplete="off" autocapitalize="off"></label>
    <button type="button" class="pri" data-kjocreate>${L2.length?"🔑 Nové prihlásenie / nové heslo":"🧒 Vytvoriť prihlásenie"}</button></div>
    ${O.res?`<div class="kjores"><p>⚠️ Heslo vidíš <b>iba teraz</b>. Prihlásenie: <b>${E(O.res.login.replace(/@junior\.ernte\.sk$/,""))}</b> · heslo: <b class="kjopw">${E(O.res.pw)}</b></p><div class="btns"><button type="button" data-kjowa>💬 WhatsApp</button><button type="button" data-kjosms>📱 SMS</button><button type="button" data-kjocp>📋 Kopírovať</button><button type="button" data-kjoshare>📤 Zdieľať</button></div><small>Ťuknutím na odkaz sa prihlási sám. Na prihlasovacej obrazovke stačí napísať iba meno (bez @).</small></div>`:""}
