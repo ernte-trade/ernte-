@@ -101,8 +101,7 @@ function onRoute(c){const R=S.route;if(!R||!R.pts||R.pts.length<2)return null;co
   let best=null;for(const k of [n.i-1,n.i]){if(k<0||k+1>=P0.length)continue;const A=P0[k],B=P0[k+1],ax=(B[1]-A[1])*cl,ay=B[0]-A[0],px=(c.lng-A[1])*cl,py=c.lat-A[0],L2=ax*ax+ay*ay;
     let t=L2?(px*ax+py*ay)/L2:0;t=Math.max(0,Math.min(1,t));const q=[A[0]+ay*t,A[1]+(B[1]-A[1])*t],d=km(c,{lat:q[0],lng:q[1]});if(!best||d<best.d)best={d,q,k}}
   if(!best)return null;const C=cum(R);let j=best.k+1;while(j<P0.length-1&&C[j]-C[best.k]<0.05)j++;return {p:best.q,b:brgOf(best.q,P0[j])}}
-function sizeNav(){const m=document.getElementById("emMap");if(!m||!m.classList.contains("navmap"))return;const w=m.parentNode.clientWidth,h=m.parentNode.clientHeight,uy=h*0.66,R=Math.ceil(Math.hypot(w/2,Math.max(uy,h-uy))+24);
-  Object.assign(m.style,{width:2*R+"px",height:2*R+"px",left:(w/2-R)+"px",top:(uy-R)+"px",right:"auto",bottom:"auto"})}
+function sizeNav(){/* 31. 10.: mapa sa už neotáča – veľká otočená vrstva sa v telefóne (Fold) nevykreslila, trasa nebola vidno */}
 function unsizeNav(){const m=document.getElementById("emMap");if(m)["width","height","left","top","right","bottom"].forEach(k=>m.style.removeProperty(k))}
 function liveView(on){const m=document.getElementById("emMap"),h=$(".emhud"),nb=$(".emnbt");if(!m)return;m.classList.toggle("navmap",on);if(h)h.hidden=!on;if(nb)nb.hidden=!on;
   if(on)sizeNav();else{unsizeNav();m.style.removeProperty("--rot");const i=document.querySelector("#emap .emme i");if(i)i.style.transform="";S.zl=null}
@@ -112,10 +111,10 @@ window.addEventListener("resize",()=>{if(S.nav&&!S.ov){sizeNav();setTimeout(()=>
 function liveTick(){const c=S.me,m=document.getElementById("emMap");if(!c||!m||!m.classList.contains("navmap")||S.ov)return;
   const r=onRoute(c),pos=r?r.p:[c.lat,c.lng],tgt=r?r.b:S.gpsB;
   if(tgt!=null){if(S.brg==null)S.brg=tgt;else{const d=((tgt-S.brg)%360+540)%360-180;if(Math.abs(d)>4)S.brg+=d*0.6}}
-  m.style.setProperty("--rot",(-(S.brg||0))+"deg");const i=document.querySelector("#emap .emme i");if(i)i.style.transform=`rotate(${S.brg||0}deg)`;if(S.meM)S.meM.setLatLng(pos);
+  const i=document.querySelector("#emap .emme i");if(i)i.style.transform=`rotate(${S.brg||0}deg)`;if(S.meM)S.meM.setLatLng(pos);
   const v=(S.spd!=null&&S.spd>=0?S.spd:0)*3.6,dn=S.dn==null?9:S.dn,want=dn<0.2?18:v>80?16:17;
   if(want!==S.zl){S.zc=(S.zc||0)+1;if(S.zc>=2||S.zl==null){S.zl=want;S.zc=0}}else S.zc=0;
-  const lc=S.lastC;if(!lc||km({lat:lc[0],lng:lc[1]},{lat:pos[0],lng:pos[1]})>0.004||S.map.getZoom()!==S.zl){S.lastC=pos;S.map.setView(pos,S.zl,{animate:true,duration:.9,easeLinearity:1})}
+  const lc=S.lastC;if(!lc||km({lat:lc[0],lng:lc[1]},{lat:pos[0],lng:pos[1]})>0.004||S.map.getZoom()!==S.zl){S.lastC=pos;const h=(m.clientHeight||600),cp=S.map.unproject(S.map.project(pos,S.zl).subtract(L.point(0,h*0.17)),S.zl);S.map.setView(cp,S.zl,{animate:true,duration:.9,easeLinearity:1})}
   const sp=$(".emspd");if(sp)sp.textContent=Math.round(v)}
 // 🔷 manéver ako v aute: zvýraznený úsek križovatky so šípkou a bežiacimi šípkami (štýl Mercedes MBUX)
 function mvDraw(nx){const R=S.route;if(!R||!R.pts||!S.map)return;const key=S.si+":"+(nx&&nx.maneuver.location.join());if(S.mvFor===key)return;S.mvFor=key;if(S.mvL){S.mvL.forEach(l=>l.remove());S.mvL=null}
@@ -123,8 +122,7 @@ function mvDraw(nx){const R=S.route;if(!R||!R.pts||!S.map)return;const key=S.si+
   let a=i,b=i;while(a>0&&C[i]-C[a]<0.06)a--;while(b<R.pts.length-1&&C[b]-C[i]<0.05)b++;const seg=R.pts.slice(a,b+1);if(seg.length<2)return;
   const p1=seg[seg.length-2],p2=seg[seg.length-1],y=Math.sin((p2[1]-p1[1])*Math.PI/180)*Math.cos(p2[0]*Math.PI/180),x=Math.cos(p1[0]*Math.PI/180)*Math.sin(p2[0]*Math.PI/180)-Math.sin(p1[0]*Math.PI/180)*Math.cos(p2[0]*Math.PI/180)*Math.cos((p2[1]-p1[1])*Math.PI/180),br=(Math.atan2(y,x)*180/Math.PI+360)%360;
   S.mvL=[L.polyline(seg,{color:"#0ea5e9",weight:22,opacity:.35,lineCap:"round"}).addTo(S.map),L.polyline(seg,{color:"#e0f2fe",weight:10,opacity:1,lineCap:"round",className:"emmv"}).addTo(S.map),
-    L.polyline(seg,{color:"#0284c7",weight:4,opacity:1,dashArray:"6 14",className:"emchev"}).addTo(S.map),
-    L.marker(p2,{icon:L.divIcon({className:"emmvh",html:`<i style="transform:rotate(${br}deg)"></i>`,iconSize:[34,34]}),interactive:false}).addTo(S.map)]}
+    L.polyline(seg,{color:"#0284c7",weight:4,opacity:1,dashArray:"6 14",className:"emchev"}).addTo(S.map)]}
 // ⚠️ upozornenia vpredu: radary, práce na ceste, zápchy, uzávery (vizuálne + hlas)
 function warnTick(R,myAt){const w=$(".emwarn");if(!w)return;const A=[...P.haz.map(h=>Object.assign({src:"o"},h)),...P.inc.filter(x=>x.onR)];let best=null;
   for(const h of A){if(h.at==null)continue;const d=h.at-myAt;if(d<-0.03||d>0.8)continue;if(!best||d<best.d)best={h,d}}
@@ -511,7 +509,8 @@ function hdrBtn(){const app=document.getElementById("app");if(!app)return;const 
 .emx{width:44px;height:44px;min-width:44px;border-radius:50%!important;padding:0!important;display:grid;place-items:center;font-size:1.1rem}
 .emm{flex:1 1 auto;min-height:200px}
 .emm{position:relative;overflow:hidden;background:radial-gradient(120% 60% at 50% 0%,#1e3a8a 0%,#0b1020 55%,#05070d 100%)}#emMap{position:absolute;inset:0}
-#emMap.navmap{pointer-events:none;transform:rotate(var(--rot,0deg));transform-origin:50% 50%;transition:transform 1s ease-out;will-change:transform}
+#emMap.navmap{pointer-events:none}
+#emap>.emnav{left:10px!important;right:10px!important;width:auto!important;max-width:none!important;transform:none!important;margin:0!important}
 #emMap.navmap .leaflet-control-container,#emap.navon .leaflet-control-container{display:none}
 #emap.navon .emme i{width:0;height:0;border-radius:0;background:none;border:none;box-shadow:none;border-left:14px solid transparent;border-right:14px solid transparent;border-bottom:30px solid #38bdf8;filter:drop-shadow(0 0 10px rgba(56,189,248,.95)) drop-shadow(0 0 2px #fff);margin:-6px 0 0 -3px;transition:transform .9s linear}
 #emap.navon .emme{animation:none}
