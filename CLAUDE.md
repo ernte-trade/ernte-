@@ -114,6 +114,7 @@ s pripojeným repozitárom `ernte-trade/ernte-`.
   + prijímatelia dotácií FY2024/2025 (sídlo, sumy) + obce z Wikidata (okres, PSČ, súradnice; km vzdušne od Zbudze). Párovanie s farmármi podľa mena (`ppaKey`).
   **31. 10.:** pri KAŽDOM farmárovi karta 🌾 PPA (`fcInject`: orná/TTP/spolu, km, dotácie 2025/2024, lokality, sídlo; párovanie IČO, inak meno) – vidí majiteľ + obchodníci s kľúčom `ppa` (Galajda, Ceperko, Ličko; RLS `is_owner() or (is_staff() and has_perm('ppa'))`). Zoznam potenciálnych farmárov ostáva iba majiteľovi.
   IČO a sídlo podľa mena z RPO (`fullName`, CORS OK). Telefóny/e-maily verejne nie sú. Nové dáta: workflow `ppa.yml` → vetva `ppa-results` (zašifrované).
+- **🔗 DUPLICITNÍ FARMÁRI** (31. 10., `farmdup.js`, `farmer_merge(keep,drop)`, záloha `farmers_merged`, iba majiteľ): skupiny podľa mena (ppaKey) / e-mailu / telefónu; zlúčenie presunie všetky `farmer_id`/`auto_farmer`, doplní prázdne polia, nič neprepíše. Rovnaký telefón = často rôzne firmy jednej rodiny (Zamba, Kačur…) – nezlučovať automaticky. Zlúčené: ABLI-AGRO, AGROTRADE GROUP.
 - **Oprava lístka odberateľa** (`odb.js`, `buyer_ticket_edit`, stĺpce `deliveries.fix/edited_at/edit_log`): hľadanie lístka / zákazníka vo všetkých obdobiach, ✏️ úprava,
   prepočet zmlúv farmára (`buyer_realloc`); `buyer_import` ručné opravy po nahratí Excelu znova použije (neprepíše ich).
 - **Dokumenty / PDF** (`pdfview.js`, načítava sa hneď po supabase): každé `window.open("")` + `document.write` sa zobrazí v okne cez celú obrazovku
