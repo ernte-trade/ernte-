@@ -119,6 +119,7 @@ s pripojeným repozitárom `ernte-trade/ernte-`.
   prepočet zmlúv farmára (`buyer_realloc`); `buyer_import` ručné opravy po nahratí Excelu znova použije (neprepíše ich).
 - **Dokumenty / PDF** (`pdfview.js`, načítava sa hneď po supabase): každé `window.open("")` + `document.write` sa zobrazí v okne cez celú obrazovku
   (✕ Zavrieť / Späť, 🖨️ Tlačiť, ⬇️ Uložiť PDF cez html2pdf v rámci dokumentu, 📤 Poslať na mobile). Automatická tlač sa ignoruje (3 s). Nové PDF písať rovnako (window.open("")).
+- **PRÍKAZ MAJITEĽA (31. 10.): ZVÝŠENIE DO 5 €/t AUTOMATICKY** (`price_guard`, ai_state `price_auto_raise.max`=5): zvýšenie ≤ 5 €/t sa zverejní samo (Martin dostane info push), nad 5 €/t čaká na súhlas Martina; pokles hneď. Nižšie pravidlo z 30. 10. platí iba pre zvýšenia nad 5 €/t.
 - **Pravidlo majiteľa (trvalé, 30. 10.): POKLES CENY AUTOMATICKY, ZVÝŠENIE IBA MARTIN** (`price_guard`, `price_propose`, `price_main()`, trigger `prices_raise`):
   zníženie našej nákupnej ceny sa zverejní hneď; zvýšenie (model aj ručne od iných) ide do `price_pending` + push a zverejní ho iba Martin (Cenník → 🛡️ Kontrola cien).
 - **± ÚPRAVA OD MODELU** (príkaz majiteľa 30. 10.): `kalk_store pricelist/adj` (samostatne, aby ho starší klient neprepísal) {komodita: ±€/t}; zverejnená cena = model + adj
@@ -208,7 +209,7 @@ s pripojeným repozitárom `ernte-trade/ernte-`.
 - Vetvy: 4 nezlúčené návrhy ERNTE AI z 25.–26. 10. (`ai-ulohy-*`, `ai-uprava-20261026`) sú prerobené v appke novšie a uložené
   v `archiv-ai-vetvy`. Majiteľ ich ponecháva (29. 10.: „nejdem do toho“) – neškodia, appku neovplyvňujú; znova to neponúkať.
   Issue #51 „ERNTE upozornenia – technické (nemazať)“ sa nesmie mazať (spúšťa upozornenia do mobilu).
-- Fotka Dominika Klacika (CLAAS Xerion) je od 30. 10. na úvode Martina (`img/ja-uvod-claas.jpg`, na príkaz majiteľa, s menom autora); písomné povolenie autora a potvrdenie práv k reklame Bio-Fer NATUR (úvod trusu) zatiaľ nemáme.
+- Fotka Dominika Klacika na úvode Martina NAHRADENÁ 31. 10. (príkaz majiteľa, bez povolenia autora) späť `img/ja-uvod.jpg` (SDF Deutschland, CC BY-SA 4.0); súbor zmazaný. Potvrdenie práv k reklame Bio-Fer NATUR (úvod trusu) zatiaľ nemáme.
 - Odložené majiteľom („k tomu sa vrátime“): upratanie karty upozornení, vlastná doména (app.ernte.sk), verejná web stránka, aplikácia vs. web.
 - Pozdrav s menom pri kuracom truse (ponúknuté).
 - Staršie: KROS, údaje firiem Agro-Somotor / Danube.
