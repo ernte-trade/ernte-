@@ -99,16 +99,32 @@ const btn=()=>document.getElementById("vaBtn");
 function mount(){if(!IN()){const b=btn();if(b)b.remove();const o=document.getElementById("vaOut");if(o)o.remove();return}
   if(btn())return;const b=document.createElement("button");b.type="button";b.id="vaBtn";b.className="vabtn";b.setAttribute("aria-label","Hlasový asistent");b.textContent="🎤";document.body.appendChild(b);
   const o=document.createElement("div");o.id="vaOut";o.className="vaout";o.hidden=true;o.setAttribute("role","status");document.body.appendChild(o);
-  b.addEventListener("pointerdown",e=>{if(fldOK())e.preventDefault()});b.addEventListener("mousedown",e=>{if(fldOK())e.preventDefault()});b.addEventListener("click",listen);place()}
-function place(){const b=btn(),o=document.getElementById("vaOut");if(!b)return;let off=16;try{const n=document.querySelector("#app nav.tabs");if(n){const r=n.getBoundingClientRect();if(getComputedStyle(n).position==="fixed"&&r.bottom>=innerHeight-2)off=Math.round(r.height)+12}}catch(x){}
+  // 31. 10. (príkaz majiteľa): tlačidlo mikrofónu sa dá presunúť – potiahni ho prstom kamkoľvek, poloha sa zapamätá
+  b.title="Ťukni = hovor · potiahni = presuň";let dg=null,mv=false;
+  b.addEventListener("click",e=>{if(mv){e.preventDefault();e.stopImmediatePropagation();mv=false}},true);
+  b.addEventListener("pointerdown",e=>{if(fldOK())e.preventDefault();const r=b.getBoundingClientRect();dg={x:e.clientX,y:e.clientY,l:r.left,t:r.top,id:e.pointerId};mv=false;try{b.setPointerCapture(e.pointerId)}catch(x){}});
+  b.addEventListener("pointermove",e=>{if(!dg)return;const dx=e.clientX-dg.x,dy=e.clientY-dg.y;if(!mv&&Math.hypot(dx,dy)<10)return;
+    if(!mv){mv=true;b.classList.add("vadrag")}e.preventDefault();setPos(dg.l+dx,dg.t+dy,false)});
+  const end=()=>{if(dg&&mv){b.classList.remove("vadrag");const r=b.getBoundingClientRect();setPos(r.left,r.top,true)}dg=null};
+  b.addEventListener("pointerup",end);b.addEventListener("pointercancel",end);
+  b.addEventListener("mousedown",e=>{if(fldOK())e.preventDefault()});b.addEventListener("click",listen);place()}
+const POSK="ernte-va-pos";
+function setPos(x,y,save){const b=btn();if(!b)return;const w=b.offsetWidth||54,h=b.offsetHeight||54;
+  x=Math.max(6,Math.min(innerWidth-w-6,x));y=Math.max(6,Math.min(innerHeight-h-6,y));
+  b.style.left=Math.round(x)+"px";b.style.top=Math.round(y)+"px";b.style.bottom="auto";b.style.right="auto";
+  if(save)try{localStorage.setItem(POSK,JSON.stringify({x:x/innerWidth,y:y/innerHeight}))}catch(e){}}
+function savedPos(){try{const p=JSON.parse(localStorage.getItem(POSK)||"null");return p&&isFinite(p.x)&&isFinite(p.y)?p:null}catch(e){return null}}
+addEventListener("resize",()=>{const p=savedPos();if(p&&btn())setPos(p.x*innerWidth,p.y*innerHeight,false)});
+function place(){const b=btn(),o=document.getElementById("vaOut");if(!b)return;{const p=savedPos();if(p){setPos(p.x*innerWidth,p.y*innerHeight,false);return}}let off=16;try{const n=document.querySelector("#app nav.tabs");if(n){const r=n.getBoundingClientRect();if(getComputedStyle(n).position==="fixed"&&r.bottom>=innerHeight-2)off=Math.round(r.height)+12}}catch(x){}
   b.style.bottom=off+"px"}
-{const s=document.createElement("style");s.textContent=`.vabtn{position:fixed;left:14px;z-index:8900;width:54px;height:54px;border-radius:50%;border:0;font-size:1.5rem;display:grid;place-items:center;padding:0;
+{const s=document.createElement("style");s.textContent=`.vabtn{position:fixed;left:14px;z-index:8900;touch-action:none;width:54px;height:54px;border-radius:50%;border:0;font-size:1.5rem;display:grid;place-items:center;padding:0;
  background:linear-gradient(135deg,#a78bfa,#22d3ee);color:#fff;box-shadow:0 8px 24px -6px rgba(124,92,255,.7)}
 .vabtn.on{animation:vapul 1s ease-in-out infinite;background:linear-gradient(135deg,#f43f5e,#f59e0b)}@keyframes vapul{50%{box-shadow:0 0 0 12px rgba(244,63,94,.25)}}
 .vaout{position:fixed;left:14px;right:14px;top:calc(10px + env(safe-area-inset-top,0px));margin:0 auto;z-index:8900;max-width:440px;padding:12px 14px;border-radius:16px;background:rgba(12,16,24,.96);border:1px solid rgba(167,139,250,.55);color:#eef2f7;font-size:.98rem;line-height:1.4;box-shadow:0 10px 30px -8px rgba(0,0,0,.7);overflow-wrap:anywhere}
 .vaout .vacall{display:inline-block;margin-top:6px;padding:8px 14px;border-radius:12px;background:linear-gradient(135deg,#b6ff3b,#22d3ee);color:#06110a;font-weight:800;text-decoration:none}
 .vabtn.vafld{background:linear-gradient(135deg,#b6ff3b,#22d3ee);box-shadow:0 0 0 4px rgba(182,255,59,.35),0 8px 24px -6px rgba(34,211,238,.7)}.vabtn.vafld::after{content:"✍️";position:absolute;right:-4px;top:-6px;font-size:.95rem}.vahit{outline:3px solid #b6ff3b;outline-offset:3px;border-radius:8px;transition:outline-color .3s}
 button.vaglow{box-shadow:0 0 0 4px rgba(182,255,59,.6)!important}
+.vabtn.vadrag{transform:scale(1.12);box-shadow:0 0 0 6px rgba(167,139,250,.35),0 14px 30px -6px rgba(0,0,0,.6);cursor:grabbing;opacity:.92}
 @media (prefers-reduced-motion:reduce){.vabtn.on{animation:none}}`;document.head.appendChild(s)}
 setInterval(()=>{mount();place()},1500);addEventListener("resize",place);
 })();

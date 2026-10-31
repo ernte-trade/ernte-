@@ -125,24 +125,32 @@ html[data-theme=light] .dsi span{background:#fff;border-color:#cbd5e1}
 .wlc .wlb,.wlc .whc{text-shadow:0 1px 2px rgba(0,0,0,.75),0 0 10px rgba(0,0,0,.35)}
 .wlc .whc small,.wlc .wlb small{color:rgba(241,245,255,.92)}
 /* diamantový odlesk – pomaly prebehne cez číre sklo (live) */
-.wlc .wlb::after,.wlc .whc:not(.wlsp .whc)::after{content:"";position:absolute;inset:0;border-radius:inherit;pointer-events:none;
-  background:linear-gradient(115deg,transparent 30%,rgba(255,255,255,.20) 45%,rgba(186,230,253,.30) 50%,rgba(255,255,255,.16) 55%,transparent 70%);
-  background-size:260% 100%;background-position:120% 0;mix-blend-mode:screen;animation:wdiaSweep 7.5s ease-in-out infinite}
+.wlc .wlb,.wlc .whc:not(.wlsp .whc){overflow:hidden}
+.wlc .wlb::after,.wlc .whc:not(.wlsp .whc)::after{content:"";position:absolute;top:0;bottom:0;left:-60%;width:60%;pointer-events:none;
+  background:linear-gradient(115deg,transparent,rgba(255,255,255,.18) 40%,rgba(186,230,253,.26) 50%,rgba(255,255,255,.14) 60%,transparent);
+  transform:translate3d(0,0,0);opacity:0}
+.wlc:has(.wmov) .wlb::after,.wlc:has(.wmov) .whc:not(.wlsp .whc)::after{opacity:1;will-change:transform;animation:wdiaSweep 7.5s ease-in-out infinite}
 .wlc .whc:nth-child(2n)::after{animation-delay:1.6s}.wlc .whc:nth-child(3n)::after{animation-delay:3.1s}
-@keyframes wdiaSweep{0%,62%{background-position:120% 0}88%,100%{background-position:-60% 0}}
+@keyframes wdiaSweep{0%,62%{transform:translate3d(0,0,0)}88%,100%{transform:translate3d(300%,0,0)}}
 @media (prefers-reduced-motion:reduce){.wlc .wlb::after,.wlc .whc::after{animation:none;opacity:0}}
 html[data-theme=light] .wlc .wlb,html[data-theme=light] .wlc .whc:not(.wlsp .whc){background:linear-gradient(145deg,rgba(255,255,255,.30),rgba(255,255,255,.12))!important}
 
-/* ===== 31. 10.: úvod – kombajn CLAAS LEXION 8700 TT pri mlátení, live pohľad (pomalý nájazd kamery, plevy a prach) ===== */
-.wimg.wclaas{background-color:#0b1020!important;background-size:auto max(100vh,560px)!important;background-repeat:no-repeat!important;animation:wclKb 22s ease-in-out infinite alternate}
+/* ===== 31. 10.: úvod – CLAAS LEXION 8700 TT (Tóth: Scania S 500). PRÍKAZ MAJITEĽA 11:09: všetkým PEVNÁ fotka (nič sa nehýbe),
+   iba Martinovi (.wmov) živý pohľad – plynulo cez transform (GPU), nie cez background-position (to sekalo) ===== */
+.wimg.wclaas{background-color:#0b1020!important;background-size:auto max(100vh,560px)!important;background-repeat:no-repeat!important;background-position:40% 0!important;animation:none!important}
 @media (min-aspect-ratio:16/9){.wimg.wclaas{background-size:100vw auto!important}}
-.wimg.wclaas::before{content:"";position:absolute;left:0;right:0;top:calc(max(100vh,560px) - 140px);height:140px;background:linear-gradient(transparent,#0b1020);pointer-events:none;z-index:0}
-@keyframes wclKb{0%{background-position:22% 0}100%{background-position:62% 0}}
-.wclaas .wchaff,.wclaas .wdust{position:absolute;inset:0;pointer-events:none;z-index:0}
-.wclaas .wchaff{background-image:radial-gradient(2px 2px at 10% 20%,rgba(255,236,170,.85),transparent 60%),radial-gradient(1.5px 1.5px at 30% 70%,rgba(255,226,150,.8),transparent 60%),radial-gradient(2.5px 2px at 55% 35%,rgba(250,214,120,.75),transparent 60%),radial-gradient(1.5px 1.5px at 75% 60%,rgba(255,240,190,.8),transparent 60%),radial-gradient(2px 1.5px at 90% 25%,rgba(240,205,120,.75),transparent 60%),radial-gradient(1.5px 2px at 45% 85%,rgba(255,230,160,.7),transparent 60%);
-  background-size:260px 220px;animation:wclChaff 9s linear infinite;opacity:.85}
-.wclaas .wchaff.w2{background-size:180px 160px;animation-duration:6.5s;animation-direction:normal;opacity:.6;filter:blur(.6px)}
-@keyframes wclChaff{from{background-position:0 0}to{background-position:-260px 220px}}
-.wclaas .wdust{background:radial-gradient(60% 40% at 35% 62%,rgba(214,186,120,.32),transparent 70%),radial-gradient(40% 30% at 62% 55%,rgba(230,205,150,.22),transparent 70%);animation:wclDust 11s ease-in-out infinite alternate;mix-blend-mode:screen}
-@keyframes wclDust{from{transform:translateX(-4%) scale(1);opacity:.55}to{transform:translateX(5%) scale(1.12);opacity:.95}}
-@media (prefers-reduced-motion:reduce){.wimg.wclaas,.wclaas .wchaff,.wclaas .wdust{animation:none}}
+.wimg.wclaas::before{content:"";position:absolute;inset:auto 0 auto 0!important;animation:none!important;transform:none!important;left:0;right:0;top:calc(max(100vh,560px) - 140px);height:140px;background:linear-gradient(transparent,#0b1020);pointer-events:none;z-index:0}
+.wclaas .wbgmv{position:absolute;left:0;top:0;width:150%;height:max(100vh,560px);background-size:cover;background-position:center 0;background-repeat:no-repeat;
+  z-index:0;pointer-events:none;-webkit-mask-image:linear-gradient(#000 78%,transparent);mask-image:linear-gradient(#000 78%,transparent);will-change:transform;transform:translate3d(0,0,0);animation:wclPan 28s ease-in-out infinite alternate;backface-visibility:hidden}
+@media (min-aspect-ratio:16/9){.wclaas .wbgmv{width:115%}}
+@keyframes wclPan{from{transform:translate3d(0,0,0)}to{transform:translate3d(-30%,0,0)}}
+.wclaas .wchaff,.wclaas .wdust{position:absolute;pointer-events:none;z-index:0;will-change:transform}
+.wclaas .wchaff{left:-260px;top:-220px;right:0;bottom:0;background-image:radial-gradient(2px 2px at 10% 20%,rgba(255,236,170,.85),transparent 60%),radial-gradient(1.5px 1.5px at 30% 70%,rgba(255,226,150,.8),transparent 60%),radial-gradient(2.5px 2px at 55% 35%,rgba(250,214,120,.75),transparent 60%),radial-gradient(1.5px 1.5px at 75% 60%,rgba(255,240,190,.8),transparent 60%),radial-gradient(2px 1.5px at 90% 25%,rgba(240,205,120,.75),transparent 60%);
+  background-size:260px 220px;animation:wclChaff 9s linear infinite;opacity:.8}
+.wclaas .wchaff.w2{left:-180px;top:-160px;background-size:180px 160px;animation:wclChaff2 6.5s linear infinite;opacity:.55}
+@keyframes wclChaff{from{transform:translate3d(0,0,0)}to{transform:translate3d(-260px,220px,0)}}
+@keyframes wclChaff2{from{transform:translate3d(0,0,0)}to{transform:translate3d(-180px,160px,0)}}
+.wclaas .wdust{inset:0;background:radial-gradient(60% 40% at 35% 62%,rgba(214,186,120,.30),transparent 70%),radial-gradient(40% 30% at 62% 55%,rgba(230,205,150,.2),transparent 70%);animation:wclDust 11s ease-in-out infinite alternate}
+@keyframes wclDust{from{transform:translate3d(-4%,0,0) scale(1);opacity:.55}to{transform:translate3d(5%,0,0) scale(1.1);opacity:.9}}
+@media (prefers-reduced-motion:reduce){.wclaas .wbgmv,.wclaas .wchaff,.wclaas .wdust{animation:none}}
+.wimg.wclaas.wtruck{background-position:68% 0!important}
