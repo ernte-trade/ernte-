@@ -173,6 +173,7 @@ s pripojeným repozitárom `ernte-trade/ernte-`.
   Automaticky smie meniť iba časť majiteľa (MAIN_OK) a nastavenia tímu bez dopadu na ich prácu; všetko, čo uvidí obchodník alebo farmár, najprv ako návrh. Nikoho nekontaktuje bez súhlasu Martina.
 - **📊 Martin – lišta sekcií podľa používania (`ownertabs.js`, `tab_use`), 3D ikony `img/ico/` (Microsoft Fluent Emoji 3D, MIT).**
 
+- **👤 KONTAKT Z DATABÁZY AUTOMATICKY (1. 11. PRÍKAZ MAJITEĽA „musíš to robiť automaticky“):** kde sa zadáva človek (meno → e-mail/telefón), aplikácia ho sama dohľadá cez `people_lookup(q)` (známe tabuľky, inak celá databáza) a vyplní – bez ručného zadávania. Prvé použitie: Kurací trus → Prístupy → Pridať človeka z firmy (`trus.js` `pplFind`).
 - **📞 MÔJ PLÁN NA DNES (31. 10., `plan.js`, `plan_ack/plan_log/deal_replace`):** vidia všetci obchodníci (deals/req/price_view alebo Galajda, Ceperko, Ličko, Jozsef). Položka zmizne IBA po vyjadrení
   (tlačidlá ✔️ Vyjadriť → `plan_say`, odloží pre celý tím na N dní) alebo keď je zmluva dodaná do nuly. Nadodávka nad zmluvu = položka ⚠️ + push (`deal_over_push`) obchodníkom, Martinovi a Jane,
   kým nie je dodatková zmluva. „Nedodá“ → náhradný nákup (`replace_save`): hodnota nedodaného (zostatok × zmluvná cena) = tony × naša zverejnená cena, tolerancia max(50 €, 1 %), kontroluje databáza.

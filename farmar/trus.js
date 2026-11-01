@@ -309,7 +309,7 @@ async function pplFind(f){const n=f.querySelector("input[name=name]"),lg=f.query
   if(n.value.trim()!==q)return;
   if(r.error){box.hidden=false;box.innerHTML=`<small>${/people_lookup/.test(String(r.error.message||""))?"🔎 Vyhľadávanie v databáze sa zapne po aktualizácii databázy (pár minút).":"🔎 Databáza teraz neodpovedá."}</small>`;return}
   const H=(r.data||[]).filter(h=>h.email||h.phone);
-  if(!H.length){box.hidden=false;box.innerHTML=`<small>🔎 V našej databáze sme „${e(q)}“ nenašli – zadaj e-mail alebo telefón ručne.</small>`;if(lg.dataset.auto==="1"){lg.value="";lg.dataset.auto=""}return}
+  if(!H.length){box.hidden=false;box.innerHTML=`<small>🔎 Prehľadal som celú našu databázu – „${e(q)}“ v nej zatiaľ nemá telefón ani e-mail.</small>`;if(lg.dataset.auto==="1"){lg.value="";lg.dataset.auto=""}return}
   const best=H[0],v=best.phone||best.email;
   if(!lg.value.trim()||lg.dataset.auto==="1"){lg.value=v;lg.dataset.auto="1"}
   box.hidden=false;box.innerHTML=`<small>✓ Nájdené v našej databáze${H.length>1?" – ťukni na správny kontakt":""}:</small>`+H.map(h=>`<div class="trpplr"><span><b>${e(pplClean(h.name)||q)}</b> <small>${e(h.src||"")}</small></span><span class="btns">${h.phone?`<button type="button" class="ghost" data-pplv="${e(h.phone)}" aria-pressed="${lg.value===h.phone}">📱 ${e(h.phone)}</button>`:""}${h.email?`<button type="button" class="ghost" data-pplv="${e(h.email)}" aria-pressed="${lg.value===h.email}">📧 ${e(h.email)}</button>`:""}</span></div>`).join("")}
