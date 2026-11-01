@@ -226,3 +226,9 @@ html[data-theme=light] .wlc .wlb,html[data-theme=light] .wlc .whc:not(.wlsp .whc
 .wlc .whk>small{white-space:normal!important;overflow:visible!important}
 .wlc .whgr .wgrs,.wlc .wbz .wbzs{display:flex!important;flex-direction:row!important;gap:6px!important;align-items:center}
 .wlc .whgr .wgrs>*,.wlc .wbz .wbzs>*{font-size:.8rem!important;padding:5px 11px!important;min-height:30px;line-height:1.15;width:auto!important;margin:0!important}
+
+/* 1. 11. kurací trus – krikľavé dlaždice €/t dodanie pre BPS (trus.js delTiles) */
+.trdelw{margin:10px 0 12px}.trdelh{text-align:center;font-weight:700;margin-bottom:8px;font-size:.95rem}.trdel{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,210px),1fr));gap:10px}
+.trdt{position:relative;display:grid;gap:6px;justify-items:center;text-align:center;padding:14px 12px;border-radius:18px;color:#fff;background:linear-gradient(135deg,#ff2d95 0%,#ff7a00 52%,#ffe600 100%);border:2px solid rgba(255,255,255,.85);box-shadow:0 0 0 2px rgba(255,45,149,.45),0 8px 26px rgba(255,90,0,.45),inset 0 1px 0 rgba(255,255,255,.7);text-shadow:0 1px 3px rgba(0,0,0,.45)}
+.trdt .trdn{font-weight:800;font-size:1rem;line-height:1.2;overflow-wrap:anywhere}.trdt .trdp{display:flex;align-items:baseline;justify-content:center;gap:6px;flex-wrap:wrap}.trdt .trdp b{font-size:2.1rem;font-weight:900;letter-spacing:-.02em;line-height:1}.trdt .trdp span{font-weight:800;font-size:.95rem}
+.trdt .trdb{display:flex;flex-wrap:wrap;justify-content:center;gap:4px}.trdt .trdb span{font-size:.78rem;font-weight:700;padding:3px 8px;border-radius:999px;background:rgba(0,0,0,.28);border:1px solid rgba(255,255,255,.4);white-space:nowrap}
