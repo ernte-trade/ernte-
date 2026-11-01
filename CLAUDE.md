@@ -157,6 +157,7 @@ s pripojeným repozitárom `ernte-trade/ernte-`.
   Registrátor: vault `ernte_dns_reg` (`domain_reg_set`, WebSupport/Active24 REST v2 HMAC). Supabase Auth redirect URL nejde nastaviť bez tokenu správy – prihlásenie kódom funguje.
 - **COMMANDER PODPORA** (`commander_podpora.sql`, `cmdreq.js`, ai_state `cmd_support`, pg_cron `commander-podpora`): e-mail o práva API, kontrola main:refuel po 3 prac. dňoch.
 - **Príkaz majiteľa (trvalý):** pracovať na 100 %, bezchybne a rýchlo; nič nepoškodiť (model cenníka, nastavenia, údaje). Pred nasadením otestovať.
+- **PRÍKAZ MAJITEĽA (1. 11.): DLHÝ ZOZNAM = KAŽDÁ POLOŽKA ZVLÁŠŤ.** Keď Martin pošle veľa otázok a príkazov naraz (aj 100 + 100), očísluj ich, prejdi jednu po druhej detailne, nič nevynechaj, každý príkaz urob a na každú otázku odpovedz; na konci prehľad č. → ✅ hotové / ❓ odpoveď / ⚠️ nedá sa (prečo). Pri veľkom množstve rozdeliť na viac správ, nie skracovať. Prehľad všetkých príkazov: dokument „ERNTE – všetko na jednom mieste“ (Claude Docs).
 
 - **🌾 FARMÁR JEDNODUCHO (31. 10., `farmapp.js`, migrácia `farmar-jednoducho`):** po úvode LIVE (burza MATIF/CBOT, naše výkupné ceny – `farm_price_hist`, počasie, obchodník – `farm_contacts`:
   Košický kraj Ing. Galajda +421 902 733 222, Prešovský Mgr. Ceperko +421 940 944 733 podľa PSČ v adrese; DANUBE iba Jozsef Karoczkai) iba veľké dlaždice. Pôvodné sekcie sa ukážu po ťuknutí (h2 → `data-fsec`).
