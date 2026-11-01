@@ -240,3 +240,7 @@ html[data-theme=light] .trdlg .ok{color:#166534;background:rgba(22,163,74,.12)}h
 .trdt.trdok{background:linear-gradient(135deg,#00e676 0%,#39ff14 45%,#ffe600 100%);box-shadow:0 0 0 2px rgba(57,255,20,.5),0 8px 28px rgba(57,255,20,.45),inset 0 1px 0 rgba(255,255,255,.7)}
 .trdt.trdck{background:linear-gradient(135deg,#6b7280 0%,#a16207 55%,#f59e0b 100%);border-style:dashed;box-shadow:0 6px 18px rgba(0,0,0,.35)}
 .trdt .trdx{font-size:.78rem;font-weight:700;opacity:.95}
+
+/* 🗑️ nebezpečné tlačidlo (vymazať obchod) */
+button.danger{border-color:rgba(248,113,113,.65)!important;color:#fecaca!important}
+html[data-theme=light] button.danger{color:#b91c1c!important}
