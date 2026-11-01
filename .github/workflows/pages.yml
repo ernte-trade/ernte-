@@ -21,14 +21,35 @@ concurrency:
 jobs:
   build:
     runs-on: ubuntu-latest
-    timeout-minutes: 8
+    timeout-minutes: 25
     steps:
       - uses: actions/checkout@v4
         with:
           ref: main
           fetch-depth: 0
+      # 🚦 BRÁNA: nová verzia sa všetkým zverejní IBA keď prejde automatická kontrola
+      # (majiteľ, obchodník, doprava, farmár × 344/390/412/690/900 px: chyby skriptov, načítanie, šírka stránky).
+      # Núdzové obídenie iba majiteľom: client_payload {"force":true}.
+      - name: Brána – Node a prehliadač
+        if: github.event_name == 'repository_dispatch' && github.event.action == 'ernte-release' && github.event.client_payload.force != true
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Brána – automatická kontrola novej verzie
+        id: gate
+        if: github.event_name == 'repository_dispatch' && github.event.action == 'ernte-release' && github.event.client_payload.force != true
+        continue-on-error: true
+        working-directory: .github/e2e
+        run: |
+          npm i --no-save --silent playwright@1.48.2 > /dev/null && npx playwright install --with-deps chromium > /dev/null
+          node smoke.mjs ../../farmar | tee gate.txt
+          exit ${PIPESTATUS[0]}
+      - name: Brána – výsledok
+        if: steps.gate.outcome == 'failure'
+        run: |
+          { echo "## ❌ Brána zastavila zverejnenie – stará verzia ostáva všetkým"; echo '```'; cat .github/e2e/gate.txt; echo '```'; } >> "$GITHUB_STEP_SUMMARY"
       - name: Zverejniť novú verziu všetkým (iba na príkaz majiteľa)
-        if: github.event_name == 'repository_dispatch' && github.event.action == 'ernte-release'
+        if: github.event_name == 'repository_dispatch' && github.event.action == 'ernte-release' && steps.gate.outcome != 'failure'
         run: |
           set -e
           git config user.name "ERNTE Trade"; git config user.email "report.valko@gmail.com"
@@ -107,3 +128,6 @@ jobs:
           curl -s "${H[@]}" "$API" | grep -E '"(cname|https_enforced|status)"' || true
           curl -s -o /dev/null -w "cname %{http_code}\n" -X PUT "${H[@]}" "$API" -d '{"cname":"app.ernte.sk"}' || true
           curl -s -o /dev/null -w "https %{http_code}\n" -X PUT "${H[@]}" "$API" -d '{"https_enforced":true}' || true
+      - name: Brána – označiť beh ako neúspešný (stránka sa postavila, ale nová verzia nebola zverejnená)
+        if: always() && steps.gate.outcome == 'failure'
+        run: exit 1

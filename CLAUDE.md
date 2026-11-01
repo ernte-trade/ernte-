@@ -73,6 +73,7 @@ Spoločné opravy rozloženia patria do `farmar/fit.css` (načítava sa posledn�
   **Zmena 30. 10. (príkaz majiteľa):** Martin aj Jana sú VŽDY v novej verzii automaticky (`NEWEST()` vo `verzia.js`), tlačidlo 🧪 a ponuka prepínania sa nezobrazujú.
   Ružový pás „Nová verzia“ sa neukazuje nikomu – nová verzia sa načíta sama pri návrate do aplikácie. Zverejnenie všetkým: dispatch `ernte-release` (na príkaz majiteľa).
 - **`?v=` je povinné** pri každom zmenenom skripte / štýle.
+- **🚦 BRÁNA PRED ZVEREJNENÍM (1. 11., príkaz majiteľa „obehnime ich“):** `ernte-release` (pages.yml) zverejní main všetkým IBA keď prejde `.github/e2e/smoke.mjs` – aplikácia z `farmar/` s náhradnou databázou `mock-sb.js` (vymyslené údaje), majiteľ / obchodník / doprava / farmár × 344, 390, 412, 690, 900 px, všetky záložky a farmárske dlaždice; zlyhá pri chybe skriptu, nenačítaní alebo stránke širšej ako displej. Pri zlyhaní ostáva STABLE, beh je červený so zoznamom chýb. Lokálne: `node smoke.mjs <farmar>` (~2,5 min). Núdzovo obísť iba na príkaz majiteľa: `client_payload {"force":true}`. Nová rola / dlaždica → doplniť do `ROLES` v smoke.mjs.
 - **Service worker meniť iba po teste na serveri s gzip kompresiou** (ako GitHub Pages). 28. 10. ukladanie súborov do telefónu
   (cache-first) s kopírovanými hlavičkami (Content-Encoding/Length) rozbilo aplikáciu všetkým – vrátené na overený network-first.
 - Každý commit: autor `ERNTE Trade <report.valko@gmail.com>`, committer `Claude <noreply@anthropic.com>`. Históriu `main` neprepisovať
