@@ -19,6 +19,7 @@ const acked=k=>{const a=D.st&&D.st.ack&&D.st.ack[k];return !!(a&&a.until&&new Da
 function myName(){try{return (STATE.me&&STATE.me.name)||"ERNTE"}catch(x){return "ERNTE"}}
 function price(c){const p=(STATE.prices||[]).find(x=>x.com===c&&x.price!=null);return p?+p.price:null}
 async function loadTg(){if(D.busyTg)return;D.busyTg=true;try{const r=await sb.from("price_targets").select("farmer_id,com,target,active,hit_at,created_at").eq("active",true).limit(400);D.tg=r.error?[]:(r.data||[])}catch(x){D.tg=[]}D.tgAt=Date.now();D.busyTg=false;paint(true)}
+const OWNR=()=>typeof ROLE!=="undefined"&&ROLE==="owner"; // nadodávky vidia iba Martin a Jana (príkaz majiteľa 1. 11. 12:34)
 const TOL=f=>{const v=+(f&&((f.terms&&f.terms.tol)||f.tol));return v>0&&v<50?v/100:0.05}; // tolerancia ± 5 % zo zmluvy (bod VI.4), farmár môže mať vlastnú
 function rows(){const F=STATE.farmers||[],byId=Object.fromEntries(F.map(f=>[f.id,f])),R=STATE.requests||STATE.reqs||[],DL=STATE.deals||[],T=STATE.trips||[],out=[];
   // 1) nevybavené požiadavky
@@ -40,7 +41,7 @@ function rows(){const F=STATE.farmers||[],byId=Object.fromEntries(F.map(f=>[f.id
   for(const f of sleep){const best=(STATE.prices||[]).filter(p=>p.price!=null).sort((a,b)=>b.price-a.price)[0];
     out.push({k:"sleep:"+f.id,kind:"sleep",p:3,i:"😴",f,t:`nepredal ${days(last[f.id])} dní · spolu ${f0(vol[f.id])} t`,s:"pripomeň sa",msg:`Dobrý deň, tu ${myName()} z ERNTE. Dlho sme sa nepočuli – ${best?CN(best.com)+" dnes vykupujeme za "+f0(best.price)+" €/t. ":""}Máte niečo na predaj?`})}
   // 5) ⚠️ nadodávka – dodané viac ako zmluva → dodatková zmluva
-  for(const d of DL.filter(d=>d.status!=="zruseny")){const ex=(+d.delivered_t||0)-(+d.tons||0);const f=byId[d.farmer_id];if(!f)continue;if(ex<=Math.max(0.5,(+d.tons||0)*TOL(f)))continue;
+  if(OWNR())for(const d of DL.filter(d=>d.status!=="zruseny")){const ex=(+d.delivered_t||0)-(+d.tons||0);const f=byId[d.farmer_id];if(!f)continue;if(ex<=Math.max(0.5,(+d.tons||0)*TOL(f)))continue;
     const fix=DL.some(x=>x.id!==d.id&&x.farmer_id===d.farmer_id&&x.com===d.com&&x.status!=="zruseny"&&new Date(x.created_at)>new Date(d.created_at)&&(+x.tons||0)>=ex-0.5);if(fix)continue;
     out.push({k:"over:"+d.id,kind:"over",warn:1,ex,eur:ex*(+d.price||0),p:0,i:"⚠️",f,t:`NADODÁVKA ${CN(d.com)} · zmluva ${d.no||""}: ${f0(d.tons)} t, dodané ${(+d.delivered_t).toLocaleString("sk-SK",{maximumFractionDigits:2})} t → nad zmluvu ${ex.toLocaleString("sk-SK",{maximumFractionDigits:2})} t (≈ ${f0(ex*(+d.price||0))} €)`,s:"urobte dodatkovú zmluvu",
       msg:`Dobrý deň, tu ${myName()} z ERNTE. Dodali ste nám o ${ex.toLocaleString("sk-SK",{maximumFractionDigits:2})} t ${CN(d.com)} viac, ako je v zmluve ${d.no||""}. Pripravím Vám dodatkovú zmluvu na toto množstvo.`,go:"deals"})}
@@ -53,17 +54,17 @@ function rows(){const F=STATE.farmers||[],byId=Object.fromEntries(F.map(f=>[f.id
     out.push({k:"rep:"+r.id,kind:"rep",rep:r,p:1,i:"🔁",f,t:`Náhradný nákup: ${it} = ${f0(r.total)} € (nedodané ${f0(r.und)} €)${r.ok?" ✅":" ⚠️ rozdiel"}`,s:`urobte zmluvu · zadal ${r.by||""}`,
       msg:`Dobrý deň, tu ${myName()} z ERNTE. Ako sme sa dohodli, namiesto nedodaného tovaru pripravujem zmluvu na ${it}.`,go:"qd"})}
   const seen=new Set();return out.filter(x=>!(x.k&&acked(x.k))).sort((a,b)=>a.p-b.p).filter(x=>{const k=x.i+x.f.id+x.t;if(seen.has(k))return false;seen.add(k);return true})}
-const WHY=`<div class="plwhy"><b>Prečo je to dôležité</b><p>Každú zmluvu s farmárom sme už <b>predali odberateľovi</b>. Zmluva pripúšťa odchýlku <b>± 5 %</b> (bod VI.4) – tu sú iba zmluvy mimo nej.</p>
+const WHY=O=>`<div class="plwhy"><b>Prečo je to dôležité</b><p>Každú zmluvu s farmárom sme už <b>predali odberateľovi</b>. Zmluva pripúšťa odchýlku <b>± 5 %</b> (bod VI.4) – tu sú iba zmluvy mimo nej.</p>
  <p>⬇️ <b>Nedodávka</b> = chýba nám tovar, ktorý je už predaný. Musíme ho dokúpiť drahšie alebo zaplatiť odberateľovi pokutu – <b>zhoršuje to výsledok firmy</b>.</p>
- <p>⬆️ <b>Nadodávka</b> = tovar navyše nemá zmluvu ani predaj – nemáme preň odberateľa ani cenu a farmár nemá podklad na zaplatenie.</p>
- <b>Postup</b><ol><li>📞 Zavolaj farmárovi – over množstvo a dôvod.</li><li>⬆️ Nadodávka: priprav <b>dodatkovú zmluvu</b> na prebytok za dnešnú zverejnenú cenu, alebo ju započítaj do inej jeho zmluvy.</li>
+ ${O?`<p>⬆️ <b>Nadodávka</b> = tovar navyše nemá zmluvu ani predaj – nemáme preň odberateľa ani cenu a farmár nemá podklad na zaplatenie.</p>`:""}
+ <b>Postup</b><ol><li>📞 Zavolaj farmárovi – over množstvo a dôvod.</li>${O?`<li>⬆️ Nadodávka: priprav <b>dodatkovú zmluvu</b> na prebytok za dnešnú zverejnenú cenu, alebo ju započítaj do inej jeho zmluvy.</li>`:""}
  <li>⬇️ Nedodávka: dohodni <b>dodanie zvyšku</b> (auto, termín), alebo <b>náhradný tovar</b> v rovnakej hodnote (✔️ Vyjadriť → Nedodá → náhradný nákup). Ak nedodá nič, podľa zmluvy (bod VI) mu patrí zmluvná pokuta – oznám to Martinovi.</li>
  <li>✔️ Vyjadri sa pri každej zmluve – kým sa nevyjadríš, ostáva tu a chodia upozornenia.</li></ol></div>`;
 function rowHTML(x){const t=tel(x.f.phone);return `<div class="plr${x.p===0?" hot":""}"><div class="pli">${x.i}</div><div class="plt"><b>${E(x.f.name)}</b><span>${E(x.t)}</span><small>${E(x.s)}</small></div>
      <div class="plb"><button type="button" class="plsay" data-plk="${E(x.k||"")}" aria-expanded="${D.ex===x.k}">✔️ Vyjadriť</button>${t?`<a class="plc" href="tel:+${E(t)}" aria-label="Volať ${E(x.f.name)}">📞</a><a class="plw" href="https://wa.me/${E(t)}?text=${encodeURIComponent(x.msg)}" target="_blank" rel="noopener" aria-label="WhatsApp ${E(x.f.name)}">💬</a>`:x.f.email?`<a class="plw" href="mailto:${E(x.f.email)}?subject=${encodeURIComponent("ERNTE")}&body=${encodeURIComponent(x.msg)}" aria-label="E-mail">✉️</a>`:`<small class="plno">bez kontaktu</small>`}</div>${D.ex===x.k?sayHTML(x):""}</div>`}
 function warnHTML(W){if(!W.length)return "";const ov=W.filter(x=>x.kind==="over"),un=W.filter(x=>x.kind==="under"),t=a=>a.reduce((s,x)=>s+(x.ex||x.un||0),0),eu=W.reduce((s,x)=>s+(x.eur||0),0);
   return `<details class="plwarn"${D.wopen?" open":""}><summary><span class="plwi">⚠️</span><span class="plws"><b>Zmluvy mimo tolerancie ± 5 % · ${W.length}</b><small>${un.length?`⬇️ nedodané ${un.length} zml. · ${t(un).toLocaleString("sk-SK",{maximumFractionDigits:1})} t`:""}${un.length&&ov.length?" · ":""}${ov.length?`⬆️ nadodané ${ov.length} zml. · ${t(ov).toLocaleString("sk-SK",{maximumFractionDigits:1})} t`:""} · ≈ ${f0(eu)} €</small></span><i class="plwc">›</i></summary>
-   ${WHY}${W.map(rowHTML).join("")}</details>`}
+   ${WHY(OWNR())}${W.map(rowHTML).join("")}</details>`}
 function html(){const A=rows(),W=A.filter(x=>x.warn),L=A.filter(x=>!x.warn);if(!L.length&&!W.length)return `<div class="card pln" id="plnCard"><h2>📞 Môj plán na dnes</h2><div class="s">Dnes nikto nečaká – všetko vybavené. 👍</div></div>`;
   const open=D.open===true||(D.open===null&&L.length<=6),show=open?L:L.slice(0,4),hot=L.filter(x=>x.p<=1).length;
   return `<div class="card pln" id="plnCard"><h2>📞 Môj plán na dnes · ${L.length+W.length}${hot+W.length?` <span class="plh">${hot+W.length} hneď</span>`:""}</h2>
