@@ -30,7 +30,7 @@ function check(){if(document.hidden)return;pass++;const w=W();
   // 2) orezaný obsah v karte / riadku (in-flow dieťa vyčnieva z prvku s overflow:hidden)
   const roots=[document.getElementById("app"),...document.querySelectorAll(".wlc")].filter(Boolean);
   roots.forEach(root=>root.querySelectorAll("*").forEach(e=>{if(!e.children.length||skip(e)||!e.offsetParent)return;const cs=getComputedStyle(e);
-    const oy=cs.overflowY==="hidden"||cs.overflowY==="clip",ox=cs.overflowX==="hidden"||cs.overflowX==="clip";if(!oy&&!ox)return;
+    const oy=cs.overflowY==="hidden"||cs.overflowY==="clip",ox=cs.overflowX==="hidden"||cs.overflowX==="clip";if(!oy&&!ox)return;if((cs.maskImage&&cs.maskImage!=="none")||(cs.webkitMaskImage&&cs.webkitMaskImage!=="none")||cs.webkitLineClamp&&cs.webkitLineClamp!=="none")return; // zámerné skrátenie s prechodom / line-clamp
     const r=e.getBoundingClientRect();if(r.height<16||r.width<16||r.bottom<0||r.top>innerHeight*3)return;
     for(const c of e.children){if(!inflow(c)||skip(c))continue;const q=c.getBoundingClientRect();if(!q.width||!q.height)continue;
       if(oy&&q.bottom>r.bottom+4&&q.top<r.bottom-2){add("orezane",e,"obsah "+Math.round(q.bottom-r.top)+" px > výška "+Math.round(r.height)+" px · "+cls(c)+" «"+txt(c)+"»");break}
