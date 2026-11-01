@@ -102,6 +102,10 @@ s pripojeným repozitárom `ernte-trade/ernte-`.
   pre všetky komodity. Strop počíta aplikácia majiteľa z „Kde predať“ (`predaj.js` → `caps()`, kalk_store `pricelist/sellcap`, platí 3 dni); databáza `price_cap()`
   v `soja_adm_tick`, `ia_tick`, `price_propose`; `sellcap_apply()` zníži zverejnené ceny nad stropom hneď.
 - **Pravidlo majiteľa (trvalé): ŽIADNE +0,777 %** – pri žiadnej komodite sa k cene nepripočítava (zrušené 29. 10.; `refPct()` = 0). Pšenica = výkup VSK, resp. burza + ich báza.
+- **Pravidlo majiteľa (trvalé, 1. 11. 16:54): HO SLNEČNICA = NAJLEPŠÍ ODBERATEĽ − DOPRAVA − MARŽA** (`ho_tick`, `ho_options`, `sell_dop`, pg_cron `ho-model` každých 15 min, triggery `ho_offer_trg` na `sell_offers` a `ho_konk_trg` na `kalk_store` konk/adj → prepočet hneď; ai_state `ho_model`, `ho_model_get` iba majiteľ, `ho_run`):
+  všetci odberatelia, ktorí HO vykupujú a kam ju vieme odviezť (Bunge Martfű/Tállya/Bruck, Interaris, ARIMEX …) – posledná ponuka na odberateľa | miesto | paritu z `sell_offers` alebo z Konkurenčných cien (odberateľ, bez západu/Hamburgu), max 21 dní, posunutá s MATIF repkou (`float_burza` + `bz_val` / `b`)
+  − naša doprava z regiónu farmárov (vzorec Kalkulačky, miesto zo `sell_buyers.sites`; bez miesta sa ponuka nepočíta, FCA = 0) → najvyšší čistý predaj − marža `cfg.hoMarza` (10 €/t) ± `adj.ho`. Bez platnej ponuky cena ostáva. Klient HO nezverejňuje (`hoOn` v autocennik.js), `prices_lock` a `price_propose` HO z aplikácie neprepíšu.
+  Predtým HO = maďarská celoštátna cena (EK) − 20 € = 575 €/t, čo bolo nad predajom po doprave (Bunge Martfű −36 €/t) → 1. 11. 529 €/t.
 - **Ceny na neskorší odber** (`ia_tick` → settings `prices_fwd`, `fwd.js`): ponuky Interagros s termínom „odber …“ (bez nad 500 t / Parchovany) − `iaMinus` sa zobrazia pod cenou („📅 odber 1.–3. 2027: … €/t“); hlavná cena = odber teraz.
 - **Kontrola automatických cien** (`price_guard`, `price_pending`, `price_watch`): skok > 25 €/t (`autoMaxJump`) sa nezverejní sám – push + potvrdenie v Cenníku
   (🛡️ Kontrola cien); 2× denne (pg_cron `cennik-kontrola`) kontrola čerstvosti: burza ≤ 3 dni, Interagros ≤ 10 dní, ADM východ ≤ 45 dní.
