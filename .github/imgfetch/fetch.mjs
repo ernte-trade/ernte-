@@ -2,6 +2,7 @@
 // a ukladá náhľady + autora a licenciu (pre povinné uvedenie zdroja) do vetvy img-candidates.
 import fs from "node:fs";
 const Q = JSON.parse(process.env.QUERIES || "{}");
+const MAXN = +process.env.MAXN || 18, TW = +process.env.TW || 1400, MINW = +process.env.MINW || 1500, MINH = +process.env.MINH || 900;
 const OK = /^(cc0|public domain|no restrictions|pd|cc by(-sa)? ?\d(\.\d)?|cc-by(-sa)?-\d(\.\d)?)/i;
 const strip = s => String(s || "").replace(/<[^>]+>/g, "").replace(/\s+/g, " ").trim();
 fs.mkdirSync("out", { recursive: true });
@@ -27,7 +28,7 @@ for (const [role, list] of Object.entries(Q).filter(([r]) => r.startsWith("vid")
 for (const [role, list] of Object.entries(Q).filter(([r]) => !r.startsWith("vid"))) {
   fs.mkdirSync("out/" + role, { recursive: true }); meta[role] = []; const seen = new Set(); let n = 0;
   for (const q of list) {
-    const u = "https://commons.wikimedia.org/w/api.php?action=query&format=json&generator=search&gsrnamespace=6&gsrlimit=40&gsrsearch=" + encodeURIComponent("filetype:bitmap " + q) + "&prop=imageinfo&iiprop=url|size|extmetadata&iiurlwidth=1400";
+    const u = "https://commons.wikimedia.org/w/api.php?action=query&format=json&generator=search&gsrnamespace=6&gsrlimit=40&gsrsearch=" + encodeURIComponent("filetype:bitmap " + q) + "&prop=imageinfo&iiprop=url|size|extmetadata&iiurlwidth=" + TW + "";
     let j; try { j = await (await fetch(u, { headers: { "User-Agent": "ERNTE-app-image-finder/1.0 (report.valko@gmail.com)" } })).json(); } catch (e) { console.log("chyba", q, e.message); continue; }
     const pages = Object.values((j.query || {}).pages || {}).sort((a, b) => (a.index || 0) - (b.index || 0));
     dbg.push({ q, keys: Object.keys(j), err: j.error && j.error.info, n: pages.length, lic: pages.slice(0, 6).map(p => { const ii = (p.imageinfo || [])[0] || {}; return [strip(((ii.extmetadata || {}).LicenseShortName || {}).value), ii.width, ii.height, (ii.url || "").slice(-12)] }) });
@@ -35,13 +36,13 @@ for (const [role, list] of Object.entries(Q).filter(([r]) => !r.startsWith("vid"
       const ii = (p.imageinfo || [])[0]; if (!ii || seen.has(p.title)) continue;
       const em = ii.extmetadata || {}; const lic = strip(em.LicenseShortName && em.LicenseShortName.value);
       if (!OK.test(lic) || /nc|nd/i.test(lic)) continue;
-      if ((ii.width || 0) < 1500 || (ii.height || 0) < 900) continue;
+      if ((ii.width || 0) < MINW || (ii.height || 0) < MINH) continue;
       if (!/\.(jpe?g|png|webp)$/i.test(new URL(ii.url).pathname)) continue;
-      seen.add(p.title); n++; if (n > 18) break;
+      seen.add(p.title); n++; if (n > MAXN) break;
       try { const b = Buffer.from(await (await fetch(ii.thumburl, { headers: { "User-Agent": "ERNTE-app-image-finder/1.0" } })).arrayBuffer()); fs.writeFileSync(`out/${role}/${n}.jpg`, b); } catch (e) { n--; continue; }
       meta[role].push({ n, q, title: p.title, page: ii.descriptionurl, w: ii.width, h: ii.height, license: lic, licenseUrl: strip(em.LicenseUrl && em.LicenseUrl.value), author: strip(em.Artist && em.Artist.value).slice(0, 120), credit: strip(em.Credit && em.Credit.value).slice(0, 120), desc: strip(em.ImageDescription && em.ImageDescription.value).slice(0, 200) });
     }
-    if (n > 18) break;
+    if (n > MAXN) break;
   }
   console.log(role, n);
 }

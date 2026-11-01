@@ -20,6 +20,10 @@ jobs:
         working-directory: .github/imgfetch
         env:
           QUERIES: ${{ toJSON(github.event.client_payload.queries) }}
+          MAXN: ${{ github.event.client_payload.maxn }}
+          TW: ${{ github.event.client_payload.tw }}
+          MINW: ${{ github.event.client_payload.minw }}
+          MINH: ${{ github.event.client_payload.minh }}
       - name: Uložiť do vetvy img-candidates
         working-directory: .github/imgfetch
         run: |
