@@ -14,8 +14,9 @@ def geo(q,cc):
       if j: return float(j[0]["lat"]),float(j[0]["lon"]),j[0].get("display_name","")
     except Exception as e: time.sleep(3)
   return None
-def route(a,b):
-  j=post(VH+"/route",{"locations":[{"lat":a[0],"lon":a[1]},{"lat":b[0],"lon":b[1]}],"costing":"truck",
+UA=[[22.27,48.45],[22.32,48.60],[22.40,48.80],[22.60,49.08],[23.6,49.0],[23.6,47.9],[22.9,47.95],[22.55,48.05],[22.35,48.30],[22.27,48.45]]  # Zakarpatská oblasť – tranzit cez Ukrajinu (colnica) sa nepočíta
+def route(a,b,ua=False):
+  j=post(VH+"/route",{"locations":[{"lat":a[0],"lon":a[1]},{"lat":b[0],"lon":b[1]}],"costing":"truck",**({} if ua else {"exclude_polygons":[UA]}),
     "costing_options":{"truck":{"weight":40,"axle_load":9,"axle_count":5,"height":4,"width":2.55,"length":16.5}},"units":"kilometers","directions_type":"none"})
   t=j["trip"]; km=t["summary"]["length"]; sec=t["summary"]["time"]; shape=t["legs"][0]["shape"]
   ta=post(VH+"/trace_attributes",{"encoded_polyline":shape,"costing":"truck","shape_match":"edge_walk",
@@ -37,7 +38,10 @@ D=geo(dest+", Slovensko","sk"); out={"dest":dest,"dest_geo":D,"at":time.strftime
 for s in sites:
   g=geo(s+", Magyarország","hu"); r={"geo":g}
   if g and D:
-    try: r["tam"]=route(g,D); time.sleep(1); r["spat"]=route(D,g); time.sleep(1)
+    try:
+      r["tam"]=route(g,D); time.sleep(1); r["spat"]=route(D,g); time.sleep(1)
+      u=route(g,D,True); time.sleep(1)
+      if "UA" in u["c"]: r["cez_ua"]=u
     except Exception as e: r["err"]=str(e)[:200]
   out["sites"][s]=r; print(s, r.get("tam",{}).get("km"), r.get("spat",{}).get("km"), r.get("err",""), flush=True)
 json.dump(out,open("trus_km.json","w"),ensure_ascii=False)
