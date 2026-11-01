@@ -1,11 +1,13 @@
 # Kamiónové trasy kurací trus: farma (HU) ⇄ BPS (SK) – Valhalla truck 40 t, 5 náprav; km podľa krajiny a triedy cesty.
-import json, os, sys, time, urllib.request, urllib.parse
+import json, os, sys, time, urllib.request, urllib.parse, urllib.error
 UA={"User-Agent":"ERNTE-Trade-trus-km/1.0 (report.valko@gmail.com)"}
 VH="https://valhalla1.openstreetmap.de"
 def get(u):
   r=urllib.request.Request(u,headers=UA); return json.load(urllib.request.urlopen(r,timeout=60))
 def post(u,b):
-  r=urllib.request.Request(u,data=json.dumps(b).encode(),headers=dict(UA,**{"Content-Type":"application/json"})); return json.load(urllib.request.urlopen(r,timeout=120))
+  r=urllib.request.Request(u,data=json.dumps(b).encode(),headers=dict(UA,**{"Content-Type":"application/json"}))
+  try: return json.load(urllib.request.urlopen(r,timeout=120))
+  except urllib.error.HTTPError as e: raise Exception("HTTP %s %s: %s"%(e.code,u.split("/")[-1],e.read()[:200].decode("utf8","ignore")))
 def geo(q,cc):
   for i in range(3):
     try:
