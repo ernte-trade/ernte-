@@ -6,7 +6,8 @@ const E=s=>String(s==null?"":s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;","
 const OWN=()=>typeof ROLE!=="undefined"&&ROLE==="owner"&&!(typeof FARMER!=="undefined"&&FARMER);
 const C={s:null,busy:false,to:null,subj:null,body:null};
 const dd=x=>{if(!x)return "";const d=new Date(x);return isNaN(d)?"":d.toLocaleDateString("sk-SK",{day:"numeric",month:"numeric",year:"numeric"})};
-const SUBJ="Žiadosť o rozšírenie práv API – VALKO s.r.o. (IČO 53 365 241)";
+const SUBJ="Žiadosť o rozšírenie práv API a hmotnosť z CAN/FMS – VALKO s.r.o. (IČO 53 365 241)";
+const HOT="hotline@commander.sk"; // 24 h linka Commander (+421 553 333 330), dev.commander.sk
 const BODY=()=>`Dobrý deň,
 
 ako zákazník COMMANDER (VALKO s.r.o., IČO 53 365 241) Vás prosím o rozšírenie práv nášho API prepoja (konto ERNTE-Farmar) o tieto časti:
@@ -16,6 +17,7 @@ ako zákazník COMMANDER (VALKO s.r.o., IČO 53 365 241) Vás prosím o rozšír
 3. Contracts (zmluvy).
 4. Costcenters (strediská).
 5. DeletedVehicles (vyradené vozidlá) – teraz vracia 403.
+6. HMOTNOSŤ VOZIDLA Z CAN / FMS – celková hmotnosť súpravy (FMS Gross Combination Vehicle Weight) a zaťaženie jednotlivých náprav (FMS Axle Weight), z ktorých počítame naloženú váhu tovaru. Prosíme o zapnutie čítania týchto údajov v jednotkách našich ťahačov (ak to jednotka a vozidlo podporujú) a o ich sprístupnenie v API (last-positions, prípadne v jazdách – hmotnosť pri štarte a konci jazdy).
 
 Údaje používame iba na internú evidenciu nafty, nákladov a jázd našej flotily.
 
@@ -28,7 +30,7 @@ IČO 53 365 241`;
 async function load(){if(!OWN()||C.busy)return;C.busy=true;try{const r=await sb.rpc("cmd_support_get");C.s=!r.error&&r.data?r.data:{err:1}}catch(x){C.s={err:1}}finally{C.busy=false}
   if(typeof TAB!=="undefined"&&TAB==="fleet"&&typeof renderStaff==="function")try{renderStaff()}catch(x){}}
 window.cmdReqHTML=function(){if(!OWN())return "";css();if(!C.s){load();return `<div class="card"><b>✉️ Žiadosť podpore Commandera</b><div class="s">Načítavam…</div></div>`}
-  const s=C.s,rf=s.refuel||{},to=C.to!=null?C.to:(s.to||""),sent=s.sent_at,ok=+rf.code===200;
+  const s=C.s,rf=s.refuel||{},to=C.to!=null?C.to:(s.to||HOT),sent=s.sent_at,ok=+rf.code===200;
   const from=s.valko_mail?"zo schránky VALKO":s.ernte_mail?"zo schránky ERNTE (VALKO ešte nie je nastavená)":"";
   let st="";
   if(sent)st=`<div class="box${s.checked_at?(s.ok?"":" w"):""}"><div>📨 Odoslané <b>${E(dd(sent))}</b> na ${E(s.to||"")}. ${s.checked_at?(s.ok?"✅ Kontrola: tankovania už idú (200).":"⚠️ Kontrola "+E(dd(s.checked_at))+": refueling imports stále vracia "+E(s.code||"chybu")+" – pošli pripomienku."):`Kontrola tankovaní <b>${E(dd(s.check_at))}</b> (o 3 pracovné dni).`}</div></div>`;
@@ -38,10 +40,11 @@ window.cmdReqHTML=function(){if(!OWN())return "";css();if(!C.s){load();return `<
     <label class="w">Predmet<input name="subj" value="${E(C.subj!=null?C.subj:SUBJ)}"></label>
     <label class="w">Text e-mailu (od VALKO s.r.o.)<textarea name="body" rows="14">${E(C.body!=null?C.body:BODY())}</textarea></label>
     <div class="w s">Odošle sa ${from||"z e-mailu aplikácie (najprv ho nastav: Martin → nastavenie schránky)"}. Po 3 pracovných dňoch aplikácia overí, či import tankovaní (main:refuel) vracia 200 – ak nie, príde upozornenie „Commander ešte nepovolil tankovania“.</div>
-    <div class="w btns"><button class="pri" type="submit">📨 ${sent?"Odoslať znova (pripomienka)":"Odoslať"}</button><button type="button" data-cmdsave>💾 Uložiť e-mail podpory</button></div>
+    <div class="w btns"><button class="pri" type="submit">📨 ${sent?"Odoslať znova (pripomienka)":"Odoslať"}</button><button type="button" data-cmdsave>💾 Uložiť e-mail podpory</button><a class="btn" data-cmdmailto href="mailto:${E(to||HOT)}?subject=${encodeURIComponent(C.subj!=null?C.subj:SUBJ)}&body=${encodeURIComponent(C.body!=null?C.body:BODY())}">📧 Odoslať z môjho e-mailu</a></div>
+    <div class="w s">Ak e-mail aplikácie nejde (Microsoft 365 má vypnuté SMTP AUTH), ťukni „📧 Odoslať z môjho e-mailu“ – otvorí sa hotová správa v tvojej pošte.</div>
    </form>${st}</details>`};
 const val=f=>{const fd=new FormData(f);C.to=String(fd.get("to")||"").trim();C.subj=String(fd.get("subj")||"");C.body=String(fd.get("body")||"");return fd};
-document.addEventListener("input",e=>{const f=e.target.closest&&e.target.closest("#fCmdReq");if(f)val(f)},true);
+document.addEventListener("input",e=>{const f=e.target.closest&&e.target.closest("#fCmdReq");if(f){val(f);const a=f.querySelector("[data-cmdmailto]");if(a)a.href="mailto:"+(C.to||HOT)+"?subject="+encodeURIComponent(C.subj||SUBJ)+"&body="+encodeURIComponent(C.body||BODY())}},true);
 document.addEventListener("click",async e=>{const b=e.target.closest&&e.target.closest("[data-cmdsave]");if(!b||!OWN())return;e.preventDefault();const f=b.closest("form");val(f);
   busy(b,true);const r=await sb.rpc("cmd_support_save",{p_to:C.to});busy(b,false);if(r.error){toast("Nepodarilo sa: "+r.error.message,6000);return}C.s=r.data;toast("💾 E-mail podpory uložený.");renderStaff()},true);
 document.addEventListener("submit",async e=>{const f=e.target;if(f.id!=="fCmdReq"||!OWN())return;e.preventDefault();val(f);const b=f.querySelector("button[type=submit]");
