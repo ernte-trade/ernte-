@@ -94,6 +94,11 @@ jobs:
             open(p,"w").write(json.dumps(z,ensure_ascii=False))
           PY
           touch /tmp/site/.nojekyll
+      - name: Android aplikácia aj na stránke aplikácie (farmar/ERNTE.apk)
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release download android -R ${{ github.repository }} -p ERNTE.apk -D /tmp/site/farmar --clobber
       - name: Vlastná doména app.ernte.sk (iba keď DNS už ukazuje na GitHub)
         run: |
           # bez DNS záznamu sa doména NEZAPÍNA – inak by GitHub presmeroval starú adresu na nefunkčnú
