@@ -52,12 +52,12 @@ jobs:
         if: github.event_name == 'repository_dispatch' && github.event.action == 'ernte-release' && steps.gate.outcome != 'failure'
         run: |
           set -e
-          git config user.name "ERNTE Trade"; git config user.email "report.valko@gmail.com"
+          git config user.name "ERNTE Trade"; git config user.email "ernte@ernte.sk"
           for i in 1 2 3; do
             git pull -q --rebase origin main || true
             git rev-parse HEAD > farmar/STABLE
             git add farmar/STABLE
-            git -c user.name=Claude -c user.email=noreply@anthropic.com commit -qm "Zverejnená nová verzia aplikácie pre všetkých ($(cut -c1-7 farmar/STABLE))" --author="ERNTE Trade <report.valko@gmail.com>" || exit 0
+            git -c user.name=Claude -c user.email=noreply@anthropic.com commit -qm "Zverejnená nová verzia aplikácie pre všetkých ($(cut -c1-7 farmar/STABLE))" --author="ERNTE Trade <ernte@ernte.sk>" || exit 0
             git push -q origin HEAD:main && break
             sleep 3
           done
@@ -119,7 +119,7 @@ jobs:
           git remote add origin "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git"
           git fetch -q --depth=1 origin gh-pages || true
           if git rev-parse -q --verify origin/gh-pages >/dev/null && [ -z "$(git diff --cached --name-only origin/gh-pages -- . ':(exclude)farmar/zmeny.json' ':(exclude)farmar/beta/zmeny.json')" ]; then echo "bez zmeny"; exit 0; fi
-          git -c user.name=Claude -c user.email=noreply@anthropic.com commit -qm "Stránka: stará $(python3 -c 'import json;print(json.load(open("farmar/zmeny.json"))["stable"])') · nová $(python3 -c 'import json;print(json.load(open("farmar/zmeny.json"))["beta"])')" --author="ERNTE Trade <report.valko@gmail.com>"
+          git -c user.name=Claude -c user.email=noreply@anthropic.com commit -qm "Stránka: stará $(python3 -c 'import json;print(json.load(open("farmar/zmeny.json"))["stable"])') · nová $(python3 -c 'import json;print(json.load(open("farmar/zmeny.json"))["beta"])')" --author="ERNTE Trade <ernte@ernte.sk>"
           git push -q -f origin gh-pages
       - name: Doména – nastavenie GitHub Pages a HTTPS (ak to token dovolí)
         if: always()

@@ -78,7 +78,7 @@ Spoločné opravy rozloženia patria do `farmar/fit.css` (načítava sa posledn�
 - **📱 ANDROID APLIKÁCIA (1. 11., príkaz majiteľa „ideme“ – natívna appka):** `android/` = Trusted Web Activity (jadro Chrome, `androidbrowserhelper`, balík `sk.ernte.app`) – otvára živú `farmar/?src=android`, takže prihlásenie, Web Push, GPS a každá zmena fungujú ako v PWA; APK sa mení iba pri zmene ikony / adresy. Zostavuje workflow `apk.yml` (push do `android/**` alebo ručne) → release `android` → `…/releases/download/android/ERNTE.apk`. Podpis: tajomstvo `ERNTE_APK_PASS` (zadá majiteľ) → kľúč zašifrovaný v `android/keystore.enc` + `.well-known/assetlinks.json`; bez tajomstva dočasný kľúč (na vyskúšanie). Bez overenia domény (assetlinks na koreni domény – funguje až s app.ernte.sk) ukazuje TWA hore tenký pás s adresou. Google Play: účet 25 $ (majiteľ). iPhone: Apple Developer 99 $/rok + D-U-N-S; čistý web-obal Apple odmieta (4.2) – treba natívne funkcie (push, poloha). CarPlay / Android Auto iba natívna navigačná app so schválením.
 - **Service worker meniť iba po teste na serveri s gzip kompresiou** (ako GitHub Pages). 28. 10. ukladanie súborov do telefónu
   (cache-first) s kopírovanými hlavičkami (Content-Encoding/Length) rozbilo aplikáciu všetkým – vrátené na overený network-first.
-- Každý commit: autor `ERNTE Trade <report.valko@gmail.com>`, committer `Claude <noreply@anthropic.com>`. Históriu `main` neprepisovať
+- Každý commit: autor `ERNTE Trade <ernte@ernte.sk>` (príkaz majiteľa 1. 11. 23:45 – predtým report.valko@gmail.com; staré commity sa neprepisujú), committer `Claude <noreply@anthropic.com>`. Históriu `main` neprepisovať
   (bot „Trhové ceny“ do nej zapisuje).
 
 ## Stav projektu (pamäť pre každý nový rozhovor – čítaj ako prvé)

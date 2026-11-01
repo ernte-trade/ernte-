@@ -66,7 +66,7 @@ jobs:
           printf '[{"relation":["delegate_permission/common.handle_all_urls"],"target":{"namespace":"android_app","package_name":"sk.ernte.app","sha256_cert_fingerprints":["%s"]}}]\n' "$FP" > .well-known/assetlinks.json
           git add .well-known/assetlinks.json android/keystore.enc
           if ! git diff --cached --quiet; then
-            git -c user.name=Claude -c user.email=noreply@anthropic.com commit -qm "Android: zašifrovaný podpisový kľúč a assetlinks" --author="ERNTE Trade <report.valko@gmail.com>"
+            git -c user.name=Claude -c user.email=noreply@anthropic.com commit -qm "Android: zašifrovaný podpisový kľúč a assetlinks" --author="ERNTE Trade <ernte@ernte.sk>"
             for i in 1 2 3; do git pull -q --rebase origin main && git push -q origin HEAD:main && break; sleep 3; done
           fi
       - name: Zverejniť APK na stiahnutie

@@ -37,6 +37,6 @@ jobs:
           F="farmar/supabase/auto/$(date -u +%Y%m%d-%H%M)-invest-list.sql.asc"
           gpg -q --batch --yes -c --cipher-algo AES256 -a --passphrase "$P" -o "$F" /tmp/l.sql
           rm -f /tmp/l.sql
-          git config user.name "ERNTE Trade"; git config user.email report.valko@gmail.com
+          git config user.name "ERNTE Trade"; git config user.email ernte@ernte.sk
           git add "$F"; git commit -qm "📈 Investičná akadémia: týždenný list"
           for i in 1 2 3; do git push -q origin HEAD:main && exit 0; git pull -q --rebase origin main; done; exit 1

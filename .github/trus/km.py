@@ -1,6 +1,6 @@
 # Kamiónové trasy kurací trus: farma (HU) ⇄ BPS (SK) – Valhalla truck 40 t, 5 náprav; km podľa krajiny a triedy cesty.
 import json, os, sys, time, urllib.request, urllib.parse, urllib.error
-UA={"User-Agent":"ERNTE-Trade-trus-km/1.0 (report.valko@gmail.com)"}
+UA={"User-Agent":"ERNTE-Trade-trus-km/1.0 (ernte@ernte.sk)"}
 VH="https://valhalla1.openstreetmap.de"
 def get(u):
   r=urllib.request.Request(u,headers=UA); return json.load(urllib.request.urlopen(r,timeout=60))

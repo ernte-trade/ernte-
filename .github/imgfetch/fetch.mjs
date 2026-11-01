@@ -12,7 +12,7 @@ for (const [role, list] of Object.entries(Q).filter(([r]) => r.startsWith("vid")
   fs.mkdirSync("out/" + role, { recursive: true }); meta[role] = []; let n = 0; const seen = new Set();
   for (const q of list) {
     const u = "https://commons.wikimedia.org/w/api.php?action=query&format=json&generator=search&gsrnamespace=6&gsrlimit=30&gsrsearch=" + encodeURIComponent("filetype:video " + q) + "&prop=videoinfo&viprop=url|size|extmetadata|derivatives|mediatype";
-    let j; try { j = await (await fetch(u, { headers: { "User-Agent": "ERNTE-app-image-finder/1.0 (report.valko@gmail.com)" } })).json(); } catch (e) { continue; }
+    let j; try { j = await (await fetch(u, { headers: { "User-Agent": "ERNTE-app-image-finder/1.0 (ernte@ernte.sk)" } })).json(); } catch (e) { continue; }
     for (const p of Object.values((j.query || {}).pages || {})) {
       const vi = (p.videoinfo || [])[0]; if (!vi || seen.has(p.title)) continue; const em = vi.extmetadata || {}; const lic = strip(em.LicenseShortName && em.LicenseShortName.value);
       if (!OK.test(lic) || /nc|nd/i.test(lic)) continue;
@@ -29,7 +29,7 @@ for (const [role, list] of Object.entries(Q).filter(([r]) => !r.startsWith("vid"
   fs.mkdirSync("out/" + role, { recursive: true }); meta[role] = []; const seen = new Set(); let n = 0;
   for (const q of list) {
     const u = "https://commons.wikimedia.org/w/api.php?action=query&format=json&generator=search&gsrnamespace=6&gsrlimit=40&gsrsearch=" + encodeURIComponent("filetype:bitmap " + q) + "&prop=imageinfo&iiprop=url|size|extmetadata&iiurlwidth=" + TW + "";
-    let j; try { j = await (await fetch(u, { headers: { "User-Agent": "ERNTE-app-image-finder/1.0 (report.valko@gmail.com)" } })).json(); } catch (e) { console.log("chyba", q, e.message); continue; }
+    let j; try { j = await (await fetch(u, { headers: { "User-Agent": "ERNTE-app-image-finder/1.0 (ernte@ernte.sk)" } })).json(); } catch (e) { console.log("chyba", q, e.message); continue; }
     const pages = Object.values((j.query || {}).pages || {}).sort((a, b) => (a.index || 0) - (b.index || 0));
     dbg.push({ q, keys: Object.keys(j), err: j.error && j.error.info, n: pages.length, lic: pages.slice(0, 6).map(p => { const ii = (p.imageinfo || [])[0] || {}; return [strip(((ii.extmetadata || {}).LicenseShortName || {}).value), ii.width, ii.height, (ii.url || "").slice(-12)] }) });
     for (const p of pages) {
