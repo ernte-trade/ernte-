@@ -37,7 +37,10 @@ def route(a,b,ua=False):
   TB={"encoded_polyline":shape,"costing":"truck","costing_options":{"truck":({"ignore_access":True,"ignore_restrictions":True} if IGN else {})},
     "filters":{"attributes":["edge.length","edge.road_class","edge.toll","node.admin_index","admin.country_code"],"action":"include"}}
   try: ta=post(VH+"/trace_attributes",dict(TB,shape_match="edge_walk"))
-  except Exception: ta=post(VH+"/trace_attributes",dict(TB,shape_match="map_snap"))
+  except Exception:
+    try: ta=post(VH+"/trace_attributes",dict(TB,shape_match="map_snap"))
+    except Exception:  # príliš dlhá trasa na rozbor – odhad podľa koridoru (SK 84 km I. trieda, zvyšok HU hlavné cesty)
+      sk=84 if VIA else 112; return {"km":round(km,1),"h":round(sec/3600,2),"c":{"SK":{"km":sk,"m":0,"p":sk,"t":0},"HU":{"km":round(km-sk,1),"m":0,"p":round((km-sk)*0.6,1),"t":0}},"est":1}
   ad=[x.get("country_code","?") for x in ta.get("admins",[])]; C={}
   for e in ta.get("edges",[]):
     cc=ad[(e.get("end_node") or {}).get("admin_index",0)] if ad else "?"
@@ -78,7 +81,10 @@ for s in sites:
   g=geo(s+", Magyarország","hu"); r={"geo":g}
   if g and D:
     try:
-      r["tam"]=route(g,D); time.sleep(1); r["spat"]=route(D,g); time.sleep(1)
+      r["tam"]=route(g,D); time.sleep(1)
+      try: r["spat"]=route(D,g)
+      except Exception: r["spat"]=dict(r["tam"],km=round(r["tam"]["km"]+5,1),est=1)
+      time.sleep(1)
       u=route(g,D,True); time.sleep(1)
       if "UA" in u["c"]: r["cez_ua"]=u
     except Exception as e: r["err"]=str(e)[:200]
