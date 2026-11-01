@@ -29,8 +29,10 @@ def route(a,b,ua=False):
     shape=None; pts=[]
     for lg in t["legs"]: pts+=dec(lg["shape"])
     shape=enc(pts)
-  ta=post(VH+"/trace_attributes",{"encoded_polyline":shape,"costing":"truck","shape_match":"edge_walk",
-    "filters":{"attributes":["edge.length","edge.road_class","edge.toll","node.admin_index","admin.country_code"],"action":"include"}})
+  TB={"encoded_polyline":shape,"costing":"truck","costing_options":{"truck":({"ignore_access":True,"ignore_restrictions":True} if IGN else {})},
+    "filters":{"attributes":["edge.length","edge.road_class","edge.toll","node.admin_index","admin.country_code"],"action":"include"}}
+  try: ta=post(VH+"/trace_attributes",dict(TB,shape_match="edge_walk"))
+  except Exception: ta=post(VH+"/trace_attributes",dict(TB,shape_match="map_snap"))
   ad=[x.get("country_code","?") for x in ta.get("admins",[])]; C={}
   for e in ta.get("edges",[]):
     cc=ad[(e.get("end_node") or {}).get("admin_index",0)] if ad else "?"
