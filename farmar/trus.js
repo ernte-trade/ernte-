@@ -288,7 +288,7 @@ function usersHTML(p,D){const U=(D.users||[]).filter(u=>u.partner_id===p.id),K=P
    ${U.length?U.map(u=>`<form class="f trusr${u.active?"":" off"}" data-tus="${e(u.login)}" data-tp="${e(p.id)}"><div class="w row"><b>${e(u.name||"bez mena")}</b><small>${e(lgShow(u.login))}${u.last_in?` · naposledy ${e(dtSK(u.last_in))}`:" · ešte sa neprihlásil"}${u.active?"":" · ⛔ zablokovaný"}</small></div>
      <div class="w trtk">${K.map(k=>box(k,!u.perms||u.perms[k[0]]!==false)).join("")}</div>
      <div class="w btns"><button>💾 Uložiť práva</button><button type="button" data-tupw="${e(u.login)}" data-tp="${e(p.id)}">🔑 Nové heslo</button><button type="button" class="ghost" data-tublk="${e(u.login)}" data-on="${u.active?0:1}">${u.active?"⛔ Zablokovať":"✓ Odblokovať"}</button></div></form>`).join(""):`<div class="s">Firma zatiaľ nemá žiadny prístup do aplikácie.</div>`}
-   <form class="f trnewu" data-tunew="${e(p.id)}"><div class="w t">➕ Pridať človeka z firmy</div><label>Meno<input name="name" placeholder="napr. Kovács Péter" required></label><label>E-mail alebo telefón<input name="login" placeholder="meno@firma.hu alebo +36 30 …" required></label>
+   <form class="f trnewu" data-tunew="${e(p.id)}"><div class="w t">➕ Pridať človeka z firmy</div><label>Meno<input name="name" placeholder="napr. Kovács Péter" required></label><label>E-mail alebo telefón<input name="login" placeholder="meno@firma.hu alebo +36 30 …" required></label><div class="w trppl" data-trppl hidden></div>
     <label class="w">Rola<select name="preset" data-tupre="${e(p.kind)}">${(PRS[p.kind]||[]).map(r=>`<option value="${r[0]}">${e(r[1])}</option>`).join("")}<option value="">Vlastné – vyberiem nižšie</option></select></label>
     <div class="w trtk">${K.map(k=>box(k,((PRS[p.kind]||[])[0]||[,,[]])[2].includes(k[0]))).join("")}</div>
     <div class="w btns"><button class="lime">🔑 Vytvoriť prístup a heslo</button></div></form></div>`}
@@ -299,6 +299,25 @@ async function showLogin(p,login,pw,name){const app=typeof APP_URL!=="undefined"
   if(typeof camModal==="function")camModal(`<b>🔑 Prístup pre ${e(name||p.name)}</b><div class="s">Heslo sa nikde neukladá – pošli ho teraz. Po prihlásení si ho môže zmeniť.</div><pre class="trpre">${window.appLinkHTML?appLinkHTML(txt):e(txt)}</pre><div class="btns">${ph?`<a class="btn lime" target="_blank" rel="noopener" href="https://wa.me/${ph}?text=${encodeURIComponent(txt)}">WhatsApp</a><a class="btn" href="sms:+${ph}?&body=${encodeURIComponent(txt)}">SMS</a>`:""}<button type="button" data-trcopy>📋 Kopírovať</button></div>`);
   window._trTxt=txt}
 const genPw2=()=>Array.from(crypto.getRandomValues(new Uint8Array(6)),b=>"abcdefghjkmnpqrstuvwxyz23456789"[b%31]).join("")+"-"+(1000+crypto.getRandomValues(new Uint16Array(1))[0]%9000);
+// 👤 automatické vyplnenie kontaktu z našej databázy podľa mena (farmári, tím, firmy, vykládky, prístupy, GDPR podpisy) – people_lookup, iba majiteľ
+const pplClean=t=>String(t||"").replace(/[^\s,;]+@[^\s,;]+/g,"").replace(/\+?\d[\d /-]{7,}\d/g,"").replace(/[\s,;·-]+$/,"").trim();
+let _pplT=0,_pplQ="";
+async function pplFind(f){const n=f.querySelector("input[name=name]"),lg=f.querySelector("input[name=login]"),box=f.querySelector("[data-trppl]");if(!n||!lg||!box)return;
+  const q=n.value.trim();if(q===_pplQ&&box.dataset.q===q)return;_pplQ=q;box.dataset.q=q;
+  if(q.replace(/(ing|mgr|bc|judr|mudr|phd|dr)\.?/gi,"").trim().length<3){box.hidden=true;box.innerHTML="";return}
+  let r;try{r=await sb.rpc("people_lookup",{q})}catch(x){r={error:x}}
+  if(n.value.trim()!==q)return;
+  if(r.error){box.hidden=false;box.innerHTML=`<small>${/people_lookup/.test(String(r.error.message||""))?"🔎 Vyhľadávanie v databáze sa zapne po aktualizácii databázy (pár minút).":"🔎 Databáza teraz neodpovedá."}</small>`;return}
+  const H=(r.data||[]).filter(h=>h.email||h.phone);
+  if(!H.length){box.hidden=false;box.innerHTML=`<small>🔎 V našej databáze sme „${e(q)}“ nenašli – zadaj e-mail alebo telefón ručne.</small>`;if(lg.dataset.auto==="1"){lg.value="";lg.dataset.auto=""}return}
+  const best=H[0],v=best.phone||best.email;
+  if(!lg.value.trim()||lg.dataset.auto==="1"){lg.value=v;lg.dataset.auto="1"}
+  box.hidden=false;box.innerHTML=`<small>✓ Nájdené v našej databáze${H.length>1?" – ťukni na správny kontakt":""}:</small>`+H.map(h=>`<div class="trpplr"><span><b>${e(pplClean(h.name)||q)}</b> <small>${e(h.src||"")}</small></span><span class="btns">${h.phone?`<button type="button" class="ghost" data-pplv="${e(h.phone)}" aria-pressed="${lg.value===h.phone}">📱 ${e(h.phone)}</button>`:""}${h.email?`<button type="button" class="ghost" data-pplv="${e(h.email)}" aria-pressed="${lg.value===h.email}">📧 ${e(h.email)}</button>`:""}</span></div>`).join("")}
+document.addEventListener("input",ev=>{const x=ev.target;if(!x.closest)return;const f=x.closest("form.trnewu");if(!f)return;
+  if(x.name==="login"){x.dataset.auto="";return}if(x.name!=="name")return;clearTimeout(_pplT);_pplT=setTimeout(()=>pplFind(f),450)});
+document.addEventListener("change",ev=>{const x=ev.target;if(x&&x.name==="name"&&x.closest&&x.closest("form.trnewu")){clearTimeout(_pplT);pplFind(x.closest("form.trnewu"))}});
+document.addEventListener("click",ev=>{const b=ev.target.closest&&ev.target.closest("[data-pplv]");if(!b)return;const f=b.closest("form"),lg=f&&f.querySelector("input[name=login]");if(!lg)return;
+  lg.value=b.dataset.pplv;lg.dataset.auto="";f.querySelectorAll("[data-pplv]").forEach(y=>y.setAttribute("aria-pressed",y===b));tm()("Kontakt vyplnený ✓",1800)});
 document.addEventListener("change",ev=>{const x=ev.target;if(!x.dataset||x.dataset.tupre==null)return;const R=(PRS[x.dataset.tupre]||[]).find(r=>r[0]===x.value);if(!R)return;x.form.querySelectorAll("input[name=pk]").forEach(c=>c.checked=R[2].includes(c.value))});
 document.addEventListener("click",async ev=>{const g=s=>ev.target.closest&&ev.target.closest(s);let x;
   if(x=g("[data-plang]")){const r=await sb.from("trus_partners").update({lang:x.dataset.l}).eq("id",x.dataset.plang);if(r.error){tm()(/lang/.test(r.error.message)?"Zapne sa po aktualizácii databázy (pár minút).":r.error.message,6000);return}tm()(x.dataset.l==="hu"?"Firma bude mať aplikáciu po maďarsky ✓":"Firma bude mať aplikáciu po slovensky ✓");await loadStaffT();return}
