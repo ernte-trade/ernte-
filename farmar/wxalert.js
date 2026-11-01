@@ -28,11 +28,11 @@ async function enable(btn){if(!sup()){tst(ios&&!std()?"Na iPhone najprv pridajte
   catch(x){tst("Nepodarilo sa zapnúť: "+(x&&x.message||x),8000)}finally{if(btn)btn.disabled=false}}
 function html(){const d=D.d||{},A=d.al||[],k=key(A),off=D.sub==="off"||D.sub==="no";
   if(!A.length){return off&&!sessionStorage.getItem("ernte-wxa-push-later")?`<div class="card wxa calm" id="wxaCard"><div class="wxah"><b>🌦️ Upozornenia na počasie</b><button type="button" class="wxax" data-wxax aria-label="Zavrieť">✕</button></div>
-    <div class="s">Dáme vám vedieť do mobilu pred dažďom (koľko mm), snehom, poľadovicou, silným vetrom a búrkou – a kde je v okolí lepšie.</div>
+    <div class="s">Dáme vám vedieť do mobilu pred dažďom (koľko mm), snehom, poľadovicou, hmlou, mrazom, silným vetrom a búrkou – s radou pre práce na poli aj jazdy a nakládky – a kde je v okolí lepšie.</div>
     <div class="btns"><button type="button" class="lime" data-wxapush>🔔 Upozorňovať ma do mobilu</button></div></div>`:""}
   if(hidden()===k)return "";const sev=A.some(a=>+a.sev>=5);
-  return `<div class="card wxa${sev?" sev":""}" id="wxaCard"><div class="wxah"><b>⚠️ Počasie · ${E(d.place||"")} · najbližších 12 h</b><button type="button" class="wxax" data-wxax aria-label="Zavrieť">✕</button></div>
-   ${A.map(a=>`<div class="wxar"><span>${E(a.i)}</span><b>${E(a.t)}</b></div>`).join("")}
+  return `<div class="card wxa${sev?" sev":""}" id="wxaCard"><div class="wxah"><b>⚠️ Počasie · ${E(d.place||"")} · najbližších 24 h</b><button type="button" class="wxax" data-wxax aria-label="Zavrieť">✕</button></div>
+   ${A.map(a=>`<div class="wxar"><span>${E(a.i)}</span><div><b>${E(a.t)}</b>${a.p?`<small class="wxai">🚜 ${E(a.p)}</small>`:""}${a.d?`<small class="wxai">🚛 ${E(a.d)}</small>`:""}</div></div>`).join("")}
    ${d.better?`<div class="wxab">☀️ Lepšie v okolí: <b>${E(d.better.n)}</b> (${E(d.better.km)} km, ${+d.better.mm<0.5?"sucho":E(String(d.better.mm).replace(".",","))+" mm"})</div>`:""}
    ${off?`<div class="btns"><button type="button" class="lime" data-wxapush>🔔 Upozorňovať ma do mobilu</button></div>`:D.sub==="denied"?`<div class="s">Upozornenia do mobilu sú v telefóne zakázané – povoľte ich v nastaveniach pre ERNTE.</div>`:""}</div>`}
 function paint(){const app=document.getElementById("app");if(!app)return;const old=document.getElementById("wxaCard"),h=IN()?html():"";
@@ -44,7 +44,7 @@ document.addEventListener("click",e=>{const t=e.target;if(!t.closest)return;
 .wxa.sev{border-color:rgba(248,113,113,.7)!important;box-shadow:0 0 0 1px rgba(248,113,113,.3),0 10px 30px -12px rgba(248,113,113,.6)}
 .wxah{display:flex;align-items:center;justify-content:space-between;gap:10px}.wxah b{min-width:0;overflow-wrap:anywhere}
 .wxax{flex:0 0 auto;width:40px;height:40px;min-height:40px;border-radius:50%;padding:0}
-.wxar{display:grid;grid-template-columns:auto minmax(0,1fr);gap:10px;align-items:center;padding:8px 0;border-top:1px solid rgba(255,255,255,.08)}.wxar span{font-size:1.5rem}.wxar b{overflow-wrap:anywhere}
+.wxar{display:grid;grid-template-columns:auto minmax(0,1fr);gap:10px;align-items:center;padding:8px 0;border-top:1px solid rgba(255,255,255,.08)}.wxar span{font-size:1.5rem}.wxar b{overflow-wrap:anywhere}.wxar>div{min-width:0}.wxai{display:block;margin-top:3px;font-size:.86rem;opacity:.88;line-height:1.35;overflow-wrap:anywhere}
 .wxab{margin-top:6px;padding:10px 12px;border-radius:14px;background:rgba(253,224,71,.1);border:1px solid rgba(253,224,71,.35);overflow-wrap:anywhere}
 .wxa .btns{justify-content:center;margin-top:8px}`;document.head.appendChild(s)}
 let q=0;const sch=()=>{if(q)return;q=(window.ernteSoon||requestAnimationFrame)(()=>{q=0;if(!IN())return;if(!D.at||Date.now()-D.at>15*60e3)load();else paint()})};

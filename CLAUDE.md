@@ -160,6 +160,7 @@ s pripojeným repozitárom `ernte-trade/ernte-`.
   Košický kraj Ing. Galajda +421 902 733 222, Prešovský Mgr. Ceperko +421 940 944 733 podľa PSČ v adrese; DANUBE iba Jozsef Karoczkai) iba veľké dlaždice. Pôvodné sekcie sa ukážu po ťuknutí (h2 → `data-fsec`).
   Predať = plodina → tony → stará úroda / nová (ceny na neskorší odber) → odvoz deň + čas → kupujúci ERNTE/Danube + jazyk zmluvy → Odoslať (`requests.harvest`, `clang`).
   Trigger `req_team_push`: push Galajda, Ceperko, Ličko; DANUBE aj Jozsef po maďarsky; `route_emails('obchod_dnb')` pridá Jozsefa do Nevybavených.
+- **🌦️ UPOZORNENIA NA POČASIE (31. 10. `wxalert.js`, `wx_alert_run/collect/my`, pg_cron `pocasie-upoz` hodinovo; 1. 11. 09:20 príkaz majiteľa):** 24 h dopredu, každé upozornenie má radu pre pole (🚜 `p`) a dopravu / nakládky (🚛 `d`); dážď, sneh, poľadovica, búrka, vietor ≥ 55 aj ≥ 40 (postrek), hmla, mráz. Do mobilu (Web Push) kto má zapnuté (v noci 21–5 iba závažné), v aplikácii karta hore pre všetkých s ✕.
 - **🌐 ZMLUVA PODĽA ŠTÁTU (`clang.js`, `farmers.clang`, `set_clang`):** ERNTE: SK/CZ → SK; HU → SK | HU; AT/DE → SK | DE; inde SK | EN (AI preklad cez `i18n_get`, „pri rozpore platí slovenské znenie“).
   DANUBE vždy SK | HU (dnzmluva.js). Tlačidlo 🌐 pri každej „Zmluva PDF“ (farmár aj tím) prepne jazyk.
 - **🌐 JAZYK APLIKÁCIE (`lang.js`):** SK/HU/EN/DE, preklad AI so spoločnou pamäťou (`i18n_tr`, pg_cron `i18n`). Danube (farmári + Jozsef) prvé prihlásenie po maďarsky (`ernteLangAuto`),
