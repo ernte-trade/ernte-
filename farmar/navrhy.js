@@ -5,6 +5,9 @@
 const E=s=>String(s==null?"":s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const OK=()=>typeof ROLE!=="undefined"&&ROLE==="owner"&&typeof MAIN_OK==="function"&&MAIN_OK()&&!window.ERNTE_VIEWAS&&!window.ERNTE_TEST&&typeof sb!=="undefined";
 const N={d:null,at:0,busy:false,open:{}};
+// 1. 11.: kedy návrh vznikol (dnes / včera / pred N dňami) – nech Martin vidí, čo je nové
+const ago=t=>{if(!t)return "";const d=new Date(t);if(isNaN(d))return "";const a=new Date();a.setHours(0,0,0,0);const b=new Date(d);b.setHours(0,0,0,0);const n=Math.round((a-b)/864e5);
+  return n<=0?"dnes "+d.toLocaleTimeString("sk-SK",{hour:"2-digit",minute:"2-digit"}):n===1?"včera":"pred "+n+" dňami"};
 async function load(){if(N.busy||Date.now()-N.at<120e3)return;N.busy=true;N.at=Date.now();
   try{const since=new Date(Date.now()-7*864e5).toISOString();
     const [a,b,c]=await Promise.all([sb.from("claude_navrhy").select("*").in("status",["navrh","ano","hotovo"]).order("id",{ascending:false}).limit(30),
@@ -14,9 +17,9 @@ async function load(){if(N.busy||Date.now()-N.at<120e3)return;N.busy=true;N.at=D
   N.busy=false;paint()}
 function card(){const d=N.d;if(!d||d.err)return "";const nav=d.nav.filter(x=>x.status==="navrh"),ok=d.nav.filter(x=>x.status==="ano"),wk=Date.now()-7*864e5,done=d.nav.filter(x=>x.status==="hotovo"&&new Date(x.decided_at||x.at).getTime()>wk);
   const ne=d.enr.length,nh=d.hu.length;if(!nav.length&&!ok.length&&!done.length&&!ne&&!nh)return "";
-  return `<div class="card cnav"><div class="cnh"><b>🤖 Claude pracuje sám</b><small>posledných 7 dní</small></div>
+  return `<div class="card cnav"><div class="cnh"><b>🤖 Claude pracuje sám</b>${nav.length?`<em class="cnb">💡 ${nav.length} na rozhodnutie</em>`:`<small>posledných 7 dní</small>`}</div>
    <div class="cns">${nh?`<span>🇭🇺 <b>${nh}</b> nových firiem z východného Maďarska v Danube</span>`:""}${ne?`<span>📇 <b>${ne}</b> doplnených kontaktov farmárov</span>`:""}${ok.length?`<span>⏳ <b>${ok.length}</b> schválených návrhov sa robí</span>`:""}${done.length?`<span>✔️ <b>${done.length}</b> návrhov hotových</span>`:""}</div>
-   ${nav.length?`<div class="cnt">💡 Návrhy – rozhodni</div>${nav.map(x=>`<div class="cnn"><b>${E(x.title)}</b>${x.area?`<small>${E(x.area)}</small>`:""}${x.body?`<p>${E(x.body).replace(/\n/g,"<br>")}</p>`:""}
+   ${nav.length?`<div class="cnt">💡 Návrhy – rozhodni</div>${nav.map(x=>`<div class="cnn"><b>${E(x.title)}</b><small>${E([x.area,ago(x.at)].filter(Boolean).join(" · "))}</small>${x.body?`<p>${E(x.body).replace(/\n/g,"<br>")}</p>`:""}
      <div class="btns"><button type="button" class="lime" data-cnav="${x.id}" data-v="ano">✅ Áno, sprav to</button><button type="button" data-cnav="${x.id}" data-v="nie">✕ Nie</button></div></div>`).join("")}`:""}
    ${ok.length||done.length?`<details class="cnd"><summary>Schválené a hotové návrhy</summary>${ok.map(x=>`<div class="cnr"><b>⏳ ${E(x.title)}</b><small>${E(x.area||"")}</small></div>`).join("")}${done.map(x=>`<div class="cnr"><b>✔️ ${E(x.title)}</b><small>${E(x.area||"")}</small></div>`).join("")}<div class="s">Schválené Claude zrealizuje pri najbližšej nočnej práci.</div></details>`:""}
    ${nh?`<details class="cnd"><summary>Noví farmári DANUBE</summary>${d.hu.slice(0,20).map(h=>`<div class="cnr"><b>${E(h.company)}</b><small>${E([h.city,h.crops].filter(Boolean).join(" · "))}</small></div>`).join("")}<div class="s">Sú v Danube Trade ako neaktívni – obchodník ich osloví, až keď rozhodneš.</div></details>`:""}
@@ -29,7 +32,7 @@ document.addEventListener("click",async e=>{const t=e.target.closest&&e.target.c
   const bs=[...(t.closest(".cnn")||t.parentNode).querySelectorAll("[data-cnav]")];bs.forEach(b=>b.disabled=true);
   const r=await sb.rpc("claude_navrh_set",{p_id:+t.dataset.cnav,p_status:t.dataset.v,p_note:note});
   if(r.error){bs.forEach(b=>b.disabled=false);(window.toast||alert)(r.error.message);return}(window.toast||(()=>{}))(t.dataset.v==="ano"?"✅ Claude to spraví pri najbližšej práci":"Zamietnuté",3000);N.at=0;load()});
-{const s=document.createElement("style");s.textContent=`.cnav .cnh{display:flex;justify-content:center;align-items:baseline;gap:10px;flex-wrap:wrap}.cnav .cnh small{opacity:.7}
+{const s=document.createElement("style");s.textContent=`.cnav .cnh{display:flex;justify-content:center;align-items:baseline;gap:10px;flex-wrap:wrap}.cnav .cnh small{opacity:.7}.cnav .cnb{font-style:normal;font-size:.82rem;font-weight:700;padding:3px 10px;border-radius:999px;background:rgba(182,255,59,.16);border:1px solid rgba(182,255,59,.45);color:#d9ff8a;white-space:nowrap}html[data-theme=light] .cnav .cnb{color:#3f6212;background:rgba(101,163,13,.12);border-color:rgba(101,163,13,.45)}
 .cnav .cns{display:grid;gap:4px;margin:8px 0;text-align:center;font-size:.9rem}.cnav .cnt{font-weight:700;margin:10px 0 4px}
 .cnav .cnn{padding:10px;border-radius:14px;border:1px solid rgba(182,255,59,.35);background:rgba(182,255,59,.05);margin-top:8px;display:grid;gap:4px}.cnav .cnn small{opacity:.7}.cnav .cnn p{margin:2px 0;line-height:1.45;overflow-wrap:anywhere}
 .cnav .btns{display:flex;flex-wrap:wrap;gap:6px}.cnav .btns button{flex:1 1 140px;min-height:40px;white-space:normal}
