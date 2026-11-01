@@ -1,908 +1,16 @@
 [
  {
-  "q": "tractor plowing field",
+  "q": "stock chart monitor",
   "keys": [
    "batchcomplete",
-   "continue",
    "query"
   ],
-  "n": 40,
+  "n": 2,
   "lic": [
-   [
-    "CC BY-SA 4.0",
-    4896,
-    3828,
-    "ent=original"
-   ],
-   [
-    "CC BY-SA 4.0",
-    5934,
-    3956,
-    "ent=original"
-   ],
-   [
-    "CC BY-SA 4.0",
-    5372,
-    3581,
-    "ent=original"
-   ],
-   [
-    "CC BY-SA 4.0",
-    5456,
-    3637,
-    "ent=original"
-   ],
-   [
-    "No restrictions",
-    2000,
-    1643,
-    "ent=original"
-   ],
-   [
-    "CC BY-SA 4.0",
-    5472,
-    3648,
-    "ent=original"
-   ]
-  ]
- },
- {
-  "q": "rapeseed field flowering",
-  "keys": [
-   "batchcomplete",
-   "continue",
-   "query"
-  ],
-  "n": 40,
-  "lic": [
-   [
-    "CC BY-SA 2.0",
-    5048,
-    3690,
-    "ent=original"
-   ],
-   [
-    "CC BY-SA 2.0",
-    3648,
-    2736,
-    "ent=original"
-   ],
-   [
-    "CC BY-SA 2.0",
-    2560,
-    1920,
-    "ent=original"
-   ],
-   [
-    "CC BY-SA 4.0",
-    4032,
-    3024,
-    "ent=original"
-   ],
-   [
-    "CC BY-SA 4.0",
-    4608,
-    3456,
-    "ent=original"
-   ],
-   [
-    "CC BY-SA 2.0",
-    3752,
-    5011,
-    "ent=original"
-   ]
-  ]
- },
- {
-  "q": "light bulb glowing",
-  "keys": [
-   "batchcomplete",
-   "continue",
-   "query"
-  ],
-  "n": 40,
-  "lic": [
-   [
-    "CC BY-SA 4.0",
-    3696,
-    4000,
-    "ent=original"
-   ],
-   [
-    "CC BY-SA 4.0",
-    2526,
-    2105,
-    "ent=original"
-   ],
-   [
-    "CC BY-SA 4.0",
-    3840,
-    2880,
-    "ent=original"
-   ],
-   [
-    "CC BY-SA 4.0",
-    2592,
-    4608,
-    "ent=original"
-   ],
-   [
-    "Public domain",
-    3131,
-    3131,
-    "ent=original"
-   ],
-   [
-    "CC BY 2.0",
-    6048,
-    4024,
-    "ent=original"
-   ]
-  ]
- },
- {
-  "q": "paper calendar desk planner",
-  "keys": [
-   "batchcomplete"
-  ],
-  "n": 0,
-  "lic": []
- },
- {
-  "q": "wall calendar",
-  "keys": [
-   "batchcomplete",
-   "continue",
-   "query"
-  ],
-  "n": 40,
-  "lic": [
-   [
-    "Public domain",
-    2816,
-    2112,
-    "ent=original"
-   ],
-   [
-    "No restrictions",
-    1380,
-    2000,
-    "ent=original"
-   ],
    [
     "CC0",
-    3000,
-    4000,
-    "ent=original"
-   ],
-   [
-    "CC BY-SA 4.0",
-    3831,
-    5762,
-    "ent=original"
-   ],
-   [
-    "CC0",
-    4000,
-    3000,
-    "ent=original"
-   ],
-   [
-    "CC0",
-    2483,
-    4000,
-    "ent=original"
-   ]
-  ]
- },
- {
-  "q": "calculator close up",
-  "keys": [
-   "batchcomplete",
-   "query"
-  ],
-  "n": 30,
-  "lic": [
-   [
-    "CC BY-SA 3.0",
-    5449,
-    3633,
-    "ent=original"
-   ],
-   [
-    "CC BY 2.0",
-    2272,
-    1704,
-    "ent=original"
-   ],
-   [
-    "CC BY-SA 3.0",
-    4789,
-    3193,
-    "ent=original"
-   ],
-   [
-    "CC BY-SA 4.0",
-    2390,
-    1750,
-    "ent=original"
-   ],
-   [
-    "CC BY 4.0",
-    5289,
-    3611,
-    "ent=original"
-   ],
-   [
-    "CC BY 4.0",
-    6000,
-    4000,
-    "ent=original"
-   ]
-  ]
- },
- {
-  "q": "financial chart graph paper",
-  "keys": [
-   "batchcomplete",
-   "query"
-  ],
-  "n": 3,
-  "lic": [
-   [
-    "CC BY-SA 3.0",
-    1388,
-    775,
-    "ent=original"
-   ],
-   [
-    "CC BY-SA 4.0",
-    1920,
+    1620,
     1080,
-    "ent=original"
-   ],
-   [
-    "CC BY-SA 4.0",
-    1920,
-    1080,
-    "ent=original"
-   ]
-  ]
- },
- {
-  "q": "line chart printed",
-  "keys": [
-   "batchcomplete",
-   "continue",
-   "query"
-  ],
-  "n": 40,
-  "lic": [
-   [
-    "Public domain",
-    5486,
-    4009,
-    "ent=original"
-   ],
-   [
-    "CC0",
-    1072,
-    1647,
-    "ent=original"
-   ],
-   [
-    "Public domain",
-    1007,
-    1280,
-    "ent=original"
-   ],
-   [
-    "Public domain",
-    962,
-    1280,
-    "ent=original"
-   ],
-   [
-    "Public domain",
-    950,
-    1280,
-    "ent=original"
-   ],
-   [
-    "Public domain",
-    5486,
-    4009,
-    "ent=original"
-   ]
-  ]
- },
- {
-  "q": "euro coins",
-  "keys": [
-   "batchcomplete",
-   "continue",
-   "query"
-  ],
-  "n": 40,
-  "lic": [
-   [
-    "CC BY-SA 3.0",
-    3908,
-    3100,
-    "ent=original"
-   ],
-   [
-    "CC BY-SA 3.0",
-    3908,
-    3100,
-    "ent=original"
-   ],
-   [
-    "CC BY-SA 4.0",
-    3648,
-    5472,
-    "ent=original"
-   ],
-   [
-    "CC BY-SA 4.0",
-    150,
-    153,
-    "ent=original"
-   ],
-   [
-    "CC BY-SA 3.0",
-    3648,
-    2432,
-    "ent=original"
-   ],
-   [
-    "CC BY 4.0",
-    4500,
-    3000,
-    "ent=original"
-   ]
-  ]
- },
- {
-  "q": "corn cob maize",
-  "keys": [
-   "batchcomplete",
-   "continue",
-   "query"
-  ],
-  "n": 40,
-  "lic": [
-   [
-    "CC0",
-    3504,
-    2336,
-    "ent=original"
-   ],
-   [
-    "CC BY 4.0",
-    960,
-    1280,
-    "ent=original"
-   ],
-   [
-    "CC BY 2.0",
-    1600,
-    912,
-    "ent=original"
-   ],
-   [
-    "CC BY 3.0",
-    3456,
-    2304,
-    "ent=original"
-   ],
-   [
-    "CC BY-SA 4.0",
-    3024,
-    4032,
-    "ent=original"
-   ],
-   [
-    "CC BY-SA 2.0",
-    640,
-    480,
-    "ent=original"
-   ]
-  ]
- },
- {
-  "q": "Danube river Budapest",
-  "keys": [
-   "batchcomplete",
-   "continue",
-   "query"
-  ],
-  "n": 40,
-  "lic": [
-   [
-    "CC0",
-    3580,
-    2000,
-    "ent=original"
-   ],
-   [
-    "CC0",
-    5184,
-    3456,
-    "ent=original"
-   ],
-   [
-    "CC0",
-    5184,
-    3456,
-    "ent=original"
-   ],
-   [
-    "CC BY 4.0",
-    4032,
-    3024,
-    "ent=original"
-   ],
-   [
-    "CC BY-SA 4.0",
-    8328,
-    4685,
-    "ent=original"
-   ],
-   [
-    "CC0",
-    4000,
-    3000,
-    "ent=original"
-   ]
-  ]
- },
- {
-  "q": "signing contract pen",
-  "keys": [
-   "batchcomplete",
-   "query"
-  ],
-  "n": 28,
-  "lic": [
-   [
-    "CC BY-SA 4.0",
-    910,
-    607,
-    "ent=original"
-   ],
-   [
-    "CC BY 2.0",
-    6000,
-    4500,
-    "ent=original"
-   ],
-   [
-    "Public domain",
-    2658,
-    3332,
-    "ent=original"
-   ],
-   [
-    "Public domain",
-    2652,
-    3336,
-    "ent=original"
-   ],
-   [
-    "Public domain",
-    2479,
-    3508,
-    "ent=original"
-   ],
-   [
-    "CC BY-SA 4.0",
-    467,
-    622,
-    "ent=original"
-   ]
-  ]
- },
- {
-  "q": "ledger book handwriting",
-  "keys": [
-   "batchcomplete",
-   "query"
-  ],
-  "n": 11,
-  "lic": [
-   [
-    "Public domain",
-    3000,
-    2268,
-    "ent=original"
-   ],
-   [
-    "Public domain",
-    3000,
-    2180,
-    "ent=original"
-   ],
-   [
-    "Public domain",
-    1977,
-    3000,
-    "ent=original"
-   ],
-   [
-    "Public domain",
-    3000,
-    2268,
-    "ent=original"
-   ],
-   [
-    "Public domain",
-    3000,
-    2268,
-    "ent=original"
-   ],
-   [
-    "Public domain",
-    3000,
-    2286,
-    "ent=original"
-   ]
-  ]
- },
- {
-  "q": "grain mill factory",
-  "keys": [
-   "batchcomplete",
-   "continue",
-   "query"
-  ],
-  "n": 40,
-  "lic": [
-   [
-    "CC BY 2.0",
-    3170,
-    2115,
-    "ent=original"
-   ],
-   [
-    "CC BY-SA 3.0",
-    2606,
-    1614,
-    "ent=original"
-   ],
-   [
-    "Public domain",
-    5000,
-    3980,
-    "ent=original"
-   ],
-   [
-    "Public domain",
-    352,
-    213,
-    "ent=original"
-   ],
-   [
-    "CC BY-SA 3.0",
-    4664,
-    3640,
-    "ent=original"
-   ],
-   [
-    "Public domain",
-    5000,
-    3707,
-    "ent=original"
-   ]
-  ]
- },
- {
-  "q": "farmer in wheat field",
-  "keys": [
-   "batchcomplete",
-   "continue",
-   "query"
-  ],
-  "n": 40,
-  "lic": [
-   [
-    "CC0",
-    2252,
-    4000,
-    "ent=original"
-   ],
-   [
-    "Public domain",
-    1347,
-    880,
-    "ent=original"
-   ],
-   [
-    "Public domain",
-    1321,
-    846,
-    "ent=original"
-   ],
-   [
-    "CC BY-SA 4.0",
-    4080,
-    3072,
-    "ent=original"
-   ],
-   [
-    "CC BY-SA 4.0",
-    4080,
-    3072,
-    "ent=original"
-   ],
-   [
-    "CC BY-SA 4.0",
-    4080,
-    3072,
-    "ent=original"
-   ]
-  ]
- },
- {
-  "q": "trucks parked row depot",
-  "keys": [
-   "batchcomplete",
-   "query"
-  ],
-  "n": 16,
-  "lic": [
-   [
-    "Public domain",
-    2543,
-    3503,
-    "ent=original"
-   ],
-   [
-    "Public domain",
-    2543,
-    3503,
-    "ent=original"
-   ],
-   [
-    "Public domain",
-    2543,
-    3503,
-    "ent=original"
-   ],
-   [
-    "Public domain",
-    2543,
-    3503,
-    "ent=original"
-   ],
-   [
-    "Public domain",
-    2543,
-    3503,
-    "ent=original"
-   ],
-   [
-    "Public domain",
-    2543,
-    3503,
-    "ent=original"
-   ]
-  ]
- },
- {
-  "q": "board game dice",
-  "keys": [
-   "batchcomplete",
-   "continue",
-   "query"
-  ],
-  "n": 40,
-  "lic": [
-   [
-    "CC BY 2.0",
-    3876,
-    2907,
-    "ent=original"
-   ],
-   [
-    "CC BY-SA 4.0",
-    411,
-    435,
-    "ent=original"
-   ],
-   [
-    "CC0",
-    4608,
-    3456,
-    "ent=original"
-   ],
-   [
-    "CC BY-SA 3.0",
-    3357,
-    4577,
-    "ent=original"
-   ],
-   [
-    "CC0",
-    4000,
-    6000,
-    "ent=original"
-   ],
-   [
-    "CC0",
-    4608,
-    3456,
-    "ent=original"
-   ]
-  ]
- },
- {
-  "q": "globe geography",
-  "keys": [
-   "batchcomplete",
-   "continue",
-   "query"
-  ],
-  "n": 40,
-  "lic": [
-   [
-    "Public domain",
-    3000,
-    3002,
-    "ent=original"
-   ],
-   [
-    "Public domain",
-    4800,
-    2400,
-    "ent=original"
-   ],
-   [
-    "Public domain",
-    8000,
-    8000,
-    "ent=original"
-   ],
-   [
-    "CC BY 2.0",
-    7360,
-    4912,
-    "ent=original"
-   ],
-   [
-    "Public domain",
-    4256,
-    2832,
-    "ent=original"
-   ],
-   [
-    "Public domain",
-    2400,
-    2400,
-    "ent=original"
-   ]
-  ]
- },
- {
-  "q": "school books classroom",
-  "keys": [
-   "batchcomplete",
-   "continue",
-   "query"
-  ],
-  "n": 40,
-  "lic": [
-   [
-    "CC BY 4.0",
-    3343,
-    2064,
-    "ent=original"
-   ],
-   [
-    "CC BY 4.0",
-    3344,
-    2088,
-    "ent=original"
-   ],
-   [
-    "CC BY 4.0",
-    3287,
-    2031,
-    "ent=original"
-   ],
-   [
-    "CC BY 4.0",
-    3352,
-    2031,
-    "ent=original"
-   ],
-   [
-    "CC BY 4.0",
-    3335,
-    2087,
-    "ent=original"
-   ],
-   [
-    "CC BY 4.0",
-    3352,
-    2064,
-    "ent=original"
-   ]
-  ]
- },
- {
-  "q": "farm aerial view grain silos",
-  "keys": [
-   "batchcomplete"
-  ],
-  "n": 0,
-  "lic": []
- },
- {
-  "q": "farmstead aerial",
-  "keys": [
-   "batchcomplete",
-   "continue",
-   "query"
-  ],
-  "n": 40,
-  "lic": [
-   [
-    "CC0",
-    640,
-    480,
-    "ent=original"
-   ],
-   [
-    "CC BY-SA 2.0",
-    3200,
-    2400,
-    "ent=original"
-   ],
-   [
-    "CC BY-SA 2.0",
-    1600,
-    1007,
-    "ent=original"
-   ],
-   [
-    "CC BY-SA 3.0",
-    912,
-    647,
-    "ent=original"
-   ],
-   [
-    "Public domain",
-    3000,
-    2370,
-    "ent=original"
-   ],
-   [
-    "Public domain",
-    3000,
-    2370,
-    "ent=original"
-   ]
-  ]
- },
- {
-  "q": "stock market chart screen",
-  "keys": [
-   "batchcomplete",
-   "query"
-  ],
-  "n": 4,
-  "lic": [
-   [
-    "CC0",
-    768,
-    1208,
-    "ent=original"
-   ],
-   [
-    "Public domain",
-    2433,
-    1432,
     "ent=original"
    ],
    [
@@ -910,17 +18,19 @@
     3180,
     1485,
     "ent=original"
-   ],
-   [
-    "No restrictions",
-    838,
-    318,
-    "ent=original"
    ]
   ]
  },
  {
-  "q": "stock exchange display board",
+  "q": "trading chart computer screen",
+  "keys": [
+   "batchcomplete"
+  ],
+  "n": 0,
+  "lic": []
+ },
+ {
+  "q": "candlestick chart",
   "keys": [
    "batchcomplete",
    "continue",
@@ -929,39 +39,180 @@
   "n": 40,
   "lic": [
    [
-    "CC BY 2.0",
-    640,
-    480,
+    "CC BY-SA 3.0",
+    407,
+    571,
     "ent=original"
    ],
    [
-    "CC BY 2.0",
-    2592,
-    1944,
+    "CC BY-SA 4.0",
+    604,
+    504,
+    "ent=original"
+   ],
+   [
+    "CC BY-SA 4.0",
+    992,
+    455,
+    "ent=original"
+   ],
+   [
+    "CC0",
+    1440,
+    1080,
+    "ent=original"
+   ],
+   [
+    "CC0",
+    1440,
+    1080,
     "ent=original"
    ],
    [
     "Public domain",
-    1000,
-    1007,
+    320,
+    240,
+    "ent=original"
+   ]
+  ]
+ },
+ {
+  "q": "Scania trucks parked",
+  "keys": [
+   "batchcomplete",
+   "continue",
+   "query"
+  ],
+  "n": 40,
+  "lic": [
+   [
+    "CC BY-SA 4.0",
+    4000,
+    3000,
+    "ent=original"
+   ],
+   [
+    "CC BY-SA 4.0",
+    5184,
+    2916,
     "ent=original"
    ],
    [
     "CC BY-SA 2.0",
+    1024,
+    761,
+    "ent=original"
+   ],
+   [
+    "CC0",
+    4032,
+    3024,
+    "ent=original"
+   ],
+   [
+    "CC BY-SA 2.0",
+    251,
+    326,
+    "ent=original"
+   ],
+   [
+    "CC BY 4.0",
     3648,
-    2736,
+    2052,
+    "ent=original"
+   ]
+  ]
+ },
+ {
+  "q": "school notebook pencil",
+  "keys": [
+   "batchcomplete",
+   "continue",
+   "query"
+  ],
+  "n": 40,
+  "lic": [
+   [
+    "CC0",
+    3024,
+    4032,
     "ent=original"
    ],
    [
-    "CC BY 2.0",
-    2000,
-    3008,
+    "Public domain",
+    8688,
+    5792,
     "ent=original"
    ],
    [
-    "CC BY 2.0",
-    2592,
-    1944,
+    "Public domain",
+    8688,
+    5792,
+    "ent=original"
+   ],
+   [
+    "Public domain",
+    8688,
+    5792,
+    "ent=original"
+   ],
+   [
+    "Public domain",
+    8688,
+    5792,
+    "ent=original"
+   ],
+   [
+    "Public domain",
+    8688,
+    5792,
+    "ent=original"
+   ]
+  ]
+ },
+ {
+  "q": "grain silos farm",
+  "keys": [
+   "batchcomplete",
+   "continue",
+   "query"
+  ],
+  "n": 40,
+  "lic": [
+   [
+    "CC BY-SA 4.0",
+    5775,
+    4331,
+    "ent=original"
+   ],
+   [
+    "CC BY-SA 4.0",
+    7580,
+    4476,
+    "ent=original"
+   ],
+   [
+    "CC BY-SA 2.0",
+    640,
+    458,
+    "ent=original"
+   ],
+   [
+    "CC BY-SA 2.0",
+    1024,
+    768,
+    "ent=original"
+   ],
+   [
+    "CC BY-SA 2.0",
+    1600,
+    1063,
+    "ent=original"
+   ],
+   [
+    "CC BY-SA 2.0",
+    1600,
+    1062,
     "ent=original"
    ]
   ]
@@ -1014,7 +265,7 @@
   ]
  },
  {
-  "q": "newspaper stack",
+  "q": "farm workers harvest group",
   "keys": [
    "batchcomplete",
    "continue",
@@ -1022,751 +273,46 @@
   ],
   "n": 40,
   "lic": [
-   [
-    "CC BY-SA 2.0",
-    800,
-    600,
-    "ent=original"
-   ],
-   [
-    "CC BY 2.0",
-    4288,
-    2848,
-    "ent=original"
-   ],
-   [
-    "CC BY-SA 4.0",
-    2272,
-    1704,
-    "ent=original"
-   ],
    [
     "CC BY-SA 3.0",
-    450,
-    600,
+    3040,
+    2689,
     "ent=original"
    ],
    [
-    "CC BY-SA 2.0",
-    250,
-    129,
-    "ent=original"
-   ],
-   [
-    "CC BY-SA 2.0",
-    3648,
-    2736,
-    "ent=original"
-   ]
-  ]
- },
- {
-  "q": "smartphone in hand",
-  "keys": [
-   "batchcomplete",
-   "continue",
-   "query"
-  ],
-  "n": 40,
-  "lic": [
-   [
-    "CC0",
-    6000,
-    4000,
-    "ent=original"
-   ],
-   [
-    "CC0",
-    3264,
-    4928,
-    "ent=original"
-   ],
-   [
-    "CC0",
+    "Public domain",
     3000,
-    4000,
-    "ent=original"
-   ],
-   [
-    "CC BY-SA 3.0",
-    2499,
-    2997,
-    "ent=original"
-   ],
-   [
-    "CC0",
-    5472,
-    3648,
-    "ent=original"
-   ],
-   [
-    "CC0",
-    1280,
-    853,
-    "ent=original"
-   ]
-  ]
- },
- {
-  "q": "grain warehouse storage",
-  "keys": [
-   "batchcomplete",
-   "continue",
-   "query"
-  ],
-  "n": 40,
-  "lic": [
-   [
-    "CC BY 4.0",
-    5180,
-    3808,
-    "ent=original"
-   ],
-   [
-    "CC BY-SA 2.0",
-    1923,
-    1248,
+    2963,
     "ent=original"
    ],
    [
     "Public domain",
-    17579,
-    13600,
+    3000,
+    2963,
     "ent=original"
    ],
    [
     "Public domain",
-    17579,
-    13600,
-    "ent=original"
-   ],
-   [
-    "Public domain",
-    4974,
-    4013,
-    "ent=original"
-   ],
-   [
-    "CC BY-SA 2.0",
-    640,
-    481,
-    "ent=original"
-   ]
-  ]
- },
- {
-  "q": "crystal ball",
-  "keys": [
-   "batchcomplete",
-   "continue",
-   "query"
-  ],
-  "n": 40,
-  "lic": [
-   [
-    "CC BY-SA 3.0",
-    600,
-    450,
-    "ent=original"
-   ],
-   [
-    "CC BY-SA 2.5",
-    1920,
-    2560,
-    "ent=original"
-   ],
-   [
-    "CC BY-SA 4.0",
-    6730,
-    4323,
-    "ent=original"
-   ],
-   [
-    "CC BY-SA 4.0",
-    5969,
-    4569,
-    "ent=original"
-   ],
-   [
-    "CC BY-SA 4.0",
-    2023,
-    2839,
-    "ent=original"
-   ],
-   [
-    "CC BY-SA 2.5",
-    600,
-    838,
-    "ent=original"
-   ]
-  ]
- },
- {
-  "q": "euro banknotes",
-  "keys": [
-   "batchcomplete",
-   "continue",
-   "query"
-  ],
-  "n": 40,
-  "lic": [
-   [
-    "CC BY-SA 4.0",
-    6020,
-    3181,
-    "ent=original"
-   ],
-   [
-    "CC BY-SA 3.0",
-    720,
-    554,
-    "ent=original"
-   ],
-   [
-    "CC0",
-    1376,
     2016,
-    "ent=original"
-   ],
-   [
-    "CC0",
-    993,
-    1205,
-    "ent=original"
-   ],
-   [
-    "CC0",
-    1069,
-    1205,
-    "ent=original"
-   ],
-   [
-    "CC BY-SA 4.0",
-    3024,
-    3676,
-    "ent=original"
-   ]
-  ]
- },
- {
-  "q": "business handshake",
-  "keys": [
-   "batchcomplete",
-   "continue",
-   "query"
-  ],
-  "n": 40,
-  "lic": [
-   [
-    "CC0",
-    6000,
-    4015,
-    "ent=original"
-   ],
-   [
-    "CC BY 2.0",
-    4000,
-    2667,
-    "ent=original"
-   ],
-   [
-    "CC0",
-    7061,
-    4759,
-    "ent=original"
-   ],
-   [
-    "CC BY 2.0",
-    1000,
-    667,
-    "ent=original"
-   ],
-   [
-    "CC0",
-    6186,
-    4124,
-    "ent=original"
-   ],
-   [
-    "CC BY 2.0",
-    3112,
-    2207,
-    "ent=original"
-   ]
-  ]
- },
- {
-  "q": "letters mailbox inbox",
-  "keys": [
-   "batchcomplete"
-  ],
-  "n": 0,
-  "lic": []
- },
- {
-  "q": "mail letters envelopes",
-  "keys": [
-   "batchcomplete",
-   "continue",
-   "query"
-  ],
-  "n": 40,
-  "lic": [
-   [
-    "CC BY-SA 3.0",
-    200,
-    200,
-    "ent=original"
-   ],
-   [
-    "Public domain",
-    1555,
-    2500,
-    "ent=original"
-   ],
-   [
-    "Public domain",
-    768,
-    1152,
-    "ent=original"
-   ],
-   [
-    "GPL",
-    16,
-    11,
-    "ent=original"
-   ],
-   [
-    "CC BY 3.0",
-    509,
-    430,
-    "ent=original"
-   ],
-   [
-    "GPL",
-    128,
-    128,
-    "ent=original"
-   ]
-  ]
- },
- {
-  "q": "contract document signature",
-  "keys": [
-   "batchcomplete",
-   "continue",
-   "query"
-  ],
-  "n": 40,
-  "lic": [
-   [
-    "CC BY 2.0",
-    6000,
-    4500,
-    "ent=original"
-   ],
-   [
-    "CC BY-SA 3.0",
-    32,
-    37,
-    "ent=original"
-   ],
-   [
-    "CC BY-SA 3.0",
-    32,
-    37,
-    "ent=original"
-   ],
-   [
-    "CC BY-SA 3.0",
-    32,
-    37,
-    "ent=original"
-   ],
-   [
-    "CC BY-SA 3.0",
-    32,
-    37,
-    "ent=original"
-   ],
-   [
-    "CC BY-SA 3.0",
-    32,
-    37,
-    "ent=original"
-   ]
-  ]
- },
- {
-  "q": "wheat ears close up",
-  "keys": [
-   "batchcomplete",
-   "continue",
-   "query"
-  ],
-  "n": 40,
-  "lic": [
-   [
-    "CC BY-SA 3.0",
-    2592,
-    1944,
-    "ent=original"
-   ],
-   [
-    "CC BY-SA 4.0",
-    4000,
-    6000,
-    "ent=original"
-   ],
-   [
-    "CC BY-SA 2.0",
-    480,
-    640,
-    "ent=original"
-   ],
-   [
-    "CC BY-SA 4.0",
-    4000,
-    6000,
-    "ent=original"
-   ],
-   [
-    "CC BY-SA 4.0",
-    6000,
-    4000,
-    "ent=original"
-   ],
-   [
-    "CC BY-SA 2.0",
-    640,
-    480,
-    "ent=original"
-   ]
-  ]
- },
- {
-  "q": "sunrise over field",
-  "keys": [
-   "batchcomplete",
-   "continue",
-   "query"
-  ],
-  "n": 40,
-  "lic": [
-   [
-    "CC BY-SA 4.0",
-    5014,
-    3134,
-    "ent=original"
-   ],
-   [
-    "CC BY 4.0",
-    4608,
-    3456,
-    "ent=original"
-   ],
-   [
-    "CC BY-SA 2.0",
-    432,
-    640,
-    "ent=original"
-   ],
-   [
-    "CC BY-SA 4.0",
-    5385,
-    3590,
-    "ent=original"
-   ],
-   [
-    "CC BY 2.0",
-    5184,
-    3456,
-    "ent=original"
-   ],
-   [
-    "CC BY 2.0",
-    4608,
-    3456,
-    "ent=original"
-   ]
-  ]
- },
- {
-  "q": "team of workers meeting",
-  "keys": [
-   "batchcomplete",
-   "continue",
-   "query"
-  ],
-  "n": 40,
-  "lic": [
-   [
-    "CC BY 4.0",
-    3280,
-    1999,
-    "ent=original"
-   ],
-   [
-    "CC BY 4.0",
-    2040,
-    3368,
-    "ent=original"
-   ],
-   [
-    "CC BY 4.0",
-    3304,
-    2040,
-    "ent=original"
-   ],
-   [
-    "CC BY 4.0",
-    3328,
-    1999,
-    "ent=original"
-   ],
-   [
-    "CC BY 4.0",
-    1992,
-    3271,
-    "ent=original"
-   ],
-   [
-    "CC BY 4.0",
-    3344,
-    2360,
-    "ent=original"
-   ]
-  ]
- },
- {
-  "q": "checklist clipboard pen",
-  "keys": [
-   "batchcomplete",
-   "query"
-  ],
-  "n": 1,
-  "lic": [
-   [
-    "Public domain",
-    5616,
-    3744,
-    "ent=original"
-   ]
-  ]
- },
- {
-  "q": "quality control inspection clipboard",
-  "keys": [
-   "batchcomplete"
-  ],
-  "n": 0,
-  "lic": []
- },
- {
-  "q": "semi truck highway Europe",
-  "keys": [
-   "batchcomplete",
-   "query"
-  ],
-  "n": 1,
-  "lic": [
-   [
-    "CC BY-SA 4.0",
-    5598,
-    3145,
-    "ent=original"
-   ]
-  ]
- },
- {
-  "q": "truck on highway",
-  "keys": [
-   "batchcomplete",
-   "continue",
-   "query"
-  ],
-  "n": 40,
-  "lic": [
-   [
-    "FAL",
-    6528,
-    4080,
-    "ent=original"
-   ],
-   [
-    "CC BY-SA 4.0",
-    3168,
-    2112,
-    "ent=original"
-   ],
-   [
-    "CC BY-SA 4.0",
-    3018,
-    2012,
-    "ent=original"
-   ],
-   [
-    "CC BY-SA 4.0",
-    4000,
-    2667,
-    "ent=original"
-   ],
-   [
-    "CC BY-SA 2.0",
-    1600,
-    1140,
-    "ent=original"
-   ],
-   [
-    "Public domain",
-    3780,
-    2585,
-    "ent=original"
-   ]
-  ]
- },
- {
-  "q": "trophy cup gold",
-  "keys": [
-   "batchcomplete",
-   "continue",
-   "query"
-  ],
-  "n": 40,
-  "lic": [
-   [
-    "CC0",
-    614,
-    1116,
-    "ent=original"
-   ],
-   [
-    "CC BY-SA 4.0",
-    726,
-    943,
-    "ent=original"
-   ],
-   [
-    "CC BY-SA 4.0",
-    260,
-    320,
-    "ent=original"
-   ],
-   [
-    "Public domain",
-    140,
-    209,
-    "ent=original"
-   ],
-   [
-    "CC BY-SA 4.0",
-    130,
-    237,
-    "ent=original"
-   ],
-   [
-    "Public domain",
-    537,
-    453,
-    "ent=original"
-   ]
-  ]
- },
- {
-  "q": "chickens poultry house broiler",
-  "keys": [
-   "batchcomplete",
-   "query"
-  ],
-  "n": 6,
-  "lic": [
-   [
-    "Public domain",
-    640,
-    427,
-    "ent=original"
-   ],
-   [
-    "Public domain",
-    640,
-    437,
-    "ent=original"
-   ],
-   [
-    "Public domain",
-    6144,
-    4081,
-    "ent=original"
-   ],
-   [
-    "No restrictions",
-    1278,
-    2096,
-    "ent=original"
-   ],
-   [
-    "No restrictions",
-    3144,
-    1188,
-    "ent=original"
-   ],
-   [
-    "No restrictions",
-    2830,
-    664,
-    "ent=original"
-   ]
-  ]
- },
- {
-  "q": "chicken farm",
-  "keys": [
-   "batchcomplete",
-   "continue",
-   "query"
-  ],
-  "n": 40,
-  "lic": [
-   [
-    "CC BY-SA 4.0",
-    5472,
-    3648,
-    "ent=original"
-   ],
-   [
-    "CC BY-SA 4.0",
     3000,
-    2000,
+    "ent=original"
+   ],
+   [
+    "CC BY-SA 2.0",
+    2092,
+    1800,
     "ent=original"
    ],
    [
     "Public domain",
-    640,
-    437,
-    "ent=original"
-   ],
-   [
-    "CC BY-SA 4.0",
-    1120,
-    1680,
-    "ent=original"
-   ],
-   [
-    "CC BY-SA 4.0",
-    1120,
-    1680,
-    "ent=original"
-   ],
-   [
-    "CC BY-SA 4.0",
-    1120,
-    1680,
+    3000,
+    2064,
     "ent=original"
    ]
   ]
  },
  {
-  "q": "cumulus clouds blue sky",
+  "q": "Volvo FH truck",
   "keys": [
    "batchcomplete",
    "continue",
@@ -1776,8 +322,32 @@
   "lic": [
    [
     "CC BY-SA 4.0",
-    2256,
-    1504,
+    4200,
+    3150,
+    "ent=original"
+   ],
+   [
+    "CC BY-SA 4.0",
+    4367,
+    2911,
+    "ent=original"
+   ],
+   [
+    "CC BY-SA 4.0",
+    4852,
+    4000,
+    "ent=original"
+   ],
+   [
+    "CC BY-SA 4.0",
+    4608,
+    3456,
+    "ent=original"
+   ],
+   [
+    "CC BY-SA 4.0",
+    4341,
+    3256,
     "ent=original"
    ],
    [
@@ -1785,43 +355,11 @@
     5472,
     3648,
     "ent=original"
-   ],
-   [
-    "CC BY-SA 4.0",
-    5095,
-    3305,
-    "ent=original"
-   ],
-   [
-    "CC BY-SA 4.0",
-    5164,
-    3259,
-    "ent=original"
-   ],
-   [
-    "CC BY-SA 4.0",
-    3523,
-    2268,
-    "ent=original"
-   ],
-   [
-    "CC BY-SA 4.0",
-    4032,
-    2268,
-    "ent=original"
    ]
   ]
  },
  {
-  "q": "invoice receipt calculator",
-  "keys": [
-   "batchcomplete"
-  ],
-  "n": 0,
-  "lic": []
- },
- {
-  "q": "receipts calculator",
+  "q": "trophy cup isolated",
   "keys": [
    "batchcomplete",
    "query"
@@ -1829,15 +367,108 @@
   "n": 2,
   "lic": [
    [
-    "No restrictions",
-    290,
-    288,
+    "Public domain",
+    1494,
+    2189,
     "ent=original"
    ],
    [
-    "No restrictions",
-    236,
-    240,
+    "Public domain",
+    712,
+    612,
+    "ent=original"
+   ]
+  ]
+ },
+ {
+  "q": "gold cup trophy object",
+  "keys": [
+   "batchcomplete",
+   "query"
+  ],
+  "n": 31,
+  "lic": [
+   [
+    "CC BY 3.0 au",
+    1200,
+    1600,
+    "ent=original"
+   ],
+   [
+    "Public domain",
+    1250,
+    891,
+    "ent=original"
+   ],
+   [
+    "Public domain",
+    1250,
+    891,
+    "ent=original"
+   ],
+   [
+    "CC BY 4.0",
+    480,
+    640,
+    "ent=original"
+   ],
+   [
+    "CC BY 4.0",
+    333,
+    632,
+    "ent=original"
+   ],
+   [
+    "Public domain",
+    916,
+    916,
+    "ent=original"
+   ]
+  ]
+ },
+ {
+  "q": "invoice paper",
+  "keys": [
+   "batchcomplete",
+   "continue",
+   "query"
+  ],
+  "n": 40,
+  "lic": [
+   [
+    "CC BY-SA 4.0",
+    900,
+    1600,
+    "ent=original"
+   ],
+   [
+    "CC BY-SA 3.0",
+    1448,
+    2592,
+    "ent=original"
+   ],
+   [
+    "CC BY-SA 4.0",
+    1350,
+    2400,
+    "ent=original"
+   ],
+   [
+    "CC BY-SA 3.0",
+    450,
+    1600,
+    "ent=original"
+   ],
+   [
+    "Public domain",
+    900,
+    1600,
+    "ent=original"
+   ],
+   [
+    "CC BY-SA 4.0",
+    900,
+    1600,
     "ent=original"
    ]
   ]
