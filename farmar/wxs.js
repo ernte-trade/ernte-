@@ -36,7 +36,7 @@ const TXT=c=>c===0?"Jasno":c<=2?"Polojasno":c===3?"Oblačno":c<=48?"Hmla":c<=57?
 async function load(force){const L=loc(),k=L.lat+","+L.lon;if(!force&&W.d&&W.key===k&&Date.now()-W.at<15*60e3)return;if(W.busy)return W.busy;
   W.busy=(async()=>{try{const q=`latitude=${L.lat}&longitude=${L.lon}&timezone=Europe%2FBratislava`;
     const [f,a]=await Promise.all([
-      fetch(`https://api.open-meteo.com/v1/forecast?${q}&current=temperature_2m,apparent_temperature,relative_humidity_2m,dew_point_2m,pressure_msl,wind_speed_10m,wind_direction_10m,visibility,uv_index,weather_code,is_day&hourly=temperature_2m,precipitation_probability,precipitation,weather_code,is_day,wind_speed_10m,relative_humidity_2m,pressure_msl&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max,precipitation_sum,sunrise,sunset,uv_index_max,wind_speed_10m_max&past_days=1&forecast_days=10`).then(r=>r.json()),
+      fetch(`https://api.open-meteo.com/v1/forecast?${q}&current=temperature_2m,apparent_temperature,relative_humidity_2m,dew_point_2m,pressure_msl,wind_speed_10m,wind_direction_10m,visibility,uv_index,weather_code,is_day&hourly=temperature_2m,precipitation_probability,precipitation,weather_code,is_day,wind_speed_10m,wind_gusts_10m,wind_direction_10m,apparent_temperature,uv_index,relative_humidity_2m,pressure_msl&daily=weather_code,temperature_2m_max,temperature_2m_min,apparent_temperature_max,apparent_temperature_min,precipitation_probability_max,precipitation_sum,precipitation_hours,rain_sum,snowfall_sum,sunrise,sunset,uv_index_max,wind_speed_10m_max,wind_gusts_10m_max,wind_direction_10m_dominant&past_days=1&forecast_days=10`).then(r=>r.json()),
       fetch(`https://air-quality-api.open-meteo.com/v1/air-quality?${q}&current=european_aqi,alder_pollen,birch_pollen,grass_pollen,ragweed_pollen,mugwort_pollen&hourly=birch_pollen,grass_pollen,ragweed_pollen&forecast_days=2`).then(r=>r.json()).catch(()=>null)]);
     if(f&&f.current){W.d=f;W.a=a;W.at=Date.now();W.key=k}else{if(!W.d)W.d={err:1};W.at=Date.now()-14*60e3;W.key=k}}catch(x){if(!W.d)W.d={err:1};W.at=Date.now()-14*60e3;W.key=k}finally{W.busy=null}})();return W.busy} // 31. 10.: pri chybe skúsiť znova až o minútu – inak nekonečné prekresľovanie (aplikácia sekala, keď počasie nešlo načítať)
 // ---- pomocné výpočty ----
@@ -73,6 +73,7 @@ function tcol(t){const S=[[-10,"#5E5CE6"],[0,"#64D2FF"],[8,"#7AE0B8"],[14,"#C9E2
   if(t<=S[0][0])return S[0][1];for(let i=1;i<S.length;i++)if(t<=S[i][0])return S[i][1];return S[S.length-1][1]}
 const pr10=p=>Math.round((p||0)/10)*10;
 const hh=t=>+String(t).slice(11,13);
+const mm1=v=>(Math.round((v||0)*10)/10).toLocaleString("sk-SK",{minimumFractionDigits:v>0&&v<10?1:0,maximumFractionDigits:1});
 function html(){const L=loc(),D=W.d;
   if(!D)return `<div class="wsx ios k-partly"><div class="wscard"><div class="wssum">Načítavam počasie…</div></div></div>`;
   if(D.err)return `<div class="wsx ios k-cloudy"><div class="wsios"><button type="button" class="wscity" data-wxpick>${E(L.name)}</button></div><div class="wscard"><div class="wssum">Počasie sa nepodarilo načítať. Skúste ↻ Obnoviť.</div><button type="button" class="wsplace" data-wxpick>📍 Zmeniť miesto</button></div></div>`;
@@ -84,7 +85,7 @@ function html(){const L=loc(),D=W.d;
   const SR=[];for(let d=it;d<=Math.min(it+1,Dl.time.length-1);d++){SR.push([Dl.sunrise[d],1]);SR.push([Dl.sunset[d],0])}
   const hrs=[];const iE=Math.min(H.time.length,i0+25);
   for(let i=i0;i<iE;i++){const dy=H.is_day[i]===1,p=H.precipitation_probability[i]??0;
-    hrs.push(`<div class="wsh"><small>${i===i0?"Teraz":hh(H.time[i])}</small><span>${ICO(i===i0?C.weather_code:H.weather_code[i],i===i0?C.is_day===1:dy)}${p>=20?`<em>${pr10(p)} %</em>`:""}</span><b>${R(i===i0?C.temperature_2m:H.temperature_2m[i])}°</b></div>`);
+    hrs.push(`<div class="wsh"><small>${i===i0?"Teraz":hh(H.time[i])}</small><span>${ICO(i===i0?C.weather_code:H.weather_code[i],i===i0?C.is_day===1:dy)}${p>=20?`<em>${pr10(p)} %</em>`:""}</span><b>${R(i===i0?C.temperature_2m:H.temperature_2m[i])}°</b>${(H.precipitation[i]||0)>=0.1?`<i class="wshm">${mm1(H.precipitation[i])}</i>`:""}<i class="wshw">${R(H.wind_speed_10m[i])}<s>km/h</s></i></div>`);
     const nx=H.time[i+1];SR.forEach(([t,up])=>{if(t&&t>H.time[i]&&(!nx||t<nx)&&i+1<iE)hrs.push(`<div class="wsh sr"><small>${hm(t).replace(/^0/,"")}</small><span>${sunIco(up)}</span><b>${up?"Východ":"Západ"}</b></div>`)})}
   // zhrnutie ako iPhone
   const nxt=H.weather_code.slice(i0,i0+12),cnt={};nxt.forEach(c=>{const k=TXT(c);cnt[k]=(cnt[k]||0)+1});const dom=Object.keys(cnt).sort((a,b)=>cnt[b]-cnt[a])[0]||TXT(C.weather_code);
@@ -98,7 +99,7 @@ function html(){const L=loc(),D=W.d;
   const last=Math.min(Dl.time.length,it+10),dmin=Math.min(...Dl.temperature_2m_min.slice(it,last)),dmax=Math.max(...Dl.temperature_2m_max.slice(it,last)),rg=Math.max(1,dmax-dmin);
   const days=[];for(let i=it;i<last;i++){const t=Dl.time[i],lo=Dl.temperature_2m_min[i],hi=Dl.temperature_2m_max[i],pp=Dl.precipitation_probability_max[i]??0,a=(lo-dmin)/rg*100,b=(hi-dmin)/rg*100;
     const dot=i===it?`<u style="left:${Math.max(0,Math.min(100,(C.temperature_2m-dmin)/rg*100))}%"></u>`:"";
-    days.push(`<div class="wsd"><b>${E(i===it?"Dnes":new Date(t+"T12:00").toLocaleDateString("sk-SK",{weekday:"short"}).replace(".",""))}</b><span>${ICO(Dl.weather_code[i])}${pp>=20?`<em>${pr10(pp)} %</em>`:""}</span><small>${R(lo)}°</small><i class="wsr"><i style="left:${a}%;right:${100-b}%;background:linear-gradient(90deg,${tcol(lo)},${tcol(hi)})"></i>${dot}</i><strong>${R(hi)}°</strong></div>`)}
+    days.push(`<button type="button" class="wsd" data-wday="${i}"><b>${E(i===it?"Dnes":new Date(t+"T12:00").toLocaleDateString("sk-SK",{weekday:"short"}).replace(".",""))}</b><span>${ICO(Dl.weather_code[i])}${pp>=20?`<em>${pr10(pp)} %</em>`:""}</span><small>${R(lo)}°</small><i class="wsr"><i style="left:${a}%;right:${100-b}%;background:linear-gradient(90deg,${tcol(lo)},${tcol(hi)})"></i>${dot}</i><strong>${R(hi)}°</strong><em class="wsdx">💧 ${mm1(Dl.precipitation_sum[i]||0)} mm${pp>=10?` · ${pr10(pp)} %`:""} &nbsp; 💨 ${R(Dl.wind_speed_10m_max[i])} km/h${Dl.wind_gusts_10m_max?` (nárazy ${R(Dl.wind_gusts_10m_max[i])})`:""}</em><i class="wsdc">›</i></button>`)}
   const A=W.a&&W.a.current||{},aqi=A.european_aqi;const uv=C.uv_index??Dl.uv_index_max[it],hum=C.relative_humidity_2m,vis=C.visibility,mo=moon();
   const pres=C.pressure_msl,p3=i0>=3?H.pressure_msl[i0-3]:null,prT=p3==null?"":pres-p3<=-1.5?"Rýchlo klesá.":pres-p3<-0.4?"Klesá.":pres-p3>=1.5?"Rýchlo stúpa.":pres-p3>0.4?"Stúpa.":"Stabilný.";
   const fl=C.apparent_temperature,ft=C.temperature_2m,flT=Math.abs(fl-ft)<1.5?"Podobná ako skutočná teplota.":fl<ft?(C.wind_speed_10m>=10?"Vietor spôsobuje, že je chladnejšie.":"Pocitovo je chladnejšie."):"Vlhkosť spôsobuje, že je teplejšie.";
@@ -113,7 +114,7 @@ function html(){const L=loc(),D=W.d;
   ${WN.length?`<div class="wscard wsc-w">${hd("⚠️","UPOZORNENIA")}${WN.map(x=>`<div class="wswn ${x[3]}"><span>${x[0]}</span><div><b>${E(x[1])}</b><small>${E(x[2])}</small></div></div>`).join("")}</div>`:""}
   <div class="wscard wsc-h"><div class="wssum">${E(sum)}</div><div class="wshs"><div class="wshrow">${hrs.join("")}</div></div></div>
   <div class="wsgrid">
-   <div class="wscard wsc-d">${hd("🗓️","PREDPOVEĎ NA 10 DNÍ")}${days.join("")}</div>
+   <div class="wscard wsc-d">${hd("🗓️","PREDPOVEĎ NA 10 DNÍ · ťukni na deň")}${days.join("")}</div>
    <div class="wscol">
     ${aqi!=null?`<div class="wscard wsc-aqi">${hd("🌫️","KVALITA OVZDUŠIA")}<b class="wsv">${R(aqi)} – ${E(aqiTxt(aqi))}</b><p>Európsky index kvality ovzdušia (EAQI).</p><i class="wsuv aq"><i style="left:${Math.min(100,aqi)}%"></i></i></div>`:""}
     <div class="wscard wsc-map">${hd("☔","MAPA ZRÁŽOK")}<div class="rdbox" id="radarBox"></div><small class="wsnote">Radar: <a href="https://www.pocasieradar.sk/" target="_blank" rel="noopener">pocasieradar.sk</a></small></div>
@@ -132,6 +133,47 @@ function html(){const L=loc(),D=W.d;
    </div>
   </div>
   <div class="wssrc">Počasie: Open-Meteo · aktualizované ${new Date(W.at).toLocaleTimeString("sk-SK",{hour:"2-digit",minute:"2-digit"})} · <button type="button" class="wsplace" data-wxpick>📍 Zmeniť miesto</button></div></div>`}
+
+// ---- 📅 DETAIL DŇA ako iPhone (1. 11., príkaz majiteľa): ťuk na deň → hodinová teplota, zrážky v mm, vietor s nárazmi a smerom ----
+function chart(vals,o){o=o||{};const n=vals.length,W2=240,H2=o.h||70,v2=vals.map(v=>v==null?null:+v),ok=v2.filter(v=>v!=null);if(!ok.length)return "";if(o.second)o.second.forEach(v=>{if(v!=null)ok.push(+v)});
+  let mn=o.min!=null?o.min:Math.min(...ok),mx=o.max!=null?Math.max(o.max,...ok):Math.max(...ok);if(mx-mn<1){mx+=0.5;mn-=0.5}
+  const X=i=>n<2?W2/2:i/(n-1)*W2,Y=v=>H2-3-(v-mn)/(mx-mn)*(H2-8);
+  if(o.bars){const bw=W2/n*0.7;return `<svg viewBox="0 0 ${W2} ${H2}" preserveAspectRatio="none">${v2.map((v,i)=>v>0?`<rect x="${(i+0.15)*W2/n}" y="${Y(v)}" width="${bw}" height="${H2-3-Y(v)}" rx="1.5" fill="${o.col||"#64D2FF"}"/>`:"").join("")}${o.line?`<path d="${o.line.map((v,i)=>(i?"L":"M")+((i+0.5)*W2/n).toFixed(1)+","+(H2-3-(v||0)/100*(H2-8)).toFixed(1)).join(" ")}" fill="none" stroke="rgba(255,255,255,.75)" stroke-width="1.5" stroke-dasharray="3 3" vector-effect="non-scaling-stroke"/>`:""}</svg>`}
+  const path=a=>a.map((v,i)=>v==null?"":(i&&a[i-1]!=null?"L":"M")+X(i).toFixed(1)+","+Y(v).toFixed(1)).join(" ");
+  return `<svg viewBox="0 0 ${W2} ${H2}" preserveAspectRatio="none">${o.fill?`<path d="${path(v2)} L${W2},${H2} L0,${H2} Z" fill="${o.fill}"/>`:""}${o.second?`<path d="${path(o.second)}" fill="none" stroke="rgba(255,255,255,.7)" stroke-width="1.5" stroke-dasharray="4 3" vector-effect="non-scaling-stroke"/>`:""}<path d="${path(v2)}" fill="none" stroke="${o.col||"#fff"}" stroke-width="2.5" stroke-linejoin="round" vector-effect="non-scaling-stroke"/>${o.nowI!=null&&o.nowI>=0&&o.nowI<n?`<line x1="${X(o.nowI)}" x2="${X(o.nowI)}" y1="0" y2="${H2}" stroke="rgba(255,255,255,.55)" stroke-width="1" vector-effect="non-scaling-stroke"/>`:""}</svg>`}
+const axis=()=>`<div class="wdax"><span>0</span><span>6</span><span>12</span><span>18</span><span>24 h</span></div>`;
+function dayHTML(i){const D=W.d,H=D.hourly,Dl=D.daily,C=D.current;const t=Dl.time[i];if(!t)return "";
+  const iT=Dl.time.indexOf(String(C.time).slice(0,10)),it=iT<0?1:iT;
+  const ix=[];H.time.forEach((x,j)=>{if(String(x).slice(0,10)===t)ix.push(j)});
+  const g=k=>ix.map(j=>(H[k]||[])[j]);const tmp=g("temperature_2m"),pr=g("precipitation"),pp=g("precipitation_probability"),ws=g("wind_speed_10m"),gu=g("wind_gusts_10m"),wd=g("wind_direction_10m"),wc=g("weather_code"),dy=g("is_day"),fl=g("apparent_temperature"),hu=g("relative_humidity_2m");
+  const nowI=i===it?ix.findIndex(j=>String(H.time[j])>=String(C.time).slice(0,13)):-1;
+  const lo=Dl.temperature_2m_min[i],hi=Dl.temperature_2m_max[i],rs=Dl.precipitation_sum[i]||0,rh=(Dl.precipitation_hours||[])[i],sn=(Dl.snowfall_sum||[])[i]||0,wmx=Dl.wind_speed_10m_max[i],gmx=(Dl.wind_gusts_10m_max||[])[i],wdom=(Dl.wind_direction_10m_dominant||[])[i];
+  const dname=i===it?"Dnes":i===it+1?"Zajtra":i===it-1?"Včera":new Date(t+"T12:00").toLocaleDateString("sk-SK",{weekday:"long"}),dd=new Date(t+"T12:00").toLocaleDateString("sk-SK",{weekday:"long",day:"numeric",month:"long"});
+  const wet=pr.map((v,k)=>v>=0.1?k:-1).filter(k=>k>=0);
+  const rainTxt=rs<0.1?"Bez zrážok.":`Spolu ${mm1(rs)} mm${rh?` počas ${R(rh)} h`:""}${sn>=0.1?`, z toho sneh ${mm1(sn)} cm`:""}. ${wet.length?`Najviac prší okolo ${String(ix[pr.indexOf(Math.max(...pr))]&&H.time[ix[pr.indexOf(Math.max(...pr))]]).slice(11,13)}:00 (${mm1(Math.max(...pr))} mm/h).`:""}`;
+  const arrows=wd.map((d,k)=>k%3===0?`<span style="transform:rotate(${((d||0)+180)%360}deg)">↑</span>`:"").join("");
+  const rows=ix.map((j,k)=>`<tr${k===nowI?' class="now"':""}><td>${String(H.time[j]).slice(11,16)}</td><td>${ICO(wc[k],dy[k]===1)}</td><td><b>${R(tmp[k])}°</b><small>${R(fl[k])}°</small></td><td class="${pr[k]>=0.1?"wet":""}">${pr[k]>=0.1?mm1(pr[k])+" mm":"–"}<small>${pp[k]!=null?pr10(pp[k])+" %":""}</small></td><td><span class="wdar" style="transform:rotate(${((wd[k]||0)+180)%360}deg)">↑</span> ${R(ws[k])}<small>${gu[k]!=null?"nárazy "+R(gu[k]):""}</small></td><td>${hu[k]!=null?R(hu[k])+" %":""}</td></tr>`).join("");
+  const K=WXK(Dl.weather_code[i],true);
+  return `<div class="wsx ios wdx k-${K} day">
+   <div class="wdtop"><button type="button" class="wdnav" data-wdgo="${i-1}" ${i<=Math.max(0,it-1)?"disabled":""} aria-label="Predchádzajúci deň">‹</button><div><b>${E(dname)}</b><small>${E(dd)}</small></div><button type="button" class="wdnav" data-wdgo="${i+1}" ${i>=Dl.time.length-1?"disabled":""} aria-label="Ďalší deň">›</button><button type="button" class="wdclose" data-wdx aria-label="Zavrieť">✕</button></div>
+   <div class="wdhead">${wxIcon(Dl.weather_code[i],true)}<div><b>${E(TXT(Dl.weather_code[i]))}</b><span>V: ${R(hi)}° · N: ${R(lo)}°</span></div></div>
+   <div class="wscard"><small class="wslbl"><i>🌡️</i>TEPLOTA · °C</small><div class="wdch">${chart(tmp,{col:"#FFD60A",fill:"rgba(255,214,10,.16)",second:fl,nowI})}</div>${axis()}<p class="wdp">Najvyššia ${R(hi)}°, najnižšia ${R(lo)}°. Prerušovaná čiara = pocitová teplota (${R(Dl.apparent_temperature_min?Dl.apparent_temperature_min[i]:null)}° až ${R(Dl.apparent_temperature_max?Dl.apparent_temperature_max[i]:null)}°).</p></div>
+   <div class="wscard"><small class="wslbl"><i>💧</i>ZRÁŽKY · mm za hodinu</small><div class="wdbig">${mm1(rs)} mm <small>${pr10(Dl.precipitation_probability_max[i])} % pravdepodobnosť</small></div><div class="wdch">${chart(pr,{bars:1,col:"#64D2FF",min:0,max:1,line:pp})}</div>${axis()}<p class="wdp">${E(rainTxt)} Stĺpce = mm, prerušovaná čiara = pravdepodobnosť.</p></div>
+   <div class="wscard"><small class="wslbl"><i>💨</i>VIETOR · km/h</small><div class="wdbig">${R(wmx)} km/h <small>nárazy do ${R(gmx)} km/h · ${E(dir16(wdom||0))}</small></div><div class="wdch">${chart(ws,{col:"#7AE0B8",min:0,second:gu,nowI})}</div><div class="wdarr">${arrows}</div>${axis()}<p class="wdp">${E(windTxt(wmx||0))}. Plná čiara = vietor, prerušovaná = nárazy, šípky = kam fúka.</p></div>
+   <div class="wdgrid"><div class="wscard"><small class="wslbl"><i>☀️</i>UV MAX</small><b class="wsv">${R(Dl.uv_index_max[i])}</b></div><div class="wscard"><small class="wslbl"><i>🌅</i>SLNKO</small><b class="wsv2">↑ ${hm(Dl.sunrise[i])}<br>↓ ${hm(Dl.sunset[i])}</b></div></div>
+   <div class="wscard"><small class="wslbl"><i>🕐</i>PO HODINÁCH</small><div class="wdtw"><table class="wdt"><thead><tr><th>Čas</th><th></th><th>Tepl.</th><th>Zrážky</th><th>Vietor</th><th>Vlhk.</th></tr></thead><tbody>${rows}</tbody></table></div></div>
+  </div>`}
+let DS=null;
+function openDay(i){if(!W.d||!W.d.daily)return;if(!DS){DS=document.createElement("div");DS.id="wxDay";DS.setAttribute("role","dialog");DS.setAttribute("aria-modal","true");document.body.appendChild(DS);try{history.pushState({wxday:1},"")}catch(x){}}
+  DS.innerHTML=dayHTML(i);DS.scrollTop=0;document.documentElement.classList.add("wdopen");
+  const n=DS.querySelector("tr.now");if(n)setTimeout(()=>{const w=DS.querySelector(".wdtw");if(w)w.scrollTop=Math.max(0,n.offsetTop-60)},50)}
+function closeDay(fromPop){if(!DS)return;DS.remove();DS=null;document.documentElement.classList.remove("wdopen");if(!fromPop)try{if(history.state&&history.state.wxday)history.back()}catch(x){}}
+document.addEventListener("click",e=>{const t=e.target.closest&&e.target.closest("[data-wday],[data-wdgo],[data-wdx]");if(!t)return;e.preventDefault();e.stopPropagation();
+  if(t.dataset.wday!=null)openDay(+t.dataset.wday);else if(t.dataset.wdgo!=null)openDay(+t.dataset.wdgo);else closeDay()},true);
+addEventListener("popstate",()=>{if(DS)closeDay(true)});
+addEventListener("keydown",e=>{if(e.key==="Escape"&&DS)closeDay()});
+{let sx=null,sy=null;document.addEventListener("touchstart",e=>{if(!DS||!DS.contains(e.target)||e.target.closest(".wdtw"))return;sx=e.touches[0].clientX;sy=e.touches[0].clientY},{passive:true});
+ document.addEventListener("touchend",e=>{if(sx==null||!DS)return;const dx=e.changedTouches[0].clientX-sx,dy2=e.changedTouches[0].clientY-sy;sx=null;if(Math.abs(dx)>70&&Math.abs(dx)>Math.abs(dy2)*1.5){const nav=DS.querySelectorAll("[data-wdgo]");const btn=dx<0?nav[1]:nav[0];if(btn&&!btn.disabled)openDay(+btn.dataset.wdgo)}},{passive:true})}
 // ---- napojenie ----
 const _card=window.wxCard;
 window.wxCard=function(){if(!W.d||(W.key&&W.key!==loc().lat+","+loc().lon)||Date.now()-W.at>15*60e3)load().then(()=>{try{if(typeof rerender==="function")rerender()}catch(x){}});
@@ -214,6 +256,35 @@ setInterval(()=>{if(!document.hidden&&document.querySelector(".wsx")&&Date.now()
 .wsplace{min-height:40px;padding:0 14px;border-radius:999px;background:rgba(255,255,255,.18)!important;border:0!important;color:#fff!important;font-weight:600;box-shadow:none!important}
 .wxi-s{display:inline-block;width:1.8em;height:1.8em;vertical-align:middle;overflow:visible;flex:none}.wxi-s.big{width:100%;height:100%}
 .whwx .wxi .wxi-s{width:1.6em;height:1.6em}
+
+/* 📅 detail dňa + mm / vietor v riadkoch */
+.wsh .wshm{display:block;font-style:normal;font-size:.68rem;font-weight:700;color:#7FD4FF;line-height:1.1;white-space:nowrap}
+.wsh .wshw{display:block;font-style:normal;font-size:.66rem;opacity:.7;line-height:1.1;white-space:nowrap}.wsh .wshw s{text-decoration:none;font-size:.58rem;margin-left:1px}
+button.wsd{width:100%;background:none!important;border:0;border-top:.5px solid rgba(255,255,255,.2)!important;border-radius:0!important;box-shadow:none!important;color:#fff!important;font:inherit;text-align:left;padding:8px 0 6px!important;min-height:0;cursor:pointer;position:relative}
+button.wsd:active{background:rgba(255,255,255,.08)!important}
+.wsd .wsdx{grid-column:1/-1;font-style:normal;font-size:.76rem;opacity:.8;margin-top:-2px;white-space:normal;line-height:1.3;padding-right:16px}
+.wsd .wsdc{position:absolute;right:0;bottom:6px;font-style:normal;opacity:.55;font-size:1.1rem}
+html.wdopen{overflow:hidden}
+#wxDay{position:fixed;inset:0;z-index:2147483000;overflow-y:auto;-webkit-overflow-scrolling:touch;background:#0b1236;overscroll-behavior:contain}
+#wxDay .wdx{min-height:100%;border-radius:0;padding:calc(env(safe-area-inset-top,0px) + 10px) 12px calc(env(safe-area-inset-bottom,0px) + 24px);max-width:820px;margin:0 auto}
+.wdtop{position:sticky;top:0;z-index:2;display:grid;grid-template-columns:44px minmax(0,1fr) 44px 44px;align-items:center;gap:6px;padding:4px 0 8px;text-align:center}
+.wdtop b{display:block;font-size:1.3rem;font-weight:600;text-transform:capitalize}.wdtop small{display:block;opacity:.8;font-size:.85rem}
+.wdnav,.wdclose{width:44px!important;height:44px!important;min-width:44px;min-height:44px!important;padding:0!important;border-radius:50%!important;border:0!important;background:rgba(255,255,255,.18)!important;color:#fff!important;font-size:1.5rem!important;line-height:1!important;display:flex;align-items:center;justify-content:center;aspect-ratio:1;box-shadow:none!important}
+.wdclose{font-size:1.1rem!important}.wdnav:disabled{opacity:.3}
+.wdhead{display:flex;align-items:center;justify-content:center;gap:12px;padding:4px 0 6px}.wdhead .wxi-s,.wdhead svg,.wdhead img{width:56px;height:56px}
+.wdhead b{display:block;font-size:1.25rem;font-weight:500}.wdhead span{font-size:1.05rem;opacity:.9}
+.wdch svg{display:block;width:100%;height:84px}
+.wdax{display:flex;justify-content:space-between;font-size:.7rem;opacity:.65;margin-top:3px}
+.wdarr{display:grid;grid-template-columns:repeat(8,1fr);font-size:.9rem;opacity:.85;text-align:center;margin-top:2px}.wdarr span{display:inline-block}
+.wdbig{font-size:1.5rem;font-weight:500;margin:-2px 0 6px}.wdbig small{display:block;font-size:.8rem;opacity:.8;font-weight:500}
+.wdp{font-size:.82rem;opacity:.85;margin:6px 0 0;line-height:1.35}
+.wdgrid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.wdtw{max-height:60vh;overflow:auto;margin:0 -4px}
+.wdt{width:100%;border-collapse:collapse;font-size:.86rem}.wdt th{position:sticky;top:0;background:rgba(20,30,60,.92);font-weight:600;font-size:.72rem;opacity:.9;text-align:left;padding:5px 4px}
+.wdt td{padding:5px 4px;border-top:.5px solid rgba(255,255,255,.15);vertical-align:middle;white-space:nowrap}.wdt td small{display:block;font-size:.68rem;opacity:.7}
+.wdt td .wxi-s,.wdt td svg,.wdt td img{width:24px;height:24px}.wdt td.wet{color:#7FD4FF;font-weight:700}.wdt tr.now td{background:rgba(255,255,255,.14)}
+.wdar{display:inline-block;font-weight:700}
+@media (max-width:380px){.wdt{font-size:.8rem}.wdt td,.wdt th{padding:4px 2px}}
 @media (max-width:380px){.wsbig{font-size:5.2rem}.wscity{font-size:1.8rem!important}.wslbl{font-size:.68rem;letter-spacing:0}.wsmini .wscard{min-height:140px}.wsd{grid-template-columns:minmax(40px,1fr) 34px 30px minmax(40px,1.4fr) 30px;gap:6px;font-size:.98rem}.wsd small{font-size:.98rem}}
 `;document.head.appendChild(s)}
 })();
