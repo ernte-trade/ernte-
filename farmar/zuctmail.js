@@ -1,0 +1,75 @@
+// ===== 📥 ZÚČTOVANIE ODBERATEĽA AUTOMATICKY Z GMAILU (príkaz majiteľa 1. 11. 17:37) =====
+// Mário Jaczko (Agro-Somotor, m.jaczko@gmail.com) posiela Excel na erntespol@gmail.com. Skript v tom Google účte (Apps Script, každých 15 min)
+// pošle prílohy .xls/.xlsx do databázy (zuct_inbox_put s tajným kľúčom – heslo Gmailu nikam neodchádza).
+// Tu ich aplikácia majiteľa (Martin / Jana) sama prečíta (parseWB z odb.js) a nahrá do Zúčtovania odberateľa (buyer_import) – ako ručné nahratie Excelu.
+(function(){
+const E=s=>String(s==null?"":s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const OWN=()=>typeof ROLE!=="undefined"&&ROLE==="owner"&&!(typeof FARMER!=="undefined"&&FARMER)&&!window.ERNTE_VIEWAS&&!window.ERNTE_TEST;
+const MAIN=()=>OWN()&&typeof window.MAIN_OK==="function"&&window.MAIN_OK();
+const Z={L:null,busy:false,at:0,key:null,show:false,last:null};
+const hm=t=>{if(!t)return "";const d=new Date(t);return d.toLocaleDateString("sk-SK",{day:"numeric",month:"numeric"})+" "+d.toLocaleTimeString("sk-SK",{hour:"2-digit",minute:"2-digit"})};
+const BUYER="Agro-Somotor s.r.o.";
+async function list(){try{const r=await sb.rpc("zuct_inbox_list");Z.L=r.error?{err:r.error.message}:r.data}catch(x){Z.L={err:String(x)}}}
+function b2a(b64){const s=atob(b64),u=new Uint8Array(s.length);for(let i=0;i<s.length;i++)u[i]=s.charCodeAt(i);return u}
+// spracuje všetky čakajúce súbory (prevzatie v databáze → nikdy dvakrát)
+async function run(){if(!OWN()||Z.busy||typeof sb==="undefined"||!sb)return;Z.busy=true;let any=false;
+  try{for(let i=0;i<10;i++){const c=await sb.rpc("zuct_inbox_claim");if(c.error||!c.data)break;const it=c.data;any=true;let res={},st="hotovo";
+      try{if(!window.odbParseWB)throw new Error("modul Zúčtovanie odberateľa sa nenačítal");const X=await fcXlsxLib();const wb=X.read(b2a(it.b64),{type:"array",cellDates:false});const P=window.odbParseWB(X,wb);
+        if(!P.rows.length){st="preskoc";res={info:"v súbore nie sú vážne lístky"}}
+        else{const tot={nove:0,aktualizovane:0,nerozdelene:0};let r,au={};
+          for(let j=0;j<P.rows.length;j+=200){r=await sb.rpc("buyer_import",{rows:P.rows.slice(j,j+200),p_buyer:BUYER});if(r.error)throw new Error(r.error.message);for(const k in tot)tot[k]+=+r.data[k]||0;au=(r.data&&r.data.auto)||au}
+          const ds=P.rows.map(x=>x.d).sort();res={listky:P.rows.length,nove:tot.nove,aktualizovane:tot.aktualizovane,pridelene:au.pridelene||0,navrhy:au.navrhy||0,zostava:au.zostava!=null?au.zostava:tot.nerozdelene,od:ds[0],do:ds[ds.length-1],nezname:P.bad.slice(0,20)}}}
+      catch(x){st="chyba";res={err:String(x&&x.message||x).slice(0,300)}}
+      await sb.rpc("zuct_inbox_done",{p_id:it.id,p_status:st,p_result:res});
+      if(st==="hotovo"&&typeof toast==="function")toast(`📥 Zúčtovanie z Gmailu nahraté (${it.fname}): ${res.nove} nových, ${res.aktualizovane} aktualizovaných lístkov, pridelené samo ${res.pridelene}, nerozdelené ${res.zostava}.`,10000)}}
+  catch(x){}
+  Z.busy=false;Z.at=Date.now();await list();if(any){try{window.zdashReload&&zdashReload()}catch(x){}}if(typeof TAB!=="undefined"&&TAB==="zuct"&&typeof renderStaff==="function"&&!(window.formBusy&&formBusy()))renderStaff()}
+window.zuctMailRun=run;
+// skript pre Google účet erntespol@gmail.com (kľúč doplnený)
+function script(k){const C=window.ERNTE_CONFIG||{};return `// ERNTE – zúčtovanie od Agro-Somotora z Gmailu do aplikácie (každých 15 min)
+// 1) Vlož celý tento text, ulož (Ctrl+S). 2) Hore vyber funkciu "setup" a klikni ▶ Spustiť. 3) Povoľ prístup k Gmailu (Rozšírené → Prejsť na projekt).
+const URL='${C.SUPABASE_URL||"https://cflliscddsgleyeykzje.supabase.co"}/rest/v1/rpc/';
+const AK='${C.SUPABASE_KEY||""}';
+const KEY='${k}';
+const Q='has:attachment newer_than:60d (from:m.jaczko@gmail.com OR from:agrosomotor.sk OR from:vojkafarm.sk)';
+function setup(){ScriptApp.getProjectTriggers().forEach(function(t){ScriptApp.deleteTrigger(t)});ScriptApp.newTrigger('run').timeBased().everyMinutes(15).create();run();}
+function rpc(f,b){return UrlFetchApp.fetch(URL+f,{method:'post',contentType:'application/json',headers:{apikey:AK,Authorization:'Bearer '+AK},payload:JSON.stringify(b),muteHttpExceptions:true});}
+function run(){var P=PropertiesService.getScriptProperties(),done=JSON.parse(P.getProperty('done')||'{}'),n=0,err='';
+  try{GmailApp.search(Q,0,40).forEach(function(t){t.getMessages().forEach(function(m){var id=m.getId();if(done[id])return;var ok=true;
+    m.getAttachments().forEach(function(a){var nm=a.getName();if(!/\\.xls[xm]?$/i.test(nm))return;
+      var r=rpc('zuct_inbox_put',{p_key:KEY,p_msgid:id,p_from:m.getFrom(),p_subject:m.getSubject(),p_date:m.getDate().toISOString(),p_name:nm,p_b64:Utilities.base64Encode(a.getBytes())});
+      var x=r.getContentText();if(r.getResponseCode()>=300||/zly kluc|limit/.test(x)){ok=false;err=x.slice(0,200)}else if(/ok/.test(x))n++;});
+    if(ok)done[id]=Date.now();});});}catch(e){err=String(e).slice(0,200)}
+  var k=Object.keys(done);if(k.length>500)k.sort(function(a,b){return done[a]-done[b]}).slice(0,k.length-500).forEach(function(x){delete done[x]});
+  P.setProperty('done',JSON.stringify(done));rpc('zuct_inbox_ping',{p_key:KEY,p_n:n,p_err:err||null});}
+`}
+window.zuctMailHTML=function(){if(!OWN())return "";if(!Z.L){if(!Z.busy)list().then(()=>{if(typeof renderStaff==="function"&&TAB==="zuct")renderStaff()});return `<div class="card zmc"><b>📥 Automaticky z Gmailu</b><div class="s">Načítavam…</div></div>`}
+  const L=Z.L;if(L.err)return `<div class="card zmc"><b>📥 Automaticky z Gmailu</b><div class="s">${/zuct_inbox/.test(L.err)?"Zapne sa po aktualizácii databázy (pár minút).":E(L.err)}</div></div>`;
+  const p=L.ping,live=p&&p.seen&&Date.now()-Date.parse(p.seen)<75*60e3,I=L.items||[];
+  const st={nove:"⏳ čaká",import:"⏳ nahrávam",hotovo:"✅ nahraté",chyba:"⚠️ chyba",preskoc:"↷ bez lístkov"};
+  return `<div class="card zmc"><div class="zmh"><b>📥 Automaticky z Gmailu</b><span class="pill ${live?"":"w"}">${live?"🟢 pripojené":p?"🟠 skript nebeží":"⚪ nepripojené"}</span></div>
+   <div class="s">Excel so zúčtovaním od <b>Mária Jaczka</b> (m.jaczko@gmail.com, Agro-Somotor) na <b>erntespol@gmail.com</b> sa stiahne sám každých 15 minút a aplikácia ho nahrá sem – lístky sa aktualizujú, pridelenie farmárom ostane, nové sa skúsia prideliť samy. Príde upozornenie do mobilu.${p&&p.seen?` Gmail naposledy skontrolovaný ${hm(p.seen)}.`:""}${p&&p.err?` <b class="zme">${E(p.err)}</b>`:""}</div>
+   ${I.length?`<div class="zml">${I.slice(0,6).map(x=>`<div><span>${st[x.status]||E(x.status)}</span><b>${E(x.fname)}</b><small>${hm(x.received||x.at)}${x.result&&x.result.listky?` · ${x.result.listky} lístkov · ${x.result.nove} nových · nerozdelené ${x.result.zostava}`:""}${x.result&&x.result.err?` · ${E(x.result.err)}`:""}${x.result&&x.result.info?` · ${E(x.result.info)}`:""}</small></div>`).join("")}</div>`:""}
+   <div class="btns">${MAIN()?`<button type="button" class="${p?"":"lime"}" data-zmset>${p?"⚙️ Nastavenie Gmailu":"🔗 Pripojiť Gmail erntespol@gmail.com"}</button>`:""}<button type="button" data-zmrun>↻ Skontrolovať teraz</button></div>
+   ${Z.show&&Z.key?setupHTML():""}</div>`};
+function setupHTML(){return `<div class="zms"><b>Jednorazové pripojenie (3 minúty, v počítači alebo v prehliadači mobilu)</b><ol>
+   <li>Prihlás sa do Google ako <b>erntespol@gmail.com</b> a otvor <a href="https://script.google.com/home/projects/create" target="_blank" rel="noopener">script.google.com → Nový projekt</a>.</li>
+   <li>Zmaž, čo tam je, a vlož celý skript nižšie (tlačidlo 📋 Kopírovať skript). Ulož (💾).</li>
+   <li>Hore vyber funkciu <b>setup</b> a klikni <b>▶ Spustiť</b>. Google sa spýta na povolenie: Skontrolovať povolenia → účet erntespol → <i>Rozšírené</i> → <i>Prejsť na projekt (nebezpečné)</i> → Povoliť. (Skript je tvoj – číta iba maily od Jaczka / Agro-Somotora s prílohou Excel.)</li>
+   <li>Hotovo – tu sa ukáže 🟢 pripojené a stiahnu sa aj zúčtovania za posledných 60 dní.</li></ol>
+   <div class="btns"><button type="button" class="lime" data-zmcopy>📋 Kopírovať skript</button><button type="button" data-zmnew>🔑 Nový kľúč</button></div>
+   <textarea class="zmt" readonly data-nocut rows="6">${E(script(Z.key))}</textarea><div class="s">Kľúč v skripte otvára iba vkladanie súborov zúčtovania, nič nečíta. Ak by unikol, daj 🔑 Nový kľúč a skript vlož znova.</div></div>`}
+document.addEventListener("click",async e=>{const b=e.target.closest&&e.target.closest("[data-zmset],[data-zmrun],[data-zmcopy],[data-zmnew]");if(!b||!OWN())return;e.preventDefault();
+  if(b.dataset.zmrun!==undefined){if(typeof busy==="function")busy(b,true);await run();if(typeof busy==="function")busy(b,false);if(typeof toast==="function")toast("Skontrolované.",2500);return}
+  if(!MAIN())return;
+  if(b.dataset.zmset!==undefined||b.dataset.zmnew!==undefined){if(b.dataset.zmnew!==undefined&&!confirm("Vytvoriť nový kľúč? Starý skript prestane fungovať – musíš doň vložiť nový."))return;
+    const r=await sb.rpc("zuct_inbox_key",{p_new:b.dataset.zmnew!==undefined});if(r.error){toast("Nepodarilo sa: "+r.error.message,6000);return}Z.key=r.data;Z.show=b.dataset.zmset!==undefined?!Z.show||b.dataset.zmnew!==undefined:true;renderStaff();return}
+  if(b.dataset.zmcopy!==undefined){const t=script(Z.key);try{await navigator.clipboard.writeText(t);toast("📋 Skript skopírovaný – vlož ho na script.google.com.",5000)}catch(x){const a=document.querySelector(".zmt");if(a){a.focus();a.select()}toast("Označ text v okne a skopíruj ho.",4000)}}},true);
+// automaticky: po štarte, každých 5 min a pri návrate do aplikácie (iba majiteľ – Martin alebo Jana)
+const st=setInterval(()=>{if(OWN()&&typeof sb!=="undefined"&&sb&&typeof STATE!=="undefined"&&STATE.deals){clearInterval(st);setTimeout(run,6000);setInterval(()=>{if(!document.hidden)run()},5*60e3);
+  document.addEventListener("visibilitychange",()=>{if(!document.hidden&&Date.now()-Z.at>60e3)run()})}},2000);setTimeout(()=>clearInterval(st),10*60e3);
+{const s=document.createElement("style");s.textContent=`.zmc{display:grid;gap:8px}.zmh{display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap}.zme{color:#fca5a5}
+.zml{display:grid;gap:4px}.zml>div{display:grid;grid-template-columns:auto 1fr;gap:2px 8px;padding:6px 10px;border-radius:12px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);font-size:.82rem}.zml b{overflow-wrap:anywhere}.zml small{grid-column:1/-1;opacity:.7}
+.zms{display:grid;gap:8px;padding:10px 12px;border-radius:14px;border:1px solid rgba(182,255,59,.4);background:rgba(182,255,59,.06)}.zms ol{margin:0;padding-left:20px;display:grid;gap:6px;font-size:.86rem;line-height:1.45}.zms a{color:#a5f3fc}
+.zmt{width:100%;min-height:120px;font:12px/1.4 ui-monospace,Menlo,monospace!important;white-space:pre;overflow:auto;resize:vertical}`;document.head.appendChild(s)}
+})();

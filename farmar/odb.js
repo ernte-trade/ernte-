@@ -27,10 +27,11 @@ function parseWB(X,wb){const rows=[],dry={},bad=[];
         if(/su[sš]en|sz[aá]r[ií]t/i.test(r[1]))mode="dry";else{mode="goods";sec=r[1]}}}}
   for(const x of rows){const q=dry[x.t];if(q){x.dp=q.dp;x.dk=q.dk}}
   return {rows,bad}}
+window.odbParseWB=parseWB;
 async function readFile(f){const X=await fcXlsxLib();const wb=X.read(await f.arrayBuffer(),{type:"array",cellDates:false});return parseWB(X,wb)}
 const sumBy=(L,f)=>L.reduce((s,x)=>s+(+f(x)||0),0);
 function impHTML(){const I=O.imp;
-  let h=`<div class="card f"><h2 class="w odh">1️⃣ Nahrať Excel od odberateľa</h2>
+  let h=(window.zuctMailHTML?zuctMailHTML():"")+`<div class="card f"><h2 class="w odh">1️⃣ Nahrať Excel od odberateľa</h2>
    <label>Odberateľ<input id="odBuyer" value="${esc(O.buyer)}" list="odBuyers"></label><datalist id="odBuyers"><option value="Agro-Somotor s.r.o."></datalist>
    <label class="btn pri" style="display:inline-flex;align-items:center;gap:6px;cursor:pointer;min-height:44px">📂 Vybrať Excel (.xlsx)<input type="file" id="odFile" accept=".xlsx,.xls,.xlsm" hidden></label>
    <div class="w s">Zúčtovanie odberateľa (hárky Sója, Pšenica, Kukurica…): vážny lístok, ŠPZ, hrubá váha, nečistoty, čistá váha, cena, hodnota a sušenie. Lístky, ktoré už v aplikácii sú, sa len aktualizujú a <b>pridelenie farmárovi ostane</b>.</div></div>`;
