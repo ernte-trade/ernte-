@@ -12,7 +12,7 @@ const CM={soja:["sóje","szóját","Sója","Szója","kŕmne","takarmányozási",
   repka:["repky olejnej","repcét","Repka olejná","Repce","priemyselné","ipari",1],slnecnica:["slnečnice","napraforgót","Slnečnica","Napraforgó","priemyselné","ipari",0],
   lo:["slnečnice","napraforgót","Slnečnica","Napraforgó","priemyselné","ipari",0],jacmen:["jačmeňa","árpát","Jačmeň","Árpa","kŕmne","takarmányozási",0]};
 // [vlhkosť, nečistoty, škodlivé, ostatné, čistota, zlomky]
-const Q={soja:[12,2,"–","–",98,5],kukurica:[14,2,"0,1",1,98,3],psenica_k:[13,2,"–","–",98,"–"],psenica_p:[14,2,"–","–",98,"–"],repka:[9,2,"–","–",98,"–"],slnecnica:[8,2,"–","–",98,"–"],lo:[8,2,"–","–",98,"–"],jacmen:[14,2,"–","–",98,"–"]};
+const Q={soja:[13,2,"–","–",98,5],kukurica:[14,2,"0,1",1,98,3],psenica_k:[14,2,"–","–",98,"–"],psenica_p:[14,2,"–","–",98,"–"],repka:[8,2,"–","–",98,"–"],slnecnica:[8,2,"–","–",98,"–"],lo:[8,2,"–","–",98,"–"],ho:[8,2,"–","–",98,"–"],jacmen:[14,2,"–","–",98,"–"]};
 // ďalšie parametre: [SK, HU, hodnota SK, hodnota HU]
 const LO_X=[["Olejnatosť (obsah tuku)","Olajtartalom (zsírtartalom)","min. 44,0 % – STN EN ISO 659","min. 44,0 % – STN EN ISO 659"],["Vlhkosť","Nedvesség","max. 8,0 % – STN EN ISO 665","max. 8,0 % – STN EN ISO 665"],
   ["Nečistoty","Szennyeződés","max. 2,0 % – STN EN ISO 658","max. 2,0 % – STN EN ISO 658"],["Ostatné parametre","Egyéb paraméterek","podľa STN 46 2300-6 a STN 46 2300-1","az STN 46 2300-6 és STN 46 2300-1 szerint"],

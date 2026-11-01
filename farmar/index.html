@@ -834,7 +834,7 @@ var q=JSON.parse(sessionStorage.getItem("ernte-prefill")||"null");if(q&&Date.now
 <script>
 "use strict";
 const MK=[["repka","Repka"],["lo","LO slnečnica"],["ho","HO slnečnica"],["soja","Sója"],["psenica_p","Pšenica potravinárska"],["psenica_k","Pšenica kŕmna"],["jacmen_k","Jačmeň kŕmny"],["jacmen_s","Jačmeň sladovnícky"],["kukurica","Kukurica"],["cirok","Cirok"]];
-const SPEC={kukurica:[14,2,1],soja:[12,2,1],psenica_k:[13,2],psenica_p:[14,2],jacmen_s:[14.5,2],jacmen_k:[14,2],repka:[8,2],lo:[9,2],ho:[9,2],cirok:[14,2]};
+const SPEC={kukurica:[14,2,1],soja:[13,2,1],psenica_k:[14,2],psenica_p:[14,2],jacmen_s:[14,2],jacmen_k:[14,2],repka:[8,2],lo:[8,2],ho:[8,2],cirok:[14,2]}; // 1. 11. 23:41 príkaz majiteľa: vlhkosť ako odberateľ (Agro-Somotor) a zúčtovanie – sója 13, pšenica/jačmeň/kukurica 14, repka/slnečnica 8
 const DSTEP=[["navrh","📝","Zmluva"],["podpisany","✍️","Podpis"],["odvoz","🚛","Odvoz"],["odvezeny","📦","Dodané"],["fakturacia","🧾","Faktúra"],["zaplateny","💶","Platba"]];
 function dealSteps(st){if(st==="zruseny")return "";const i=Math.max(0,DSTEP.findIndex(x=>x[0]===st));
   return `<div class="dstep" role="list" aria-label="Stav obchodu">${DSTEP.map((x,k)=>`<div class="dsi${k<i?" done":k===i?" now":""}" role="listitem"><span>${k<i?"✓":x[1]}</span><small>${x[2]}</small></div>`).join("")}</div>`}
@@ -3003,7 +3003,7 @@ document.addEventListener("click",e=>{const b=e.target.closest("[data-dfp]");if(
 <script src="odb.js?v=20261101-1800"></script>
 <script src="zuctmail.js?v=20261101-1800"></script>
 <script src="zdash.js?v=20261027-1620"></script>
-<script src="contract.js?v=20261101-2340"></script>
+<script src="contract.js?v=20261101-2345"></script>
 <script src="agro.js?v=20261029-2150"></script>
 <script src="activity.js?v=20261029-2050"></script>
 <script src="trus.js?v=20261101-0945"></script>
@@ -3016,7 +3016,7 @@ document.addEventListener("click",e=>{const b=e.target.closest("[data-dfp]");if(
 <script src="owhome.js?v=20261030-2355"></script>
 <script src="nbell.js?v=20261028-1130"></script>
 <script src="novinky.js?v=20261027-0845"></script>
-<script src="dnzmluva.js?v=20261101-2340"></script>
+<script src="dnzmluva.js?v=20261101-2345"></script>
 <script src="danube.js?v=20261031-1120"></script>
 <script src="installapp.js?v=20261031-0700"></script>
 <script src="bio.js?v=20261031-0720"></script>
