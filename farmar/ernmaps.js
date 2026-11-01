@@ -505,7 +505,7 @@ async function navResume(){const sv=navSaved();if(!sv||S.nav||!OK())return;open(
 .emfix{position:absolute;left:10px;right:10px;bottom:150px;z-index:1001;display:grid;gap:6px;padding:10px 12px;border-radius:16px;background:rgba(40,20,5,.94);border:1px solid rgba(251,191,36,.75);box-shadow:0 0 22px rgba(251,191,36,.4);color:#fff;text-align:left}
 .emfix b{color:#fde68a;overflow-wrap:anywhere}.emfix span{font-size:.9rem;overflow-wrap:anywhere}.emfix div{display:flex;gap:8px;flex-wrap:wrap}
 .emfix button{flex:1 1 140px;min-height:44px;border-radius:12px;border:0;font:800 .9rem system-ui;background:linear-gradient(135deg,#fde68a,#f59e0b);color:#1a1205}.emfix button[data-emfixno]{background:rgba(255,255,255,.12);color:#fff;border:1px solid rgba(255,255,255,.25)}`;document.head.appendChild(s)}
-window.ernteMaps={open:c=>OK()?open(c):null,close,ok:OK,resume:navResume};
+window.ernteMaps={open:c=>OK()?open(c):null,close,ok:OK,resume:navResume,_x:{S,P,say,showPlan,calc}}; // _x = waze.js (Nahlásiť, limity, Domov/Práca, zdieľanie príchodu, nočná mapa)
 // 🗺️ tlačidlo v hornej lište aplikácie (iba Martin)
 function hdrBtn(){const app=document.getElementById("app");if(!app)return;const row=app.querySelector(":scope > .hrow");const ok=OK();
   let b=document.querySelector(".emhb");if(!ok||!row){if(b)b.remove();return}if(b&&b.parentNode===row)return;if(b)b.remove();

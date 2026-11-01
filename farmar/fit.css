@@ -177,7 +177,8 @@ html[data-theme=light] .wlc .wlb,html[data-theme=light] .wlc .whc:not(.wlsp .whc
 .wlc .wfuel .wfnav{margin-top:4px!important}
 .wlc .wfuel .wfnav a,.wlc .wfuel .wfnav button{min-height:38px!important;padding:6px 12px!important}
 .wlc .wdeal .wdc{display:none!important}
-.wlc .wlb .wjk{display:none!important}
+/* 2. 11. príkaz majiteľa („nevidím zaujímavosti“): 💡 Vedeli ste? znova viditeľné, kompaktne */
+.wlc .wlb .wjk{display:block!important;margin-top:6px!important;padding:6px 10px!important;font-size:.82rem!important;line-height:1.3!important}
 .wlc .wlb{padding-top:10px!important;padding-bottom:10px!important}
 .wlc .wlb .wlt p{margin:2px 0!important}
 @media (min-width:700px){
