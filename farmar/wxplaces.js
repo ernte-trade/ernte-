@@ -9,10 +9,11 @@ const same=(a,b)=>a&&b&&Math.abs(a.lat-b.lat)<.01&&Math.abs(a.lon-b.lon)<.01;
 const FLAG={SK:"🇸🇰",HU:"🇭🇺",CZ:"🇨🇿",PL:"🇵🇱",UA:"🇺🇦",AT:"🇦🇹",DE:"🇩🇪",RO:"🇷🇴"};
 const say=t=>{if(typeof toast==="function")toast(t,4000)};
 function cur(){try{return WXLOC}catch(x){return null}}
+let MAN=false;
 async function apply(p){const L={name:p.name,lat:+(+p.lat).toFixed(3),lon:+(+p.lon).toFixed(3)};if(p.sub)L.sub=p.sub;if(p.gps)L.gps=true;
   try{WXLOC=L}catch(x){}try{localStorage.setItem("ernte-wxloc",JSON.stringify(L))}catch(x){}
-  if(!p.gps){const r=get(RK).filter(x=>!same(x,L));r.unshift(L);put(RK,r.slice(0,6))}
-  close();if(typeof loadWx==="function"){await loadWx(true)}if(typeof rerender==="function")rerender()}
+  MAN=!p.gps;if(!p.gps){const r=get(RK).filter(x=>!same(x,L));r.unshift(L);put(RK,r.slice(0,6))}
+  close();if(typeof loadWx==="function"){await loadWx(true)}if(typeof rerender==="function")rerender();try{window.dispatchEvent(new Event("ernte-wxloc"))}catch(x){}}
 async function place(lat,lon){try{const r=await fetch(`https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${lat}&longitude=${lon}&localityLanguage=sk`);const j=await r.json();
   const n=j.locality||j.city||(j.localityInfo&&j.localityInfo.administrative&&(j.localityInfo.administrative.slice(-1)[0]||{}).name);return {name:n||"Moja poloha",sub:[j.principalSubdivision,j.countryName].filter(Boolean).join(", ")}}catch(x){return {name:"Moja poloha",sub:""}}}
 function gps(auto){return new Promise(ok=>{if(!navigator.geolocation){if(!auto)say("Poloha nie je v tomto zariadení dostupná.");return ok(false)}
@@ -59,11 +60,11 @@ html[data-theme=light] .wxp-b{background:#fff;color:#0f172a}
 .wxp-i{font-size:1.2rem}.wxp-star{min-height:48px;min-width:48px;padding:0;font-size:1.3rem;border-radius:14px}.wxp-star.on{color:#facc15}
 .wxloc-b{display:inline-flex;align-items:center;gap:6px;max-width:100%}.wxloc-b small{opacity:.7;font-weight:500}`;document.head.appendChild(s)}
 function open(){css();close();const o=document.createElement("div");o.className="wxp";o.id="wxp";o.setAttribute("role","dialog");o.setAttribute("aria-modal","true");o.setAttribute("aria-label","Miesto pre počasie");
-  const c=cur()||{},auto=localStorage.getItem(AK)==="1";Q="";RES=null;
+  const c=cur()||{};Q="";RES=null;
   o.innerHTML=`<div class="wxp-b"><div class="wxp-hd"><b>📍 Miesto pre počasie</b><button type="button" class="wxp-x" data-wxpx aria-label="Zavrieť">✕</button></div>
     <div class="s" style="margin:-4px 2px 0">Teraz: <b>${e(c.name||"")}</b>${c.sub?" · "+e(c.sub):""}</div>
     <button type="button" class="lime wxp-gps" data-wxpgps>🎯 Použiť moju polohu (GPS)</button>
-    <label class="wxp-auto"><input type="checkbox" data-wxpauto ${auto?"checked":""}> Pri otvorení aplikácie vždy podľa mojej polohy</label>
+    <div class="wxp-auto">🎯 Pri každom otvorení aplikácie sa počasie zistí podľa vašej polohy.</div>
     <input class="wxp-q" id="wxpQ" type="search" inputmode="search" autocomplete="off" placeholder="🔎 Hľadať mesto, dedinu, obec…" aria-label="Hľadať mesto alebo obec">
     <div id="wxpList" aria-live="polite"></div></div>`;
   document.body.appendChild(o);list();const q=o.querySelector("#wxpQ");q.addEventListener("input",()=>search(q.value));setTimeout(()=>{try{q.focus()}catch(x){}},120);
@@ -75,8 +76,9 @@ document.addEventListener("click",async ev=>{const g=s=>ev.target.closest&&ev.ta
   if(g("[data-wxpgps]")){await gps(false);return}
   if(x=g("[data-wxpset]")){const p=pick(x.dataset.wxpset);if(p)apply(p);return}
   if(x=g("[data-wxpfav]")){const p=pick(x.dataset.wxpfav);if(!p)return;let F=get(FK);F=F.some(f=>same(f,p))?F.filter(f=>!same(f,p)):[p,...F].slice(0,10);put(FK,F);list();return}},true);
-document.addEventListener("change",ev=>{if(ev.target.matches&&ev.target.matches("[data-wxpauto]")){try{localStorage.setItem(AK,ev.target.checked?"1":"0")}catch(x){}if(ev.target.checked)gps(false)}});
-// automaticky podľa polohy pri otvorení (iba keď to používateľ zapol)
-setTimeout(()=>{try{if(localStorage.getItem(AK)==="1")gps(true)}catch(x){}},2500);
+// 🎯 PRÍKAZ MAJITEĽA 1. 11.: pri KAŽDOM otvorení aplikácie počasie podľa polohy (pre všetkých); po návrate z pozadia ≥ 10 min znova,
+// ak si človek medzitým ručne nevybral iné miesto.
+setTimeout(()=>gps(true),400);
+{let hid=0;document.addEventListener("visibilitychange",()=>{if(document.hidden){hid=Date.now();return}if(hid&&Date.now()-hid>=10*60e3&&!MAN)gps(true);hid=0})}
 window.wxPlaceOpen=open;
 })();

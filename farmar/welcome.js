@@ -212,6 +212,7 @@ async function wx(el){const L=(()=>{try{return WXLOC}catch(x){return null}})()||
     const c=j.current||{};{const ic=el.querySelector(".wxi");if(window.wxIcon){const h=new Date().getHours();ic.innerHTML=wxIcon(c.weather_code,h>=6&&h<19)}else ic.textContent=WXI(c.weather_code)}countTo(el.querySelector(".wxt"),Math.round(c.temperature_2m),"°");
     el.querySelector(".wxs").textContent=`${WXN(c.weather_code)} · ${Math.round(c.wind_speed_10m)} km/h · ${L.name||""}`;spark(el.querySelector(".wspk"),((j.hourly||{}).temperature_2m||[]).filter(v=>v!=null))}
   catch(x){el.querySelector(".wxs").textContent=L.name||"";el.querySelector(".wxi").textContent="🌾"}}
+window.addEventListener("ernte-wxloc",()=>{document.querySelectorAll(".whud").forEach(h=>{if(h.querySelector(".wxi"))wx(h)})}); // poloha z GPS → počasie na úvode hneď podľa nej
 function countTo(n,to,suf){if(!n)return;if(!isFinite(to)){n.textContent="–";return}const t0=performance.now(),D=1100;const f=t=>{const p=Math.min(1,(t-t0)/D),e=1-Math.pow(1-p,3);n.textContent=Math.round(to*e).toLocaleString("sk-SK")+(suf||"");if(p<1)requestAnimationFrame(f)};requestAnimationFrame(f)}
 function ring(pct){const C=2*Math.PI*26;return `<div class="wring"><svg viewBox="0 0 64 64"><circle cx="32" cy="32" r="26" class="wrb"/><circle cx="32" cy="32" r="26" class="wrf" stroke-dasharray="${C}" stroke-dashoffset="${C}" style="--to:${C*(1-pct/100)}"/></svg><b data-to="${Math.round(pct)}" data-suf="%">0%</b></div>`}
 function big(v,suf){return `<b class="whbig" data-to="${v}" data-suf="${suf||""}">0</b>`}
