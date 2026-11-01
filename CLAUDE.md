@@ -166,6 +166,11 @@ s pripojeným repozitárom `ernte-trade/ernte-`.
   pozvánky po maďarsky (`inviteText`, odkaz s `#prihlas` a `l:"hu"`).
 - **🎤 HLAS PRE KAŽDÉ PRIHLÁSENIE (`voice.js`):** ťukni do políčka a diktuj (čísla, dátum, čas, e-mail), „hľadaj …“, „otvor …“, „späť“, „predaj 30 ton repky“; nič neodošle samo.
 - **📈 TÝŽDENNÝ LIST INVESTIČNEJ AKADÉMIE (31. 10., workflow `invest-list`, `.github/workflows/investlist.yml`):** naplánovaná úloha nemá heslo migrácií → SQL (`insert into invest_notes(who,title,body) values …`, base64) pošle cez workflow_dispatch (input `sql_b64`); workflow ho zašifruje tajomstvom `ERNTE_MIG_PASS` a commitne do `farmar/supabase/auto/`. Povolený je iba INSERT do invest_notes. **Tajomstvo `ERNTE_MIG_PASS` musí majiteľ raz zadať v GitHub → Settings → Secrets → Actions** (31. 10. ešte chýbalo – List č. 1 nevložený).
+- **🤖 CLAUDE PRACUJE SÁM (1. 11. 2:27 PRÍKAZ MAJITEĽA: „prechádzaj app bez mojej žiadosti, modernizuj, zľahčuj, dopĺňaj zákazníkov, hľadaj farmárov vo východnom Maďarsku do Danube; v mojej app a v tíme automaticky, pre obchodníka/farmára sa spýtaj a navrhni“):**
+  databáza (`20261101-0245-claude-samostatne`): `hu_farm_run` (pg_cron `hu-farm` 3:10) – AI s web_search nájde firmy (Kft./Zrt./Bt./szövetkezet, NIE súkromné osoby) z východného Maďarska → `farmers` (firma DANUBE, active=false) + `hu_prospects` (zdroj, plodiny);
+  `farm_enrich_run` (`farm-enrich` 3:40) – 10 farmárov denne bez e-mailu/telefónu/adresy → overené verejné firemné kontakty, IBA prázdne polia, log `farm_enrich_log`; `claude_auto_tick` každé 3 min (zber + ai_state `claude_auto` → sonda `ernte_probe2.auto`).
+  Návrhy: tabuľka `claude_navrhy` (navrh → ano/nie Martin v Prehľade, `navrhy.js`, `claude_navrh_set`) → naplánovaná úloha „Claude – nočná práca na aplikácii“ schválené zrealizuje (status `hotovo`).
+  Automaticky smie meniť iba časť majiteľa (MAIN_OK) a nastavenia tímu bez dopadu na ich prácu; všetko, čo uvidí obchodník alebo farmár, najprv ako návrh. Nikoho nekontaktuje bez súhlasu Martina.
 - **📊 Martin – lišta sekcií podľa používania (`ownertabs.js`, `tab_use`), 3D ikony `img/ico/` (Microsoft Fluent Emoji 3D, MIT).**
 
 - **📞 MÔJ PLÁN NA DNES (31. 10., `plan.js`, `plan_ack/plan_log/deal_replace`):** vidia všetci obchodníci (deals/req/price_view alebo Galajda, Ceperko, Ličko, Jozsef). Položka zmizne IBA po vyjadrení
