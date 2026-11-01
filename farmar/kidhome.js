@@ -7,7 +7,13 @@ const E=s=>String(s==null?"":s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;","
 const EUR=v=>(+v||0).toLocaleString("sk-SK",{minimumFractionDigits:2,maximumFractionDigits:2})+" €";
 const D={wx:null,wxAt:0,inv:null,invAt:0,fq:null,fm:null};
 const SPK="ernte-kid-sp",SPDEF="playlist/70yWEVCtXXtTay9CMsxnyD"; // FC Barcelona Anthem (tatino môže zmeniť)
-const SPL=[["⚽ Hymny a pesničky sveta","playlist/37i9dQZF1DXaoALgva1Aqr"],["🏟️ Hymny klubov","playlist/3W72k7KYqQah9sDYh4vZ1S"],["🔵🔴 Barça","playlist/70yWEVCtXXtTay9CMsxnyD"]]; // Spotify „Football Anthems“ + verejný playlist hymien klubov (1. 11. príkaz majiteľa)
+// 🎵 Timotejova hudba (1. 11. príkaz majiteľa): futbalové pesničky + playlisty, veľké prepínanie ◀ ▶ a dlaždice
+const SPL=[["🏆","Liga majstrov – hymna","UEFA","track/7HJidWHPoAXJhaKeAmqfF5"],["🔵🔴","Cant del Barça","hymna FC Barcelona","track/5xXjygXDO7SQirJo37KBxV"],
+ ["🌍","Waka Waka","Shakira · MS 2010","track/6bNB5gxFX6Q87DbQWb8OWZ"],["🥇","We Are the Champions","Queen","track/0saBeiGcu2dECTvAknHPzL"],
+ ["🎸","Seven Nation Army","„Po-po-po-po“ zo štadiónov","track/3dPQuX8Gs42Y7b454ybpMR"],["🇫🇷","La Copa de la Vida","Ricky Martin · MS 1998","track/0KnZ3Fgnqjmz4Sl2OA5zwa"],
+ ["🇷🇺","Live It Up","Nicky Jam, Will Smith · MS 2018","track/4DnHUy01jEA4b5ydC3HgsT"],["🔴","You'll Never Walk Alone","hymna Liverpoolu","track/6fSNK6QlZskYmKTvJnNH5P"],
+ ["🎉","Freed From Desire","Gala · tribúny","track/3u5N55tHf7hXATSQrjBh2q"],["⚡","Song 2","Blur · „Woo-hoo!“","track/3GfOAdcoc3X5GPiiXmpBjK"],
+ ["⚽","Futbalové hymny sveta","playlist Spotify","playlist/37i9dQZF1DXaoALgva1Aqr"],["🏟️","Hymny klubov","playlist","playlist/3W72k7KYqQah9sDYh4vZ1S"],["💙","Barça – playlist","playlist","playlist/70yWEVCtXXtTay9CMsxnyD"]];
 const spRef=()=>{try{return localStorage.getItem(SPK)||SPDEF}catch(x){return SPDEF}};
 const WMO=c=>c==null?["🌡️",""]:c===0?["☀️","jasno"]:c<=2?["🌤️","polojasno"]:c===3?["☁️","zamračené"]:c<=48?["🌫️","hmla"]:c<=57?["🌦️","mrholí"]:c<=67?["🌧️","dážď"]:c<=77?["❄️","sneh"]:c<=82?["🌧️","prehánky"]:c<=86?["🌨️","snehové prehánky"]:["⛈️","búrka"];
 function rr(){try{const c=window.kidCtx&&kidCtx();if(c&&(c.V==="home"||c.V==="fut"))c.render()}catch(x){}}
@@ -52,9 +58,12 @@ window.kidDash=function(){const c=window.kidCtx&&kidCtx();if(!c)return "";loadWx
   </div>
   <div class="kdg kdsub">${s.sub.map(x=>{const a=x.n?Math.round(x.ok/x.n*100):null;return `<button type="button" data-kpr="${x.k}"><b>${E(x.name)}</b><span class="${a==null?"":a>=85?"kup":a>=70?"kmid":"kdn"}">${a==null?"–":a+" %"}</span><small>${x.ok}/${x.n}</small></button>`}).join("")}</div>
   <button type="button" class="kdg kdfut" data-kfut><span>⚽</span><div><b>Futbal</b><small>Zemplín Michalovce · Barça · Ronaldo · Yamal · El Clásico</small></div><em>›</em></button>
-  <div class="kdg kdsp"><div class="kdsph"><b>🎵 Moja hudba</b><button type="button" data-kspc>Zmeniť</button></div>
-   <div class="kdspl">${SPL.map(x=>`<button type="button" data-kspp="${x[1]}" class="${spRef()===x[1]?"on":""}">${E(x[0])}</button>`).join("")}</div>
-   <iframe title="Spotify" src="https://open.spotify.com/embed/${E(spRef())}?utm_source=generator&theme=0" width="100%" height="152" frameborder="0" loading="lazy" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"></iframe></div>
+  <div class="kdg kdsp">${(()=>{const r=spRef(),ci=SPL.findIndex(x=>x[3]===r),c=SPL[ci]||[ "🎵","Moja pesnička","vlastný odkaz",r];
+   return `<div class="kdsph"><b>🎵 Moja hudba</b><button type="button" data-kspc>🔗 Vlastná</button></div>
+   <div class="kdnow"><button type="button" class="kdsk" data-ksps="-1" aria-label="Predchádzajúca">◀</button><div class="kdnt"><span>${c[0]}</span><div><small>▶ HRÁ</small><b>${E(c[1])}</b><em>${E(c[2])}</em></div></div><button type="button" class="kdsk" data-ksps="1" aria-label="Ďalšia">▶</button></div>
+   <iframe title="Spotify" src="https://open.spotify.com/embed/${E(r)}?utm_source=generator&theme=0" width="100%" height="${r.startsWith("track/")?152:232}" frameborder="0" loading="lazy" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"></iframe>
+   <small class="kdslb">🎵 Pesničky</small><div class="kdspl">${SPL.filter(x=>x[3].startsWith("track/")).map(x=>`<button type="button" data-kspp="${x[3]}" class="${x[3]===r?"on":""}"><span>${x[0]}</span><b>${E(x[1])}</b><small>${x[3]===r?"▶ hrá":E(x[2])}</small></button>`).join("")}</div>
+   <small class="kdslb">📻 Playlisty</small><div class="kdspl">${SPL.filter(x=>x[3].startsWith("playlist/")).map(x=>`<button type="button" data-kspp="${x[3]}" class="${x[3]===r?"on":""}"><span>${x[0]}</span><b>${E(x[1])}</b><small>${x[3]===r?"▶ hrá":E(x[2])}</small></button>`).join("")}</div>`})()}</div>
  </div>`};
 
 // ---------- ⚽ FUTBAL ----------
@@ -102,13 +111,14 @@ window.kidFutbal=function(){const c=window.kidCtx&&kidCtx();if(!c)return "";if(!
      :`<p class="${D.fm.res?"kup":"kdn"}">${D.fm.res?"✅ Správne! +3 🪙":"❌ Správne je "+D.fm.a.toLocaleString("sk-SK")}</p><button type="button" class="lime" data-kfmn>Ďalší príklad ›</button>`}</div>
   </div>`};
 
-document.addEventListener("click",e=>{const t=e.target.closest&&e.target.closest("[data-kfut],[data-kfq],[data-kfqn],[data-kfqr],[data-kfmc],[data-kfmn],[data-kspc],[data-kspp]");if(!t)return;const c=window.kidCtx&&kidCtx();if(!c)return;e.preventDefault();e.stopPropagation();
+document.addEventListener("click",e=>{const t=e.target.closest&&e.target.closest("[data-kfut],[data-kfq],[data-kfqn],[data-kfqr],[data-kfmc],[data-kfmn],[data-kspc],[data-kspp],[data-ksps]");if(!t)return;const c=window.kidCtx&&kidCtx();if(!c)return;e.preventDefault();e.stopPropagation();
   if("kfut" in t.dataset){c.go("fut");return}
   if(t.dataset.kfq!=null){const q=D.fq;if(!q||q.pick!=null)return;q.pick=+t.dataset.kfq;const ok=q.L[q.i].o[q.pick].ok;if(ok){q.ok++;c.addCoins(3,"futbalový kvíz")}c.stat(ok);c.render();return}
   if("kfqn" in t.dataset){D.fq.i++;D.fq.pick=null;c.render();return}
   if("kfqr" in t.dataset){fqNew();c.render();return}
   if("kfmc" in t.dataset){const i=document.querySelector("[data-kfmi]");const v=(i&&i.value||"").replace(/\s/g,"");if(!v)return;D.fm.inp=v;D.fm.res=+v===D.fm.a;if(D.fm.res){c.addCoins(3,"futbalová matematika");c.earn("q","Futbalová matematika")}c.stat(D.fm.res,"mat");c.render();return}
   if("kfmn" in t.dataset){fmNew();c.render();return}
+  if(t.dataset.ksps){const i=SPL.findIndex(x=>x[3]===spRef()),n=(i<0?0:i+(+t.dataset.ksps)+SPL.length)%SPL.length;try{localStorage.setItem(SPK,SPL[n][3])}catch(x){}rr();return}
   if(t.dataset.kspp){try{localStorage.setItem(SPK,t.dataset.kspp)}catch(x){}rr();return}
   if("kspc" in t.dataset){const u=prompt("Vlož odkaz na playlist zo Spotify (Zdieľať → Kopírovať odkaz). Prázdne = hymna Barçy.");if(u==null)return;const m=String(u).match(/open\.spotify\.com\/(?:intl-[a-z-]+\/)?(?:embed\/)?(playlist|album|track|artist)\/([A-Za-z0-9]{10,})/);
     try{if(!u.trim())localStorage.removeItem(SPK);else if(m)localStorage.setItem(SPK,m[1]+"/"+m[2]);else{alert("To nie je odkaz na Spotify.");return}}catch(x){}c.render()}},true);
@@ -139,7 +149,14 @@ document.addEventListener("click",e=>{const t=e.target.closest&&e.target.closest
 .kdfut{all:unset;box-sizing:border-box;position:relative;display:flex;align-items:center;gap:12px;padding:14px 16px;border-radius:24px;cursor:pointer;color:#fff;overflow:hidden;
  background:linear-gradient(120deg,rgba(29,78,216,.55),rgba(165,0,68,.45) 55%,rgba(250,204,21,.25));box-shadow:0 8px 30px rgba(0,0,0,.25),inset 0 1px 0 rgba(255,255,255,.35)}
 .kdfut>span{font-size:2.2rem}.kdfut div{display:grid;gap:2px;text-align:left;flex:1;min-width:0}.kdfut b{font-size:1.2rem}.kdfut small{opacity:.85;font-size:.8rem;overflow-wrap:anywhere}.kdfut em{font-style:normal;font-size:1.6rem;opacity:.8}
-.kdsp{padding:10px}.kdspl{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 8px}.kdspl button{min-height:36px!important;padding:6px 12px!important;border-radius:999px!important;font-size:.85rem!important;background:rgba(255,255,255,.08)!important;border:1px solid rgba(255,255,255,.18)!important;color:#fff!important}.kdspl button.on{background:rgba(182,255,59,.22)!important;border-color:rgba(182,255,59,.7)!important}
+.kdsp{padding:12px}.kdslb{display:block;font-size:.72rem;font-weight:800;letter-spacing:.08em;opacity:.7;margin:12px 2px 6px;text-transform:uppercase}
+.kdnow{display:grid;grid-template-columns:52px minmax(0,1fr) 52px;gap:8px;align-items:center;margin:0 0 10px;padding:10px;border-radius:18px;background:linear-gradient(135deg,rgba(29,185,84,.30),rgba(34,211,238,.14));border:1px solid rgba(29,185,84,.65);box-shadow:0 0 18px rgba(29,185,84,.35)}
+.kdsk{width:52px!important;height:52px!important;min-height:52px!important;padding:0!important;border-radius:50%!important;font-size:1.4rem!important;background:#1DB954!important;color:#000!important;border:0!important;font-weight:900;box-shadow:0 6px 16px rgba(29,185,84,.45)!important}
+.kdnt{display:flex;align-items:center;gap:10px;min-width:0}.kdnt>span{font-size:2rem;line-height:1}.kdnt>div{min-width:0}.kdnt small{display:block;font-size:.66rem;font-weight:900;letter-spacing:.12em;color:#7CFFA8}.kdnt b{display:block;font-size:1.08rem;line-height:1.2;overflow-wrap:anywhere}.kdnt em{display:block;font-style:normal;font-size:.8rem;opacity:.8;overflow-wrap:anywhere}
+.kdspl{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:8px}
+.kdspl button{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;min-height:96px!important;padding:10px 6px!important;border-radius:16px!important;background:rgba(255,255,255,.07)!important;border:1px solid rgba(255,255,255,.16)!important;color:#fff!important;text-align:center}
+.kdspl button span{font-size:1.7rem;line-height:1.1}.kdspl button b{font-size:.88rem;line-height:1.2;overflow-wrap:anywhere}.kdspl button small{font-size:.7rem;opacity:.75;overflow-wrap:anywhere}
+.kdspl button.on{background:linear-gradient(135deg,rgba(29,185,84,.38),rgba(29,185,84,.14))!important;border:2px solid #1DB954!important;box-shadow:0 0 16px rgba(29,185,84,.5)!important}.kdspl button.on small{color:#7CFFA8;opacity:1;font-weight:800}
 .kdsph{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;gap:8px}.kdsph button{min-height:34px;padding:0 12px;border-radius:12px}.kdsp iframe{border-radius:14px;display:block;background:#000}
 .kdzem{display:grid;gap:4px;background:linear-gradient(150deg,rgba(250,204,21,.4),rgba(29,78,216,.45))}.kdzem b{font-size:1.15rem}.kdzem small{opacity:.9}
 .kdfc{text-align:left}.kdfc summary{display:flex;gap:10px;align-items:center;cursor:pointer;list-style:none}.kdfc summary::-webkit-details-marker{display:none}.kdfc summary span{font-size:1.4rem;white-space:nowrap;flex-shrink:0}.kdfc summary b{font-size:1.02rem}.kdfc p{margin:10px 0 2px;line-height:1.55;font-size:.95rem}
