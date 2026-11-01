@@ -132,7 +132,7 @@ async function load(){if(R.busy||!has())return;R.busy=true;const y=new Date().ge
     q.push(sb.from("app_feedback").select("who,rating").gte("created_at",since).not("rating","is",null).then(r=>{const L=r.error?[]:r.data||[],av=w=>{const x=L.filter(z=>z.who===w);return x.length?x.reduce((s,z)=>s+z.rating,0)/x.length:null};R.fb={n:L.length,f:av("farmer"),s:av("staff")}},()=>{R.fb={n:0}}))}
   await Promise.all(q.map(p=>Promise.resolve(p).catch(()=>{})));R.busy=false;dot();const m=document.getElementById("fbMod");if(m&&window.feedbackRepaint)feedbackRepaint()}
 // bodka na 💬 + krátka bublina raz denne
-function dot(){const b=document.getElementById("fbBtn");if(!b)return;let d=b.querySelector(".rsdot");const u=unseen();
+function dot(){const b=document.getElementById("fbBtn");if(!b||(window.kidCtx&&window.kidCtx()))return;let d=b.querySelector(".rsdot");const u=unseen();
   if(u&&!d){d=document.createElement("span");d.className="rsdot";d.setAttribute("aria-hidden","true");b.appendChild(d);b.setAttribute("aria-label","Ranná správa je pripravená");
     const t=b.querySelector(".fbtip"),k="ernte-rs-tip";if(t&&ld(k,"")!==TODAY()){sv(k,TODAY());t.textContent=`☀️ ${greet()}! Ranná správa je pripravená – ťuknite na 💬.`;t.hidden=false;setTimeout(()=>{t.hidden=true},9000)}}
   else if(!u&&d){d.remove();b.setAttribute("aria-label","Spätná väzba – čo by ste zmenili?")}}

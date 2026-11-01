@@ -5,10 +5,11 @@
 (function(){
 const e=x=>typeof esc==="function"?esc(x):String(x??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const say=(t,ms)=>{if(typeof toast==="function")toast(t,ms||4000)};
-const isF=()=>typeof FARMER!=="undefined"&&!!FARMER,isS=()=>typeof ROLE!=="undefined"&&!!ROLE&&!isF(),isOwn=()=>isS()&&ROLE==="owner";
-const who=()=>isF()?"farmer":isS()?"staff":document.querySelector(".trtabs")?"partner":null;
+const isK=()=>!!(window.kidCtx&&window.kidCtx()),isF=()=>typeof FARMER!=="undefined"&&!!FARMER,isS=()=>typeof ROLE!=="undefined"&&!!ROLE&&!isF(),isOwn=()=>isS()&&ROLE==="owner";
+const who=()=>isF()?"farmer":isS()?"staff":isK()?"kid":document.querySelector(".trtabs")?"partner":null;
 const Q={farmer:["Čo vám v aplikácii ERNTE najviac pomáha?","Čo by ste v aplikácii zmenili alebo pridali?","Bolo niečo, čo ste v aplikácii nevedeli nájsť?","Chýba vám nejaká informácia o odvoze, vážení alebo platbe?","Ako ste spokojný s výkupnými cenami a komunikáciou s ERNTE?","Odporučili by ste ERNTE inému farmárovi? Prečo áno / nie?"],
  staff:["Čo ti v aplikácii zaberá najviac času?","Čo by si v aplikácii zmenil/a alebo pridal/a?","Robíš ešte niečo mimo aplikácie (Excel, papier, telefón)? Čo?","Ktorá časť aplikácie je neprehľadná?","Nefungovalo ti dnes niečo? Napíš čo a kde.","Čo by ti ušetrilo najviac práce?"],
+ kid:["Čo ťa v ERNTE Junior najviac baví?","Čo by si v aplikácii pridal – hru, predmet, futbal…?","Bola nejaká otázka zlá alebo nejasná? Ktorá?","Čomu si dnes nerozumel? Vysvetlíme ti to.","Ktorý predmet chceš precvičovať viac?","Chceš sa niečo naučiť o našej firme? Čo?"],
  partner:["Čo vám v aplikácii pomáha?","Čo by ste zmenili alebo pridali?","Chýba vám nejaká informácia?"]};
 const LK="ernte-fb",ld=()=>{try{return JSON.parse(localStorage.getItem(LK)||"{}")}catch(x){return {}}},sv=v=>{try{localStorage.setItem(LK,JSON.stringify(v))}catch(x){}};
 let S={open:false,qi:0,rate:0,busy:false,list:null,tbl:null};
@@ -16,11 +17,34 @@ function nextQ(){const w=who()||"staff",L=Q[w]||Q.staff,st=ld(),done=st.done||[]
 function btn(){if(!who()||document.getElementById("fbBtn"))return;css();const b=document.createElement("button");b.type="button";b.id="fbBtn";b.className="fbbtn";b.setAttribute("aria-label","Spätná väzba – čo by ste zmenili?");b.innerHTML=`💬<span class="fbtip" hidden></span>`;document.body.appendChild(b);b.onclick=()=>open()}
 function tip(){const st=ld(),b=document.getElementById("fbBtn");if(!b)return;if(st.last&&Date.now()-st.last<3*864e5)return;if(st.snooze&&Date.now()<st.snooze)return;
   const t=b.querySelector(".fbtip");const L=Q[who()]||Q.staff;t.textContent="Máte minútku? "+L[nextQ()];t.hidden=false;setTimeout(()=>{t.hidden=true},14000)}
-function open(qOnly){S.open=true;S.qOnly=qOnly===true;S.fbOpen=false;S.qi=nextQ();S.rate=0;paint();if(!S.qOnly&&window.rsSeen)try{rsSeen()}catch(x){}}
+
+// ---------- 🧒 Timotej: zhrnutie dňa v 💬 (príkaz majiteľa 1. 11.) – čo má v aplikácii a čo robí ----------
+const KSEEN="ernte-kid-rs-seen",TD=()=>new Date().toLocaleDateString("sv-SE");
+const eur=v=>(+v||0).toLocaleString("sk-SK",{minimumFractionDigits:2,maximumFractionDigits:2})+" €";
+const WMOK=c=>c==null?["🌤️",""]:c===0?["☀️","jasno"]:c<=2?["🌤️","polojasno"]:c===3?["☁️","oblačno"]:c<=48?["🌫️","hmla"]:c<=57?["🌦️","mrholenie"]:c<=67?["🌧️","dážď"]:c<=77?["❄️","sneženie"]:c<=82?["🌦️","prehánky"]:c<=86?["🌨️","snehové prehánky"]:["⛈️","búrka"];
+function kidRs(){const X=window.kidStats&&kidStats();if(!X)return "";const {c,s,wx,inv}=X,P=c.P,p=c.PAY||{},nm=String(c.K.name||"").split(" ")[0]||"Timotej",hr=new Date().getHours();
+  let first=true;const m=(h,b)=>{const lb=first?`<span class="fbav">ERNTE Junior · ${e(new Date().toLocaleDateString("sk-SK",{weekday:"long",day:"numeric",month:"numeric"}))}</span>`:"";first=false;return `<div class="fbmsg them rsm">${lb}<div class="rsb">${h}</div>${b?`<div class="rsbtns">${b}</div>`:""}</div>`};
+  const L=[];L.push(m(`<p>${hr<10?"Dobré ráno":hr<18?"Ahoj":"Dobrý večer"}, ${e(nm)}! ⚽ ${e(c.lv[0])} ${e(c.lv[1])} · 🪙 ${c.coins}</p>`));
+  const td=s.td||{n:0,ok:0};
+  L.push(m(td.n?`<p>📊 <b>Dnes</b> si už odpovedal na <b>${td.n}</b> ${td.n===1?"otázku":td.n<5?"otázky":"otázok"}, správne <b>${td.ok}</b> (${Math.round(td.ok/td.n*100)} %). ${td.ok/td.n>=0.8?"Výborne! 🌟":"Ešte trochu a bude to super 💪"}</p>`:`<p>📊 <b>Dnes</b> si ešte nezačal. Daj si 10 otázok – každá správna je peniaz od tatina. 💶</p>`));
+  const left=Math.max(0,(+p.max||200)-(+p.month||0)),dl=Math.max(0,(+p.day||30)-(+p.today||0));
+  L.push(m(`<p>💶 <b>Zarobené</b> tento mesiac: <b>${eur(p.month)}</b> z ${eur(p.max||200)} · dnes ${eur(p.today||0)}${dl>0&&left>0?` – dnes môžeš zarobiť ešte ${eur(Math.min(dl,left))}`:left<=0?" – máš maximum na mesiac 🎉":" – na dnes máš maximum 🎉"}.</p>`,`<button type="button" data-kpay>💶 Moje zarobené</button>`));
+  if(s.W&&s.W.length)L.push(m(`<p>📚 <b>Dnes sa uč:</b><br>${s.W.map(w=>`• ${e(w.t)}`).join("<br>")}</p>`,s.W.map(w=>`<button type="button" data-kpr="${e(w.k)}">${e((c.PRK[w.k]||[])[1]||w.k)} ›</button>`).join("")));
+  else L.push(m(`<p>🌟 Všetky predmety ideš výborne – celková úspešnosť <b>${s.acc} %</b> z ${s.n} otázok.</p>`));
+  const nx=c.LESSONS.find(l=>!(P["l_"+l.id]&&P["l_"+l.id].ok));
+  L.push(m(`<p>🎓 <b>Lekcie</b>: ${s.ld} z ${s.lessons} hotových.${nx?` Ďalšia: <b>${e(nx.t)}</b> (+1 € za dokončenie).`:" Všetky hotové 🏆"}</p>`,nx?`<button type="button" data-kl="${e(nx.id)}">🎓 ${e(nx.t)} ›</button>`:""));
+  if(inv&&inv.v!=null)L.push(m(`<p>📈 <b>Investície</b>: ${eur(inv.v)} (${inv.g>=0?"+":""}${(+inv.g||0).toLocaleString("sk-SK",{maximumFractionDigits:1})} % od štartu)${inv.dg!=null?(inv.g>=inv.dg?" – 🏆 vedieš pred tatinom!":" – tatino vedie, dobehni ho!"):""}${inv.unread?` · ✉️ ${inv.unread} nový list`:""}</p>`,`<button type="button" data-kinv>📈 Moje investície ›</button>`));
+  const dw=wx&&wx.daily;if(dw){const w=WMOK(dw.weather_code[0]),r=(dw.precipitation_sum&&dw.precipitation_sum[0])||0;
+    L.push(m(`<p>${w[0]} <b>Michalovce</b>: ${Math.round(dw.temperature_2m_min[0])} až ${Math.round(dw.temperature_2m_max[0])} °C, ${e(w[1])}.${r>=1?" ☔ Na tréning si zober bundu.":dw.temperature_2m_max[0]<8?" 🧤 Je zima – teplé oblečenie na futbal.":" ⚽ Dobré počasie na futbal!"}</p>`))}
+  return L.join("")}
+function kidDot(){const b=document.getElementById("fbBtn");if(!b||!isK())return;let d=b.querySelector(".rsdot");const u=(()=>{try{return localStorage.getItem(KSEEN)!==TD()}catch(x){return false}})();
+  if(u&&!d){d=document.createElement("span");d.className="rsdot";d.setAttribute("aria-hidden","true");b.appendChild(d);b.setAttribute("aria-label","Tvoje zhrnutie dňa je pripravené")}else if(!u&&d)d.remove()}
+document.addEventListener("click",ev=>{const t=ev.target.closest&&ev.target.closest("#fbMod [data-kpr],#fbMod [data-kl],#fbMod [data-kpay],#fbMod [data-kinv]");if(t)setTimeout(close,0)});
+function open(qOnly){S.open=true;S.qOnly=qOnly===true;S.fbOpen=false;S.qi=nextQ();S.rate=0;paint();if(!S.qOnly&&isK()){try{localStorage.setItem(KSEEN,TD())}catch(x){}kidDot()}else if(!S.qOnly&&window.rsSeen)try{rsSeen()}catch(x){}}
 function close(){S.open=false;const m=document.getElementById("fbMod");if(m)m.remove()}
 function paint(){let m=document.getElementById("fbMod");if(!S.open){if(m)m.remove();return}if(!m){m=document.createElement("div");m.id="fbMod";m.className="fbmod";document.body.appendChild(m);m.addEventListener("click",ev=>{if(ev.target===m)close()})}
-  const L=Q[who()]||Q.staff,q=L[S.qi],nm=isF()?FARMER.name:(typeof ME!=="undefined"&&ME&&(ME.staffName||ME.email))||"";
-  const rs=!S.qOnly&&window.rsHTML?rsHTML():"";
+  const L=Q[who()]||Q.staff,q=L[S.qi],nm=isF()?FARMER.name:isK()?(window.kidCtx().K.name||""):(typeof ME!=="undefined"&&ME&&(ME.staffName||ME.email))||"";
+  const rs=S.qOnly?"":isK()?kidRs():window.rsHTML?rsHTML():"";
   m.innerHTML=`<div class="fbbox" role="dialog" aria-modal="true" aria-label="${rs?"Ranná správa a spätná väzba":"Spätná väzba"}"><div class="fbhd"><b>${rs?"💬 ERNTE":"💬 Pomôžte nám zlepšiť aplikáciu"}</b><button type="button" class="fbx" data-fbx aria-label="Zavrieť">✕</button></div>
    ${rs?`<div class="fbchat">${rs}</div><details class="fbmore"${S.fbOpen?" open":""}><summary>💬 Máte nápad alebo pripomienku?</summary>`:""}
    <div class="fbchat"><div class="fbmsg them"><span class="fbav">ERNTE</span><p>Dobrý deň${nm?", "+e(String(nm).split(" ")[0]):""}! ${e(q)}</p></div></div>
@@ -31,7 +55,7 @@ function paint(){let m=document.getElementById("fbMod");if(!S.open){if(m)m.remov
   if(rs){const d=m.querySelector(".fbmore");if(d)d.addEventListener("toggle",()=>{S.fbOpen=d.open})}
   if(!rs||S.fbOpen)setTimeout(()=>{const t=m.querySelector("textarea");try{t&&t.focus({preventScroll:!!rs})}catch(x){}},80)}
 async function send(a){const w=who(),L=Q[w]||Q.staff,q=L[S.qi];S.busy=true;paint();
-  const row={who:w,farmer_id:isF()?FARMER.id:null,email:typeof ME!=="undefined"&&ME?String(ME.email||"").toLowerCase():null,name:isF()?FARMER.name:(typeof ME!=="undefined"&&ME&&ME.staffName)||null,question:q,answer:a.slice(0,2000),rating:S.rate||null,screen:typeof TAB!=="undefined"&&isS()?TAB:w,dev:navigator.userAgent.slice(0,180)};
+  const row={who:w,farmer_id:isF()?FARMER.id:null,email:typeof ME!=="undefined"&&ME?String(ME.email||"").toLowerCase():null,name:isF()?FARMER.name:isK()?(window.kidCtx().K.name||null):(typeof ME!=="undefined"&&ME&&ME.staffName)||null,question:q,answer:a.slice(0,2000),rating:S.rate||null,screen:typeof TAB!=="undefined"&&isS()?TAB:w,dev:navigator.userAgent.slice(0,180)};
   let r=await sb.from("app_feedback").insert(row);
   if(r.error&&/app_feedback|relation|schema cache|does not exist|could not find/i.test(r.error.message)){
     if(isF())r=await sb.from("requests").insert({farmer_id:FARMER.id,kind:"message",note:(`💬 SPÄTNÁ VÄZBA${S.rate?" · "+S.rate+"/5":""} · ${q} → ${a}`).slice(0,500)});
@@ -69,7 +93,7 @@ document.addEventListener("click",ev=>{const g=s=>ev.target.closest&&ev.target.c
   if(x=g("[data-fbr]")){S.rate=+x.dataset.fbr;document.querySelectorAll("[data-fbr]").forEach(b=>b.setAttribute("aria-pressed",String(+b.dataset.fbr===S.rate)));return}},true);
 document.addEventListener("submit",ev=>{if(ev.target.id!=="fbF")return;ev.preventDefault();ev.stopPropagation();const a=String(new FormData(ev.target).get("a")||"").trim();if(a)send(a)},true);
 function wrap(n,fn){const o=window[n];if(typeof o!=="function"||o["__fb"+n])return;const w=function(){const r=o.apply(this,arguments);try{fn()}catch(x){}return r};w["__fb"+n]=1;Object.keys(o).forEach(k=>{try{if(!(k in w))w[k]=o[k]}catch(x){}});window[n]=w}
-const t=setInterval(()=>{wrap("renderStaff",injectHome);if(who())btn()},500);setTimeout(()=>clearInterval(t),120000);
+const t=setInterval(()=>{wrap("renderStaff",injectHome);if(who()){btn();kidDot()}},500);setTimeout(()=>clearInterval(t),120000);
 // občasná otázka: po 90 s používania, najviac raz za 3 dni
 setTimeout(()=>{if(who()){btn();tip()}},90000);
 window.feedbackOpen=open;window.feedbackClose=close;window.feedbackRepaint=()=>{if(S.open){const t=document.querySelector("#fbF textarea"),v=t?t.value:"";paint();const n=document.querySelector("#fbF textarea");if(n&&v)n.value=v}};

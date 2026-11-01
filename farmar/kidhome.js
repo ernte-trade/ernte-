@@ -7,6 +7,7 @@ const E=s=>String(s==null?"":s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;","
 const EUR=v=>(+v||0).toLocaleString("sk-SK",{minimumFractionDigits:2,maximumFractionDigits:2})+" €";
 const D={wx:null,wxAt:0,inv:null,invAt:0,fq:null,fm:null};
 const SPK="ernte-kid-sp",SPDEF="playlist/70yWEVCtXXtTay9CMsxnyD"; // FC Barcelona Anthem (tatino môže zmeniť)
+const SPL=[["⚽ Hymny a pesničky sveta","playlist/37i9dQZF1DXaoALgva1Aqr"],["🏟️ Hymny klubov","playlist/3W72k7KYqQah9sDYh4vZ1S"],["🔵🔴 Barça","playlist/70yWEVCtXXtTay9CMsxnyD"]]; // Spotify „Football Anthems“ + verejný playlist hymien klubov (1. 11. príkaz majiteľa)
 const spRef=()=>{try{return localStorage.getItem(SPK)||SPDEF}catch(x){return SPDEF}};
 const WMO=c=>c==null?["🌡️",""]:c===0?["☀️","jasno"]:c<=2?["🌤️","polojasno"]:c===3?["☁️","zamračené"]:c<=48?["🌫️","hmla"]:c<=57?["🌦️","mrholí"]:c<=67?["🌧️","dážď"]:c<=77?["❄️","sneh"]:c<=82?["🌧️","prehánky"]:c<=86?["🌨️","snehové prehánky"]:["⛈️","búrka"];
 function rr(){try{const c=window.kidCtx&&kidCtx();if(c&&(c.V==="home"||c.V==="fut"))c.render()}catch(x){}}
@@ -33,6 +34,8 @@ function stats(c){const P=c.P,PRK=c.PRK,sub=Object.keys(PRK).map(k=>{const s=P["
   const lessons=c.LESSONS.length,ld=c.LESSONS.filter(l=>P["l_"+l.id]&&P["l_"+l.id].ok).length;
   return {sub,n,ok,acc:n?Math.round(ok/n*100):0,td,W:W.slice(0,3),lessons,ld}}
 
+// pre rannú správu v 💬 (feedback.js): štatistiky, počasie, investície
+window.kidStats=function(){const c=window.kidCtx&&kidCtx();if(!c)return null;try{loadWx();loadInv()}catch(x){}return {c,s:stats(c),wx:D.wx||null,inv:D.inv||null}};
 window.kidDash=function(){const c=window.kidCtx&&kidCtx();if(!c)return "";loadWx();loadInv();
   const s=stats(c),p=c.PAY||{},w=D.wx&&D.wx.current,dw=D.wx&&D.wx.daily,wi=WMO(w&&w.weather_code),inv=D.inv;
   const now=new Date(),hr=now.getHours(),greet=hr<10?"Dobré ráno":hr<18?"Ahoj":"Dobrý večer",nm=String(c.K.name||"").split(" ")[0];
@@ -50,6 +53,7 @@ window.kidDash=function(){const c=window.kidCtx&&kidCtx();if(!c)return "";loadWx
   <div class="kdg kdsub">${s.sub.map(x=>{const a=x.n?Math.round(x.ok/x.n*100):null;return `<button type="button" data-kpr="${x.k}"><b>${E(x.name)}</b><span class="${a==null?"":a>=85?"kup":a>=70?"kmid":"kdn"}">${a==null?"–":a+" %"}</span><small>${x.ok}/${x.n}</small></button>`}).join("")}</div>
   <button type="button" class="kdg kdfut" data-kfut><span>⚽</span><div><b>Futbal</b><small>Zemplín Michalovce · Barça · Ronaldo · Yamal · El Clásico</small></div><em>›</em></button>
   <div class="kdg kdsp"><div class="kdsph"><b>🎵 Moja hudba</b><button type="button" data-kspc>Zmeniť</button></div>
+   <div class="kdspl">${SPL.map(x=>`<button type="button" data-kspp="${x[1]}" class="${spRef()===x[1]?"on":""}">${E(x[0])}</button>`).join("")}</div>
    <iframe title="Spotify" src="https://open.spotify.com/embed/${E(spRef())}?utm_source=generator&theme=0" width="100%" height="152" frameborder="0" loading="lazy" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"></iframe></div>
  </div>`};
 
@@ -98,13 +102,14 @@ window.kidFutbal=function(){const c=window.kidCtx&&kidCtx();if(!c)return "";if(!
      :`<p class="${D.fm.res?"kup":"kdn"}">${D.fm.res?"✅ Správne! +3 🪙":"❌ Správne je "+D.fm.a.toLocaleString("sk-SK")}</p><button type="button" class="lime" data-kfmn>Ďalší príklad ›</button>`}</div>
   </div>`};
 
-document.addEventListener("click",e=>{const t=e.target.closest&&e.target.closest("[data-kfut],[data-kfq],[data-kfqn],[data-kfqr],[data-kfmc],[data-kfmn],[data-kspc]");if(!t)return;const c=window.kidCtx&&kidCtx();if(!c)return;e.preventDefault();e.stopPropagation();
+document.addEventListener("click",e=>{const t=e.target.closest&&e.target.closest("[data-kfut],[data-kfq],[data-kfqn],[data-kfqr],[data-kfmc],[data-kfmn],[data-kspc],[data-kspp]");if(!t)return;const c=window.kidCtx&&kidCtx();if(!c)return;e.preventDefault();e.stopPropagation();
   if("kfut" in t.dataset){c.go("fut");return}
   if(t.dataset.kfq!=null){const q=D.fq;if(!q||q.pick!=null)return;q.pick=+t.dataset.kfq;const ok=q.L[q.i].o[q.pick].ok;if(ok){q.ok++;c.addCoins(3,"futbalový kvíz")}c.stat(ok);c.render();return}
   if("kfqn" in t.dataset){D.fq.i++;D.fq.pick=null;c.render();return}
   if("kfqr" in t.dataset){fqNew();c.render();return}
   if("kfmc" in t.dataset){const i=document.querySelector("[data-kfmi]");const v=(i&&i.value||"").replace(/\s/g,"");if(!v)return;D.fm.inp=v;D.fm.res=+v===D.fm.a;if(D.fm.res){c.addCoins(3,"futbalová matematika");c.earn("q","Futbalová matematika")}c.stat(D.fm.res,"mat");c.render();return}
   if("kfmn" in t.dataset){fmNew();c.render();return}
+  if(t.dataset.kspp){try{localStorage.setItem(SPK,t.dataset.kspp)}catch(x){}rr();return}
   if("kspc" in t.dataset){const u=prompt("Vlož odkaz na playlist zo Spotify (Zdieľať → Kopírovať odkaz). Prázdne = hymna Barçy.");if(u==null)return;const m=String(u).match(/open\.spotify\.com\/(?:intl-[a-z-]+\/)?(?:embed\/)?(playlist|album|track|artist)\/([A-Za-z0-9]{10,})/);
     try{if(!u.trim())localStorage.removeItem(SPK);else if(m)localStorage.setItem(SPK,m[1]+"/"+m[2]);else{alert("To nie je odkaz na Spotify.");return}}catch(x){}c.render()}},true);
 
@@ -134,7 +139,8 @@ document.addEventListener("click",e=>{const t=e.target.closest&&e.target.closest
 .kdfut{all:unset;box-sizing:border-box;position:relative;display:flex;align-items:center;gap:12px;padding:14px 16px;border-radius:24px;cursor:pointer;color:#fff;overflow:hidden;
  background:linear-gradient(120deg,rgba(29,78,216,.55),rgba(165,0,68,.45) 55%,rgba(250,204,21,.25));box-shadow:0 8px 30px rgba(0,0,0,.25),inset 0 1px 0 rgba(255,255,255,.35)}
 .kdfut>span{font-size:2.2rem}.kdfut div{display:grid;gap:2px;text-align:left;flex:1;min-width:0}.kdfut b{font-size:1.2rem}.kdfut small{opacity:.85;font-size:.8rem;overflow-wrap:anywhere}.kdfut em{font-style:normal;font-size:1.6rem;opacity:.8}
-.kdsp{padding:10px}.kdsph{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;gap:8px}.kdsph button{min-height:34px;padding:0 12px;border-radius:12px}.kdsp iframe{border-radius:14px;display:block;background:#000}
+.kdsp{padding:10px}.kdspl{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 8px}.kdspl button{min-height:36px!important;padding:6px 12px!important;border-radius:999px!important;font-size:.85rem!important;background:rgba(255,255,255,.08)!important;border:1px solid rgba(255,255,255,.18)!important;color:#fff!important}.kdspl button.on{background:rgba(182,255,59,.22)!important;border-color:rgba(182,255,59,.7)!important}
+.kdsph{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;gap:8px}.kdsph button{min-height:34px;padding:0 12px;border-radius:12px}.kdsp iframe{border-radius:14px;display:block;background:#000}
 .kdzem{display:grid;gap:4px;background:linear-gradient(150deg,rgba(250,204,21,.4),rgba(29,78,216,.45))}.kdzem b{font-size:1.15rem}.kdzem small{opacity:.9}
 .kdfc{text-align:left}.kdfc summary{display:flex;gap:10px;align-items:center;cursor:pointer;list-style:none}.kdfc summary::-webkit-details-marker{display:none}.kdfc summary span{font-size:1.4rem;white-space:nowrap;flex-shrink:0}.kdfc summary b{font-size:1.02rem}.kdfc p{margin:10px 0 2px;line-height:1.55;font-size:.95rem}
 .kdq{display:grid;gap:8px}.kdq>b{font-size:1.1rem}.kdq small{opacity:.8}.kdqq{margin:0;font-size:1.02rem;line-height:1.45;font-weight:600}
