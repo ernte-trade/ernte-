@@ -19,6 +19,7 @@ const acked=k=>{const a=D.st&&D.st.ack&&D.st.ack[k];return !!(a&&a.until&&new Da
 function myName(){try{return (STATE.me&&STATE.me.name)||"ERNTE"}catch(x){return "ERNTE"}}
 function price(c){const p=(STATE.prices||[]).find(x=>x.com===c&&x.price!=null);return p?+p.price:null}
 async function loadTg(){if(D.busyTg)return;D.busyTg=true;try{const r=await sb.from("price_targets").select("farmer_id,com,target,active,hit_at,created_at").eq("active",true).limit(400);D.tg=r.error?[]:(r.data||[])}catch(x){D.tg=[]}D.tgAt=Date.now();D.busyTg=false;paint(true)}
+const TOL=f=>{const v=+(f&&((f.terms&&f.terms.tol)||f.tol));return v>0&&v<50?v/100:0.05}; // tolerancia ± 5 % zo zmluvy (bod VI.4), farmár môže mať vlastnú
 function rows(){const F=STATE.farmers||[],byId=Object.fromEntries(F.map(f=>[f.id,f])),R=STATE.requests||STATE.reqs||[],DL=STATE.deals||[],T=STATE.trips||[],out=[];
   // 1) nevybavené požiadavky
   for(const r of R.filter(r=>r.status==="nova").slice(0,25)){const f=byId[r.farmer_id];if(!f)continue;const h=Math.max(0,Math.round((Date.now()-new Date(r.created_at))/36e5));
@@ -30,7 +31,7 @@ function rows(){const F=STATE.farmers||[],byId=Object.fromEntries(F.map(f=>[f.id
     out.push({k:"tg:"+g.farmer_id+":"+g.com,kind:"tg",p:diff>=0?0:2,i:"🎯",f,t:`${CN(g.com)}: chce ${f0(g.target)} €/t, dnes ponúkame ${f0(pc)} €/t`,s:diff>=0?"CENA DOSIAHNUTÁ – volaj hneď":`chýba ${f0(-diff)} €/t`,
       msg:`Dobrý deň, tu ${myName()} z ERNTE. ${CN(g.com)} dnes vykupujeme za ${f0(pc)} €/t${diff>=0?" – to je Vaša cieľová cena":""}. Chcete predať?`})}
   // 3) podpísané obchody so zostatkom bez auta
-  for(const d of DL.filter(d=>["podpisany","odvoz"].includes(d.status))){const left=(+d.tons||0)-(+d.delivered_t||0);if(left<=0.5)continue;const f=byId[d.farmer_id];if(!f)continue;
+  for(const d of DL.filter(d=>["podpisany","odvoz"].includes(d.status))){const left=(+d.tons||0)-(+d.delivered_t||0);const f=byId[d.farmer_id];if(!f)continue;if(left<=Math.max(0.5,(+d.tons||0)*TOL(f)))continue;
     const planned=T.some(t=>t.deal_id===d.id&&!["vylozene","zrusena"].includes(t.status));if(planned)continue;
     out.push({k:"deal:"+d.id,kind:"deal",deal:d,left,p:2,i:"🚛",f,t:`${CN(d.com)} · zmluva ${d.no||""}: zostáva ${f0(left)} t`,s:"bez naplánovaného auta",msg:`Dobrý deň, tu ${myName()} z ERNTE. Kedy Vám môžeme poslať autá na ${CN(d.com)} (zostáva ${f0(left)} t)?`,go:"deals"})}
   // 4) dlho nepredali
@@ -39,20 +40,34 @@ function rows(){const F=STATE.farmers||[],byId=Object.fromEntries(F.map(f=>[f.id
   for(const f of sleep){const best=(STATE.prices||[]).filter(p=>p.price!=null).sort((a,b)=>b.price-a.price)[0];
     out.push({k:"sleep:"+f.id,kind:"sleep",p:3,i:"😴",f,t:`nepredal ${days(last[f.id])} dní · spolu ${f0(vol[f.id])} t`,s:"pripomeň sa",msg:`Dobrý deň, tu ${myName()} z ERNTE. Dlho sme sa nepočuli – ${best?CN(best.com)+" dnes vykupujeme za "+f0(best.price)+" €/t. ":""}Máte niečo na predaj?`})}
   // 5) ⚠️ nadodávka – dodané viac ako zmluva → dodatková zmluva
-  for(const d of DL.filter(d=>d.status!=="zruseny")){const ex=(+d.delivered_t||0)-(+d.tons||0);if(ex<=0.5)continue;const f=byId[d.farmer_id];if(!f)continue;
+  for(const d of DL.filter(d=>d.status!=="zruseny")){const ex=(+d.delivered_t||0)-(+d.tons||0);const f=byId[d.farmer_id];if(!f)continue;if(ex<=Math.max(0.5,(+d.tons||0)*TOL(f)))continue;
     const fix=DL.some(x=>x.id!==d.id&&x.farmer_id===d.farmer_id&&x.com===d.com&&x.status!=="zruseny"&&new Date(x.created_at)>new Date(d.created_at)&&(+x.tons||0)>=ex-0.5);if(fix)continue;
-    out.push({k:"over:"+d.id,kind:"over",p:0,i:"⚠️",f,t:`NADODÁVKA ${CN(d.com)} · zmluva ${d.no||""}: ${f0(d.tons)} t, dodané ${(+d.delivered_t).toLocaleString("sk-SK",{maximumFractionDigits:2})} t → nad zmluvu ${ex.toLocaleString("sk-SK",{maximumFractionDigits:2})} t (≈ ${f0(ex*(+d.price||0))} €)`,s:"urobte dodatkovú zmluvu",
+    out.push({k:"over:"+d.id,kind:"over",warn:1,ex,eur:ex*(+d.price||0),p:0,i:"⚠️",f,t:`NADODÁVKA ${CN(d.com)} · zmluva ${d.no||""}: ${f0(d.tons)} t, dodané ${(+d.delivered_t).toLocaleString("sk-SK",{maximumFractionDigits:2})} t → nad zmluvu ${ex.toLocaleString("sk-SK",{maximumFractionDigits:2})} t (≈ ${f0(ex*(+d.price||0))} €)`,s:"urobte dodatkovú zmluvu",
       msg:`Dobrý deň, tu ${myName()} z ERNTE. Dodali ste nám o ${ex.toLocaleString("sk-SK",{maximumFractionDigits:2})} t ${CN(d.com)} viac, ako je v zmluve ${d.no||""}. Pripravím Vám dodatkovú zmluvu na toto množstvo.`,go:"deals"})}
+  // 5b) ⚠️ nedodávka – zmluva uzavretá (odvezený / fakturácia / zaplatený), dodané menej ako zmluva − tolerancia → tovar je predaný odberateľovi
+  for(const d of DL.filter(d=>["odvezeny","fakturacia","zaplateny"].includes(d.status))){const un=(+d.tons||0)-(+d.delivered_t||0);const f=byId[d.farmer_id];if(!f)continue;if(un<=Math.max(0.5,(+d.tons||0)*TOL(f)))continue;
+    out.push({k:"under:"+d.id,kind:"under",warn:1,un,eur:un*(+d.price||0),deal:d,left:un,p:0,i:"⚠️",f,t:`NEDODÁVKA ${CN(d.com)} · zmluva ${d.no||""}: ${f0(d.tons)} t, dodané ${(+d.delivered_t).toLocaleString("sk-SK",{maximumFractionDigits:2})} t → chýba ${un.toLocaleString("sk-SK",{maximumFractionDigits:2})} t (≈ ${f0(un*(+d.price||0))} €)`,s:"dohodnite dodanie zvyšku alebo náhradný tovar",
+      msg:`Dobrý deň, tu ${myName()} z ERNTE. Podľa zmluvy ${d.no||""} nám chýba ${un.toLocaleString("sk-SK",{maximumFractionDigits:2})} t ${CN(d.com)}. Kedy môžete dodať zvyšok? Prípadne sa dohodneme na náhradnom tovare.`,go:"deals"})}
   // 6) 🔁 náhradný nákup čaká na zmluvu
   for(const r of ((D.st&&D.st.rep)||[])){const f=byId[r.farmer_id];if(!f)continue;const it=(r.items||[]).map(x=>CN(x.com)+" "+f0(x.tons)+" t").join(", ");
     out.push({k:"rep:"+r.id,kind:"rep",rep:r,p:1,i:"🔁",f,t:`Náhradný nákup: ${it} = ${f0(r.total)} € (nedodané ${f0(r.und)} €)${r.ok?" ✅":" ⚠️ rozdiel"}`,s:`urobte zmluvu · zadal ${r.by||""}`,
       msg:`Dobrý deň, tu ${myName()} z ERNTE. Ako sme sa dohodli, namiesto nedodaného tovaru pripravujem zmluvu na ${it}.`,go:"qd"})}
   const seen=new Set();return out.filter(x=>!(x.k&&acked(x.k))).sort((a,b)=>a.p-b.p).filter(x=>{const k=x.i+x.f.id+x.t;if(seen.has(k))return false;seen.add(k);return true})}
-function html(){const L=rows();if(!L.length)return `<div class="card pln" id="plnCard"><h2>📞 Môj plán na dnes</h2><div class="s">Dnes nikto nečaká – všetko vybavené. 👍</div></div>`;
+const WHY=`<div class="plwhy"><b>Prečo je to dôležité</b><p>Každú zmluvu s farmárom sme už <b>predali odberateľovi</b>. Zmluva pripúšťa odchýlku <b>± 5 %</b> (bod VI.4) – tu sú iba zmluvy mimo nej.</p>
+ <p>⬇️ <b>Nedodávka</b> = chýba nám tovar, ktorý je už predaný. Musíme ho dokúpiť drahšie alebo zaplatiť odberateľovi pokutu – <b>zhoršuje to výsledok firmy</b>.</p>
+ <p>⬆️ <b>Nadodávka</b> = tovar navyše nemá zmluvu ani predaj – nemáme preň odberateľa ani cenu a farmár nemá podklad na zaplatenie.</p>
+ <b>Postup</b><ol><li>📞 Zavolaj farmárovi – over množstvo a dôvod.</li><li>⬆️ Nadodávka: priprav <b>dodatkovú zmluvu</b> na prebytok za dnešnú zverejnenú cenu, alebo ju započítaj do inej jeho zmluvy.</li>
+ <li>⬇️ Nedodávka: dohodni <b>dodanie zvyšku</b> (auto, termín), alebo <b>náhradný tovar</b> v rovnakej hodnote (✔️ Vyjadriť → Nedodá → náhradný nákup). Ak nedodá nič, podľa zmluvy (bod VI) mu patrí zmluvná pokuta – oznám to Martinovi.</li>
+ <li>✔️ Vyjadri sa pri každej zmluve – kým sa nevyjadríš, ostáva tu a chodia upozornenia.</li></ol></div>`;
+function rowHTML(x){const t=tel(x.f.phone);return `<div class="plr${x.p===0?" hot":""}"><div class="pli">${x.i}</div><div class="plt"><b>${E(x.f.name)}</b><span>${E(x.t)}</span><small>${E(x.s)}</small></div>
+     <div class="plb"><button type="button" class="plsay" data-plk="${E(x.k||"")}" aria-expanded="${D.ex===x.k}">✔️ Vyjadriť</button>${t?`<a class="plc" href="tel:+${E(t)}" aria-label="Volať ${E(x.f.name)}">📞</a><a class="plw" href="https://wa.me/${E(t)}?text=${encodeURIComponent(x.msg)}" target="_blank" rel="noopener" aria-label="WhatsApp ${E(x.f.name)}">💬</a>`:x.f.email?`<a class="plw" href="mailto:${E(x.f.email)}?subject=${encodeURIComponent("ERNTE")}&body=${encodeURIComponent(x.msg)}" aria-label="E-mail">✉️</a>`:`<small class="plno">bez kontaktu</small>`}</div>${D.ex===x.k?sayHTML(x):""}</div>`}
+function warnHTML(W){if(!W.length)return "";const ov=W.filter(x=>x.kind==="over"),un=W.filter(x=>x.kind==="under"),t=a=>a.reduce((s,x)=>s+(x.ex||x.un||0),0),eu=W.reduce((s,x)=>s+(x.eur||0),0);
+  return `<details class="plwarn"${D.wopen?" open":""}><summary><span class="plwi">⚠️</span><span class="plws"><b>Zmluvy mimo tolerancie ± 5 % · ${W.length}</b><small>${un.length?`⬇️ nedodané ${un.length} zml. · ${t(un).toLocaleString("sk-SK",{maximumFractionDigits:1})} t`:""}${un.length&&ov.length?" · ":""}${ov.length?`⬆️ nadodané ${ov.length} zml. · ${t(ov).toLocaleString("sk-SK",{maximumFractionDigits:1})} t`:""} · ≈ ${f0(eu)} €</small></span><i class="plwc">›</i></summary>
+   ${WHY}${W.map(rowHTML).join("")}</details>`}
+function html(){const A=rows(),W=A.filter(x=>x.warn),L=A.filter(x=>!x.warn);if(!L.length&&!W.length)return `<div class="card pln" id="plnCard"><h2>📞 Môj plán na dnes</h2><div class="s">Dnes nikto nečaká – všetko vybavené. 👍</div></div>`;
   const open=D.open===true||(D.open===null&&L.length<=6),show=open?L:L.slice(0,4),hot=L.filter(x=>x.p<=1).length;
-  return `<div class="card pln" id="plnCard"><h2>📞 Môj plán na dnes · ${L.length}${hot?` <span class="plh">${hot} hneď</span>`:""}</h2>
-   ${show.map(x=>{const t=tel(x.f.phone);return `<div class="plr${x.p===0?" hot":""}"><div class="pli">${x.i}</div><div class="plt"><b>${E(x.f.name)}</b><span>${E(x.t)}</span><small>${E(x.s)}</small></div>
-     <div class="plb"><button type="button" class="plsay" data-plk="${E(x.k||"")}" aria-expanded="${D.ex===x.k}">✔️ Vyjadriť</button>${t?`<a class="plc" href="tel:+${E(t)}" aria-label="Volať ${E(x.f.name)}">📞</a><a class="plw" href="https://wa.me/${E(t)}?text=${encodeURIComponent(x.msg)}" target="_blank" rel="noopener" aria-label="WhatsApp ${E(x.f.name)}">💬</a>`:x.f.email?`<a class="plw" href="mailto:${E(x.f.email)}?subject=${encodeURIComponent("ERNTE")}&body=${encodeURIComponent(x.msg)}" aria-label="E-mail">✉️</a>`:`<small class="plno">bez kontaktu</small>`}</div>${D.ex===x.k?sayHTML(x):""}</div>`}).join("")}
+  return `<div class="card pln" id="plnCard"><h2>📞 Môj plán na dnes · ${L.length+W.length}${hot+W.length?` <span class="plh">${hot+W.length} hneď</span>`:""}</h2>
+   ${warnHTML(W)}${show.map(rowHTML).join("")}
    ${L.length>4?`<div class="btns"><button type="button" class="ghost" data-plnt>${open?"Menej":"Zobraziť všetko ("+L.length+")"}</button></div>`:""}</div>`}
 function paint(force){const app=document.getElementById("app");if(!app||typeof TAB==="undefined")return;const old=document.getElementById("plnCard");if(old&&document.activeElement&&old.contains(document.activeElement)&&document.activeElement.tagName==="INPUT")return;
   if(!OK()||!TABS.includes(TAB)){if(old)old.remove();return}
@@ -65,7 +80,8 @@ const RS={req:[["✅ Vybavené – dohodnuté",3],["📅 Ozve sa neskôr",2],["�
   tg:[["📞 Volal som – predá",7],["💬 Čaká na vyššiu cenu",5],["❌ Nemá záujem",30]],
   deal:[["🌾 Ešte nemá nakosené",7],["🏠 Má na sklade – dodá neskôr",7],["🚛 Auto dohodnuté",3],["📵 Nedvíha – zavolám znova",1],["❌ Nedodá – slabá úroda","repl"],["❌ Nedodá – iný dôvod","repl"]],
   sleep:[["📞 Volal som – nemá tovar",30],["🌾 Predá po žatve",45],["❌ Predáva inde",60]],
-  over:[["✍️ Dodatková zmluva urobená",365],["🔁 Započítané do inej zmluvy",365]],
+  over:[["✍️ Dodatková zmluva urobená",365],["🔁 Započítané do inej zmluvy",365],["📞 Volal som – rieši sa",3]],
+  under:[["🏠 Dodá zvyšok – termín dohodnutý",7],["🚛 Auto na zvyšok dohodnuté",3],["📵 Nedvíha – zavolám znova",1],["❌ Nedodá – slabá úroda","repl"],["❌ Nedodá – iný dôvod","repl"],["⚖️ Nedodá nič – oznámené Martinovi (pokuta)",365]],
   rep:[["✍️ Zmluva na náhradný tovar urobená","zmluva"],["❌ Farmár náhradu odmietol","zrusene"]]};
 function sayHTML(x){const L=RS[x.kind]||[];return `<div class="plsays" role="group" aria-label="Vyjadrenie">${L.map((r,i)=>`<button type="button" data-plr="${i}" data-plk="${E(x.k)}">${E(r[0])}</button>`).join("")}<input class="plnote" data-plnote="${E(x.k)}" placeholder="Poznámka (nepovinné)" autocomplete="off"></div>`}
 function findItem(k){return rows().find(x=>x.k===k)}
@@ -103,6 +119,7 @@ function replModal(x,why,note){const d=x.deal,left=x.left,V=Math.round(left*(+d.
       await sb.rpc("plan_say",{p_key:x.k,p_reason:why+" – náhradný nákup",p_note:note,p_days:365,p_meta:{deal:d.id,replace:q.data&&q.data.id}});
       m.remove();D.ex=null;toast(q.data&&q.data.ok?"✓ Náhradný nákup uložený – hodnota sedí. Majitelia a obchodníci dostali správu, urobte zmluvu.":"✓ Uložené, ale hodnota nesedí (rozdiel "+f0(q.data&&q.data.diff)+" €). Majitelia to vidia.",7000);loadSt()}
     catch(x2){bt.disabled=false;bt.textContent="💾 Uložiť náhradný nákup";er.textContent="⚠️ "+(x2&&x2.message||x2);er.classList.add("on")}})}
+document.addEventListener("toggle",e=>{const d=e.target;if(d&&d.classList&&d.classList.contains("plwarn"))D.wopen=d.open},true);
 document.addEventListener("click",e=>{const b=e.target.closest&&e.target.closest("[data-plk]");if(!b||!b.closest("#plnCard"))return;e.preventDefault();const k=b.dataset.plk;
   if(b.dataset.plr!=null){const x=findItem(k);if(x)doSay(x,+b.dataset.plr);return}
   D.ex=D.ex===k?null:k;paint(true)},true);
@@ -110,6 +127,7 @@ document.addEventListener("click",e=>{const b=e.target.closest&&e.target.closest
 {const s=document.createElement("style");s.textContent=`.pln h2{text-align:center}.plh{font-size:.75rem;padding:2px 8px;border-radius:10px;background:rgba(248,113,113,.2);color:#fca5a5;vertical-align:middle}
 .plr{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:10px;align-items:center;padding:10px 0;border-top:1px solid rgba(255,255,255,.08)}
 .plr.hot{background:linear-gradient(90deg,rgba(182,255,59,.12),transparent);border-radius:12px;padding-left:6px}
+.plwarn{margin:4px 0 10px;border-radius:16px;border:1px solid rgba(248,113,113,.6);background:linear-gradient(135deg,rgba(248,113,113,.16),rgba(251,191,36,.08));box-shadow:0 0 18px rgba(248,113,113,.2)}.plwarn>summary{list-style:none;display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:10px;align-items:center;padding:12px;cursor:pointer}.plwarn>summary::-webkit-details-marker{display:none}.plwi{font-size:1.6rem}.plws b{display:block;overflow-wrap:anywhere}.plws small{display:block;font-size:.8rem;opacity:.85;overflow-wrap:anywhere}.plwc{font-style:normal;font-size:1.4rem;transition:transform .2s}.plwarn[open] .plwc{transform:rotate(90deg)}.plwarn>.plr{margin:0 8px 8px}.plwhy{margin:0 10px 10px;padding:10px 12px;border-radius:12px;background:rgba(0,0,0,.22);font-size:.86rem;line-height:1.45}.plwhy p{margin:4px 0}.plwhy ol{margin:4px 0 0;padding-left:20px}.plwhy li{margin:3px 0}
 .pli{font-size:1.4rem}.plt{display:grid;gap:1px;min-width:0}.plt b,.plt span{overflow-wrap:anywhere}.plt span{font-size:.9rem}.plt small{opacity:.65;font-size:.78rem}.plr.hot .plt small{color:#d9ff9e;opacity:1;font-weight:700}
 .plb{display:flex;gap:6px;align-items:center;flex-wrap:wrap}.plsay{min-height:44px;padding:0 12px!important;border-radius:12px!important;font-size:.85rem!important;white-space:nowrap}.plsays{grid-column:1/-1;display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:6px;padding:8px 0 2px}.plsays button{min-height:46px;font-size:.88rem;text-align:left;justify-content:flex-start;border-radius:12px}.plnote{grid-column:1/-1;min-height:44px}
 .plrm .pinbox p{text-align:left}.plrr{display:grid;grid-template-columns:1fr 110px auto auto;gap:6px;align-items:end}.plrr select{min-height:48px}.plrr label{display:grid;font-size:.78rem}.plrr input{min-height:48px;font:700 1.05rem system-ui!important;letter-spacing:0!important}.plrr small{grid-column:1/-1;text-align:right;opacity:.8}.plrr button{min-height:48px;padding:0 10px}
