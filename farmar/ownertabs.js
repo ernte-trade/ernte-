@@ -1,12 +1,12 @@
 // ===== 📊 MOJE SEKCIE (iba Martin, príkaz majiteľa 31. 10.) =====
 // Lišta sekcií sa zoradí od najpoužívanejšej (otvorenia + čas, spoločne pre všetky zariadenia – tab_use) a dostane
-// nový živý sklenený vzhľad s 3D ikonami (Microsoft Fluent Emoji 3D, licencia MIT, img/ico/).
+// nový živý sklenený vzhľad so skutočnými fotkami ako ikonami (img/foto/, Wikimedia Commons, zdroje v img/foto/zdroje.json).
 (function(){
 const OK=()=>typeof MAIN_OK==="function"&&MAIN_OK()&&typeof ROLE!=="undefined"&&ROLE==="owner"&&!window.ERNTE_VIEWAS&&!window.ERNTE_TEST;
 const LK="ernte-tabuse";
 // odhad na začiatok (kým sa nenazbiera používanie): podľa toho, s čím Martin najčastejšie pracuje
 const SEED=["home","qd","price","deals","req","farm","pred","fleet","cal","danube","trans","zuct","calc","team","wx","agro","evid","trus","nov","test","inv"];
-const ICO=["cal","test","qd","pred","danube","nov","evid","trus","agro","zuct","home","req","price","trans","fleet","deals","farm","wx","team","calc"];
+const ICO=["inv","cal","test","qd","pred","danube","nov","evid","trus","agro","zuct","home","req","price","trans","fleet","deals","farm","wx","team","calc"];
 let U={},DB={},cur=null,t0=0;
 try{U=JSON.parse(localStorage.getItem(LK)||"{}")||{}}catch(e){U={}}
 const saveL=()=>{try{localStorage.setItem(LK,JSON.stringify(U))}catch(e){}};
@@ -27,7 +27,7 @@ function arrange(){if(!OK())return;const nav=document.querySelector("#app nav.ta
   const order=S.map(b=>b.dataset.tab).join(",");
   if(nav.dataset.ord!==order){S.forEach((b,i)=>{nav.appendChild(b);b.style.setProperty("--i",i)});nav.dataset.ord=order}
   S.forEach((b,i)=>{const k=b.dataset.tab,ti=b.querySelector(".ti");b.classList.toggle("otop",i<3);
-    if(ti&&ICO.includes(k)&&!ti.querySelector("img")){ti.innerHTML=`<img src="img/ico/${k}.png" alt="" width="34" height="34" decoding="async" draggable="false">`}});
+    if(ti&&ICO.includes(k)&&!ti.querySelector("img")){ti.innerHTML=`<img src="img/foto/${k}.jpg" alt="" width="34" height="34" decoding="async" draggable="false">`}});
   const a=nav.querySelector('[aria-pressed="true"]');if(a&&nav.scrollWidth>nav.clientWidth+2&&!nav._sc){nav._sc=1;nav.scrollLeft=Math.max(0,a.offsetLeft-(nav.clientWidth-a.offsetWidth)/2)}}
 function wrap(){const o=window.renderStaff;if(typeof o!=="function"||o.__otab)return false;
   const w=function(){const r=o.apply(this,arguments);try{if(OK()){if(typeof TAB!=="undefined")open(TAB);arrange();load()}}catch(e){}return r};

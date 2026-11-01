@@ -22,7 +22,7 @@ function kraj(F){const m=String(F&&F.addr||"").match(/\b(0\d{2})\s?\d{2}\b/);if(
 window.farmKraj=kraj;
 function ctHTML(big){const F=F_(),L=CT||[],k=kraj(F);if(!L.length)return `<div class="s">Načítavam…</div>`;
   const S=L.slice().sort((a,b)=>(b.k===k)-(a.k===k));
-  return S.map(c=>`<a class="fct${c.k===k||L.length===1?" mine":""}" href="tel:${E(String(c.phone).replace(/[^\d+]/g,""))}"><img src="img/ico/phone.png" alt="" width="40" height="40"><span><small>${E(c.kraj)}${c.k===k?" · váš obchodník":""}</small><b>${E(c.name)}</b><em>${E(c.phone)}</em></span><i>📞 Volať</i></a>`).join("")}
+  return S.map(c=>`<a class="fct${c.k===k||L.length===1?" mine":""}" href="tel:${E(String(c.phone).replace(/[^\d+]/g,""))}"><img src="img/foto/phone.jpg" alt="" width="40" height="40"><span><small>${E(c.kraj)}${c.k===k?" · váš obchodník":""}</small><b>${E(c.name)}</b><em>${E(c.phone)}</em></span><i>📞 Volať</i></a>`).join("")}
 // ---------- dlaždice ----------
 function tiles(){const F=F_(),P=(STATE.prices||[]).filter(p=>p.price!=null),top=P.slice().sort((a,b)=>b.price-a.price)[0];
   const nd=(STATE.deals||[]).filter(d=>!/zrus|zaplat/.test(d.status||"")).length,nr=(STATE.reqs||[]).filter(r=>r.status==="nova").length,ntr=(STATE.trips||[]).filter(t=>!["vylozene","zrusena"].includes(t.status)).length;
@@ -36,7 +36,7 @@ function tiles(){const F=F_(),P=(STATE.prices||[]).filter(p=>p.price!=null),top=
   L.push(["kontakt","Obchodník","zavolať jedným ťuknutím"]);
   if(document.querySelector('#app [data-fsec="sluzby"]'))L.push(["sluzby","Služby strojmi","žatva, pôda, sejba"]);
   if(document.querySelector('#app [data-fsec="viac"]'))L.push(["viac","Ďalšie","poznámky a ciele"]);
-  return `<div class="ftiles" data-fsec="home">${lastHTML()}${L.map((t,i)=>`<button type="button" class="ftile${t[3]?" fbig":""}" data-fv="${t[0]}" style="--i:${i}"><i class="fdsh"></i><img src="img/ico/${IC[t[0]]}.png" alt="" width="56" height="56" draggable="false"><b>${E(t[1])}</b><small>${t[2]}</small></button>`).join("")}</div>`}
+  return `<div class="ftiles" data-fsec="home">${lastHTML()}${L.map((t,i)=>`<button type="button" class="ftile${t[3]?" fbig":""}" data-fv="${t[0]}" style="--i:${i}"><i class="fdsh"></i><img src="img/foto/${IC[t[0]]}.jpg" alt="" width="56" height="56" draggable="false"><b>${E(t[1])}</b><small>${t[2]}</small></button>`).join("")}</div>`}
 // ---------- 1. 11. schválené návrhy Martina: stav poslednej ponuky na úvode + zopakovať jedným ťuknutím ----------
 function lastReq(){return (STATE.reqs||[]).filter(r=>r.kind==="sell"&&r.com).sort((a,b)=>String(b.created_at||"").localeCompare(String(a.created_at||"")))[0]}
 function lastHTML(){if(!fc("f_sell"))return "";const r=lastReq();if(!r)return "";
@@ -46,7 +46,7 @@ function lastHTML(){if(!fc("f_sell"))return "";const r=lastReq();if(!r)return ""
    ${p?`<button type="button" class="lime flrep" data-wrep="${E(r.id||"")}">🔁 Ponúknuť znova ${N(r.tons)} t<small>dnes ${N(p.price,0)} €/t</small></button>`:""}</div>`}
 // ---------- predaj krok za krokom ----------
 function wizard(){const F=F_(),P=(STATE.prices||[]).filter(p=>p.price!=null&&p.price>0);const dn=String(F.firma||"ERNTE").toUpperCase()==="DANUBE";
-  if(W.sent)return `<div class="fwz" data-fsec="predat"><div class="fok"><img src="img/ico/deals.png" alt="" width="84" height="84"><b>Odoslané ✅</b><p>${E(comName(W.sent.com))} · ${N(W.sent.tons)} t. Váš obchodník sa vám ozve${W.sent.need?` a dohodne odvoz na ${E(dSK2(W.sent.date))} ${E(W.sent.time||"")}`:""}.</p></div><div class="fcts">${ctHTML()}</div><button type="button" class="lime fwgo" data-fvhome>← Späť na začiatok</button></div>`;
+  if(W.sent)return `<div class="fwz" data-fsec="predat"><div class="fok"><img src="img/foto/deals.jpg" alt="" width="84" height="84"><b>Odoslané ✅</b><p>${E(comName(W.sent.com))} · ${N(W.sent.tons)} t. Váš obchodník sa vám ozve${W.sent.need?` a dohodne odvoz na ${E(dSK2(W.sent.date))} ${E(W.sent.time||"")}`:""}.</p></div><div class="fcts">${ctHTML()}</div><button type="button" class="lime fwgo" data-fvhome>← Späť na začiatok</button></div>`;
   const p=P.find(x=>x.com===W.com),fw=W.com&&window.fwdList?fwdList(W.com):[];
   let h=`<div class="fwz" data-fsec="predat"><div class="fst"><span class="fsn">1</span><b>Čo chcete predať?</b></div><div class="fcoms">${P.map(x=>`<button type="button" class="fcom${x.com===W.com?" on":""}" data-wcom="${E(x.com)}">${comImg(x.com,"fci")}<b>${E(comName(x.com))}</b><em>${N(x.price,0)} €/t</em></button>`).join("")||`<div class="s">Cenník sa práve pripravuje – zavolajte obchodníkovi.</div>`}</div>`;
   if(!W.com)return h+`</div>`;
@@ -54,11 +54,11 @@ function wizard(){const F=F_(),P=(STATE.prices||[]).filter(p=>p.price!=null&&p.p
    <label class="fin">alebo napíšte presne<input data-wf="tons" inputmode="decimal" value="${E(W.tons)}" placeholder="napr. 80" autocomplete="off"></label>`;
   if(!(+String(W.tons).replace(",",".")>0))return h+`</div>`;
   h+=`<div class="fst" id="fs3"><span class="fsn">3</span><b>Kedy odber?</b></div><div class="fhv">
-   <button type="button" class="${W.harvest==="stara"?"on":""}" data-wh="stara"><img src="img/ico/pkg.png" alt="" width="44" height="44"><b>Stará úroda – mám na sklade</b><small>odvoz hneď · ${N(p.price,0)} €/t</small></button>
-   ${fw.length?fw.map((x,i)=>`<button type="button" class="${W.harvest==="nova"&&W.fwd===i?"on":""}" data-wh="nova" data-wfw="${i}"><img src="img/ico/sheaf.png" alt="" width="44" height="44"><b>Nová úroda · odber ${E(x.p)}</b><small>${N(x.price,0)} €/t</small></button>`).join("")
-     :`<button type="button" class="${W.harvest==="nova"?"on":""}" data-wh="nova"><img src="img/ico/sheaf.png" alt="" width="44" height="44"><b>Nová úroda (po žatve)</b><small>cenu potvrdí obchodník</small></button>`}</div>`;
+   <button type="button" class="${W.harvest==="stara"?"on":""}" data-wh="stara"><img src="img/foto/pkg.jpg" alt="" width="44" height="44"><b>Stará úroda – mám na sklade</b><small>odvoz hneď · ${N(p.price,0)} €/t</small></button>
+   ${fw.length?fw.map((x,i)=>`<button type="button" class="${W.harvest==="nova"&&W.fwd===i?"on":""}" data-wh="nova" data-wfw="${i}"><img src="img/foto/sheaf.jpg" alt="" width="44" height="44"><b>Nová úroda · odber ${E(x.p)}</b><small>${N(x.price,0)} €/t</small></button>`).join("")
+     :`<button type="button" class="${W.harvest==="nova"?"on":""}" data-wh="nova"><img src="img/foto/sheaf.jpg" alt="" width="44" height="44"><b>Nová úroda (po žatve)</b><small>cenu potvrdí obchodník</small></button>`}</div>`;
   if(!W.harvest)return h+`</div>`;
-  h+=`<div class="fst" id="fs4"><span class="fsn">4</span><b>Odvoz</b></div><div class="fneed"><button type="button" class="${W.need?"on":""}" data-wn="1"><img src="img/ico/fleet.png" alt="" width="44" height="44"><b>Pošlite kamión</b></button><button type="button" class="${!W.need?"on":""}" data-wn="0"><img src="img/ico/agro.png" alt="" width="44" height="44"><b>Dovezieme sami</b></button></div>
+  h+=`<div class="fst" id="fs4"><span class="fsn">4</span><b>Odvoz</b></div><div class="fneed"><button type="button" class="${W.need?"on":""}" data-wn="1"><img src="img/foto/fleet.jpg" alt="" width="44" height="44"><b>Pošlite kamión</b></button><button type="button" class="${!W.need?"on":""}" data-wn="0"><img src="img/foto/agro.jpg" alt="" width="44" height="44"><b>Dovezieme sami</b></button></div>
    ${W.need?`<div class="fdt"><label class="fin">Deň<input type="date" data-wf="date" min="${td()}" value="${E(W.date)}"></label><label class="fin">Čas<input type="time" data-wf="time" value="${E(W.time)}"></label></div><label class="fin">Kde naložiť (nepovinné)<input data-wf="place" value="${E(W.place)}" placeholder="napr. sklad na farme" autocomplete="off"></label>`:""}`;
   if(W.need&&!W.date)return h+`<div class="s fhint">👆 Vyberte deň odvozu.</div></div>`;
   const fwx=W.harvest==="nova"&&W.fwd!=null?fw[W.fwd]:null,price=W.harvest==="nova"?(fwx?fwx.price:null):p.price,tons=+String(W.tons).replace(",",".");

@@ -9,7 +9,7 @@
 //    sadzby a stropy drží databáza (kid_earn_add), otec ich mení a označuje Vyplatené v Tíme.
 (function(){
 const E=s=>String(s==null?"":s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
-const IMG=(k,n)=>`<img src="img/ico/${k}.png" alt="" width="${n||56}" height="${n||56}" draggable="false">`;
+const IMG=(k,n)=>`<img src="img/foto/${k}.jpg" alt="" width="${n||56}" height="${n||56}" draggable="false">`;
 const EUR=v=>(+v||0).toLocaleString("sk-SK",{minimumFractionDigits:2,maximumFractionDigits:2})+" €";
 let K=null,V="home",S=0,Q=null,G=null,ETF=null,PR=null,PAY=null;
 const P=()=>(K&&K.p)||{};

@@ -530,7 +530,7 @@ css();
 
 /* 🌅 tlačidlo Úvod – hneď prvé v lište sekcií (tím); farmár ho má ako prvú dlaždicu (farmapp.js) */
 function uvodBtn(){if(!kind()||(typeof FARMER!=="undefined"&&FARMER))return;const nav=document.querySelector("#app nav.tabs");if(!nav)return;let b=nav.querySelector(":scope>.uvodb");
-  if(!b){b=document.createElement("button");b.type="button";b.className="uvodb";b.setAttribute("data-uvod","");b.innerHTML='<span class="ti" aria-hidden="true">'+(nav.classList.contains("otab")?'<img src="img/ico/star.png" alt="" width="34" height="34">':"🌅")+'</span><span class="tl">Úvod</span>';}
+  if(!b){b=document.createElement("button");b.type="button";b.className="uvodb";b.setAttribute("data-uvod","");b.innerHTML='<span class="ti" aria-hidden="true">'+(nav.classList.contains("otab")?'<img src="img/foto/star.jpg" alt="" width="34" height="34">':"🌅")+'</span><span class="tl">Úvod</span>';}
   if(nav.firstElementChild!==b&&!(nav.firstElementChild&&nav.firstElementChild.classList.contains("ds-ind")&&nav.firstElementChild.nextElementSibling===b)){const ind=nav.querySelector(":scope>.ds-ind");if(ind)ind.after(b);else nav.prepend(b)}}
 document.addEventListener("click",e=>{const b=e.target.closest&&e.target.closest("[data-uvod]");if(!b)return;e.preventDefault();e.stopPropagation();window.ernteWelcome()},true);
 {let q2=0;const go2=()=>{const a=document.getElementById("app");if(!a){setTimeout(go2,500);return}new MutationObserver(()=>{if(q2)return;q2=(window.ernteSoon||requestAnimationFrame)(()=>{q2=0;uvodBtn()})}).observe(a,{childList:true,subtree:false});uvodBtn()};go2()}
