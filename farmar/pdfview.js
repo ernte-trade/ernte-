@@ -19,9 +19,9 @@ function arm(){if(!V)return;let d;try{d=V.iw.document}catch(x){return}
   const tt=V.ov.querySelector(".pvt");try{const t=(d.title||"Dokument").replace(/_+/g," ");if(tt&&tt.textContent!==t)tt.textContent=t}catch(x){}}
 function open(){if(V)close(true);const M=window.__pvMail||null;window.__pvMail=null;
   const ov=document.createElement("div");ov.id="pdfv";ov.setAttribute("role","dialog");ov.setAttribute("aria-modal","true");
-  ov.innerHTML=`<div class="pvbar"><button type="button" class="pvx" data-pv="x" aria-label="Zavrieť">✕</button><b class="pvt">Dokument</b>
+  ov.innerHTML=`<div class="pvbar"><button type="button" class="pvback" data-pv="x" aria-label="Späť do aplikácie">← Späť</button><b class="pvt">Dokument</b>
     <div class="pvb"><button type="button" data-pv="print">🖨️ Tlačiť</button>${M?`<button type="button" data-pv="mail" class="pvpri">📧 Odoslať</button>`:""}<button type="button" data-pv="pdf"${M?"":' class="pvpri"'}>⬇️ Uložiť PDF</button>${MOB&&navigator.canShare?`<button type="button" data-pv="share">📤 Poslať</button>`:""}</div></div>
-    <iframe class="pvf" title="Dokument"></iframe><div class="pvbusy" hidden>Pripravujem PDF…</div>`;
+    <iframe class="pvf" title="Dokument"></iframe><button type="button" class="pvback2" data-pv="x">← Späť do aplikácie</button><div class="pvbusy" hidden>Pripravujem PDF…</div>`;
   document.body.appendChild(ov);document.documentElement.classList.add("pvon");
   const fr=ov.querySelector("iframe");const iw=fr.contentWindow;
   V={ov,fr,iw,orig:null,pp:null,t0:Date.now(),timer:0,pushed:false,M};
@@ -48,9 +48,10 @@ async function makeFile(){const b=V.ov.querySelector(".pvbusy");b.hidden=false;
   const d=V.iw.document,land=[...d.querySelectorAll("style")].some(x=>/size\s*:\s*A4\s+landscape/i.test(x.textContent)),fr=V.fr,os=fr.getAttribute("style")||"";
   fr.style.cssText=os+";width:"+(land?1180:840)+"px!important;min-width:"+(land?1180:840)+"px;flex:none";await new Promise(r=>setTimeout(r,120));
   try{const blob=await pdfBlob();return new File([blob],fname(),{type:"application/pdf"})}finally{fr.setAttribute("style",os);st.remove();if(V)V.ov.querySelector(".pvbusy").hidden=true}}
-function dl(f){const u=URL.createObjectURL(f),a=document.createElement("a");a.href=u;a.download=f.name;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(u),60000)}
+const IOSAPP=/iPhone|iPad|iPod/i.test(navigator.userAgent)||(navigator.platform==="MacIntel"&&navigator.maxTouchPoints>1);
+function dl(f){if(IOSAPP){share(f).then(ok=>{if(!ok)tmsg("Na iPhone ulož PDF cez 📤 Poslať → Uložiť do Súborov.",7000)});return}const u=URL.createObjectURL(f),a=document.createElement("a");a.href=u;a.download=f.name;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(u),60000)}
 async function share(f){if(navigator.canShare&&navigator.canShare({files:[f]})){try{await navigator.share({files:[f],title:f.name.replace(/\.pdf$/,"")});return true}catch(e){if(e&&e.name==="AbortError")return true}}return false}
-async function savePdf(){try{const f=await makeFile();dl(f);tmsg("✓ PDF uložené: "+f.name,5000)}catch(e){tmsg("PDF sa nepodarilo vytvoriť – skús 🖨️ Tlačiť → Uložiť ako PDF. ("+(e&&e.message||e)+")",8000)}}
+async function savePdf(){try{const f=await makeFile();if(MOB&&await share(f))return;dl(f);if(!IOSAPP)tmsg("✓ PDF uložené: "+f.name,5000)}catch(e){tmsg("PDF sa nepodarilo vytvoriť – skús 🖨️ Tlačiť → Uložiť ako PDF. ("+(e&&e.message||e)+")",8000)}}
 async function sendPdf(){try{const f=await makeFile();if(!(await share(f))){dl(f);tmsg("✓ PDF uložené: "+f.name,5000)}}catch(e){tmsg("PDF sa nepodarilo vytvoriť: "+(e&&e.message||e),8000)}}
 function doPrint(){if(!V)return;
   if(!MOB){try{V.iw.focus();(V.orig||V.iw.print).call(V.iw);return}catch(x){}}
@@ -131,6 +132,8 @@ window.addEventListener("hashchange",setupLink);setTimeout(setupLink,1500);
 window.pdfViewOpen=open;window.pdfViewClose=close;
 {const s=document.createElement("style");s.textContent=`#pdfv{position:fixed;inset:0;overflow:hidden;z-index:2147483000;display:flex;flex-direction:column;background:#0b1020}
 #pdfv .pvbar{display:flex;flex-wrap:wrap;align-items:center;gap:8px;padding:calc(8px + env(safe-area-inset-top)) 10px 8px;background:#0f172a;border-bottom:1px solid rgba(255,255,255,.12);color:#fff}
+#pdfv .pvback{min-height:44px;padding:0 16px!important;border-radius:999px!important;font-weight:800;font-size:.95rem;background:linear-gradient(135deg,#a3e635,#22d3ee);color:#0b1020;border:0;flex:0 0 auto;white-space:nowrap}
+#pdfv .pvback2{position:absolute;left:50%;transform:translateX(-50%);bottom:calc(14px + env(safe-area-inset-bottom));z-index:4;min-height:48px;padding:0 22px!important;border-radius:999px!important;font-weight:800;font-size:1rem;background:#0f172a;color:#fff;border:2px solid #a3e635;box-shadow:0 8px 28px rgba(0,0,0,.45);white-space:nowrap}
 #pdfv .pvx{width:44px;height:44px;min-width:44px;aspect-ratio:1;border-radius:50%!important;padding:0!important;display:grid;place-items:center;font-size:1.2rem;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.25);color:#fff;flex:0 0 44px}
 #pdfv .pvt{flex:1 1 120px;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:.95rem}
 #pdfv .pvb{display:flex;gap:6px;flex:1 1 100%;flex-wrap:wrap}#pdfv .pvb button{flex:1 1 0;min-width:0;overflow:hidden;text-overflow:ellipsis;min-height:42px;padding:6px 8px;border-radius:12px;font-weight:700;font-size:.88rem;white-space:nowrap;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.22);color:#fff}

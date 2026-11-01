@@ -77,11 +77,11 @@ document.addEventListener("submit",async e=>{const fm=e.target;if(!fm.dataset||f
 
 function farmHTML(){const F=(STATE.farmers||[]).filter(f=>String(f.name||"").trim()).sort((a,b)=>String(a.name).localeCompare(String(b.name),"sk")),q=nz(Z.fq);
   const C=Z.C&&!Z.C.err?Z.C:null,K=C?C.contracts||[]:[],coms=[...new Set(K.map(k=>k.com))];
-  if(C&&K.length){if(!coms.includes(Z.com))Z.com=coms[0];const KC=K.filter(k=>k.com===Z.com);if(!KC.some(k=>k.id===Z.deal))Z.deal=(KC.find(k=>k.remain_t>0.01)||KC[0]).id}
+  if(C&&K.length){if(Z.com!=="*"&&!coms.includes(Z.com))Z.com=coms[0];const KC=K.filter(k=>Z.com==="*"||k.com===Z.com);if(Z.deal!=="*"&&!KC.some(k=>k.id===Z.deal))Z.deal=Z.com==="*"?"*":(KC.find(k=>k.remain_t>0.01)||KC[0]).id}
   let h=`<div class="card f zform"><div class="w t">Zúčtovanie dodávateľa</div>
    <label class="w">Zákazník (farmár)<input id="zfq" list="zfl" value="${esc(Z.fq)}" placeholder="meno alebo ID, napr. C0102" autocomplete="off"></label><datalist id="zfl">${F.map(f=>`<option value="${esc(f.name)}">${esc(f.code||"")}</option>`).join("")}</datalist>
-   ${C&&K.length?`<label>Komodita<select id="zcom">${coms.map(c=>`<option value="${c}"${c===Z.com?" selected":""}>${esc(comName(c))}</option>`).join("")}</select></label>
-   <label>Číslo zmluvy<select id="zdeal">${K.filter(k=>k.com===Z.com).map(k=>`<option value="${esc(k.id)}"${k.id===Z.deal?" selected":""}>${esc(k.no)} · ${fmt(k.tons,0)} t${k.remain_t<=0.01?" ✓":""}</option>`).join("")}</select></label>`:""}
+   ${C&&K.length?`<label>Komodita<select id="zcom">${coms.length>1?`<option value="*"${Z.com==="*"?" selected":""}>📚 Všetky komodity</option>`:""}${coms.map(c=>`<option value="${c}"${c===Z.com?" selected":""}>${esc(comName(c))}</option>`).join("")}</select></label>
+   <label>Číslo zmluvy<select id="zdeal"><option value="*"${Z.deal==="*"?" selected":""}>📚 Všetky zmluvy (${K.filter(k=>Z.com==="*"||k.com===Z.com).length})</option>${K.filter(k=>Z.com==="*"||k.com===Z.com).map(k=>`<option value="${esc(k.id)}"${k.id===Z.deal?" selected":""}>${esc(k.no)} · ${fmt(k.tons,0)} t${k.remain_t<=0.01?" ✓":""}</option>`).join("")}</select></label>`:""}
    <label>Dátum od<input type="date" id="zd0" value="${esc(Z.d0)}"></label><label>Dátum do<input type="date" id="zd1" value="${esc(Z.d1)}"></label>
    ${Z.d0||Z.d1?`<div class="w btns"><button type="button" data-zclr="1">✕ Celá zmluva (bez dátumu)</button></div>`:`<div class="w s">Bez dátumu = celá zmluva. Zadaj od–do, ak zúčtovávaš len časť dodávok (napr. za týždeň).</div>`}</div>`;
   if(!Z.farm)return h+`<div id="zflBox">${zflList()}</div>`;
@@ -89,6 +89,7 @@ function farmHTML(){const F=(STATE.farmers||[]).filter(f=>String(f.name||"").tri
   const f=C.farmer||{};h+=`<div class="card zfh"><div><b>${esc(f.name||"")}</b><small>${esc([f.code,f.addr,f.phone].filter(Boolean).join(" · "))}</small></div><button type="button" data-zfarm="">Iný farmár</button></div>`;
   h+=nocHTML(f);
   if(!K.length)return h+`<div class="card"><div class="s">Farmár nemá žiadnu zmluvu.${(Z.noc||{})[f.id]&&(Z.noc[f.id]||[]).length?" Vytvor ju vyššie z jeho lístkov.":""}</div></div>`;
+  if(Z.deal==="*")return h+allHTML(K.filter(x=>Z.com==="*"||x.com===Z.com));
   const k=K.find(x=>x.id===Z.deal);if(!k)return h;const LA=Z.L[k.id];if(!LA){loadL(k.id).then(renderStaff);return h+`<div class="card"><div class="s">Načítavam lístky…</div></div>`}
   const P=periodOf(LA),S=sumL(P),A=sumL(LA),per=Z.d0||Z.d1,over=k.remain_t<0,kg=LA[0]&&LA[0].kg_mode;
   const st=k.last&&over&&-k.remain_t>tolOf(k)?`Fakturuje sa celé dodané množstvo (${fmt(k.delivered_t,2)} t) – posledná zmluva prekročená o ${fmt(-k.remain_t,0)} t`:`Fakturuje sa podľa zmluvy (${fmt(k.delivered_t,2)} t)`;
@@ -102,6 +103,19 @@ function farmHTML(){const F=(STATE.farmers||[]).filter(f=>String(f.name||"").tri
    <div class="btns"><button type="button" class="pri" data-zpdf="${esc(k.id)}">🖨️ Zúčtovanie PDF${per?" za obdobie":""}</button><button type="button" data-cpdf="${esc(k.id)}">📄 Kúpna zmluva PDF</button>${f.phone?`<button type="button" class="lime" data-zwa="${esc(k.id)}">WhatsApp farmárovi</button>`:""}</div>
    <b class="sth">Vážne lístky${per?" za obdobie":""} (${P.length})</b>${linesTable(P)}</div>`;
   return h}
+// 📚 všetky zmluvy farmára naraz (príkaz majiteľa 1. 11. 22:37): súhrn za všetky + karta každej zmluvy + jedno PDF so všetkými
+function allHTML(KS){const miss=KS.filter(k=>!Z.L[k.id]);if(miss.length){Promise.all(miss.map(k=>loadL(k.id))).then(renderStaff);return `<div class="card"><div class="s">Načítavam lístky (${miss.length} ${miss.length===1?"zmluva":miss.length<5?"zmluvy":"zmlúv"})…</div></div>`}
+  const per=Z.d0||Z.d1,P=KS.flatMap(k=>periodOf(Z.L[k.id]||[])),S=sumL(P),T=KS.reduce((a,k)=>(a.t+=+k.tons||0,a.d+=+k.delivered_t||0,a),{t:0,d:0});
+  return `<div class="card zc"><div class="row"><span class="t">📚 Všetky zmluvy · ${KS.length} · ${esc(Z.com==="*"?"všetky komodity":comName(Z.com))}</span></div>
+   <b class="sth">Súhrn zúčtovania${per?` · ${Z.d0?dSK(Z.d0):"…"} – ${Z.d1?dSK(Z.d1):"…"}`:" · celé zmluvy"}</b>
+   <div class="zsg">${[["Zmluvy spolu",fmt(T.t,0)+" t"],["Dodané (fakt.)",fmt(T.d,2)+" t"],["Netto váha",fmt(S.g,0)+" kg"],["Fakturačná váha",fmt(S.w,0)+" kg"],["Čistenie",fmt(S.cc,2)],["Sušenie",fmt(S.dc,2)],["Fakturovať spolu",fmt(S.e,2)+" €","hl"],["Počet lístkov",String(P.length)]].map(x=>`<div class="${x[2]||""}"><small>${x[0]}</small><b>${x[1]}</b></div>`).join("")}</div>
+   <div class="btns"><button type="button" class="pri" data-zpdfall="1">🖨️ Zúčtovanie PDF – všetky zmluvy${per?" za obdobie":""}</button></div></div>`+KS.map(k=>contractCard(k,1)).join("")}
+function allPdf(){const C=Z.C;if(!C)return;const KS=(C.contracts||[]).filter(x=>Z.com==="*"||x.com===Z.com).filter(k=>periodOf(Z.L[k.id]||[]).length);if(!KS.length){toast("V období nie sú žiadne lístky.",4000);return}
+  const docs=KS.map(k=>pdfHTML(C.farmer||{},k,periodOf(Z.L[k.id]||[]))),head=docs[0].split("<body>")[0],body=d=>d.split("<body>")[1].split("</body>")[0].replace(/<div class="pb">[\s\S]*?<\/div>/,"");
+  const P=KS.flatMap(k=>periodOf(Z.L[k.id]||[])),S=sumL(P);
+  const html=head.replace(/<title>[^<]*<\/title>/,`<title>Zúčtovanie všetky zmluvy – ${esc((C.farmer||{}).name||"")}</title>`)+"<body>"+docs.map((d,i)=>`<div${i?' style="page-break-before:always;break-before:page"':""}>${body(d)}</div>`).join("")+
+    `<div class="ft" style="page-break-before:avoid;margin-top:18px;font-size:13px"><b>Spolu za ${KS.length} ${KS.length===1?"zmluvu":KS.length<5?"zmluvy":"zmlúv"}: ${P.length} ${P.length===1?"lístok":P.length<5?"lístky":"lístkov"} · fakturačná váha ${fmt(S.w/1000,3)} t · k fakturácii ${fmt(S.e)} € bez DPH</b></div></body></html>`;
+  openPdf(html)}
 const tolOf=k=>k.tol_t!=null?+k.tol_t:(+k.tons||0)*0.05;
 const tolSt=k=>{const t=tolOf(k),r=+k.remain_t;return r<=0?(-r<=t?["ok","Splnená (prebytok v tolerancii)"]:["over","Prekročená o "+fmt(-r-t,2)+" t nad toleranciu"]):r<=t?["ok","Splnená v tolerancii"]:["short","Chýba "+fmt(r-t,2)+" t mimo tolerancie"]};
 const periodOf=L=>L.filter(x=>(!Z.d0||x.day>=Z.d0)&&(!Z.d1||x.day<=Z.d1));
@@ -190,6 +204,7 @@ document.addEventListener("click",async e=>{if(typeof ROLE==="undefined"||ROLE!=
   if(x=t.closest("[data-zsave]")){await savePaste(x);return}
   if(x=t.closest("[data-zfarm]")){if(x.dataset.zfarm){const ff=(STATE.farmers||[]).find(y=>y.id===x.dataset.zfarm);if(ff)Z.fq=ff.name}Z.farm=x.dataset.zfarm;Z.C=null;Z.L={};Z.open=null;Z.com="";Z.deal="";if(!Z.farm)Z.fq="";renderStaff();return}
   if(x=t.closest("[data-zopen]")){const id=x.dataset.zopen;Z.open=Z.open===id?null:id;renderStaff();if(Z.open&&!Z.L[id]){await loadL(id);renderStaff()}return}
+  if(t.closest("[data-zpdfall]")){allPdf();return}
   if(x=t.closest("[data-zpdf]")){const id=x.dataset.zpdf,k=Z.C&&Z.C.contracts.find(y=>y.id===id);if(!k)return;const L=periodOf(Z.L[id]||await loadL(id));
     const F=Z.C.farmer||{},F2=(STATE.farmers||[]).find(y=>y.id===F.id)||{},em=F.email||F2.email||"",S=L.reduce((a,x)=>(a.w+=+x.invoice_kg||0,a.e+=+x.invoice_eur||0,a),{w:0,e:0});
     window.__pvMail={to:em,deal:id,subj:`Zúčtovanie ${k.no} – ERNTE spol. s r.o.`,body:`Dobrý deň,\n\nv prílohe Vám posielam zúčtovanie ${comName(k.com).toLowerCase()} k zmluve ${k.no}${Z.d0||Z.d1?` za obdobie ${Z.d0?dSK(Z.d0):"…"} – ${Z.d1?dSK(Z.d1):"…"}`:""}: ${L.length} lístkov, fakturačná váha ${fmt(S.w/1000,3)} t, k fakturácii ${fmt(S.e)} € bez DPH.\nProsím o kontrolu a vystavenie faktúry.\n\nĎakujem\nJana Valková · ERNTE spol. s r.o.\n\n👉 ERNTE Trade & Logistic: ${typeof APP_URL!=="undefined"?APP_URL:location.href.split("#")[0]}`};
