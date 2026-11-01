@@ -1,0 +1,83 @@
+# 📱 ERNTE – Android aplikácia (APK) zo živej webovej aplikácie (Trusted Web Activity, jadro Chrome).
+# Výsledok: https://github.com/ernte-trade/ernte-/releases/download/android/ERNTE.apk
+# Podpisový kľúč: tajomstvo ERNTE_APK_PASS (heslo si zvolí majiteľ v GitHub → Settings → Secrets → Actions).
+#   – prvý beh s heslom vytvorí kľúč a uloží ho ZAŠIFROVANÝ (android/keystore.enc, AES-256) – bez hesla je nepoužiteľný;
+#   – kým heslo nie je, APK sa podpíše dočasným kľúčom (na vyskúšanie; pri ďalšej verzii treba starú odinštalovať).
+name: ernte-apk
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ["android/**", ".github/workflows/apk.yml"]
+permissions:
+  contents: write
+concurrency:
+  group: ernte-apk
+jobs:
+  apk:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: "8.9"
+      - name: Podpisový kľúč
+        env:
+          KP: ${{ secrets.ERNTE_APK_PASS }}
+        run: |
+          set -e
+          DN="CN=ERNTE Trade, O=ERNTE spol. s r.o., C=SK"
+          if [ -n "$KP" ]; then
+            if [ -f android/keystore.enc ]; then
+              openssl enc -d -aes-256-cbc -pbkdf2 -iter 600000 -in android/keystore.enc -out "$RUNNER_TEMP/ks.jks" -pass env:KP
+            else
+              keytool -genkeypair -keystore "$RUNNER_TEMP/ks.jks" -alias ernte -keyalg RSA -keysize 4096 -validity 36500 -storepass "$KP" -keypass "$KP" -dname "$DN"
+              openssl enc -aes-256-cbc -pbkdf2 -iter 600000 -salt -in "$RUNNER_TEMP/ks.jks" -out android/keystore.enc -pass env:KP
+              echo NEWKEY=1 >> "$GITHUB_ENV"
+            fi
+            echo "ERNTE_KS_PASS=$KP" >> "$GITHUB_ENV"; echo "KIND=stály" >> "$GITHUB_ENV"
+          else
+            P=$(openssl rand -hex 16)
+            keytool -genkeypair -keystore "$RUNNER_TEMP/ks.jks" -alias ernte -keyalg RSA -keysize 2048 -validity 3650 -storepass "$P" -keypass "$P" -dname "$DN"
+            echo "::add-mask::$P"; echo "ERNTE_KS_PASS=$P" >> "$GITHUB_ENV"; echo "KIND=dočasný" >> "$GITHUB_ENV"
+          fi
+          echo "ERNTE_KS=$RUNNER_TEMP/ks.jks" >> "$GITHUB_ENV"
+          echo "ERNTE_VC=$(( $(date +%s) / 600 - 2960000 ))" >> "$GITHUB_ENV"
+          echo "ERNTE_VN=1.0.$(date +%Y%m%d%H%M)" >> "$GITHUB_ENV"
+      - name: Zostaviť APK
+        run: gradle -p android :app:assembleRelease --no-daemon -q
+      - name: Odtlačok kľúča (pre overenie domény – assetlinks.json)
+        run: |
+          set -e
+          FP=$(keytool -list -v -keystore "$ERNTE_KS" -storepass "$ERNTE_KS_PASS" -alias ernte | sed -n 's/.*SHA256: *//p' | head -1)
+          echo "FP=$FP" >> "$GITHUB_ENV"
+          echo "### 📱 ERNTE APK ${ERNTE_VN} – kľúč ${KIND}" >> "$GITHUB_STEP_SUMMARY"
+          echo "SHA-256: \`$FP\`" >> "$GITHUB_STEP_SUMMARY"
+      - name: Uložiť zašifrovaný kľúč a assetlinks (iba stály kľúč)
+        if: env.KIND == 'stály'
+        run: |
+          set -e
+          mkdir -p .well-known
+          printf '[{"relation":["delegate_permission/common.handle_all_urls"],"target":{"namespace":"android_app","package_name":"sk.ernte.app","sha256_cert_fingerprints":["%s"]}}]\n' "$FP" > .well-known/assetlinks.json
+          git add .well-known/assetlinks.json android/keystore.enc
+          if ! git diff --cached --quiet; then
+            git -c user.name=Claude -c user.email=noreply@anthropic.com commit -qm "Android: zašifrovaný podpisový kľúč a assetlinks" --author="ERNTE Trade <report.valko@gmail.com>"
+            for i in 1 2 3; do git pull -q --rebase origin main && git push -q origin HEAD:main && break; sleep 3; done
+          fi
+      - name: Zverejniť APK na stiahnutie
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -e
+          cp android/app/build/outputs/apk/release/app-release.apk ERNTE.apk
+          N="📱 ERNTE – Android aplikácia ${ERNTE_VN} (kľúč ${KIND})"
+          B="Inštalácia: otvor v telefóne odkaz na ERNTE.apk → Stiahnuť → Otvoriť → povoliť inštaláciu z tohto zdroja.
+          Aplikácia otvára živú ERNTE Trade & Logistic – zmeny sú v nej hneď, APK netreba aktualizovať."
+          gh release view android >/dev/null 2>&1 || gh release create android --title "$N" --notes "$B" --latest=false
+          gh release edit android --title "$N" --notes "$B"
+          gh release upload android ERNTE.apk --clobber

@@ -1,0 +1,24 @@
+// ERNTE Trade & Logistic – Android aplikácia (Trusted Web Activity).
+// Aplikácia otvára živú webovú aplikáciu v jadre Chrome (rovnaké prihlásenie, upozornenia, GPS ako PWA),
+// takže každá zmena v aplikácii je v telefóne hneď – APK sa mení iba pri zmene ikony / adresy.
+plugins { id "com.android.application" }
+def ks = System.getenv("ERNTE_KS")
+android {
+  namespace "sk.ernte.app"
+  compileSdk 34
+  defaultConfig {
+    applicationId "sk.ernte.app"
+    minSdk 21
+    targetSdk 34
+    versionCode((System.getenv("ERNTE_VC") ?: "1") as int)
+    versionName(System.getenv("ERNTE_VN") ?: "1.0")
+  }
+  signingConfigs {
+    rel {
+      if (ks) { storeFile file(ks); storePassword System.getenv("ERNTE_KS_PASS"); keyAlias "ernte"; keyPassword System.getenv("ERNTE_KS_PASS") }
+    }
+  }
+  buildTypes { release { minifyEnabled false; if (ks) signingConfig signingConfigs.rel } }
+  compileOptions { sourceCompatibility JavaVersion.VERSION_17; targetCompatibility JavaVersion.VERSION_17 }
+}
+dependencies { implementation "com.google.androidbrowserhelper:androidbrowserhelper:2.5.0" }
