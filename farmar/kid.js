@@ -310,7 +310,7 @@ document.addEventListener("click",async e=>{if(!K)return;const t=e.target.closes
   if(t.dataset.kbuy!=null){const sell=!!(document.querySelector("[data-ksell]")||{}).checked;const m=gStep(+t.dataset.kbuy,sell);G.log.push(...m);
     if(G.r>5){const val=G.cash+G.stock*G.m,prof=val-20000;const h=Object.assign({n:0,best:0},P().hra||{});h.n++;h.best=Math.max(h.best,prof);h.last=prof;save("hra",h);if(prof>0)addCoins(Math.min(50,Math.round(prof/100)),"hra")}render();return}},true);
 document.addEventListener("keydown",e=>{if(e.key==="Enter"&&e.target&&e.target.matches&&e.target.matches("[data-kinp]")){e.preventDefault();const b=document.querySelector("[data-kchk]");if(b)b.click()}});
-window.startKid=async function(){document.documentElement.classList.add("kjon");try{$("hT").textContent="ERNTE Junior";$("hS").textContent=K.name+" · škola biznisu";$("refBtn").hidden=true}catch(x){}V="home";render();await loadPay();if(V==="home")render()};
+window.startKid=async function(){document.documentElement.classList.add("kjon");try{$("hT").textContent="ERNTE Junior";$("hS").textContent=K.name+" · škola biznisu";$("refBtn").hidden=false}catch(x){}V="home";render();await loadPay();if(V==="home")render()};
 function qday(ok){const d=new Date().toLocaleDateString("sv-SE"),q=P().qday&&P().qday.d===d?Object.assign({},P().qday):{d,n:0,ok:0};q.n++;if(ok)q.ok++;save("qday",q)}
 window.kidCtx=()=>K?{K,P:P(),PAY,V,LESSONS:L,PRK,coins:coins(),lv:LEVEL(coins()),render,addCoins,earn,go:v=>{V=v;render()},
   stat:(ok,k)=>{qday(ok);if(k){const st=Object.assign({n:0,ok:0},P()["pr_"+k]||{});st.n++;if(ok)st.ok++;st.t=Date.now();save("pr_"+k,st)}else{const qs=Object.assign({n:0,ok:0},P().qs||{});qs.n++;if(ok)qs.ok++;qs.t=Date.now();save("qs",qs)}}}:null;
