@@ -17,8 +17,9 @@ Platí pre Claude aj ERNTE AI pri každej novej sekcii, záložke, funkcii alebo
 6. **Odkaz na aplikáciu** – v správach pre používateľov nikdy holý odkaz na začiatku; vždy „👉 ERNTE Trade & Logistic: …“ na konci,
    v aplikácii zobrazovať cez `appLinkHTML()` (logo + názov namiesto https).
 
-7. **Štýl dokumentov (PDF)** – všetko o doprave (preprava, jazdy, CMR, vodiči, flotila, doprava trusu) v štýle **VALKO s.r.o.**,
-   obchod, výkup, zúčtovanie, zmluvy a kurací trus v štýle **ERNTE spol. s r.o.** Hlavička cez `brandHead("valko"|"ernte", nadpis, podnadpis)`
+7. **Štýl dokumentov (PDF) – LOGÁ (príkaz majiteľa 1. 11.)** – všetko o doprave (preprava, jazdy, CMR, vodiči, flotila, výplaty vodičov, doprava trusu) v štýle **VALKO s.r.o.** (`valko-logo.png`),
+   maďarský obchod (Danube Trade, zmluvy SK | HU, maďarskí farmári) v štýle **DANUBE Commodities Kft.** (`img/danube.png`, okrúhle logo, zlatá linka, bez pečiatky ERNTE),
+   všetko ostatné – obchod a výkup SK, zúčtovanie, zmluvy ERNTE, kurací trus, Agro služby, GDPR, pozvánky – v štýle **ERNTE spol. s r.o.** (`logo.png`). Hlavička cez `brandHead("valko"|"danube"|"ernte", nadpis, podnadpis)`
    a farby cez `brandCss(...)` (`farmar/brand.js`).
 
 8. **Názvy súborov (PDF a iné pre majiteľa)** – PRÍKAZ MAJITEĽA: v názve súboru namiesto podčiarkovníka `_` vždy normálna medzera
@@ -171,6 +172,7 @@ s pripojeným repozitárom `ernte-trade/ernte-`.
   pozvánky po maďarsky (`inviteText`, odkaz s `#prihlas` a `l:"hu"`).
 - **🎤 HLAS PRE KAŽDÉ PRIHLÁSENIE (`voice.js`):** ťukni do políčka a diktuj (čísla, dátum, čas, e-mail), „hľadaj …“, „otvor …“, „späť“, „predaj 30 ton repky“; nič neodošle samo.
 - **📈 TÝŽDENNÝ LIST INVESTIČNEJ AKADÉMIE (31. 10., workflow `invest-list`, `.github/workflows/investlist.yml`):** naplánovaná úloha nemá heslo migrácií → SQL (`insert into invest_notes(who,title,body) values …`, base64) pošle cez workflow_dispatch (input `sql_b64`); workflow ho zašifruje tajomstvom `ERNTE_MIG_PASS` a commitne do `farmar/supabase/auto/`. Povolený je iba INSERT do invest_notes. **Tajomstvo `ERNTE_MIG_PASS` musí majiteľ raz zadať v GitHub → Settings → Secrets → Actions** (31. 10. ešte chýbalo – List č. 1 nevložený).
+- **🔎 HĽADANIE FARMÁROV (1. 11. 13:27 PRÍKAZ MAJITEĽA):** `hu_farm_run` každú hodinu (pg_cron `hu-farm` :10), striedavo CELÉ Maďarsko → `firma DANUBE` a CELÉ Slovensko → `firma ERNTE`; zapíše IBA firmu s overeným IČO / cégjegyzékszám, DIČ / adószám, telefónom AJ e-mailom (`hu_farm_collect` validuje, duplicity podľa IČO, mena, e-mailu); `active=false` = bez prístupu do aplikácie (active zapína prihlásenie!). `danube_view` ukazuje aj neaktívnych DANUBE farmárov. `hu_prospects.country/ico/dic/icdph`.
 - **🤖 CLAUDE PRACUJE SÁM (1. 11. 2:27 PRÍKAZ MAJITEĽA: „prechádzaj app bez mojej žiadosti, modernizuj, zľahčuj, dopĺňaj zákazníkov, hľadaj farmárov vo východnom Maďarsku do Danube; v mojej app a v tíme automaticky, pre obchodníka/farmára sa spýtaj a navrhni“):**
   databáza (`20261101-0245-claude-samostatne`): `hu_farm_run` (pg_cron `hu-farm` 3:10) – AI s web_search nájde firmy (Kft./Zrt./Bt./szövetkezet, NIE súkromné osoby) z východného Maďarska → `farmers` (firma DANUBE, active=false) + `hu_prospects` (zdroj, plodiny);
   `farm_enrich_run` (`farm-enrich` 3:40) – 10 farmárov denne bez e-mailu/telefónu/adresy → overené verejné firemné kontakty, IBA prázdne polia, log `farm_enrich_log`; `claude_auto_tick` každé 3 min (zber + ai_state `claude_auto` → sonda `ernte_probe2.auto`).

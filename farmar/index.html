@@ -2950,13 +2950,13 @@ document.addEventListener("focusin",e=>{if(e.target.id==="dfq")dfList(e.target.v
 document.addEventListener("input",e=>{if(e.target.id==="dfq"){const h=e.target.form&&e.target.form.elements.farmer;if(h)h.value="";dfList(e.target.value)}});
 document.addEventListener("click",e=>{const b=e.target.closest("[data-dfp]");if(!b)return;const fm=b.closest("form"),f=(STATE.farmers||[]).find(x=>x.id===b.dataset.dfp);if(!fm||!f)return;fm.elements.farmer.value=f.id;document.getElementById("dfq").value=String(f.name).trim();document.getElementById("dfl").innerHTML=`<div class="s">✓ Vybraný: <b>${esc(String(f.name).trim())}</b></div>`});
 </script>
-<script src="ai.js?v=20261029-0010"></script>
+<script src="ai.js?v=20261101-1340"></script>
 <script src="perms.js?v=20261031-0930c"></script>
 <script src="gdprsign.js?v=20261031-1310"></script>
 <script src="bonus.js?v=20261028-0110"></script>
 <script src="fterms.js?v=20261031-0915"></script>
 <script src="hub.js?v=20261028-2150"></script>
-<script src="brand.js?v=20261027-1620"></script>
+<script src="brand.js?v=20261101-1340"></script>
 <script src="settle.js?v=20261030-1000"></script>
 <script src="mic.js?v=20261030-1700"></script>
 <script src="qd.js?v=20261031-1120"></script>
@@ -2990,7 +2990,7 @@ document.addEventListener("click",e=>{const b=e.target.closest("[data-dfp]");if(
 <script src="owhome.js?v=20261030-2355"></script>
 <script src="nbell.js?v=20261028-1130"></script>
 <script src="novinky.js?v=20261027-0845"></script>
-<script src="dnzmluva.js?v=20261031-0915"></script>
+<script src="dnzmluva.js?v=20261101-1340"></script>
 <script src="danube.js?v=20261031-1120"></script>
 <script src="installapp.js?v=20261031-0700"></script>
 <script src="bio.js?v=20261031-0720"></script>
@@ -3018,7 +3018,7 @@ document.addEventListener("click",e=>{const b=e.target.closest("[data-dfp]");if(
 <script src="konk.js?v=20261031-0700"></script>
 <script src="cennikalert.js?v=20261031-0700"></script>
 <script src="dropalert.js?v=20261101-1010"></script>
-<script src="timai.js?v=20261031-0915"></script>
+<script src="timai.js?v=20261101-1340"></script>
 <script src="heslainv.js?v=20261031-1300"></script>
 <script src="ownertabs.js?v=20261101-1000"></script>
 <script src="fotoico.js?v=20261101-1000"></script>
@@ -3029,7 +3029,7 @@ document.addEventListener("click",e=>{const b=e.target.closest("[data-dfp]");if(
 <script src="invest.js?v=20261031-1730"></script>
 <script src="kidhome.js?v=20261101-1045"></script>
 <script src="uiwatch.js?v=20261101-0355"></script>
-<script src="navrhy.js?v=20261101-0430"></script>
+<script src="navrhy.js?v=20261101-1340"></script>
 <script src="plan.js?v=20261101-1245"></script>
 <script src="voice.js?v=20261031-1650"></script>
 <script src="wxalert.js?v=20261101-0920"></script>

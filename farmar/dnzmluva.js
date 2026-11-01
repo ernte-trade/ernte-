@@ -95,7 +95,7 @@ function build(no,d,cfg){const B=Object.assign({},BUY0),C=cfg||{};["name","addr"
   <tr class="b"><td>Príloha č. 1. je neoddeliteľnou súčasťou zmluvy.</td><td>Az 1. számú melléklet a szerződés elválaszthatatlan részét képezi.</td></tr></table>`;
   return `<!doctype html><html lang="sk"><head><meta charset="utf-8"><title>Kúpna zmluva ${e(no)} ${e(F.name||"")}</title><style>
 @page{size:A4;margin:13mm 13mm 15mm}*{box-sizing:border-box}body{font:9.6pt/1.38 "Times New Roman","Liberation Serif",Georgia,serif;color:#111;margin:0 auto;max-width:186mm;padding:6px;background:#fff}
-.hdr{display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #999;padding-bottom:6px;margin-bottom:8px}.hdr img{height:44px}.hdr span{font:8pt Arial,sans-serif;color:#555}
+.hdr{display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #999;padding-bottom:6px;margin-bottom:8px}.hdr img{height:60px}.hdr span{font:8pt Arial,sans-serif;color:#555}
 h1{text-align:center;font-size:14.5pt;margin:6px 0 0}h1 small{display:block;font-size:12pt;font-weight:700}.no{text-align:center;font-weight:700;margin:3px 0 8px}
 table.bi{width:100%;border-collapse:collapse;table-layout:fixed}table.bi td{vertical-align:top;padding:3px 7px;text-align:justify;overflow-wrap:anywhere}table.bi td+td{border-left:1px solid #bbb;color:#1d2f6b}
 table.bi tr.h td{font-weight:700;text-align:center;padding-top:10px;font-size:10.2pt}table.bi tr.b td{font-weight:700}table.bi tr.c td{text-align:center}table.bi tr.n td{font-style:italic}
