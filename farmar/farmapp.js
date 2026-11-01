@@ -36,7 +36,14 @@ function tiles(){const F=F_(),P=(STATE.prices||[]).filter(p=>p.price!=null),top=
   L.push(["kontakt","Obchodník","zavolať jedným ťuknutím"]);
   if(document.querySelector('#app [data-fsec="sluzby"]'))L.push(["sluzby","Služby strojmi","žatva, pôda, sejba"]);
   if(document.querySelector('#app [data-fsec="viac"]'))L.push(["viac","Ďalšie","poznámky a ciele"]);
-  return `<div class="ftiles" data-fsec="home">${L.map((t,i)=>`<button type="button" class="ftile${t[3]?" fbig":""}" data-fv="${t[0]}" style="--i:${i}"><i class="fdsh"></i><img src="img/ico/${IC[t[0]]}.png" alt="" width="56" height="56" draggable="false"><b>${E(t[1])}</b><small>${t[2]}</small></button>`).join("")}</div>`}
+  return `<div class="ftiles" data-fsec="home">${lastHTML()}${L.map((t,i)=>`<button type="button" class="ftile${t[3]?" fbig":""}" data-fv="${t[0]}" style="--i:${i}"><i class="fdsh"></i><img src="img/ico/${IC[t[0]]}.png" alt="" width="56" height="56" draggable="false"><b>${E(t[1])}</b><small>${t[2]}</small></button>`).join("")}</div>`}
+// ---------- 1. 11. schválené návrhy Martina: stav poslednej ponuky na úvode + zopakovať jedným ťuknutím ----------
+function lastReq(){return (STATE.reqs||[]).filter(r=>r.kind==="sell"&&r.com).sort((a,b)=>String(b.created_at||"").localeCompare(String(a.created_at||"")))[0]}
+function lastHTML(){if(!fc("f_sell"))return "";const r=lastReq();if(!r)return "";
+  const ST={nova:["⏳","čaká na obchodníka","w"],v_spracovani:["🔄","obchodník ju rieši","b"],vybavena:["✅","vybavená","g"],zamietnuta:["✕","nevyšla","r"]}[r.status]||["•",r.status||"","b"];
+  const p=(STATE.prices||[]).find(x=>x.com===r.com&&x.price>0),d=r.created_at?new Date(r.created_at).toLocaleDateString("sk-SK",{day:"numeric",month:"numeric"}):"";
+  return `<div class="flast ${ST[2]}"><div class="flh"><small>Moja posledná ponuka · ${E(d)}</small><b>${E(comName(r.com))} · ${N(r.tons)} t</b><span class="flst">${ST[0]} ${E(ST[1])}</span></div>
+   ${p?`<button type="button" class="lime flrep" data-wrep="${E(r.id||"")}">🔁 Ponúknuť znova ${N(r.tons)} t<small>dnes ${N(p.price,0)} €/t</small></button>`:""}</div>`}
 // ---------- predaj krok za krokom ----------
 function wizard(){const F=F_(),P=(STATE.prices||[]).filter(p=>p.price!=null&&p.price>0);const dn=String(F.firma||"ERNTE").toUpperCase()==="DANUBE";
   if(W.sent)return `<div class="fwz" data-fsec="predat"><div class="fok"><img src="img/ico/deals.png" alt="" width="84" height="84"><b>Odoslané ✅</b><p>${E(comName(W.sent.com))} · ${N(W.sent.tons)} t. Váš obchodník sa vám ozve${W.sent.need?` a dohodne odvoz na ${E(dSK2(W.sent.date))} ${E(W.sent.time||"")}`:""}.</p></div><div class="fcts">${ctHTML()}</div><button type="button" class="lime fwgo" data-fvhome>← Späť na začiatok</button></div>`;
@@ -96,12 +103,13 @@ window.farmGo=go;
 window.farmSell=(c,t)=>{Object.assign(W,{com:c,tons:t?String(t):"",harvest:null,fwd:null,sent:null});if(FV!=="predat")go("predat");else paintWz();setTimeout(()=>{const e=document.getElementById(t?"fs3":"fs2");if(e)e.scrollIntoView({behavior:"smooth",block:"start"})},300)};
 addEventListener("popstate",()=>{if(F_()&&FV!=="home"){FV="home";if(typeof renderFarmer==="function")renderFarmer()}});
 // ťuknutie platí pre tlačidlo, na ktoré prst dopadol (keď sa stránka medzitým o kúsok posunie – zatvorenie klávesnice / kalendára)
-const SELW="[data-fv],[data-fvhome],[data-wcom],[data-wt],[data-wh],[data-wn],[data-wsend]";let PD=null;
+const SELW="[data-fv],[data-fvhome],[data-wcom],[data-wt],[data-wh],[data-wn],[data-wsend],[data-wrep]";let PD=null;
 document.addEventListener("pointerdown",e=>{const t=e.target.closest&&e.target.closest(SELW);PD=t?{el:t,t:Date.now()}:null},true);
 document.addEventListener("click",async e=>{if(!F_())return;let t=e.target.closest&&e.target.closest(SELW);if(!t&&PD&&Date.now()-PD.t<900&&PD.el.isConnected&&e.target.closest&&e.target.closest(".fwz,#app"))t=PD.el;PD=null;if(!t)return;e.preventDefault();
   if(t.dataset.fv==="uvod"){if(window.ernteWelcome)ernteWelcome();return}
   if(t.dataset.fv){go(t.dataset.fv);return}
   if("fvhome" in t.dataset){if(history.state&&history.state.fv){history.back()}else{FV="home";renderFarmer()}return}
+  if("wrep" in t.dataset){const r=lastReq();if(!r)return;W.sent=null;W.com=r.com;W.tons=String(r.tons||"");W.harvest=r.harvest||null;W.fwd=null;W.need=r.pickup_date?true:(r.note&&/Dovezie sám/.test(r.note)?false:null);W.date=null;W.time=null;W.place=r.place||"";if(FV!=="predat")go("predat");else paintWz();setTimeout(()=>{const e=document.getElementById(W.harvest?"fs4":"fs3");if(e)e.scrollIntoView({behavior:"smooth",block:"start"})},300);return}
   if(t.dataset.wcom){W.com=t.dataset.wcom;W.harvest=null;W.fwd=null;paintWz();next("fs2");return}
   if(t.dataset.wt){W.tons=t.dataset.wt;paintWz();next("fs3");return}
   if(t.dataset.wh){W.harvest=t.dataset.wh;W.fwd=t.dataset.wfw!=null?+t.dataset.wfw:null;paintWz();next("fs4");return}
@@ -131,6 +139,10 @@ let q=0;function boot(){const app=document.getElementById("app");if(!app){setTim
 if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",boot);else boot();
 {const s=document.createElement("style");s.textContent=`
 #app>[hidden]{display:none!important}
+.flast{grid-column:1/-1;margin:0;padding:12px 14px;border-radius:18px;border:1px solid rgba(255,255,255,.16);background:rgba(255,255,255,.05);display:grid;gap:10px}
+.flast .flh{display:grid;gap:2px;text-align:center}.flast .flh small{opacity:.75;font-size:.8rem}.flast .flh b{font-size:1.15rem}.flast .flst{font-weight:700}
+.flast.w .flst{color:#fde68a}.flast.b .flst{color:#7dd3fc}.flast.g .flst{color:#86efac}.flast.r .flst{color:#fca5a5}
+.flast .flrep{min-height:52px;display:grid;gap:2px;justify-items:center;font-size:1.05rem;white-space:normal}.flast .flrep small{font-weight:500;opacity:.8;font-size:.8rem}
 .ftiles{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin:14px 0}
 .ftile{position:relative;overflow:hidden;display:flex!important;flex-direction:column;align-items:center;justify-content:center;gap:6px;min-height:150px;padding:16px 10px!important;border-radius:26px!important;text-align:center;color:#fff!important;
  background:linear-gradient(150deg,rgba(255,255,255,.14),rgba(255,255,255,.03) 55%,rgba(124,92,255,.12))!important;border:1px solid rgba(255,255,255,.22)!important;box-shadow:inset 0 1px 0 rgba(255,255,255,.35),0 14px 34px rgba(0,0,0,.35)!important;backdrop-filter:blur(16px) saturate(150%);-webkit-backdrop-filter:blur(16px) saturate(150%)}
