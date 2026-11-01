@@ -17,10 +17,15 @@ def geo(q,cc):
     except Exception as e: time.sleep(3)
   return None
 UAPOLY=[[22.27,48.45],[22.32,48.60],[22.40,48.80],[22.60,49.08],[23.6,49.0],[23.6,47.9],[22.9,47.95],[22.55,48.05],[22.35,48.30],[22.27,48.45]]  # Zakarpatská oblasť – tranzit cez Ukrajinu (colnica) sa nepočíta
-VIA=[float(x) for x in os.environ.get("VIA","").split(",")] if os.environ.get("VIA") else None
+VIA=[[float(x) for x in p.split(",")] for p in os.environ.get("VIA","").split(";") if p.strip()]  # prejazdové body (lat,lon;lat,lon)
+VIAE=[[float(x) for x in p.split(",")] for p in os.environ.get("VIA_E","").split(";") if p.strip()]  # pre farmy na východ (Kisvárda; Cigánd)
 IGN=os.environ.get("IGNORE")=="1"
 def route(a,b,ua=False):
-  L=[{"lat":a[0],"lon":a[1]}]+([{"lat":VIA[0],"lon":VIA[1],"type":"through"}] if VIA and not ua else [])+[{"lat":b[0],"lon":b[1]}]
+  V=[] if ua else list(VIA)
+  far=a if a[0]<48.38 else b
+  if V and VIAE and far[1]>=21.95: V=list(VIAE)+V
+  if a[0]>=48.38: V=V[::-1]   # cesta späť: body v opačnom poradí
+  L=[{"lat":a[0],"lon":a[1]}]+[{"lat":p[0],"lon":p[1],"type":"through"} for p in V]+[{"lat":b[0],"lon":b[1]}]
   j=post(VH+"/route",{"locations":L,"costing":"truck",
     "costing_options":{"truck":dict({"weight":40,"axle_load":9,"axle_count":5,"height":4,"width":2.55,"length":16.5},**({} if ua else {"country_crossing_penalty":4000,"country_crossing_cost":1200}),**({"ignore_access":True,"ignore_restrictions":True} if IGN and not ua else {}))},"units":"kilometers","directions_type":"none"})
   t=j["trip"]; km=t["summary"]["length"]; sec=t["summary"]["time"]; shape=t["legs"][0]["shape"] if len(t["legs"])==1 else None
