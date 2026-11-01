@@ -34,7 +34,7 @@ function close(silent){if(!V)return;const v=V;V=null;clearInterval(v.timer);v.ov
 window.addEventListener("popstate",()=>{if(V){V.pushed=false;close(true)}});
 document.addEventListener("keydown",e=>{if(V&&e.key==="Escape")close()});
 // skutočný PDF súbor – html2pdf sa načíta priamo do dokumentu (jeho štýly ostanú)
-function pdfBlob(){return new Promise((ok,no)=>{const iw=V.iw,d=iw.document;
+function pdfBlob(){return new Promise((ok,no)=>{const iw=V.iw,d=iw.document;try{window.ernteTrace&&window.ernteTrace(d)}catch(x){}
   const run=()=>{try{const land=[...d.querySelectorAll("style")].some(x=>/size\s*:\s*A4\s+landscape/i.test(x.textContent));
       const O=iw.JSON.parse(JSON.stringify({margin:[8,8,10,8],image:{type:"jpeg",quality:.95},
       html2canvas:{scale:2,useCORS:true,backgroundColor:"#ffffff",scrollX:0,scrollY:0,windowWidth:land?1180:840},

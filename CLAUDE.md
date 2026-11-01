@@ -59,6 +59,7 @@ Spoločné opravy rozloženia patria do `farmar/fit.css` (načítava sa posledn�
   **PRÍKAZ MAJITEĽA (31. 10.):** farmár na úvode LIVE VIDÍ verejnú burzu MATIF a CBOT s grafom (`market.json`, s poznámkou „burza nie je naša výkupná cena“).
   História 90 dní: workflow `burza-hist` (každý prac. deň 21:40 UTC) → vetva `burza-hist`/hist.json z AHDB Futures prices (najbližší kontrakt, € / t; dni z bota majú prednosť).
   AHDB v súbore uvádza, že ďalšie zverejnenie vyžaduje súhlas poskytovateľov – súhlas zatiaľ nemáme (cereals.mi@ahdb.org.uk).
+- **🛡️ NAŠA OCHRANA (1. 11. príkaz majiteľa, `ochrana.js`, tabuľky `data_guard`/`data_guard_block`, `guard_log/guard_status/guard_list/guard_block`):** každé stiahnutie (a[download] – prototyp aj klik), zdieľanie (navigator.share), tlač, kopírovanie ≥ 120 znakov a uloženie PDF (stopa `ernteTrace` v päte: meno, čas, kód) sa zapíše; ≥ `guard_cfg.lim` (15)/h → push Martinovi (raz za hodinu na človeka). Martin (MAIN_OK) sa nezapisuje. Tím → 🛡️ Naša ochrana: prehľad po ľuďoch + ⛔ Zablokovať (potom export/zdieľanie/tlač/kopírovanie nejde). Uvedené v `sukromie.html` (oddiel 3, VER nezvýšená).
 - Upozornenia príjemcom odchádzajú až po schválení majiteľom (📤), okrem výslovne povolených automatických správ
   (napr. „objednávka je v spracovaní“).
 
