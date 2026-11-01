@@ -1,0 +1,23 @@
+name: trus-km
+on:
+  workflow_dispatch:
+    inputs:
+      sites: {description: "miesta nakládky (čiarkou)", required: true}
+      dest: {description: "vykládka", required: false, default: "Kamenica nad Cirochou"}
+permissions:
+  contents: write
+jobs:
+  km:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - name: Kamiónové trasy (Valhalla truck 40 t)
+        env: {SITES: "${{ inputs.sites }}", DEST: "${{ inputs.dest }}"}
+        run: python3 .github/trus/km.py > log.txt 2>&1; echo done
+      - name: Zašifrovať a uložiť (vetva trus-km)
+        run: |
+          gpg --batch --yes --trust-model always --recipient-file .github/e2e/results.pub.asc -o trus_km.gpg -e trus_km.json
+          gpg --batch --yes --trust-model always --recipient-file .github/e2e/results.pub.asc -o log.gpg -e log.txt
+          git config user.name bot; git config user.email bot@users.noreply.github.com
+          git checkout --orphan trus-km; git rm -rfq . >/dev/null; date -u > t.txt; git add trus_km.gpg log.gpg t.txt; git commit -qm trus-km; git push -fq origin trus-km
