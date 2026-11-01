@@ -232,3 +232,11 @@ html[data-theme=light] .wlc .wlb,html[data-theme=light] .wlc .whc:not(.wlsp .whc
 .trdt{position:relative;display:grid;gap:6px;justify-items:center;text-align:center;padding:14px 12px;border-radius:18px;color:#fff;background:linear-gradient(135deg,#ff2d95 0%,#ff7a00 52%,#ffe600 100%);border:2px solid rgba(255,255,255,.85);box-shadow:0 0 0 2px rgba(255,45,149,.45),0 8px 26px rgba(255,90,0,.45),inset 0 1px 0 rgba(255,255,255,.7);text-shadow:0 1px 3px rgba(0,0,0,.45)}
 .trdt .trdn{font-weight:800;font-size:1rem;line-height:1.2;overflow-wrap:anywhere}.trdt .trdp{display:flex;align-items:baseline;justify-content:center;gap:6px;flex-wrap:wrap}.trdt .trdp b{font-size:2.1rem;font-weight:900;letter-spacing:-.02em;line-height:1}.trdt .trdp span{font-weight:800;font-size:.95rem}
 .trdt .trdb{display:flex;flex-wrap:wrap;justify-content:center;gap:4px}.trdt .trdb span{font-size:.78rem;font-weight:700;padding:3px 8px;border-radius:999px;background:rgba(0,0,0,.28);border:1px solid rgba(255,255,255,.4);white-space:nowrap}
+/* 1. 11. 9:43 BPS cenník: odporúčané do 36 €/t vs. prepočítať ekonomiku */
+.trdlg{display:flex;flex-wrap:wrap;justify-content:center;gap:6px;margin:0 0 10px}.trdlg span{font-size:.8rem;font-weight:700;padding:4px 10px;border-radius:999px;text-align:center}
+.trdlg .ok{background:rgba(57,255,20,.15);border:1px solid #39ff14;color:#b8ff9e}.trdlg .ck{background:rgba(255,200,0,.12);border:1px solid rgba(255,200,0,.6);color:#ffe08a}
+html[data-theme=light] .trdlg .ok{color:#166534;background:rgba(22,163,74,.12)}html[data-theme=light] .trdlg .ck{color:#854d0e;background:rgba(234,179,8,.15)}
+.trdt .trdr{font-size:.78rem;font-weight:900;letter-spacing:.02em;padding:4px 12px;border-radius:999px;background:rgba(0,0,0,.35);border:1px solid rgba(255,255,255,.6)}
+.trdt.trdok{background:linear-gradient(135deg,#00e676 0%,#39ff14 45%,#ffe600 100%);box-shadow:0 0 0 2px rgba(57,255,20,.5),0 8px 28px rgba(57,255,20,.45),inset 0 1px 0 rgba(255,255,255,.7)}
+.trdt.trdck{background:linear-gradient(135deg,#6b7280 0%,#a16207 55%,#f59e0b 100%);border-style:dashed;box-shadow:0 6px 18px rgba(0,0,0,.35)}
+.trdt .trdx{font-size:.78rem;font-weight:700;opacity:.95}
