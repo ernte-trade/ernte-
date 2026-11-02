@@ -130,9 +130,9 @@ async function load(){if(S.busy)return;S.busy=true;
   S.at=Date.now();S.busy=false;RS()}
 const RN={owner:"majiteľ",admin:"kancelária",dispatch:"doprava",invoice:"fakturácia",staff:"obchodník",farmar:"farmár",junior:"Junior",anon:"pred prihlásením",trus:"kurací trus","?":"neznáma"};
 const rn=r=>RN[r]||r;
-const SN={prihlasenie:"Prihlásenie",start:"Štart",uvod:"Úvod LIVE",junior:"ERNTE Junior"};
+const SN={AI:"🤖 ERNTE AI",prihlasenie:"Prihlásenie",start:"Štart",uvod:"Úvod LIVE",junior:"ERNTE Junior"};
 const sn=s=>{s=String(s||"?");if(SN[s])return SN[s];if(s.startsWith("farmar:"))return "Farmár · "+s.slice(7);if(s.startsWith("fleet/"))return "Flotila · "+s.slice(6);return s};
-const KN={js:"skript",promise:"sľub",api:"databáza",render:"zobrazenie",siet:"sieť"};
+const KN={js:"skript",promise:"sľub",api:"databáza",render:"zobrazenie",siet:"sieť",ai:"AI (Claude API)"};
 const dt=a=>a?new Date(a).toLocaleString("sk-SK",{day:"numeric",month:"numeric",hour:"2-digit",minute:"2-digit"}):"";
 function css(){if(document.getElementById("emdCss"))return;const s=document.createElement("style");s.id="emdCss";s.textContent=`
 .emd{display:grid;gap:12px;min-width:0;margin-top:12px}.emd .card{min-width:0}
