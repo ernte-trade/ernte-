@@ -22,7 +22,15 @@ function Q(tab){let rows=(T[tab]||[]).slice(),single=false;const q={
   then(ok,er){return Promise.resolve({data:single?(rows[0]||null):rows,error:null,count:rows.length}).then(ok,er)}};return q}
 const ch={on(){return ch},subscribe(cb){try{cb&&cb("SUBSCRIBED")}catch(e){}return ch},unsubscribe(){},send(){}};
 const user={id:"u-test",email:R.kind==="farmer"?FARMER.email:((R.staff&&R.staff.email)||"test@example.com")};
-const RPC={gdpr_status:()=>({ver:window.ernteGdpr&&window.ernteGdpr.VER}),sus_rules:()=>({norm:{kukurica:14,psenica_p:14,psenica_k:14,repka:8,soja:12,jacmen_k:14},clean:1.2,dry:1.6})};
+const SALE={sales:[{id:"s1",no:"PZ2026/1",buyer:"Veľmi Dlhý Názov Odberateľa Agrokomodity Medzinárodná Obchodná Spoločnosť s.r.o.",ico:"00000000",com:"kukurica",tons:300,price:205.5,parity:"DAP",dop:12,term:"1.–15. 12. 2026",delivered_t:40,status:"dodava",note:"Vymyslená poznámka na test dlhého textu, ktorý sa musí zalomiť a nesmie pretiecť doprava.",archived:false,
+   alloc:[{deal_id:"d1",no:"T2026/1",farmer:"Demo Farma s.r.o.",com:"kukurica",tons:100,buy:170,status:"navrh",live:false,m_t:23.5,m_eur:2350}]},
+  {id:"s2",no:"PZ2026/2",buyer:"Odberateľ Test",com:"psenica_p",tons:150,price:210,parity:"FCA",dop:0,delivered_t:0,status:"podpisana",archived:false,alloc:[]},
+  {id:"s3",no:"PZ2026/0",buyer:"Starý Odberateľ",com:"repka",tons:50,price:450,parity:"FCA",dop:0,delivered_t:50,status:"zaplatena",archived:true,alloc:[]}],
+ deals:[{id:"d2",no:"T2026/2",farmer:"Demo Farma s.r.o.",com:"psenica_p",tons:200,price:180,status:"odvoz",alloc_t:0}],buyers:[{id:"b1",name:"Odberateľ Test"}],
+ sum:{pozicie:{psenica_p:{komodita:"Pšenica potravinárska",nakupene_t:200,predane_t:150,sparovane_t:0,marza_sparovane_eur:0,nakupene_nepredane_t:200,nepredane_priemer_nakup_eur_t:180,predane_nenakupene_t:150,nenakupene_priemer_predaj_eur_t:210,otvorena_t:50,cena_eur_t:195,cena_zdroj:"MATIF pšenica Mar 2027",hodnota_eur:9750},
+   kukurica:{komodita:"Kukurica",nakupene_t:900,predane_t:300,sparovane_t:0,marza_sparovane_eur:0,nakupene_nepredane_t:900,nepredane_priemer_nakup_eur_t:170,predane_nenakupene_t:300,nenakupene_priemer_predaj_eur_t:193.5,otvorena_t:600,cena_eur_t:190,cena_zdroj:"MATIF kukurica Mar 2027",hodnota_eur:114000}},
+  spolu:{otvorena_t:650,hodnota_eur:123750,marza_sparovane_eur:0},eurusd:1.08}};
+const RPC={sale_book:()=>SALE,gdpr_status:()=>({ver:window.ernteGdpr&&window.ernteGdpr.VER}),sus_rules:()=>({norm:{kukurica:14,psenica_p:14,psenica_k:14,repka:8,soja:12,jacmen_k:14},clean:1.2,dry:1.6})};
 const session={user,access_token:"test",expires_at:Math.floor(Date.now()/1000)+3600};
 window.supabase={createClient:()=>({
   from:Q,rpc:async n=>({data:RPC[n]?RPC[n]():[],error:null}),channel:()=>ch,removeChannel(){},removeAllChannels(){},getChannels:()=>[],
