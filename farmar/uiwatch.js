@@ -23,7 +23,7 @@ function addNow(kind,e,detail){const sc=screen(),k=kind+"|"+sc+"|"+(e?path(e):""
 function flush(){if(qt||!Q.length)return;qt=setTimeout(async()=>{qt=0;const b=Q.splice(0,20);if(!b.length)return;try{if(typeof sb!=="undefined"&&sb.rpc)await sb.rpc("ui_report",{p:b})}catch(x){}},4000)}
 const skip=e=>e.closest("svg,.leaflet-container,#emMap,[data-nocut],.wscan,.ernte-ai,iframe,video,canvas,[hidden],details:not([open])")||e.tagName==="DETAILS";
 const inflow=c=>{const p=getComputedStyle(c).position;return p!=="absolute"&&p!=="fixed"&&c.offsetParent!==null};
-function check(){if(document.hidden)return;pass++;const w=W();
+function check(){if(document.hidden||document.querySelector("#emap.on"))return;pass++;const w=W();
   // 1) stránka širšia ako displej
   if(document.documentElement.scrollWidth>w+1){let worst=null,wr=w;document.querySelectorAll("#app *,.wlc *").forEach(e=>{if(skip(e))return;const r=e.getBoundingClientRect();if(r.width>0&&r.right>wr+1&&inflow(e)){const p=e.parentElement&&e.parentElement.getBoundingClientRect();if(!p||p.right<=w+1){wr=r.right;worst=e}}});
     add("sirka",worst,"stránka "+document.documentElement.scrollWidth+" px > displej "+w+" px")}

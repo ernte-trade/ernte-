@@ -3,6 +3,7 @@
 <head>
 <meta charset="utf-8">
 <script>/* 31. 10.: obrazovka neskáče – dlaždice a popisy, ktoré moduly vkladajú po prekreslení, sa vložia ešte pred vykreslením (mikroúloha), nie o pár snímok neskôr. Poistka: max 300 za úlohu, potom requestAnimationFrame. */(function(){var n=0,r=0;window.ernteSoon=function(cb){if(n>300)return requestAnimationFrame(cb);n++;if(!r){r=1;setTimeout(function(){n=0;r=0},0)}queueMicrotask(function(){try{cb(performance.now())}catch(e){setTimeout(function(){throw e})}});return 1}})();</script>
+<script>/* 2. 11. príkaz majiteľa „GPS rýchlo a nesekať“: zmeny vo vnútri ERNTE Maps (#emap – dlaždice mapy, rýchlosť a vzdialenosť každú sekundu) nebudia sledovače celej aplikácie (preklad, kontrola vzhľadu, ochrana, kruhové tlačidlá…). Pridanie / odobratie #emap samotného prejde. */(function(){var MO=window.MutationObserver;if(!MO)return;function inMap(n){var t=n&&(n.nodeType===1?n:n.parentElement);return !!(t&&t.closest&&t.closest("#emap"))}try{window.MutationObserver=class extends MO{constructor(cb){super(function(ms,o){var f=[];for(var i=0;i<ms.length;i++)if(!inMap(ms[i].target))f.push(ms[i]);if(f.length)cb(f,o)})}}}catch(e){}})();</script>
 <script>/* Android/Chrome: zachytiť ponuku inštalácie hneď, aby tlačidlo „Pridať na plochu“ otvorilo systémové okno jedným ťuknutím */window.addEventListener("beforeinstallprompt",function(e){e.preventDefault();window.__bip=e});</script>
 <script>/* app.ernte.sk: vždy zabezpečené https (poloha, PIN, upozornenia fungujú iba cez https) */if(location.protocol==="http:"&&/(^|\.)ernte\.sk$/.test(location.hostname))location.replace("https://"+location.host+location.pathname+location.search+location.hash)</script>
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover">
@@ -3018,8 +3019,8 @@ document.addEventListener("click",e=>{const b=e.target.closest("[data-dfp]");if(
 <script src="watermark.js?v=20261028-2320"></script>
 <script src="valkopay.js?v=20261031-0920" defer></script>
 <script src="welcome.js?v=20261101-1000"></script>
-<script src="ernmaps.js?v=20261102-0030" defer></script>
-<script src="waze.js?v=20261102-0030" defer></script>
+<script src="ernmaps.js?v=20261102-0850" defer></script>
+<script src="waze.js?v=20261102-0850" defer></script>
 <script src="odb.js?v=20261101-1800"></script>
 <script src="zuctmail.js?v=20261101-1800"></script>
 <script src="zdash.js?v=20261027-1620"></script>
@@ -3079,7 +3080,7 @@ document.addEventListener("click",e=>{const b=e.target.closest("[data-dfp]");if(
 <script src="kid.js?v=20261101-1050"></script>
 <script src="invest.js?v=20261031-1730"></script>
 <script src="kidhome.js?v=20261101-1045"></script>
-<script src="uiwatch.js?v=20261101-0355"></script>
+<script src="uiwatch.js?v=20261102-0850"></script>
 <script src="navrhy.js?v=20261101-1340"></script>
 <script src="plan.js?v=20261101-1245"></script>
 <script src="voice.js?v=20261031-1650"></script>

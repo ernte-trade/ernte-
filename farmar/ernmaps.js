@@ -44,7 +44,7 @@ function startGps(){if(!navigator.geolocation){status("Telefón nepodporuje GPS 
     {enableHighAccuracy:true,maximumAge:0,timeout:30000})}
 function drawMe(){const c=S.me;if(!c||!S.map)return;const ll=[c.lat,c.lng];
   if(!S.meM){S.meM=L.marker(ll,{icon:L.divIcon({className:"emme",html:"<i></i>",iconSize:[22,22]}),zIndexOffset:1000}).addTo(S.map);S.acc=L.circle(ll,{radius:c.acc,color:"#38bdf8",weight:1,fillOpacity:.08}).addTo(S.map)}
-  else{if(!S.nav)S.meM.setLatLng(ll);S.acc.setLatLng(ll).setRadius(c.acc)}
+  else if(!S.nav){S.meM.setLatLng(ll);S.acc.setLatLng(ll).setRadius(c.acc)}
   if(S.follow&&!S.nav)S.map.panTo(ll,{animate:true})}
 // Overpass býva preťažený (502 / bez odpovede) → naraz všetky zrkadlá + Nominatim (OSM vyhľadávanie, spoľahlivé); vyhrá prvý s výsledkom
 const NOM={fuel:[["amenity","fuel"]],food:[["amenity","restaurant"],["amenity","fast_food"]],cafe:[["amenity","cafe"]],truck:[["q","truck stop"],["amenity","parking"]],
@@ -120,11 +120,21 @@ window.addEventListener("resize",()=>{if(S.nav&&!S.ov){sizeNav();setTimeout(()=>
 function liveTick(){const c=S.me,m=document.getElementById("emMap");if(!c||!m||!m.classList.contains("navmap")||S.ov)return;
   const r=onRoute(c),pos=r?r.p:[c.lat,c.lng],tgt=r?r.b:S.gpsB;
   if(tgt!=null){if(S.brg==null)S.brg=tgt;else{const d=((tgt-S.brg)%360+540)%360-180;if(Math.abs(d)>4)S.brg+=d*0.6}}
-  if(sizeNav()){try{S.map.invalidateSize(false)}catch(x){}S.lastC=null}m.style.setProperty("--rot",(-(S.brg||0))+"deg");const i=document.querySelector("#emap .emme i");if(i)i.style.transform=`rotate(${S.brg||0}deg)`;if(S.meM)S.meM.setLatLng(pos);
+  if(sizeNav()){try{S.map.invalidateSize(false)}catch(x){}S.lastC=null}m.style.setProperty("--rot",(-(S.brg||0))+"deg");const i=S.meI&&S.meI.isConnected?S.meI:(S.meI=document.querySelector("#emap .emme i"));if(i)i.style.transform=`rotate(${S.brg||0}deg)`;
   const v=(S.spd!=null&&S.spd>=0?S.spd:0)*3.6,dn=S.dn==null?9:S.dn,want=Math.max(6,Math.min(19,(dn<0.2?18:v>80?16:17)+(S.zoff||0)));
   if(want!==S.zl){S.zc=(S.zc||0)+1;if(S.zc>=2||S.zl==null){S.zl=want;S.zc=0}}else S.zc=0;
-  const lc=S.lastC;if(!lc||km({lat:lc[0],lng:lc[1]},{lat:pos[0],lng:pos[1]})>0.004||S.map.getZoom()!==S.zl){S.lastC=pos;S.map.setView(pos,S.zl,{animate:true,duration:.9,easeLinearity:1})}
-  const sp=$(".emspd");if(sp)sp.textContent=Math.round(v)}
+  // 2. 11. PRÍKAZ MAJITEĽA „GPS rýchlo a nesekať“: medzi dvoma GPS bodmi sa mapa aj šípka posúvajú plynulo každú snímku (glide),
+  // nie skokom raz za sekundu; veľký skok (prepočet, zlý signál) alebo zmena priblíženia = okamžite.
+  const lc=S.lastC,now=performance.now();
+  if(!lc||S.map.getZoom()!==S.zl||km({lat:lc[0],lng:lc[1]},{lat:pos[0],lng:pos[1]})>0.3){S.anim=null;S.lastC=pos;S.shown=pos;S.fixT=now;if(S.meM)S.meM.setLatLng(pos);S.map.setView(pos,S.zl,{animate:!!lc&&S.map.getZoom()!==S.zl})}
+  else{const dt=S.fixT?Math.min(1600,Math.max(250,now-S.fixT)):1000;S.fixT=now;S.anim={a:S.shown||lc,b:pos,t0:now,d:dt*1.08};S.lastC=pos;glide()}
+  const sp=S.spE&&S.spE.isConnected?S.spE:(S.spE=$(".emspd"));if(sp){const t=String(Math.round(v));if(sp.textContent!==t)sp.textContent=t}}
+function glide(){if(S.raf)return;const f=()=>{S.raf=0;const A=S.anim,M=S.map,m=document.getElementById("emMap");if(!A||!M||!S.nav||S.ov||!m||!m.classList.contains("navmap")||document.hidden)return;
+  const now=performance.now(),k=Math.min(1,(now-A.t0)/A.d),p=[A.a[0]+(A.b[0]-A.a[0])*k,A.a[1]+(A.b[1]-A.a[1])*k];S.shown=p;
+  try{if(S.meM)S.meM.setLatLng(p);if(!M._animatingZoom){const o=M.latLngToContainerPoint(p).subtract(M.getSize().divideBy(2));
+      if(Math.abs(o.x)+Math.abs(o.y)>0.3){M._rawPanBy(o);M.fire("move");S.gMv=1}
+      if(S.gMv&&(k>=1||now-(S.gEnd||0)>800)){S.gEnd=now;S.gMv=0;M.fire("moveend")}}}catch(x){}
+  if(k<1||S.gMv)S.raf=requestAnimationFrame(f)};S.raf=requestAnimationFrame(f)}
 // 🔷 manéver ako v aute: zvýraznený úsek križovatky so šípkou a bežiacimi šípkami (štýl Mercedes MBUX)
 function mvDraw(nx){const R=S.route;if(!R||!R.pts||!S.map)return;const key=S.si+":"+(nx&&nx.maneuver.location.join());if(S.mvFor===key)return;S.mvFor=key;if(S.mvL){S.mvL.forEach(l=>l.remove());S.mvL=null}
   if(!nx||nx.maneuver.type==="arrive")return;const C=cum(R);let i=nx.idx!=null?nx.idx:nearIx(R,{lat:nx.maneuver.location[1],lng:nx.maneuver.location[0]}).i;
@@ -185,7 +195,7 @@ document.addEventListener("click",e=>{const t=e.target.closest&&e.target.closest
   if(t.dataset.emmute!==undefined){S.mute=!S.mute;t.textContent=S.mute?"🔇":"🔊";try{if(S.mute)speechSynthesis.cancel()}catch(x){}}},true);
 document.addEventListener("fullscreenchange",()=>{if(!document.fullscreenElement)S.fs=false;setTimeout(()=>{try{S.map&&S.map.invalidateSize(false)}catch(x){}},300)});
 function startNav(){if(!S.route)return;fsOn();S.nav=true;S.follow=true;S.si=0;$(".emnav").hidden=false;$("[data-emgo]").hidden=true;$("[data-emstop]").hidden=false;document.getElementById("emap").classList.add("navon");liveView(true);navTick(true);navSave();fixStart()}
-function stopNav(){S.nav=false;fsOff();S.ov=false;S.brg=null;S.lastC=null;S.dn=null;S.wd={};if(S.mvL){S.mvL.forEach(l=>l.remove());S.mvL=null;S.mvFor=null}["emcar","emalp","emwarn","emovt"].forEach(k=>{const c=$("."+k);if(c)c.hidden=true});{const b=$("[data-emov]");if(b)b.classList.remove("on")}try{speechSynthesis.cancel()}catch(x){}const n=$(".emnav");if(n)n.hidden=true;const g=$("[data-emgo]");if(g)g.hidden=!S.route;const st=$("[data-emstop]");if(st)st.hidden=true;const o=document.getElementById("emap");if(o&&o.classList.contains("navon")){o.classList.remove("navon");liveView(false)}}
+function stopNav(){S.nav=false;S.anim=null;S.lastC=null;S.shown=null;fsOff();S.ov=false;S.brg=null;S.lastC=null;S.dn=null;S.wd={};if(S.mvL){S.mvL.forEach(l=>l.remove());S.mvL=null;S.mvFor=null}["emcar","emalp","emwarn","emovt"].forEach(k=>{const c=$("."+k);if(c)c.hidden=true});{const b=$("[data-emov]");if(b)b.classList.remove("on")}try{speechSynthesis.cancel()}catch(x){}const n=$(".emnav");if(n)n.hidden=true;const g=$("[data-emgo]");if(g)g.hidden=!S.route;const st=$("[data-emstop]");if(st)st.hidden=true;const o=document.getElementById("emap");if(o&&o.classList.contains("navon")){o.classList.remove("navon");liveView(false)}}
 async function acquireWake(){try{if(navigator.wakeLock&&!S.wl)S.wl=await navigator.wakeLock.request("screen")}catch(x){}}
 function releaseWake(){try{if(S.wl){S.wl.release();S.wl=null}}catch(x){}}
 document.addEventListener("click",e=>{const t=e.target.closest&&e.target.closest("[data-emx],[data-emgo],[data-emstop],[data-emcenter],[data-emi],[data-emretry],[data-emcat]");if(!t)return;e.preventDefault();e.stopPropagation();
@@ -540,7 +550,7 @@ function hdrBtn(){const app=document.getElementById("app");if(!app)return;const 
 .emprog{position:absolute;left:14px;right:14px;bottom:6px;height:4px;border-radius:9px;background:rgba(255,255,255,.15);overflow:hidden}.emprog>i{display:block;height:100%;width:0;border-radius:9px;background:linear-gradient(90deg,#22d3ee,#a3e635);transition:width .8s linear}
 .emnav{padding-bottom:16px!important}.emnav.near{background:rgba(2,44,88,.95)!important;border-color:#38bdf8!important;box-shadow:0 0 30px rgba(56,189,248,.8)!important;animation:emnear 1s ease-in-out infinite alternate}
 @keyframes emnear{to{box-shadow:0 0 12px rgba(56,189,248,.4)}}
-.emmv{filter:drop-shadow(0 0 8px #38bdf8)}.emchev{animation:emchev .9s linear infinite}@keyframes emchev{to{stroke-dashoffset:-20}}
+.emmv{filter:drop-shadow(0 0 8px #38bdf8)}.emchev{animation:emchev .9s linear infinite}#emMap.navmap .emchev{animation:none}#emap.navon .emnav.near{animation:none}#emMap.navmap .emme{animation:none}@keyframes emchev{to{stroke-dashoffset:-20}}
 .emmvh i{display:block;width:0;height:0;margin:2px auto 0;border-left:15px solid transparent;border-right:15px solid transparent;border-bottom:28px solid #e0f2fe;filter:drop-shadow(0 0 8px #38bdf8)}
 .emfuel,.emhzi,.emme,.emmvh{min-height:0!important;min-width:0!important;padding:0!important;box-sizing:border-box!important;line-height:1!important}
 .emhzi{display:grid!important;place-items:center;font-size:15px;border-radius:50%;background:rgba(5,7,13,.9);border:2px solid #f87171;box-shadow:0 0 10px rgba(248,113,113,.8)}.emhzi.work{border-color:#fb923c;box-shadow:0 0 10px rgba(251,146,60,.8)}.emhzi.inc{border-color:#facc15}

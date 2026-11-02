@@ -119,14 +119,15 @@ document.addEventListener("click",e=>{const t=e.target.closest&&e.target.closest
   else if(d.ewnight!=null){const md=LS.get("night","auto");LS.set("night",md==="auto"?"night":md==="night"?"day":"auto");W.night=null;night()}},true);
 
 /* ---------- slučka ---------- */
-let wasNav=false,mo=null;
-function tick(){const o=document.getElementById("emap");if(!o||!o.classList.contains("on"))return;inject();
+let wasNav=false;
+function tick(){const o=document.getElementById("emap");if(!o||!o.classList.contains("on")||document.hidden)return;if(!q(".ewfab")||!q("[data-ewnight]")||(q(".emzm")&&!q(".emzm .ewlim"))||(q(".empl")&&!q(".ewfavw")))inject();
   const nav=o.classList.contains("navon");if(nav&&!wasNav)addRecent();wasNav=nav;
   const x=X();if(x&&x.S.me&&x.S.me.at!==W.lastSeen){W.lastSeen=x.S.me.at;alerts();if(nav)limit();paintLim()}
   if(!nav){const l=q(".ewlim");if(l)l.hidden=true}}
 function boot(){setInterval(()=>{tick();if(Date.now()%60000<1000)night()},1000);
   const watch=()=>{const o=document.getElementById("emap");if(!o){setTimeout(watch,1000);return}
-    mo=new MutationObserver(()=>(window.ernteSoon||requestAnimationFrame)(()=>{favInject()}));mo.observe(o,{childList:true,subtree:true});pull();setInterval(pull,5*60000)};watch()}
+    pull();setInterval(pull,5*60000)};watch();
+  document.addEventListener("click",e=>{if(e.target.closest&&e.target.closest("#emap [data-emplan],#emap [data-emq]"))[60,250,600].forEach(t=>setTimeout(favInject,t))},true)}
 {const s=document.createElement("style");s.textContent=`
 #emap .ewfab{position:absolute;right:12px;bottom:12px;z-index:1001;width:56px;height:56px;min-width:56px;border-radius:50%!important;padding:0!important;display:grid;place-items:center;font-size:1.6rem;background:#facc15!important;color:#111!important;border:2px solid #fff!important;box-shadow:0 0 18px rgba(250,204,21,.6)}
 #emap.navon .ewfab{display:none}
