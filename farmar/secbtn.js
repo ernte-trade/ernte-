@@ -32,6 +32,7 @@ function items(box,deep){const K=[...box.children].filter(e=>!e.matches(NOC)),L=
 function auto(app,t){if(SKIPT[t])return null;const L=[],seen={};
   for(const it of items(app,0)){if(seen[it.x])continue;seen[it.x]=1;L.push(["a:"+it.x.replace(/[\d\s()]+/g,""),it.els,it.x])}
   return L.length>=3&&L.length<=16?L:null}
+let LAST=null;
 function apply(){const app=document.getElementById("app");if(!app)return;
   const t=typeof TAB!=="undefined"?TAB:"";let C=CFG[t];
   if(!C&&OWN()&&!window.ERNTE_VIEWAS){app.querySelectorAll(".sbh").forEach(e=>e.classList.remove("sbh"));const A=auto(app,t);if(A)C={def:"*",auto:A}}
@@ -40,7 +41,7 @@ function apply(){const app=document.getElementById("app");if(!app)return;
   /* ďalšie karty záložky (Obchodné návrhy AI, Môj plán, Predaj…) tiež ako tlačidlá; pri predvolenom výbere ostávajú viditeľné */
   if(!C.auto){const E=found.map(x=>x[1]),X=(items(app,0)||[]).filter(it=>!it.els.some(z=>E.some(c=>c===z||c.contains(z)||z.contains(c)))).map(it=>["x:"+it.x.replace(/[\d\s()]+/g,""),it.els,it.x,1]);found=found.concat(X)}
   if(found.length<2){app.querySelectorAll(":scope > .secbar").forEach(b=>b.remove());return}
-  let cur=getSel(t);if(C.auto&&cur!=="*"&&!found.some(x=>x[0]===cur))cur="*";else if(!C.auto&&cur&&cur!=="*"&&!found.some(x=>x[0]===cur))cur="";
+  LAST={t,found};let cur=getSel(t);if(C.auto&&cur!=="*"&&!found.some(x=>x[0]===cur))cur="*";else if(!C.auto&&cur&&cur!=="*"&&!found.some(x=>x[0]===cur))cur="";
   const act=document.activeElement;
   for(const [k,el,,xx] of found){const E=Array.isArray(el)?el:[el],keep=cur==="*"||k===cur||(xx&&!cur)||(act&&act!==document.body&&E.some(z=>z.contains(act)));E.forEach(z=>z.classList.toggle("sbh",!keep))}
   let bar=app.querySelector(":scope > .secbar");const html=`<button type="button" data-secb="*" aria-pressed="${cur==="*"}">📋 Všetko</button>`+found.map(([k,,lab])=>`<button type="button" data-secb="${String(k).replace(/"/g,"&quot;")}" aria-pressed="${k===cur}">${String(lab).replace(/</g,"&lt;")}</button>`).join("");
@@ -48,6 +49,11 @@ function apply(){const app=document.getElementById("app");if(!app)return;
   if(bar.dataset.h!==html+t){bar.innerHTML=html;bar.dataset.h=html+t}
   const top=[...app.children].filter(e=>e.matches("nav.tabs,.rokbar,.spatbar,.uvodb")&&!e.classList.contains("sbh")),anc=top.length?top[top.length-1]:null;
   if(anc){if(bar.parentNode!==app||bar.previousElementSibling!==anc)anc.after(bar)}else{const f0=found[0][1],first=Array.isArray(f0)?f0[0]:f0;if(bar.nextElementSibling!==first||bar.parentNode!==app)app.insertBefore(bar,first)}}
+/* 2. 11. 18:46 „nereaguje Pridať“ – tlačidlo mimo sekcií (➕ Pridať zamestnanca …) otvára formulár v skrytej sekcii → ukáž všetko */
+window.addEventListener("click",e=>{const t=e.target;if(!t||!t.closest||t.closest(".secbar")||!LAST||typeof TAB==="undefined"||LAST.t!==TAB)return;
+  const app=document.getElementById("app");if(!app||!app.contains(t)||!t.closest("button,a,[role=button]"))return;
+  const inItem=LAST.found.some(x=>(Array.isArray(x[1])?x[1]:[x[1]]).some(z=>z.contains(t)));if(inItem)return;
+  const cur=getSel(TAB);if(!cur||cur==="*")return;setSel(TAB,"*");apply()},true);
 document.addEventListener("click",e=>{const b=e.target.closest&&e.target.closest("[data-secb]");if(!b)return;e.preventDefault();
   const t=TAB,k=b.dataset.secb,cur=getSel(t),au=!CFG[t];setSel(t,au?(cur===k?"*":k):(cur===k?(k==="*"?"":""):k));apply();
   const bar=document.querySelector("#app > .secbar");if(bar&&cur!==k){const y=bar.getBoundingClientRect().top+scrollY-70;if(Math.abs(scrollY-y)>40)window.scrollTo({top:y,behavior:"smooth"})}});
