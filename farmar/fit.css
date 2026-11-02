@@ -278,3 +278,6 @@ body.ds-tab-calc .calcw .calcfr{flex:1;height:auto;min-height:0}
   .wlc:not(.por) .whud>.whc{min-width:0}
 }
 @media (min-width:1100px) and (min-height:640px){#spdock.att{bottom:auto!important;height:auto!important;align-content:start}#spdock.att .spdw{align-self:start}}
+/* 2. 11. 18:58 PRÍKAZ MAJITEĽA „aplikácia je spomalená“ – vypnuté nekonečné ozdobné animácie (otáčanie tlačidla AI, pohyb pozadia lišty sekcií, blikanie bodiek) – zbytočne prekresľovali obrazovku stále dokola */
+.aibtn i,.aiorb,nav.tabs,nav.tabs::before,nav.tabs::after,.otop,.otop::before,.otop::after,.otop i{animation:none!important}
+.fdsh,.fdsh::before,.fdsh::after{animation:none!important}

@@ -8,7 +8,8 @@ const IN=()=>typeof sb!=="undefined"&&typeof ME!=="undefined"&&!!ME&&!window.ERN
 const MAIN=()=>typeof MAIN_OK==="function"&&MAIN_OK()&&typeof ROLE!=="undefined"&&ROLE==="owner";
 const say=(t,ms)=>{if(typeof toast==="function")toast(t,ms||5000);else alert(t)};
 let ST={blocked:false,own:false,at:0};
-async function status(){if(!IN())return ST;if(Date.now()-ST.at<120e3)return ST;try{const r=await sb.rpc("guard_status");if(!r.error&&r.data)ST=Object.assign(r.data,{at:Date.now()})}catch(x){}return ST}
+/* 2. 11. oprava spomalenia: pri chybe / prázdnej odpovedi sa guard_status volal pri každej zmene obrazovky (stovky krát za sekundu) – teraz najviac raz za 2 min */
+async function status(){if(!IN())return ST;if(Date.now()-ST.at<120e3)return ST;ST.at=Date.now();try{const r=await sb.rpc("guard_status");if(!r.error&&r.data)ST=Object.assign(r.data,{at:Date.now()})}catch(x){}return ST}
 function who(){try{if(typeof FARMER!=="undefined"&&FARMER&&FARMER.name)return FARMER.name;if(window.kidCtx&&kidCtx())return kidCtx().K.name;return (ME&&(ME.staffName||ME.email))||""}catch(x){return ""}}
 function log(kind,what,n){if(!IN()||MAIN())return;try{sb.rpc("guard_log",{p_kind:kind,p_what:String(what||"").slice(0,200),p_n:n||1,p_dev:navigator.userAgent.slice(0,120)}).then(r=>{if(r&&r.data&&r.data.blocked)ST.blocked=true},()=>{})}catch(x){}}
 const blocked=()=>ST.blocked&&!MAIN();
