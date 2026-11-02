@@ -1,0 +1,89 @@
+# 🧪 AUTOMATICKÉ TESTY APLIKÁCIE (app-test) – každých 15 min a po každej zmene kódu v main.
+# Nová verzia (main) aj schválená (farmar/STABLE) sa spustia s náhradnou databázou (.github/e2e/mock-sb.js, vymyslené údaje):
+# majiteľ, obchodník, doprava, farmár × 344/390/412/690/900/1440 px, všetky záložky a farmárske dlaždice.
+# Kontrola: chyby skriptov a konzoly, načítanie (> 3 s), „undefined/null/NaN/nezadané“ u farmára, prázdne tabuľky, šírka stránky,
+# vizuálny rozdiel oproti schválenej verzii (> 2 %). Výsledok (bez osobných údajov) → vetva app-test/result.json; databáza (app_test_tick)
+# ho prevezme: push majiteľovi, záznam v Diagnostike, AI úloha na opravu.
+# AUTOMATICKÉ VRÁTENIE: ak hodinu po zverejnení novej verzie (zmena farmar/STABLE) stúpne počet chýb u používateľov (app_err_rate) –
+# viac ako 2× predošlá hodina a aspoň o 10 – farmar/STABLE sa vráti na predošlú verziu (iba raz na zverejnenie).
+name: app-test
+on:
+  schedule:
+    - cron: "3,18,33,48 * * * *"
+  push:
+    branches: [main]
+    paths: ["farmar/**", ".github/e2e/**"]
+  workflow_dispatch:
+permissions:
+  contents: write
+  actions: write
+concurrency:
+  group: app-test
+  cancel-in-progress: false
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+        with: { ref: main, fetch-depth: 0 }
+      - uses: actions/setup-node@v4
+        with: { node-version: 22 }
+      - name: Prehliadač
+        run: |
+          cd .github/e2e && npm init -y >/dev/null && npm i --no-audit --no-fund playwright@1.48.2 pngjs@7.0.0 pixelmatch@5.3.0 >/dev/null && npx playwright install --with-deps chromium >/dev/null
+          cp ../apptest/compare.mjs .
+      - name: Schválená verzia (STABLE)
+        run: |
+          S=$(tr -dc '0-9a-f' < farmar/STABLE | head -c 40)
+          mkdir -p /tmp/stable && git archive "$S" farmar | tar -x -C /tmp/stable || echo "STABLE nedostupná"
+      - name: Test novej verzie (main)
+        id: t
+        continue-on-error: true
+        run: cd .github/e2e && SHOTS=/tmp/shots-new node smoke.mjs ../../farmar
+      - name: Snímky schválenej verzie
+        continue-on-error: true
+        run: |
+          [ -d /tmp/stable/farmar ] || exit 0
+          mkdir -p /tmp/st && cd /tmp/st && SHOTS=/tmp/shots-base node "$GITHUB_WORKSPACE/.github/e2e/smoke.mjs" /tmp/stable/farmar >/dev/null 2>&1 || true
+      - name: Vyhodnotenie a automatické vrátenie
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          cd .github/e2e
+          VIS=$(node compare.mjs /tmp/shots-new /tmp/shots-base 2>/dev/null || echo '[]')
+          # chyby u používateľov (iba súčty, bez textov) a vek zverejnenia
+          U=$(node -e "const c=require('fs').readFileSync('../../farmar/config.js','utf8');console.log(c.match(/SUPABASE_URL:\s*\"([^\"]+)/)[1])")
+          K=$(node -e "const c=require('fs').readFileSync('../../farmar/config.js','utf8');console.log(c.match(/SUPABASE_KEY:\s*\"([^\"]+)/)[1])")
+          RATE=$(curl -s -m 20 -X POST -H "apikey: $K" -H "Content-Type: application/json" -d '{}' "$U/rest/v1/rpc/app_err_rate" || echo '{}')
+          echo "$RATE" | grep -q '"h0"' || RATE='{}'
+          cd ../..
+          ST_AT=$(git log -1 --format=%ct -- farmar/STABLE); ST_MSG=$(git log -1 --format=%s -- farmar/STABLE); NOW=$(date +%s); AGE=$(( (NOW-ST_AT)/60 ))
+          RB=""
+          H0=$(echo "$RATE" | node -e "let s='';process.stdin.on('data',d=>s+=d).on('end',()=>{try{console.log(JSON.parse(s).h0??-1)}catch(e){console.log(-1)}})")
+          H1=$(echo "$RATE" | node -e "let s='';process.stdin.on('data',d=>s+=d).on('end',()=>{try{console.log(JSON.parse(s).h1??-1)}catch(e){console.log(-1)}})")
+          if [ "$AGE" -ge 60 ] && [ "$AGE" -le 120 ] && [ "$H0" -ge 0 ] && ! echo "$ST_MSG" | grep -q "Automatické vrátenie"; then
+            if [ "$H0" -gt $(( 2*H1 )) ] && [ "$H0" -ge $(( H1+10 )) ]; then
+              PREV=$(git log -2 --format=%H -- farmar/STABLE | tail -1)
+              if [ -n "$PREV" ]; then
+                git show "$PREV:farmar/STABLE" > farmar/STABLE
+                git -c user.name="ERNTE Trade" -c user.email="ernte@ernte.sk" commit -qam "Automatické vrátenie verzie: chyby u používateľov $H1 → $H0 za hodinu" && git push -q origin HEAD:main && RB="$H1→$H0"
+                gh workflow run pages.yml --ref main || true
+              fi
+            fi
+          fi
+          node -e "
+            const fs=require('fs');const R=JSON.parse(fs.readFileSync('.github/e2e/out-smoke/result.json','utf8'));
+            const vis=(JSON.parse(process.argv[1])||[]).filter(v=>v.pct>2);
+            const out={at:R.at,sha:process.env.GITHUB_SHA,ok:R.ok,fails:[...new Set(R.fails)].slice(0,40),warns:R.warns||[],vis,load_avg:R.load_avg,load_max:R.load_max,runs:R.runs.length,
+              rate:JSON.parse(process.argv[2]||'{}'),stable_age_min:+process.argv[3],rollback:process.argv[4]||null,shots:[]};
+            fs.writeFileSync('/tmp/result.json',JSON.stringify(out,null,1));
+            console.log(out.ok?'✅ testy OK':'❌ '+out.fails.slice(0,10).join(' | '));
+          " "$VIS" "$RATE" "$AGE" "$RB"
+      - name: Zápis výsledku (vetva app-test)
+        run: |
+          mkdir -p /tmp/pub && cp /tmp/result.json /tmp/pub/
+          ls .github/e2e/out-smoke/*.jpg >/dev/null 2>&1 && mkdir -p /tmp/pub/shots && cp .github/e2e/out-smoke/*.jpg /tmp/pub/shots/ || true
+          node -e "const fs=require('fs');const r=JSON.parse(fs.readFileSync('/tmp/pub/result.json'));r.shots=fs.existsSync('/tmp/pub/shots')?fs.readdirSync('/tmp/pub/shots'):[];fs.writeFileSync('/tmp/pub/result.json',JSON.stringify(r,null,1))"
+          cd /tmp/pub && git init -q && git checkout -q -b app-test && git add -A && git -c user.name="ERNTE Trade" -c user.email="ernte@ernte.sk" commit -qm "app-test $(date -u +%FT%TZ)"
+          git push -qf "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git" app-test

@@ -1048,7 +1048,7 @@ async function loadFarmer(){const [p,s,d,r]=await Promise.all([
   sb.from("deals").select("*").order("created_at",{ascending:false}),
   sb.from("requests").select("*").order("created_at",{ascending:false}).limit(20)]);
   try{const t=await sb.from("trips").select("id,deal_id,spz,driver_phone,day,time,status,netto,note").order("day",{ascending:true});STATE.trips=t.data||[]}catch(e){STATE.trips=[]}
-  STATE.prices=(p.data||[]).filter(x=>x.price!=null);STATE.settings=Object.fromEntries((s.data||[]).map(x=>[x.key,x.value]));STATE.deals=d.data||[];STATE.reqs=r.data||[]}
+  STATE.prices=(p.data||[]).filter(x=>x.price!=null&&+x.price>0);STATE.settings=Object.fromEntries((s.data||[]).map(x=>[x.key,x.value]));STATE.deals=d.data||[];STATE.reqs=r.data||[]}
 function contact(){return (STATE.settings||{}).contact||{phone:"+421 918 449 991",email:"jana.valkova@ernte.sk"}}
 function miniMap(lat,lon,label){return lmapHTML([{lat,lon,label,mv:true}],"sm")}
 const ago=d=>{const m=Math.round((Date.now()-new Date(d))/60000);return m<1?"práve teraz":m<60?`pred ${m} min`:`pred ${Math.round(m/60)} h`};
@@ -1823,9 +1823,9 @@ function fleetPay(F,FM,curMon){if(STATE.payCurMon!==curMon||STATE.payCur==null){
 // ===================== FLOTILA: 7 podzáložiek, alarmy so stavom, nafta, report mesiaca =====================
 const FNAV=[["dash","🏠","Prehľad"],["fuel","⛽","Nafta"],["alarm","🚨","Alarmy"],["money","💶","Peniaze"],["drv","👤","Vodiči"],["veh","🚛","Vozidlá"],["map","🗺️","Mapa"]];
 // staré odkazy → nové miesto
-const FOLD={perf:["money"],loss:["money"],find:["map","find"],moves:["map","moves"],places:["map","places"],yard:["fuel","yard"],cams:["fuel","cams"],cmd:["set","cmd"],firm:["set","firm"],diag:["set","diag"],notif:["set","notif"],notifikacie:["set","notif"],diagnostika:["set","diag"],
+const FOLD={perf:["money"],loss:["money"],find:["map","find"],moves:["map","moves"],places:["map","places"],yard:["fuel","yard"],cams:["fuel","cams"],cmd:["set","cmd"],firm:["set","firm"],diag:["set","diag"],mail:["set","mail"],email:["set","mail"],notif:["set","notif"],notifikacie:["set","notif"],diagnostika:["set","diag"],
   prehlad:["dash"],nafta:["fuel"],alarmy:["alarm"],peniaze:["money"],vodici:["drv"],vozidla:["veh"],mapa:["map"],nastavenia:["set"],pohyby:["map","moves"],miesta:["map","places"],kamery:["fuel","cams"],commander:["set","cmd"],dom:["set","dom"],domena:["set","dom"]};
-const FSUB={fuel:[["main","⛽ Nafta"],["yard","🛢️ Nádrž dvor"],["cams","📹 Kamery dvor"]],map:[["map","🗺️ Mapa"],["moves","🔁 Pohyby"],["places","📍 Miesta"],["find","🔍 Hľadať"]],set:[["main","⚙️ Nastavenia"],["notif","🔔 Notifikácie"],["diag","🩺 Diagnostika"],["cmd","📡 Commander"],["dom","🌐 Doména"],["firm","🏢 Firma VALKO"]]};
+const FSUB={fuel:[["main","⛽ Nafta"],["yard","🛢️ Nádrž dvor"],["cams","📹 Kamery dvor"]],map:[["map","🗺️ Mapa"],["moves","🔁 Pohyby"],["places","📍 Miesta"],["find","🔍 Hľadať"]],set:[["main","⚙️ Nastavenia"],["notif","🔔 Notifikácie"],["diag","🩺 Diagnostika"],["cmd","📡 Commander"],["dom","🌐 Doména"],["mail","📧 E-mail"],["firm","🏢 Firma VALKO"]]};
 const fsub=k=>{const s=(STATE.fsub||{})[k],L=FSUB[k]&&window.subOK?FSUB[k].filter(x=>subOK(k,x[0])):FSUB[k];return L&&L.length?(L.some(x=>x[0]===s)?s:L[0][0]):""};
 function fsecGo(k,sub){k=String(k||"dash");const o=FOLD[k];let s=k,u=sub;if(o){s=o[0];u=u||o[1]}if(s!=="set"&&!FNAV.some(n=>n[0]===s))s="dash";STATE.fsec=s;
   if(u){STATE.fsub=STATE.fsub||{};STATE.fsub[s]=u}
@@ -2274,7 +2274,7 @@ function vFleet(){const F0=STATE.fleet;if(!F0)return `<div class="card"><div cla
   else if(sec==="drv")o+=(S.drv||"")+(window.vValkoPay?vValkoPay(F):"")+vDrvIssues(F,AX);
   else if(sec==="veh")o+=S.veh||"";
   else if(sec==="map"){o+=fswHTML("map");const s2=fsub("map");o+=s2==="moves"?(S.moves||""):s2==="places"?PLH:s2==="find"?(S.find||""):(S.map||`<div class="card"><div class="s">Žiadne autá s polohou.</div></div>`)}
-  else if(sec==="set"){o+=fswHTML("set");const s2=fsub("set");o+=s2==="cmd"?vCmd(F0):s2==="firm"?vFirm():s2==="notif"?(window.vNotif?vNotif():""):s2==="dom"?(window.vDom?vDom():""):s2==="diag"?((window.vDomCard?vDomCard():"")+(window.vDiag?vDiag():(OWNx?`<div class="aidiag"></div>`:""))+(window.vErrDiag?vErrDiag():"")):(S.set||"")}
+  else if(sec==="set"){o+=fswHTML("set");const s2=fsub("set");o+=s2==="cmd"?vCmd(F0):s2==="firm"?vFirm():s2==="notif"?(window.vNotif?vNotif():""):s2==="dom"?(window.vDom?vDom():""):s2==="mail"?(window.vMail?vMail():""):s2==="diag"?((window.vDomCard?vDomCard():"")+(window.vDiag?vDiag():(OWNx?`<div class="aidiag"></div>`:""))+(window.vErrDiag?vErrDiag():"")+(window.vAppTest?vAppTest():"")):(S.set||"")}
   else o+=S[sec]||"";
   return o}
 // ================= COMMANDER: všetko, čo z neho ťaháme =================
@@ -2819,7 +2819,7 @@ function vPrice(){const P=STATE.prices,valid=((STATE.settings||{}).pricelist||{}
   let vc="w",vt="Platnosť nie je zadaná";if(valid){const t0=new Date();t0.setHours(0,0,0,0);const dd=Math.round((new Date(valid+"T00:00:00")-t0)/864e5);
     if(dd<0){vc="r";vt="Platnosť uplynula "+dSK(valid)}else if(dd<7){vc="w";vt=dd===0?"Platí už len dnes":"Do konca platnosti "+dd+" "+(dd===1?"deň":dd<5?"dni":"dní")}else{vc="ok";vt="Platí ešte "+dd+" dní"}}
   return `<div class="card bzc"><div class="tdh"><b>📈 Burza pri cenách</b><small>${mAt?"aktualizované "+esc(new Date(mAt).toLocaleString("sk-SK",{day:"numeric",month:"numeric",hour:"2-digit",minute:"2-digit"})):"zatiaľ bez údajov"}</small></div><div class="s">MATIF (Euronext Paríž) repka, pšenica, kukurica; CBOT sója prepočítaná na €/t podľa kurzu EUR/USD${STATE.mkt&&STATE.mkt.eurusd?" ("+String(STATE.mkt.eurusd.price).replace(".",",")+")":""}. Najbližší kontrakt, automaticky v pracovné dni ráno a poobede. Farmári burzu nevidia.</div><div class="btns"><button type="button" data-mktref="1">↻ Obnoviť burzu</button></div></div>
-  ${window.PADJ?`<div class="card padjn"><b>💶 Tvoje nákupné ceny</b><div class="s">Ceny nižšie sú už upravené pre teba: ${PADJ<0?"−":"+"}${String(Math.abs(PADJ)).replace(".",",")} €/t${PADJN?" ("+esc(PADJN)+")":""}. Za tieto ceny ponúkaj a uzatváraj obchody.</div></div>`:""}<form class="card f" id="fPrice"><div class="w s">Výkupné ceny FCA farma bez DPH. Prázdne = farmár komoditu nevidí. Po uložení ich hneď vidia všetci prihlásení farmári.</div>
+  ${(()=>{if(ROLE!=="owner")return "";const E0=MK.filter(m=>{const p=(STATE.prices||[]).find(x=>x.com===m[0]);return !p||p.price==null||!(+p.price>0)});if(!E0.length)return "";const n=E0.length;return `<div class="card pxempty" data-nocut style="border-color:rgba(253,230,138,.55)"><b>⚠️ ${n} ${n===1?"plodina":n<5?"plodiny":"plodín"} bez ceny – farmári ${n===1?"ju":"ich"} nevidia</b><div class="s" style="overflow-wrap:anywhere">${E0.map(m=>esc(m[1])).join(", ")}. Farmár v Cenníku vidí iba plodiny so zadanou cenou. Ak ich chceš ponúkať, doplň cenu nižšie.</div></div>`})()}${window.PADJ?`<div class="card padjn"><b>💶 Tvoje nákupné ceny</b><div class="s">Ceny nižšie sú už upravené pre teba: ${PADJ<0?"−":"+"}${String(Math.abs(PADJ)).replace(".",",")} €/t${PADJN?" ("+esc(PADJN)+")":""}. Za tieto ceny ponúkaj a uzatváraj obchody.</div></div>`:""}<form class="card f" id="fPrice"><div class="w s">Výkupné ceny FCA farma bez DPH. Prázdne = farmár komoditu nevidí. Po uložení ich hneď vidia všetci prihlásení farmári.</div>
   <div class="w ds-ptiles">${MK.map(m=>{const p=P.find(x=>x.com===m[0]),has=p&&p.price!=null;return `<label class="ds-tile${has?"":" emp"}"><span class="pn">${esc(m[1])}</span><span class="pv"><input name="p_${m[0]}" inputmode="decimal" value="${has?String(p.price).replace(".",","):""}" placeholder="nezadané" aria-label="${esc(m[1])} €/t"><i>€/t</i></span>${burzaTile(m[0],has?p.price:null)}${window.fwdLine?fwdLine(m[0]):""}${ROLE==="owner"&&window.sellTileHTML?sellTileHTML(m[0],has?p.price:null):""}</label>`}).join("")}</div>
   <label class="w ds-valid ${vc}">Platí do<input name="valid" type="date" value="${esc(valid)}"><small>${esc(vt)}</small></label><div class="w btns"><button class="pri" type="submit">Uložiť a zverejniť</button></div></form>`}
 function vDeals(){const F=STATE.farmers.filter(f=>f.active),pre=DEALF||{},OWN=ROLE==="owner";
@@ -2990,7 +2990,7 @@ document.addEventListener("input",e=>{if(e.target.id==="dfq"){const h=e.target.f
 document.addEventListener("click",e=>{const b=e.target.closest("[data-dfp]");if(!b)return;const fm=b.closest("form"),f=(STATE.farmers||[]).find(x=>x.id===b.dataset.dfp);if(!fm||!f)return;fm.elements.farmer.value=f.id;document.getElementById("dfq").value=String(f.name).trim();document.getElementById("dfl").innerHTML=`<div class="s">✓ Vybraný: <b>${esc(String(f.name).trim())}</b></div>`});
 </script>
 <script src="ai.js?v=20261102-0130"></script>
-<script src="perms.js?v=20261031-0930c"></script>
+<script src="perms.js?v=20261102-0200"></script>
 <script src="gdprsign.js?v=20261031-1310"></script>
 <script src="bonus.js?v=20261028-0110"></script>
 <script src="fterms.js?v=20261031-0915"></script>
@@ -3035,7 +3035,7 @@ document.addEventListener("click",e=>{const b=e.target.closest("[data-dfp]");if(
 <script src="danube.js?v=20261031-1120"></script>
 <script src="installapp.js?v=20261031-0700"></script>
 <script src="bio.js?v=20261031-0720"></script>
-<script src="fndesc.js?v=20261102-0141"></script>
+<script src="fndesc.js?v=20261102-0200"></script>
 <script src="sign.js?v=20261030-0930"></script>
 <script src="outbox.js?v=20261029-0130"></script>
 <script src="invitecard.js?v=20261031-1200"></script>
@@ -3057,6 +3057,8 @@ document.addEventListener("click",e=>{const b=e.target.closest("[data-dfp]");if(
 <script src="dealwatch.js?v=20261031-0700"></script>
 <script src="predzml.js?v=20261102-0120"></script>
 <script src="trhpred.js?v=20261102-0141"></script>
+<script src="mailgraph.js?v=20261102-0200"></script>
+<script src="apptest.js?v=20261102-0200"></script>
 <script src="domena.js?v=20261031-0700"></script>
 <script src="cmdreq.js?v=20261101-1420"></script>
 <script src="konk.js?v=20261031-0700"></script>

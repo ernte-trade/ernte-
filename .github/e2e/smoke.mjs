@@ -23,16 +23,17 @@ const ROLES = [
   { id: "doprava", role: { kind: "staff", staff: { email: "doprava@example.com", name: "Doprava Test", role: "dispatch", perms: P("trans", "assign", "fleet", "wx"), must_change: false } } },
   { id: "farmar", role: { kind: "farmer" } },
 ];
-const WIDTHS = [344, 390, 412, 690, 900];
+const WIDTHS = [344, 390, 412, 690, 900, 1440];
+const SHOTS = process.env.SHOTS || ""; if (SHOTS) fs.mkdirSync(SHOTS, { recursive: true });
 // šum, ktorý nie je chyba aplikácie (externé služby sú v teste zablokované)
 const NOISE = /ResizeObserver loop|Failed to fetch|NetworkError|Load failed|net::ERR|AbortError|The operation was aborted|Script error\.?$|serviceWorker|ServiceWorker|play\(\) request|NotAllowedError|Notification|geolocation|Permission/i;
 
-const R = { at: new Date().toISOString(), ok: true, fails: [], runs: [] };
+const R = { at: new Date().toISOString(), ok: true, fails: [], warns: [], runs: [], load: [] };
 const b = await chromium.launch();
 // roly bežia súbežne (rýchlejšie), šírky v rámci roly po sebe
 await Promise.all(ROLES.map(async r => { for (const w of WIDTHS) {
-  const run = { role: r.id, w, errors: [], tabs: [], overflow: [] }; R.runs.push(run);
-  const ctx = await b.newContext({ viewport: { width: w, height: 860 }, deviceScaleFactor: 1, isMobile: w < 700, hasTouch: w < 700, locale: "sk-SK", timezoneId: "Europe/Bratislava", serviceWorkers: "block" });
+  const run = { role: r.id, w, errors: [], tabs: [], overflow: [], load_ms: null }; R.runs.push(run);
+  const ctx = await b.newContext({ viewport: { width: w, height: w >= 1200 ? 900 : w === 390 ? 844 : 860 }, deviceScaleFactor: 1, isMobile: w < 700, hasTouch: w < 700, locale: "sk-SK", timezoneId: "Europe/Bratislava", serviceWorkers: "block" });
   await ctx.route("**/*", async rt => {
     const u = rt.request().url();
     if (/vendor\/supabase-[\d.]+\.js/.test(u)) return rt.fulfill({ body: `window.__ROLE=${JSON.stringify(r.role)};` + MOCK, contentType: "text/javascript" });
@@ -42,22 +43,33 @@ await Promise.all(ROLES.map(async r => { for (const w of WIDTHS) {
   });
   await ctx.addInitScript(() => { try { localStorage.setItem("ernte-inst", "1"); sessionStorage.setItem("ernte-welcome-skip", "1"); } catch (e) {} window.confirm = () => true; window.alert = () => {}; window.prompt = () => null; });
   const pg = await ctx.newPage();
+  pg.on("console", m => { if (m.type() === "error") { const t = m.text(); if (!NOISE.test(t) && !/Failed to load resource/.test(t)) R.warns.push(`${r.id} ${w}px: konzola – ${t.slice(0, 160)}`); } });
   pg.on("pageerror", e => { const m = String(e.message || e); if (!NOISE.test(m)) run.errors.push(m.slice(0, 240)); });
   const fail = async (what) => { R.ok = false; R.fails.push(`${r.id} ${w}px: ${what}`); try { await pg.screenshot({ path: `${OUT}/${r.id}-${w}-${R.fails.length}.jpg`, type: "jpeg", quality: 50 }); } catch (e) {} };
   try {
+    const t0 = Date.now();
     await pg.goto(BASE + "index.html", { waitUntil: "load", timeout: 45000 });
-    await pg.waitForTimeout(4000);
+    // čas načítania: kým #app ukáže obsah (nie „Načítavam…“)
+    for (let i = 0; i < 150; i++) { const ok = await pg.evaluate(() => { const a = document.getElementById("app"); const t = (a && a.innerText || "").trim(); return t.length > 40 && !/^Načítavam/.test(t); }).catch(() => false); if (ok) { run.load_ms = Date.now() - t0; break; } await pg.waitForTimeout(100); }
+    if (run.load_ms != null) { R.load.push(run.load_ms); if (run.load_ms > 3000) R.warns.push(`${r.id} ${w}px: načítanie ${(run.load_ms / 1000).toFixed(1).replace(".", ",")} s (nad 3 s)`); }
+    await pg.waitForTimeout(Math.max(0, 4000 - (Date.now() - t0)));
     // zavrieť úvod LIVE, ak sa ukázal
     await pg.evaluate(() => { const g = [...document.querySelectorAll("button,a")].find(x => /Poďme na to/.test(x.innerText || "")); g && g.click(); });
     await pg.waitForTimeout(800);
     const st = await pg.evaluate(() => { const a = document.getElementById("app"); const t = (a && a.innerText || "").trim(); return { len: t.length, loading: /^Načítavam/.test(t) || (t.length < 400 && /Načítavam/.test(t)), login: !!document.querySelector("#app input[type=email]") && !document.querySelector("[data-tab],[data-ftile],[data-fsec]") }; });
     if (st.len < 40 || st.loading) await fail(`aplikácia sa nenačítala (${st.loading ? "Načítavam…" : "prázdna"})`);
     if (st.login) await fail("ukázalo prihlásenie namiesto aplikácie");
+    if (SHOTS) { try { await pg.screenshot({ path: `${SHOTS}/${r.id}-${w}.png` }); } catch (e) {} }
     const tabs = await pg.evaluate(() => [...new Set([...document.querySelectorAll("[data-tab]")].map(x => x.dataset.tab))]);
     for (const t of [null, ...tabs.slice(0, 30)]) {
       if (t) { await pg.evaluate(t => { const e = document.querySelector(`[data-tab="${t}"]`); e && e.click(); }, t); await pg.waitForTimeout(900); }
       const ov = await pg.evaluate(() => Math.max(0, document.documentElement.scrollWidth - innerWidth));
       run.tabs.push(t || "start");
+      // farmár nesmie vidieť technické hodnoty; prázdne tabuľky = upozornenie
+      const bad = await pg.evaluate(fm => { const a = document.getElementById("app"); const tx = a ? a.innerText : ""; const m = fm ? tx.match(/(^|[\s:(>])(undefined|NaN|null|nezadané)(?=$|[\s,.)<])/) : tx.match(/(^|[\s:(>])(undefined|NaN)(?=$|[\s,.)<])/);
+        const empty = [...document.querySelectorAll("#app table")].filter(tb => tb.offsetParent && !tb.querySelector("tbody tr, tr td")).length; return { m: m ? m[2] : null, empty }; }, r.id === "farmar");
+      if (bad.m) await fail(`viditeľný text „${bad.m}“ (záložka ${t || "start"})`);
+      if (bad.empty) R.warns.push(`${r.id} ${w}px: prázdna tabuľka (${bad.empty}) na záložke ${t || "start"}`);
       if (ov > 2) { run.overflow.push(`${t || "start"} +${ov}px`); await fail(`stránka širšia ako displej o ${ov}px (záložka ${t || "start"})`); }
     }
     // farmár: veľké dlaždice (Predať, Zmluvy, …) – každú otvoriť a vrátiť sa domov
@@ -74,6 +86,8 @@ await Promise.all(ROLES.map(async r => { for (const w of WIDTHS) {
   await ctx.close();
 } }));
 await b.close(); srv.close();
+R.warns = [...new Set(R.warns)].slice(0, 60);
+R.load_avg = R.load.length ? Math.round(R.load.reduce((a, b) => a + b, 0) / R.load.length) : null; R.load_max = R.load.length ? Math.max(...R.load) : null; delete R.load;
 fs.writeFileSync(`${OUT}/result.json`, JSON.stringify(R, null, 1));
 const uniq = [...new Set(R.fails)];
 console.log(R.ok ? `✅ Brána: všetko v poriadku (${R.runs.length} behov)` : `❌ Brána zastavila zverejnenie:\n- ` + uniq.slice(0, 40).join("\n- "));

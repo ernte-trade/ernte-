@@ -33,11 +33,44 @@ if (process.env.MODE === "comment") {
 }
 if (!job) { console.log("úloha už vybavená alebo neplatná"); process.exit(0); }
 const s = job.smtp || {};
+// Microsoft Graph (OAuth 2.0 client credentials, Mail.Send obmedzené na odosielaciu schránku) – Microsoft 365 má SMTP AUTH vypnuté
+async function graphSend() {
+  const tk = await fetch(`https://login.microsoftonline.com/${encodeURIComponent(s.tenant)}/oauth2/v2.0/token`, { method: "POST", headers: { "Content-Type": "application/x-www-form-urlencoded" },
+    body: new URLSearchParams({ grant_type: "client_credentials", client_id: s.client_id, client_secret: s.secret, scope: "https://graph.microsoft.com/.default" }) });
+  const tj = await tk.json().catch(() => ({}));
+  if (!tk.ok || !tj.access_token) throw new Error("Graph token " + tk.status + ": " + (tj.error || "") + " " + String(tj.error_description || "").split("\r\n")[0]);
+  const H = { Authorization: "Bearer " + tj.access_token, "Content-Type": "application/json" };
+  const G = async (method, path, body) => { const r = await fetch("https://graph.microsoft.com/v1.0" + path, { method, headers: H, body: body ? JSON.stringify(body) : undefined });
+    const t = await r.text(); if (!r.ok) { let e = {}; try { e = JSON.parse(t).error || {} } catch (x) {} throw new Error("Graph " + r.status + " " + (e.code || "") + ": " + (e.message || t.slice(0, 160))); } return t ? JSON.parse(t) : null; };
+  const me = "/users/" + encodeURIComponent(s.from);
+  const rt = job.reply_to || s.from;
+  const msg = { subject: job.subject || "ERNTE", body: { contentType: "Text", content: job.body || "" }, toRecipients: [{ emailAddress: { address: job.to } }],
+    replyTo: rt ? [{ emailAddress: { address: rt } }] : [] };
+  const b64 = job.att ? String(job.att).replace(/^data:[^,]+,/, "") : null, buf = b64 ? Buffer.from(b64, "base64") : null, name = job.att_name || "Dokument.pdf";
+  if (!buf || buf.length < 3000000) {
+    if (buf) msg.attachments = [{ "@odata.type": "#microsoft.graph.fileAttachment", name, contentType: "application/pdf", contentBytes: b64 }];
+    await G("POST", me + "/sendMail", { message: msg, saveToSentItems: true });
+    return;
+  }
+  // veľká príloha (≥ 3 MB): koncept → nahratie po častiach → odoslanie
+  const d = await G("POST", me + "/messages", msg);
+  const up = await G("POST", me + "/messages/" + d.id + "/attachments/createUploadSession", { AttachmentItem: { attachmentType: "file", name, size: buf.length, contentType: "application/pdf" } });
+  const CH = 3 * 1024 * 1024;
+  for (let o = 0; o < buf.length; o += CH) {
+    const part = buf.subarray(o, Math.min(o + CH, buf.length));
+    const r = await fetch(up.uploadUrl, { method: "PUT", headers: { "Content-Length": String(part.length), "Content-Range": `bytes ${o}-${o + part.length - 1}/${buf.length}` }, body: part });
+    if (!r.ok) throw new Error("Graph príloha " + r.status);
+  }
+  await G("POST", me + "/messages/" + d.id + "/send");
+}
 try {
-  const port = +s.port || 465;
-  const tr = nodemailer.createTransport({ host: s.host, port, secure: port === 465, auth: { user: s.user, pass: s.pass } });
-  const att = job.att ? [{ filename: job.att_name || "Dokument.pdf", content: Buffer.from(String(job.att).replace(/^data:[^,]+,/, ""), "base64"), contentType: "application/pdf" }] : [];
-  await tr.sendMail({ from: { name: job.from_name || s.name || "ERNTE spol. s r.o.", address: s.from || s.user }, replyTo: job.reply_to || s.from || s.user, to: job.to, subject: job.subject || "ERNTE", text: job.body || "", attachments: att });
+  if (s.kind === "graph") await graphSend();
+  else {
+    const port = +s.port || 465;
+    const tr = nodemailer.createTransport({ host: s.host, port, secure: port === 465, auth: { user: s.user, pass: s.pass } });
+    const att = job.att ? [{ filename: job.att_name || "Dokument.pdf", content: Buffer.from(String(job.att).replace(/^data:[^,]+,/, ""), "base64"), contentType: "application/pdf" }] : [];
+    await tr.sendMail({ from: { name: job.from_name || s.name || "ERNTE spol. s r.o.", address: s.from || s.user }, replyTo: job.reply_to || s.from || s.user, to: job.to, subject: job.subject || "ERNTE", text: job.body || "", attachments: att });
+  }
   await rpc("mail_job_done", { p_id: id, p_ok: true, p_err: null });
   console.log("odoslané");
 } catch (e) {
