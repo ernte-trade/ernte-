@@ -65,6 +65,7 @@ const H2=[
  ["🔔 Upozornenia do mobilu","Koľko upozornení odišlo za 24 h, posledných 20 odoslaní s HTTP kódom (200 = doručené na server ntfy / GitHub) a chyby."],
  ["🤖 Stav úloh AI","Posledných 30 úloh z Podpory: nová → odoslaná → hotová (dátum nasadenia) alebo chyba. Filter podľa stavu. Úloha odoslaná viac ako 2 h = upozornenie do mobilu."],
  ["📅 Obdobie výpisu kariet","Výpis z palivových kariet chodí raz za 2 týždne (1.–15. a 16.–koniec mesiaca). Rozdiely nafty a € straty sa počítajú len do posledného výpisu; potom je obdobie sivé „čaká na výpis“. Poskytovatelia kariet podľa skupín áut."],
+ ["📈 Trh a predpoveď","Iba Martin. Burza s pásmom predpovede 10–90 % na týždeň, mesiac a 3 mesiace, úspešnosť modelu voči „cena ostane rovnaká“, kalendár správ (WASDE, COT), otvorené pozície a stav zdrojov. Odporúčanie iba keď model za 6 mesiacov porazil trh."],
  ["📜 História cien","Každá zmena zverejnenej výkupnej ceny: kedy, kto, stará → nová cena a rozdiel (aj zrušená cena, nová plodina a zmena platnosti). 🤖 = automatický cenník."],
  ["🔔 Upozornenie na zmenu ceny","Pri zmene ceny zazvoní telefón hneď, aj v noci. Veľkú zmenu treba potvrdiť ťuknutím, inak sa o 10 min zopakuje (najviac 3×). Tvoja vlastná zmena príde ticho."],
  ["Výkupné ceny","Ceny, za ktoré ERNTE kúpi vašu komoditu na farme (bez DPH). Ťuknite Predať, napíšte tony – ERNTE sa vám ozve."],

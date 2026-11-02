@@ -4,7 +4,7 @@
 (function(){
 const OWN=()=>typeof ROLE!=="undefined"&&ROLE==="owner"&&!(typeof FARMER!=="undefined"&&FARMER);
 const CFG={
-  price:{def:"cen",S:[["bzc",":scope > .card.bzc","📈 Burza"],["kkg",":scope > .card.kkg","🛡️ Kontrola cien"],["acn",":scope > .card.acn-card","🤖 Automatický cenník"],
+  price:{def:"cen",S:[["bzc",":scope > .card.bzc","📈 Burza"],["trh",":scope > .card.trhcard","🔮 Trh a predpoveď"],["kkg",":scope > .card.kkg","🛡️ Kontrola cien"],["acn",":scope > .card.acn-card","🤖 Automatický cenník"],
     ["cen",":scope > form.card.f:not(.chcard)","💶 Výkupné ceny"],["his",":scope > div.card.chcard","📜 História cien"],["upz",":scope > form.card.chcard","🔔 Upozornenie na zmenu"],["kk",":scope > .card.kkcard","🏷️ Konkurenčné ceny"]]},
   deals:{def:"",S:[["dw",":scope > .card.dwcard","📊 Stráženie nákupov"],["new",":scope > form.card.f","➕ Nový obchod"],["lis",":scope > details.card.hsec","⚖️ Vážne lístky"]]},
   farm:{def:"",S:[["reg",":scope > .card.fsall","🔎 Údaje z registra"],["ppa",":scope > .card.ppa","🌾 Pôda z PPA"],["fpc",":scope > details.card.fpc","👁️ Čo vidia farmári"]]}
