@@ -22,7 +22,14 @@ function Q(tab){let rows=(T[tab]||[]).slice(),single=false;const q={
   then(ok,er){return Promise.resolve({data:single?(rows[0]||null):rows,error:null,count:rows.length}).then(ok,er)}};return q}
 const ch={on(){return ch},subscribe(cb){try{cb&&cb("SUBSCRIBED")}catch(e){}return ch},unsubscribe(){},send(){}};
 const user={id:"u-test",email:R.kind==="farmer"?FARMER.email:((R.staff&&R.staff.email)||"test@example.com")};
-const RPC={gdpr_status:()=>({ver:window.ernteGdpr&&window.ernteGdpr.VER}),sus_rules:()=>({norm:{kukurica:14,psenica_p:14,psenica_k:14,repka:8,soja:12,jacmen_k:14},clean:1.2,dry:1.6})};
+const RPC={gdpr_status:()=>({ver:window.ernteGdpr&&window.ernteGdpr.VER}),sus_rules:()=>({norm:{kukurica:14,psenica_p:14,psenica_k:14,repka:8,soja:12,jacmen_k:14},clean:1.2,dry:1.6}),
+ // 🐞 Chyby aplikácie (errmon.js) – vymyslené súčty a dlhé texty na kontrolu rozloženia
+ app_err_stats:()=>({days:1,n:57,farmar:12,tim:41,anon:4,h1:3,by_screen:[{s:"farmar:domov",n:12},{s:"fleet/set",n:20},{s:"deals",n:9},{s:"prihlasenie",n:4},{s:"velmi_dlhy_nazov_obrazovky_ktory_sa_musi_zalomit_bez_pretrcania",n:2}],
+  by_role:[{r:"owner",n:30},{r:"farmar",n:12},{r:"dispatch",n:11},{r:"anon",n:4}],by_kind:[{k:"api",n:30},{k:"js",n:27}],
+  top:[{m:"HTTP 500 POST rpc:deal_update [P0001]: neplatný stav obchodu – veľmi dlhá správa z databázy, ktorá sa musí zalomiť do viacerých riadkov a nesmie pretŕčať doprava ani byť orezaná",n:23,last:d0.toISOString(),roles:["owner","staff"],s:"deals",k:"api",u:3,dev:"Android 14 mobil 412px · Chrome 130 app",ver:"20261102-0110"},
+   {m:"TypeError: Cannot read properties of undefined (reading 'tons')",n:9,last:d0.toISOString(),roles:["farmar"],s:"farmar:domov",k:"render",u:2,dev:"iPhone iOS 18 390px · Safari 18 app",ver:"beta 20261102-0110"},
+   {m:"Uncaught_ReferenceError_veryLongIdentifierWithoutSpacesThatMustBreakAnywhere_abcdefghijklmnopqrstuvwxyz is not defined",n:2,last:d0.toISOString(),roles:["dispatch"],s:"fleet/set",k:"js",u:1,dev:"Windows 1920px · Edge 130",ver:"20261102-0110"}],
+  login:{ok:14,fail:5,link_sent:3,link_fail:1,last_fail:[{at:d0.toISOString(),ev:"fail",m:"heslo",w:"m***@example.com",c:"invalid_credentials",dev:"iPhone iOS 18 390px"},{at:d0.toISOString(),ev:"link_fail",m:"odkaz",w:"j***@example.com",c:"over_email_send_rate_limit",dev:"Android 14 mobil 412px"}]}})};
 const session={user,access_token:"test",expires_at:Math.floor(Date.now()/1000)+3600};
 window.supabase={createClient:()=>({
   from:Q,rpc:async n=>({data:RPC[n]?RPC[n]():[],error:null}),channel:()=>ch,removeChannel(){},removeAllChannels(){},getChannels:()=>[],

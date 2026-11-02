@@ -826,6 +826,7 @@ var q=JSON.parse(sessionStorage.getItem("ernte-prefill")||"null");if(q&&Date.now
 <script>window.LEAFLET_SRC="leaflet.js"</script>
 <script src="config.js"></script>
 <script src="vendor/supabase-2.45.4.js"></script>
+<script src="errmon.js?v=20261102-0110"></script>
 <script src="pdfview.js?v=20261101-2250"></script>
 <script src="ochrana.js?v=20261101-1135"></script>
 <script src="tts.js?v=20261031-1305"></script>
@@ -922,14 +923,16 @@ document.addEventListener("submit",async e=>{const f=e.target;
   if(f.id==="fEmail"){e.preventDefault();const b=f.querySelector("button");busy(b,true);LOGIN.email=loginId(String(new FormData(f).get("email")));
     const pw=String(new FormData(f).get("pw")||"").replace(/^\s+|\s+$/g,"");
     if(!pw&&LOGIN.email.endsWith("@tel.ernte.sk")){busy(b,false);toast("Pri prihlásení telefónom zadajte heslo od ERNTE.",5000);return}
-    if(pw){const r=await sb.auth.signInWithPassword({email:LOGIN.email,password:pw});busy(b,false);if(r.error){toast("Nesprávny e-mail alebo heslo.",4500);return}await enter(r.data.user);return}
+    if(pw){const r=await sb.auth.signInWithPassword({email:LOGIN.email,password:pw});busy(b,false);if(r.error){window.ernteLogin&&ernteLogin("fail","heslo",LOGIN.email,r.error);toast("Nesprávny e-mail alebo heslo.",4500);return}window.ernteLogin&&ernteLogin("ok","heslo",LOGIN.email);await enter(r.data.user);return}
     const {error}=await sb.auth.signInWithOtp({email:LOGIN.email,options:{shouldCreateUser:true,emailRedirectTo:APP_URL}});busy(b,false);
+    window.ernteLogin&&ernteLogin(error?"link_fail":"link_sent","odkaz",LOGIN.email,error);
     if(error){toast(error.status===429?"Príliš veľa pokusov, skúste o minútu.":"Kód sa nepodarilo poslať: "+error.message,5000);return}
     LOGIN.sent=true;showLogin();return}
   if(f.id==="fCode"){e.preventDefault();const b=f.querySelector("button");busy(b,true);let raw=String(new FormData(f).get("code")).trim();let data,error;for(let i=0;i<3&&/%3F|%26|%3D/i.test(raw);i++){try{raw=decodeURIComponent(raw)}catch(x){break}}
     const m=raw.match(/[?&]token=([^&\s]+)/);
     if(m){const tp=(raw.match(/[?&]type=([a-z_]+)/)||[])[1]||"magiclink";({data,error}=await sb.auth.verifyOtp({token_hash:m[1],type:tp}))}
     else{({data,error}=await sb.auth.verifyOtp({email:LOGIN.email,token:raw.replace(/\D/g,""),type:"email"}))}busy(b,false);
+    window.ernteLogin&&ernteLogin(error?"code_fail":"ok","kod",LOGIN.email,error);
     if(error){toast("Kód nesedí alebo vypršal ("+(error.message||error.code||"")+"). Najjednoduchšie: prihláste sa heslom.",7000);return}
     LOGIN.sent=false;await enter(data.user);return}
 },true);
@@ -1247,7 +1250,7 @@ money:["Peniaze","Prevádzka a náklady, zisk do dnes aj za celý mesiac, karta 
 drv:["Vodiči","Vodiči a mzdy, spotreba po vodičoch, register porušení po vodičoch a dokumenty z archívu filtrované na vodiča. Ťukni na vodiča: 📄 Dokumenty, 📊 Hodnotenie mesiaca, 📞 Volať."],
 veh:["Vozidlá","Každé auto: stav, nádrž, km (aj za 30 dní), spotreba, štítok nekalibrovaného snímača. Tlačidlá 🅿️ Odstaviť, 🔧 Na servis (dočasne mimo alarmov a priemerov), 📈 Spotreba 3 mesiace, 💶 Pevné náklady (odhad, kým nie je zadaný rozpis)."],
 map:["Mapa","Prepínače: Mapa (kde sú autá), Pohyby (príchody, odchody), Miesta (dvor, odberatelia, čerpačky s upozornením) a Hľadať záznamy."],
-set:["Nastavenia","Ceny, mýto, pevné náklady po skupinách a po autách, mzdy v zisku (odvody, diéty), nádrže a kalibrácia snímačov, výpis kariet (interval 1.–15. a 16.–koniec mesiaca, posledný import, poskytovatelia kariet podľa skupín, pokrytie skupín), tachografy, upozornenia. 🔔 Notifikácie (iba majiteľ): témy ntfy s QR kódom, stupne alarmov (VYSOKÝ hneď, STREDNÝ hodinový súhrn, NÍZKY ranný súhrn o 5:00), udalosti aplikácie, sledované osoby, tiché hodiny, test. 🩺 Diagnostika (iba majiteľ): diagnostika dát, posledných 20 odoslaní upozornení s HTTP kódom a chybami, Stav úloh AI. Prepínače Commander (stav synchronizácie) a Firma VALKO."]});
+set:["Nastavenia","Ceny, mýto, pevné náklady po skupinách a po autách, mzdy v zisku (odvody, diéty), nádrže a kalibrácia snímačov, výpis kariet (interval 1.–15. a 16.–koniec mesiaca, posledný import, poskytovatelia kariet podľa skupín, pokrytie skupín), tachografy, upozornenia. 🔔 Notifikácie (iba majiteľ): témy ntfy s QR kódom, stupne alarmov (VYSOKÝ hneď, STREDNÝ hodinový súhrn, NÍZKY ranný súhrn o 5:00), udalosti aplikácie, sledované osoby, tiché hodiny, test. 🩺 Diagnostika (iba majiteľ): diagnostika dát, posledných 20 odoslaní upozornení s HTTP kódom a chybami, Stav úloh AI a 🐞 Chyby aplikácie (chyby u farmárov aj tímu za 24 h / 7 dní podľa obrazovky a roly, 10 najčastejších, prihlásenia a neúspešné pokusy – bez osobných údajov). Prepínače Commander (stav synchronizácie) a Firma VALKO."]});
 function helpBtn(k){return HELP[k]?`<button type="button" class="hbtn" data-help="${k}" aria-label="Ako to funguje"><span>?</span>Ako to funguje</button>`:""}
 function openHelp(k){const H=HELP[k];if(!H)return;let f="";if(k==="fleet"&&STATE.fsec&&FHELP[STATE.fsec]){const x=FHELP[STATE.fsec];f=`<div class="hsec hcur"><b>Práve si v: ${x[0]}</b><p>${x[1]}</p></div>`}
   const fl=k==="fleet"?`<div class="hsub">Sekcie flotily</div>`+Object.entries(FHELP).map(([a,x])=>`<details class="hdet"><summary>${x[0]}</summary><p>${x[1]}</p></details>`).join(""):"";
@@ -2264,7 +2267,7 @@ function vFleet(){const F0=STATE.fleet;if(!F0)return `<div class="card"><div cla
   else if(sec==="drv")o+=(S.drv||"")+(window.vValkoPay?vValkoPay(F):"")+vDrvIssues(F,AX);
   else if(sec==="veh")o+=S.veh||"";
   else if(sec==="map"){o+=fswHTML("map");const s2=fsub("map");o+=s2==="moves"?(S.moves||""):s2==="places"?PLH:s2==="find"?(S.find||""):(S.map||`<div class="card"><div class="s">Žiadne autá s polohou.</div></div>`)}
-  else if(sec==="set"){o+=fswHTML("set");const s2=fsub("set");o+=s2==="cmd"?vCmd(F0):s2==="firm"?vFirm():s2==="notif"?(window.vNotif?vNotif():""):s2==="dom"?(window.vDom?vDom():""):s2==="diag"?((window.vDomCard?vDomCard():"")+(window.vDiag?vDiag():(OWNx?`<div class="aidiag"></div>`:""))):(S.set||"")}
+  else if(sec==="set"){o+=fswHTML("set");const s2=fsub("set");o+=s2==="cmd"?vCmd(F0):s2==="firm"?vFirm():s2==="notif"?(window.vNotif?vNotif():""):s2==="dom"?(window.vDom?vDom():""):s2==="diag"?((window.vDomCard?vDomCard():"")+(window.vDiag?vDiag():(OWNx?`<div class="aidiag"></div>`:""))+(window.vErrDiag?vErrDiag():"")):(S.set||"")}
   else o+=S[sec]||"";
   return o}
 // ================= COMMANDER: všetko, čo z neho ťaháme =================
@@ -3021,7 +3024,7 @@ document.addEventListener("click",e=>{const b=e.target.closest("[data-dfp]");if(
 <script src="danube.js?v=20261031-1120"></script>
 <script src="installapp.js?v=20261031-0700"></script>
 <script src="bio.js?v=20261031-0720"></script>
-<script src="fndesc.js?v=20261031-1730"></script>
+<script src="fndesc.js?v=20261102-0110"></script>
 <script src="sign.js?v=20261030-0930"></script>
 <script src="outbox.js?v=20261029-0130"></script>
 <script src="invitecard.js?v=20261031-1200"></script>
