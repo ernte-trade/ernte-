@@ -123,13 +123,15 @@ function pinModal(){return new Promise(res=>{const d=document.createElement("div
     if(needG&&!f.get("gdpr")){bad("Zaškrtnite, že ste si prečítali ochranu osobných údajov.");return}
     const bt=e.target.querySelector("button[type=submit]");bt.disabled=true;bt.textContent="Ukladám…";
     let r;try{r=await sb.auth.updateUser({password:a})}catch(x){r={error:{message:String(x&&x.message||x)}}}
+    /* 2. 11. 20:29 „také chcem mať, tak ho ulož“ – rovnaké heslo ako doteraz = v poriadku, ponechá sa */
+    if(r.error&&/same|different from the old/i.test(String(r.error.message||"")+String(r.error.code||"")))r={error:null,same:1};
     if(r.error){bt.disabled=false;bt.textContent="Uložiť moje heslo";const m=String(r.error.message||""),c=String(r.error.code||"");
       bad(/same|different from the old/i.test(m+c)?"Nové heslo musí byť iné ako heslo od ERNTE.":
         /weak|pwned|leaked|characters|too short/i.test(m+c)?"<b>Na toto prihlásenie použite silnejšie heslo</b> – toto je známe z únikov hesiel. Skúste iné, napr. Klas.Repka-7428!":
         /reauth|recent|session|jwt|expired|not authenticated/i.test(m+c)?"Prihlásenie vypršalo. Otvorte znova odkaz z pozvánky a hneď nastavte heslo.":
         /fetch|network|failed/i.test(m)?"Nie je internet alebo je slabý signál. Skúste to znova o chvíľu.":"Nepodarilo sa uložiť heslo ("+E2(m)+"). Skúste iné alebo zavolajte ERNTE.");return}
     try{await sb.rpc("pin_done")}catch(x){}if(needG){try{await sb.rpc("gdpr_ok");window.ERNTE_GDPR_OK=1}catch(x){}}
-    d.remove();toast("✓ Vaše heslo je uložené. Odteraz sa prihlasujete ním.",5000);res()})})}
+    d.remove();toast(r.same?"✓ Heslo ostáva – odteraz sa prihlasujete ním.":"✓ Vaše heslo je uložené. Odteraz sa prihlasujete ním.",5000);res()})})}
 const E2=s=>String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 // súhlas GDPR pre každého, kto ho ešte nemá (okienko → zelená fajka)
 function gdprModal(){return new Promise(res=>{const d=document.createElement("div");d.className="pinmod";d.setAttribute("role","dialog");d.setAttribute("aria-label","Ochrana osobných údajov");
