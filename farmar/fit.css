@@ -258,3 +258,11 @@ html[data-theme=light] button.danger{color:#b91c1c!important}
 .ds-ttl .dsby b{font-weight:700}
 /* Strážca 2. 11.: dlhé meno farmára vo výbere (Obchody → nový obchod) sa nesmie orezať – riadok rastie s textom */
 #app .dfl{grid-auto-rows:max-content}#app .dfl button{height:auto!important;max-height:none!important;flex-shrink:0}
+/* 2. 11. Kalkulačka – prepínač Sušenie (mokrý tovar) / Nákupná cena */
+.calcsw{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:0 0 10px}
+.calcsw button{min-height:48px;border-radius:14px;font-weight:700;font-size:.88rem;line-height:1.2;white-space:normal;padding:6px 8px}
+.calcsw button[aria-pressed="true"]{background:linear-gradient(135deg,#34d399,#22d3ee)!important;color:#05210f!important;border-color:transparent!important}
+body.ds-tab-calc .calcw{display:flex!important;flex-direction:column;background:#0b1020}
+html[data-theme=light] body.ds-tab-calc .calcw{background:#f4f6fb}
+body.ds-tab-calc .calcw .calcsw{margin:8px 10px 6px;flex:none}
+body.ds-tab-calc .calcw .calcfr{flex:1;height:auto;min-height:0}

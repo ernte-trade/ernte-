@@ -300,7 +300,13 @@ document.addEventListener("submit",async e=>{const f=e.target;if(f.id!=="fOpsA"&
 
 // ===== KALKULAČKA ERNTE (z Claude app) =====
 /* 31. 10. príkaz majiteľa: Kalkulačka nákupnej ceny (odberatelia, DAP, odpočty = možnosti predaja) iba Martin (MAIN_OK); ostatní tu majú kalkulačku sušenia */
-window.vCalc=function(){const main=typeof window.MAIN_OK==="function"&&window.MAIN_OK();if(main)requestAnimationFrame(calcFit);return (window.susCardHTML?susCardHTML():"")+(main?`<div class="calcw" id="calcW"><iframe class="calcfr" src="kalkulacka.html?v=20261026c" title="ERNTE Kalkulačka nákupnej ceny" allow="clipboard-write"></iframe></div>`:`<div class="card"><div class="s">🔒 Kalkulačku nákupnej ceny (odberatelia a doprava) vidí iba majiteľ. Tu máš kalkulačku sušenia a čistenia.</div></div>`)};
+/* 2. 11. 13:48 „nevidím kalkulačku na mokrý tovar“ – u Martina ju prekrývala kalkulačka nákupnej ceny (celá obrazovka) → prepínač hore */
+const CMODE=()=>{try{return sessionStorage.getItem("ernte-calc-mode")||"cena"}catch(x){return "cena"}};
+const CSW=m=>`<div class="calcsw" role="tablist"><button type="button" data-cmode="sus" aria-pressed="${m==="sus"}">🧮 Sušenie a čistenie (mokrý tovar)</button><button type="button" data-cmode="cena" aria-pressed="${m!=="sus"}">💶 Nákupná cena</button></div>`;
+document.addEventListener("click",e=>{const b=e.target.closest&&e.target.closest("[data-cmode]");if(!b)return;e.preventDefault();try{sessionStorage.setItem("ernte-calc-mode",b.dataset.cmode)}catch(x){}if(b.dataset.cmode==="sus"&&window.susForceOpen)susForceOpen();if(typeof renderStaff==="function")renderStaff()});
+window.vCalc=function(){const main=typeof window.MAIN_OK==="function"&&window.MAIN_OK();
+  if(main&&CMODE()==="sus"){if(window.susForceOpen)susForceOpen();return CSW("sus")+(window.susCardHTML?susCardHTML():"")}
+  if(main)requestAnimationFrame(calcFit);return (main?"":(window.susCardHTML?susCardHTML():""))+(main?`<div class="calcw" id="calcW">${CSW("cena")}<iframe class="calcfr" src="kalkulacka.html?v=20261026c" title="ERNTE Kalkulačka nákupnej ceny" allow="clipboard-write"></iframe></div>`:`<div class="card"><div class="s">🔒 Kalkulačku nákupnej ceny (odberatelia a doprava) vidí iba majiteľ. Tu máš kalkulačku sušenia a čistenia.</div></div>`)};
 function calcFit(){const w=document.getElementById("calcW");if(!w)return;const hd=document.querySelector("header.top"),nv=document.querySelector("#app>.tabs,.tabs");
   let top=hd?Math.max(0,hd.getBoundingClientRect().bottom):0,bot=0;if(nv){const r=nv.getBoundingClientRect();if(r.top>innerHeight/2)bot=Math.max(0,innerHeight-r.top);else top=Math.max(top,r.bottom)}w.style.top=top+"px";w.style.bottom=bot+"px"}
 addEventListener("resize",()=>calcFit());addEventListener("orientationchange",()=>setTimeout(calcFit,300));

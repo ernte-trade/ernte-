@@ -9,7 +9,7 @@ const cn=k=>typeof comName==="function"?comName(k):k;
 let U={open:false,R:null,com:"",t:"100",w:"",p:"",b:"",c:"",cTouched:false,loading:false};
 const prices=()=>(typeof STATE!=="undefined"&&STATE.prices)||[];
 async function loadR(){if(U.loading)return;U.loading=true;let r;try{r=await sb.rpc("sus_rules")}catch(x){r={error:x}}U.loading=false;
-  U.R=r.error?{norm:{kukurica:14,soja:13},clean:2.5,dry:3.5,broken_limit:5,off:true}:r.data;if(!U.com)U.com=Object.keys(U.R.norm).includes("kukurica")?"kukurica":Object.keys(U.R.norm)[0];setPrice();rer()}
+  U.R=(r.error||!r.data||!r.data.norm)?{norm:{kukurica:14,soja:13},clean:2.5,dry:3.5,broken_limit:5,off:true}:r.data;if(!U.com)U.com=Object.keys(U.R.norm).includes("kukurica")?"kukurica":Object.keys(U.R.norm)[0];setPrice();rer()}
 function setPrice(){if(U.cTouched)return;const p=prices().find(x=>x.com===U.com);U.c=p&&p.price?String(p.price).replace(".",","):""}
 function rer(){if(typeof FARMER!=="undefined"&&FARMER&&typeof renderFarmer==="function")renderFarmer();else if(typeof renderStaff==="function")renderStaff()}
 
@@ -51,6 +51,7 @@ function outHTML(){const j=num(U.t),w=num(U.w),p=num(U.p),b=num(U.b),c=num(U.c);
      ${rows.map(m=>{const x=calc(U.com,j,m,p,b,c);return `<tr${w!=null&&Math.round(w)===m?' class="susme"':""}><td>${m} %</td><td class="r">${f2(x.inv,2)}</td><td class="r">${f2(x.eur,0)}</td></tr>`}).join("")}</tbody></table></div>
      <div class="s">💡 Každé percento vlhkosti nad normu vás pri ${f2(j,0)} t stojí približne <b>${f2(calc(U.com,j,r.nm,p,b,c).eur-calc(U.com,j,r.nm+1,p,b,c).eur)} €</b>.</div></details>`}
   return h}
+window.susForceOpen=()=>{if(!U.open){U.open=true;if(!U.R)loadR()}};
 document.addEventListener("click",ev=>{const x=ev.target.closest&&ev.target.closest("[data-susopen]");if(!x)return;U.open=!U.open;if(U.open&&!U.R)loadR();rer()});
 document.addEventListener("toggle",ev=>{if(ev.target.dataset&&ev.target.dataset.sussens!=null)U.sens=ev.target.open},true);
 document.addEventListener("input",ev=>{const f=ev.target.form;if(!f||f.id!=="susF")return;const k=ev.target.name;U[k]=ev.target.value;if(k==="c")U.cTouched=true;
