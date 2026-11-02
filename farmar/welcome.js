@@ -100,10 +100,10 @@ function hud(k){return `<div class="whud"><div class="whtop"><span class="wlive"
 /* na širokej obrazovke sa „live“ fotka roztiahne nižšie, aby sa zmestili všetky dlaždice (dá sa posúvať) */
 function wfit(el){try{const im=el.querySelector(".wimg"),hd=el.querySelector(".whud");if(!im||!hd)return;if(el.classList.contains("por")){el.style.removeProperty("--wT");im.style.minHeight="";return}
   /* 2. 11. PC: obsah zvisle na stred – ľavý stĺpec (pozdrav + rádio) aj dlaždice začínajú v rovnakej výške */
-  const lb=el.querySelector(".wlb"),sp=el.querySelector(".wlsp");const L=(lb?lb.offsetHeight+12:0)+(sp?sp.offsetHeight+12:0),H=Math.max(L,hd.offsetHeight);
+  const lb=el.querySelector(".wlb"),sp=el.querySelector(".wlsp"),lz=el.querySelector(".wlz");const L=(lb?lb.offsetHeight+12:0)+(sp?sp.offsetHeight+12:0)+(lz?lz.offsetHeight+12:0),H=Math.max(L,hd.offsetHeight);
   const T=Math.max(48,Math.round((innerHeight-H)/2));el.style.setProperty("--wT",T+"px");
   const need=T+H+40;im.style.minHeight=need>innerHeight?need+"px":"";
-  if(!el._wro&&window.ResizeObserver){let q=0;el._wro=new ResizeObserver(()=>{if(q)return;q=1;requestAnimationFrame(()=>{q=0;if(el.isConnected)wfit(el);else el._wro.disconnect()})});[hd,lb,sp].forEach(x=>x&&el._wro.observe(x));
+  if(!el._wro&&window.ResizeObserver){let q=0;el._wro=new ResizeObserver(()=>{if(q)return;q=1;requestAnimationFrame(()=>{q=0;if(el.isConnected)wfit(el);else el._wro.disconnect()})});[hd,lb,sp,lz].forEach(x=>x&&el._wro.observe(x));
     const rz=()=>{if(!el.isConnected){removeEventListener("resize",rz);return}wfit(el)};addEventListener("resize",rz)}}catch(x){}}
 /* 💎 diamantové dlaždice (príkaz majiteľa 30. 10.) – iba Martin a Jana: ⛽ nafta MOL Group + navigácia, 🤝 graf obchodov */
 const DIAF=k=>GRK(k)?`<div class="whc wdia wfuel"><i class="wdsh"></i><div class="wgrh"><small>⛽ Nafta · Slovnaft / MOL Group</small><span class="wfv"></span></div><div class="wfc"></div><div class="wfl"></div>
@@ -321,12 +321,16 @@ async function show(force){const k=kind();if(!k||document.querySelector(".wlc"))
   const POR=()=>innerWidth<1100||innerHeight<640;const por=POR();if(por)el.classList.add("por");
   const rz=()=>{if(!el.isConnected){removeEventListener("resize",rz);return}el.classList.toggle("por",POR())};addEventListener("resize",rz);
   el.innerHTML=`${scene(k,ph,por)}<div class="wlb"><img src="icon-192.png" alt=""><div class="wlt"><small>${E(tag)}</small><b>${g}</b><p>${E(sub)}</p>${joke?`<p class="wjk">💡 <b>Vedeli ste?</b> <span>${E(joke)}</span></p>`:""}<ul class="wlf"></ul>
-   <div class="wla"><button type="button" class="lime" data-wlgo>${k==="farmar"?"Pokračovať do aplikácie →":"Poďme na to →"}</button><button type="button" class="wmore" data-wljoke>💡 Ďalšia zaujímavosť</button></div></div></div>${GRK(k)&&spotOK(k)?`<div class="wlsp">${radioOff()?radioOnHTML():spot()}</div>`:""}
+   <div class="wla"><button type="button" class="lime" data-wlgo>${k==="farmar"?"Hlavná ponuka →":"Poďme na to →"}</button><button type="button" class="wmore" data-wljoke>💡 Ďalšia zaujímavosť</button></div></div></div>${GRK(k)&&spotOK(k)?`<div class="wlsp">${radioOff()?radioOnHTML():spot()}</div>`:""}
    <button type="button" class="wlx" data-wlx hidden tabindex="-1" aria-hidden="true">✕</button><div class="wltap">${new Date().toLocaleDateString("sk-SK",{weekday:"long",day:"numeric",month:"long"})}</div>`;
   document.body.appendChild(el);
+  /* 2. 11. 22:15 PRÍKAZ MAJITEĽA: 💡 zaujímavosti + „Ďalšia zaujímavosť“ úplne dole pod všetkými dlaždicami; pozdrav s menom hore a pevný pri posúvaní */
+  {const z=document.createElement("div");z.className="wlz";const jk=el.querySelector(".wlb .wjk"),jb0=el.querySelector(".wlb [data-wljoke]");if(jk)z.appendChild(jk);if(jb0)z.appendChild(jb0);
+   const x=el.querySelector("[data-wlx]");el.insertBefore(z,x);
+   el.addEventListener("scroll",()=>{el.classList.toggle("wsc",el.classList.contains("por")&&el.scrollTop>40)},{passive:true})}
   const nextJoke=ev=>{if(ev){ev.preventDefault();ev.stopPropagation()}const now=Date.now();if(nextJoke.t&&now-nextJoke.t<500)return;nextJoke.t=now;
     const jt=pickJoke();
-    let w=el.querySelector(".wjk");if(!w){el.querySelector(".wlt p").insertAdjacentHTML("afterend",`<p class="wjk">💡 <b>Vedeli ste?</b> <span></span></p>`);w=el.querySelector(".wjk")}
+    let w=el.querySelector(".wjk");if(!w){(el.querySelector(".wlz")||el.querySelector(".wlt")).insertAdjacentHTML("afterbegin",`<p class="wjk">💡 <b>Vedeli ste?</b> <span></span></p>`);w=el.querySelector(".wjk")}
     w.querySelector("span").textContent=jt;w.classList.remove("pop");void w.offsetWidth;w.classList.add("pop");
     try{w.scrollIntoView({block:"nearest",behavior:"smooth"})}catch(x){}if(navigator.vibrate)try{navigator.vibrate(15)}catch(x){}};
   const jb=el.querySelector("[data-wljoke]");if(jb){jb.addEventListener("click",nextJoke);jb.addEventListener("touchend",nextJoke,{passive:false})}

@@ -310,3 +310,24 @@ body.ds-tab-calc .calcw .calcfr{flex:1;height:auto;min-height:0}
   .wlc:not(.por) .whud>.wfuel{grid-column:1/-1!important}
   .wlc:not(.por) .whud .wfuel .wfnav{margin-top:2px!important}
 }
+/* 2. 11. 22:15 PRÍKAZ MAJITEĽA: úvod LIVE – dlaždica s menom a pozdravom ÚPLNE HORE a PEVNÁ pri posúvaní (mobil, Fold),
+   💡 zaujímavosti úplne dole pod všetkými dlaždicami, tlačidlo farmára „Hlavná ponuka →“ */
+.wlc .wlz{display:grid;gap:8px;box-sizing:border-box;position:relative;z-index:2}
+.wlc .wlz .wjk{display:block!important;margin:0!important;padding:10px 12px!important;font-size:.86rem!important;line-height:1.35!important;text-align:left;
+  background:linear-gradient(135deg,rgba(11,16,32,.72),rgba(11,16,32,.55)),linear-gradient(135deg,rgba(182,255,59,.14),rgba(94,234,212,.08))!important}
+.wlc .wlz .wmore{width:100%;min-height:44px;white-space:normal}
+.wlc.por .wlz{width:min(640px,calc(100% - 28px));margin:12px auto calc(18px + env(safe-area-inset-bottom,0px))}
+.wlc.por .wlb{order:-1;position:sticky!important;top:calc(6px + env(safe-area-inset-top,0px));z-index:6;
+  margin-top:calc(38px + env(safe-area-inset-top,0px))!important;margin-bottom:0!important;
+  background:rgba(11,16,32,.78)!important;-webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px);transition:padding .2s ease}
+.wlc.por .whud{margin-top:12px!important}
+.wlc.por .wla{position:static!important;margin:10px 0 0!important;padding:0!important;background:none!important;-webkit-backdrop-filter:none;backdrop-filter:none}
+.wlc.por .wla>button[data-wlgo]{flex:1 1 100%;width:100%}
+/* pri posúvaní sa pevná dlaždica zmenší: meno + Hlavná ponuka */
+.wlc.por.wsc .wlb>img,.wlc.por.wsc .wlb .wlt>small,.wlc.por.wsc .wlb .wlt>p,.wlc.por.wsc .wlb .wlf{display:none!important}
+.wlc.por.wsc .wlb{padding-top:8px!important;padding-bottom:8px!important}
+.wlc.por.wsc .wlb .wlt>b{font-size:1.05rem!important}
+.wlc.por.wsc .wla{margin-top:6px!important}.wlc.por.wsc .wla .lime{min-height:40px!important}
+@media (min-width:1100px) and (min-height:640px){
+  .wlc:not(.por) .wlz{margin:0 0 12px var(--wL)!important;width:var(--wC)!important}
+}
