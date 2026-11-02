@@ -256,3 +256,5 @@ html[data-theme=light] button.danger{color:#b91c1c!important}
 /* 2. 11.: kto vytvoril zmluvu – pod číslom zmluvy, celý text (zalomí sa, neoreže) */
 .ds-ttl .dsby{display:block;white-space:normal!important;overflow:visible!important;text-overflow:clip!important;margin-top:2px;opacity:.85;font-size:.82em}
 .ds-ttl .dsby b{font-weight:700}
+/* Strážca 2. 11.: dlhé meno farmára vo výbere (Obchody → nový obchod) sa nesmie orezať – riadok rastie s textom */
+#app .dfl{grid-auto-rows:max-content}#app .dfl button{height:auto!important;max-height:none!important;flex-shrink:0}
