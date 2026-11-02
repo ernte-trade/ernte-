@@ -79,7 +79,7 @@ async function mailBox(){const M=V&&V.M;if(!M)return;const old=document.getEleme
   if(!MR.ok){mailPdf();return}
   d.innerHTML=`<div class="pvmb"><b>📧 Odoslať e-mailom</b><label>Komu<input id="pvmTo" type="email" autocapitalize="off" value="${esc(M.to||"")}" placeholder="e-mail farmára"></label>
    <label>Predmet<input id="pvmSubj" value="${esc(M.subj||"")}"></label><label>Text<textarea id="pvmBody" rows="5">${esc(M.body||"")}</textarea></label>
-   <div class="pvs">Odošle sa zo schránky ${esc(MR.from||"ERNTE")} s PDF v prílohe.</div>
+   ${M.cc&&M.cc.length?`<div class="pvs">📨 Kópia: ${esc(M.cc.join(", "))}</div>`:""}<div class="pvs">Odošle sa zo schránky ${esc(MR.from||"ERNTE")} s PDF v prílohe.</div>
    <div class="pvbt"><button type="button" class="pvpri" data-pv="msend">📤 Odoslať</button><button type="button" data-pv="mx">Zrušiť</button></div></div>`;
   V.ov.appendChild(d)}
 async function mailCfgSave(){const g=i=>(document.getElementById(i)||{}).value||"";const r=await sb.rpc("mail_cfg_set",{p_prof:(V&&V.M&&V.M.prof)||"ernte",p:{host:g("pvmHost"),port:g("pvmPort"),user:g("pvmUser"),pass:g("pvmPass"),from:g("pvmUser"),name:g("pvmName")}});
@@ -90,6 +90,7 @@ async function mailDirect(){const M=V&&V.M;const to=((document.getElementById("p
   try{const f=await makeFile();const b64=await new Promise((ok,no)=>{const r=new FileReader();r.onload=()=>ok(String(r.result).split(",")[1]);r.onerror=no;r.readAsDataURL(f)});
     if(b)b.textContent="Odosielam…";const r=await sb.rpc("mail_send",{p_to:to,p_subject:subj,p_body:body,p_att_name:f.name,p_att_b64:b64,p_deal:M.deal||null,p_prof:M.prof||"ernte"});if(r.error)throw r.error;
     const id=r.data;const box=document.getElementById("pvMail");if(box)box.remove();tmsg("📤 Odosiela sa na "+to+"…",6000);
+    const CC=(M.cc||[]).filter(c=>c&&c.toLowerCase()!==to.toLowerCase());for(const c of CC){try{await sb.rpc("mail_send",{p_to:c,p_subject:"Kópia: "+subj,p_body:"Kópia – odoslané klientovi na "+to+".\n\n"+body,p_att_name:f.name,p_att_b64:b64,p_deal:M.deal||null,p_prof:M.prof||"ernte"})}catch(x){}}if(CC.length)tmsg("📤 Odosiela sa na "+to+" + kópia "+CC.length+"× ("+CC.join(", ")+")",7000);
     for(let i=0;i<30;i++){await new Promise(z=>setTimeout(z,4000));const s=await sb.rpc("mail_status",{p_id:id});const st=s.data&&s.data.status;
       if(st==="odoslany"){tmsg("✅ Zmluva odoslaná na "+to,8000);return}if(st==="chyba"){tmsg("⚠️ E-mail sa neodoslal: "+((s.data&&s.data.err)||"chyba schránky")+" – skontroluj nastavenie (Martin).",10000);return}}
     tmsg("E-mail sa ešte odosiela – výsledok uvidíš o chvíľu.",6000)}

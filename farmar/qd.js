@@ -51,7 +51,7 @@ window.vQd=function(){if(!OK())return `<div class="card"><div class="s">Uzatvár
     <label>Poznámka (nepovinné)<textarea class="qdin" id="qdNote" rows="2" placeholder="napr. vlhkosť do 14 %, platba do 30 dní">${e(Q.note)}</textarea></label>
     <button type="button" class="qdsm" data-qdtext="1">🤖 Vyplniť z textu poznámky</button></div>
    <button type="submit" class="qdgo">✅ Uzatvoriť a poslať farmárovi na podpis</button>
-   <button type="button" class="qdsec" data-qdgomail="1">📧 Uzatvoriť a poslať farmárovi na e-mail</button>
+   <button type="button" class="qdsec" data-qdgomail="1">📧 Uzatvoriť a poslať na podpis e-mailom (PDF + kópia Galajdovi a Martinovi)</button>
    <button type="button" class="qdclr" data-qdclr="1">Začať odznova</button>
    </form></div>`;
   return h};
@@ -145,10 +145,10 @@ document.addEventListener("click",async ev=>{const t=ev.target;if(!t.closest||!O
   if(x=t.closest("[data-qdmail]")){mailContract();return}
   if(x=t.closest("[data-qdgomail]")){Q.mail=true;const fm=document.getElementById("fQd");if(fm)fm.requestSubmit?fm.requestSubmit():fm.dispatchEvent(new Event("submit",{cancelable:true,bubbles:true}));return}});
 // 📧 zmluva farmárovi e-mailom (aj keď nemá aplikáciu): otvorí zmluvu a v lište je „Poslať e-mailom“ s adresou
-function mailContract(){const D=Q.done;if(!D)return;let to=String(D.email||Q.F.email||"").trim();
+async function mailContract(){const D=Q.done;if(!D)return;let cc=[];try{const r=await sb.rpc("deal_sign_cc");if(!r.error&&Array.isArray(r.data))cc=r.data}catch(x){}let to=String(D.email||Q.F.email||"").trim();
   if(!to){to=String(prompt("E-mail farmára:","")||"").trim();if(!to)return;D.email=to}
   const c=COMS.find(x=>x[0]===D.com),me=(typeof ME!=="undefined"&&ME&&ME.staffName)||"ERNTE";
-  window.__pvMail={to,deal:D.deal_id,subj:`Kúpna zmluva ${D.no} – ERNTE spol. s r.o.`,body:`Dobrý deň,\n\nv prílohe Vám posielam kúpnu zmluvu ${D.no}: ${c?c[2].toLowerCase():D.com} ${D.tons} t za ${D.price} €/t${D.term?", vývoz "+D.term:""}.\nProsím o podpis a vrátenie. Zmluvu môžete podpísať aj v aplikácii ERNTE (Podpísať teraz).\n\nĎakujem\n${me} · ERNTE spol. s r.o.\n\n👉 ERNTE Trade & Logistic: ${typeof APP_URL!=="undefined"?APP_URL:location.href.split("#")[0]}`};
+  window.__pvMail={to,cc,deal:D.deal_id,subj:`Kúpna zmluva ${D.no} – ERNTE spol. s r.o.`,body:`Dobrý deň,\n\nv prílohe Vám posielam kúpnu zmluvu ${D.no}: ${c?c[2].toLowerCase():D.com} ${D.tons} t za ${D.price} €/t${D.term?", vývoz "+D.term:""}.\nProsím o podpis a vrátenie. Zmluvu môžete podpísať aj v aplikácii ERNTE (Podpísať teraz).\n\nĎakujem\n${me} · ERNTE spol. s r.o.\n\n👉 ERNTE Trade & Logistic: ${typeof APP_URL!=="undefined"?APP_URL:location.href.split("#")[0]}`};
   if(window.contractPdf)contractPdf(D.deal_id)}
 document.addEventListener("change",async ev=>{const t=ev.target;if(!t||!t.dataset||!t.dataset.qdfoto||!OK())return;const f=t.files&&t.files[0];if(!f)return;grab();
   try{const img=await shrink(f,1600,.82),th=await shrink(f,240,.6);scan(t.dataset.qdfoto,img,null,th)}catch(x){tst(x.message||String(x),6000)}});

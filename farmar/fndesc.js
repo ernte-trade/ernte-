@@ -7,6 +7,7 @@ const isF=()=>typeof FARMER!=="undefined"&&!!FARMER;
 
 // ---- záložky (zamestnanci) ----
 const TABD={
+ klient:"Klientská zóna: iba klienti a členovia tímu, ktorým chýbajú údaje – doplníš ich a zmiznú. Pridáš nového klienta a uzatvoríš obchod so zmluvou na podpis e-mailom.",
  inv:"Investičná akadémia pre teba a Timoteja: cvičné portfólio s vymyslenými peniazmi a skutočnými cenami ETF, lekcie a každý týždeň list od Claude. Vzdelávanie, nie investičné odporúčanie.",
  home:"Ranný prehľad firmy na jednom mieste: čo je nové, čo čaká na teba, termíny a upozornenia. Ťukni na dlaždicu a prejdeš rovno tam.",
  req:"Všetko, čo poslali farmári: ponuky na predaj, objednávky odvozu, otázky a súhlasy. Odpovieš, schváliš alebo z toho spravíš obchod.",

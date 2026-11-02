@@ -8,6 +8,7 @@ const PCAT=[
  ["deals","Obchody S CENAMI","Obchod","nákupná cena €/t"],
  ["deals_qty","Obchody BEZ CIEN","Obchod","množstvá, nakládka, vykládka"],
  ["farm","Farmári – kontakty a adresy","Obchod",""],
+ ["klient","👥 Klientská zóna – doplniť chýbajúce údaje klientov a tímu, nový klient","Obchod","iba záznamy s chýbajúcimi údajmi; existujúce sa neprepíšu"],
  ["farm_login","Vytvárať prihlásenia farmárom","Obchod",""],
  ["farm_terms","⚙️ Podmienky a bonusy farmárov","Obchod","individuálny bonus, splatnosť, doprava"],
  ["firmy","🔎 Firmy podľa IČO – automatické vyplnenie z registra, FinStat","Obchod","po zadaní IČO / odfotení pečiatky"],
@@ -59,7 +60,8 @@ const PRESET={
  mzdy:{n:"Mzdy ERNTE (mzdárka)",role:"dispatch",k:["ev","ev_doch","ev_mzdy","wx","big"]},
  obchodnik_bez:{n:"Obchodník bez cenníka (Maďarsko)",role:"admin",k:["req","deals","farm","farm_login","trans","remain","notes","wx","big"]},
  danube:{n:"Obchodník Danube Trade",role:"admin",k:["danube","market","wx","big"]},
- trus:{n:"Kurací trus (vývozy, autá, váženie)",role:"dispatch",k:["trus","wx","big"]}};
+ trus:{n:"Kurací trus (vývozy, autá, váženie)",role:"dispatch",k:["trus","wx","big"]},
+ sekretarka:{n:"Sekretárka – Klientská zóna, uzatváranie obchodov",role:"admin",k:["klient","deals","price_view","farm","firmy","farm_login","wx","big"]}};
 /* noví ľudia (28. 10.) – ukážu sa v Tíme ako „ešte nemá prihlásenie“, kým im majiteľ nevytvorí prihlásenie a kód */
 const PEOPLE_X=[["tomas stofa","Tomáš Štofa","Evidencia · Agro služby","ERNTE","evagro"],["tomas valko","Tomáš Vaľko","Evidencia · Agro služby","ERNTE","evagro"],["kacur","Ľuboš Kačur","Evidencia","ERNTE","evid"],["valkova st","Jana Valková st.","Mzdárka · Mzdy ERNTE","ERNTE","mzdy"],["karoczkai","Jozsef Karoczkai","Obchodník · bez cenníka","Maďarsko","obchodnik_bez"]];/* Ing. Adrian Meričko je odberateľ trusu – prístup cez Kurací trus → prístupy firiem, nie ako zamestnanec */
 function peopleX(){for(const x of PEOPLE_X)if(!PEOPLE.some(p=>p[0]===x[0]||norm(p[1]).includes(x[0])))PEOPLE.push(x)}
@@ -72,14 +74,14 @@ const FDEF=["f_prices","f_sell","f_offer","f_deals","f_remain","f_trucks","f_gps
 const FNEVER="Farmár nikdy nevidí: odberateľa, miesto vykládky, burzu, predajné ceny, maržu ani iných farmárov.";
 const norm=s=>String(s||"").toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g,"");
 window.PCAT_KEYS=PCAT.map(p=>p[0]);const PKEYS=new Set(PCAT.map(p=>p[0])),LOCKK=new Set(PLOCK.map(p=>p[0]));
-const recOf=p=>{const t=norm((p&&p.title)||"");return t.includes("dopr")?"doprava":t.includes("vedu")?"veduci":t.includes("stroj")||t.includes("rolni")||t.includes("traktor")?"strojnik":t.includes("manaz")?"manazer":t.includes("obchod")?"obchodnik":t.includes("faktur")?"fakt":({dispatch:"doprava",admin:"obchodnik",invoice:"fakt"})[p&&p.role]||"obchodnik"};
+const recOf=p=>{const t=norm((p&&p.title)||"");return t.includes("sekret")||t.includes("asist")?"sekretarka":t.includes("dopr")?"doprava":t.includes("vedu")?"veduci":t.includes("stroj")||t.includes("rolni")||t.includes("traktor")?"strojnik":t.includes("manaz")?"manazer":t.includes("obchod")?"obchodnik":t.includes("faktur")?"fakt":({dispatch:"doprava",admin:"obchodnik",invoice:"fakt"})[p&&p.role]||"obchodnik"};
 function pOn(row,k){if(!row)return false;if(row.role==="owner")return true;if(LOCKK.has(k))return false;const v=(row.perms||{})[k];return v===true||v===false?v:(PDEF[row.role]||[]).includes(k)}
 window.can=k=>{if(typeof ROLE==="undefined"||!ROLE)return false;if(ROLE==="owner")return true;return pOn(STATE.me||{role:ROLE,perms:{}},k)};
 window.canAny=(...k)=>k.some(x=>can(x));
 function fDefs(){const g=((STATE.settings||{}).farmer_perms)||{};return g}
 window.fcan=k=>{if(typeof FARMER==="undefined"||!FARMER)return true;const v=(FARMER.perms||{})[k];if(v===true||v===false)return v;const g=fDefs()[k];if(g===true||g===false)return g;return FDEF.includes(k)};
 // hlavné záložky
-const TABP={req:["req","trans","assign"],price:["price_view","price_edit","market"],trans:["trans","assign"],fleet:["fleet"],deals:["deals","deals_qty","remain","notes"],farm:["farm"],wx:["wx"],calc:["calc"],team:["team"],agro:["agro"],trus:["trus","trus_price"],evid:["ev","ev_doch","sklad","praca","ev_mzdy"],danube:["danube"],nov:["nov"],qd:["deals"],pred:["pred_owner_only"]};
+const TABP={req:["req","trans","assign"],price:["price_view","price_edit","market"],trans:["trans","assign"],fleet:["fleet"],deals:["deals","deals_qty","remain","notes"],farm:["farm"],wx:["wx"],calc:["calc"],team:["team"],agro:["agro"],trus:["trus","trus_price"],evid:["ev","ev_doch","sklad","praca","ev_mzdy"],danube:["danube"],nov:["nov"],qd:["deals"],klient:["klient"],pred:["pred_owner_only"]};
 window.tabOK=k=>ROLE==="owner"||(k!=="nov"&&(TABP[k]?TABP[k].some(can):true)); // Novinky vidia iba majitelia
 // sekcie flotily
 const FSP={dash:["fleet"],fuel:["diesel","yard","cams"],alarm:["alarms"],money:["fleet_cost"],drv:["drivers"],veh:["drivers"],map:["fleet"],set:["fleet_set"]};
