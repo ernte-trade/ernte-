@@ -281,3 +281,32 @@ body.ds-tab-calc .calcw .calcfr{flex:1;height:auto;min-height:0}
 /* 2. 11. 18:58 PRÍKAZ MAJITEĽA „aplikácia je spomalená“ – vypnuté nekonečné ozdobné animácie (otáčanie tlačidla AI, pohyb pozadia lišty sekcií, blikanie bodiek) – zbytočne prekresľovali obrazovku stále dokola */
 .aibtn i,.aiorb,nav.tabs,nav.tabs::before,nav.tabs::after,.otop,.otop::before,.otop::after,.otop i{animation:none!important}
 .fdsh,.fdsh::before,.fdsh::after{animation:none!important}
+/* 2. 11. 21:40 PRÍKAZ MAJITEĽA „rozlož pekne dlaždice, PC verzia, centruj, aby boli celé viditeľné“ – úvod LIVE na PC:
+   obsah v centrovanom kontajneri (max 1480 px), vľavo pozdrav + rádio, vpravo dlaždice v mriežke 6 stĺpcov (páry vedľa seba),
+   celok zvisle na stred (--wT počíta wfit vo welcome.js); všetko sa zmestí na obrazovku notebooku bez orezania */
+@media (min-width:1100px) and (min-height:640px){
+  .wlc:not(.por){--wW:min(1480px,calc(100% - 56px));--wL:calc((100% - var(--wW))/2);--wC:clamp(360px,30vw,500px);--wG:20px;
+    padding-top:var(--wT,56px)!important}
+  .wlc:not(.por) .wlb,.wlc:not(.por) .wlsp{margin:0 0 12px var(--wL)!important;width:var(--wC)!important}
+  .wlc:not(.por) .whud{left:calc(var(--wL) + var(--wC) + var(--wG))!important;right:auto!important;top:var(--wT,56px)!important;
+    width:calc(var(--wW) - var(--wC) - var(--wG))!important;display:grid!important;grid-template-columns:repeat(6,minmax(0,1fr))!important;
+    grid-auto-flow:row dense;gap:10px!important;align-items:stretch!important}
+  .wlc:not(.por) .whud>*{grid-column:span 3!important;min-width:0}
+  .wlc:not(.por) .whud>.whtop{grid-column:1/-1!important}
+  .wlc:not(.por) .whud>.whrow{grid-column:span 3!important}
+  .wlc:not(.por) .whud>.wsenc{grid-column:span 3!important}
+  .wlc:not(.por) .whud>.wfuel{grid-column:span 2!important}
+  .wlc:not(.por) .whud>.whpr{grid-column:span 4!important}
+  .wlc:not(.por) .whud>.whrow>.whc,.wlc:not(.por) .whud>.whc{height:auto;box-sizing:border-box}
+  .wlc:not(.por) .whud .wfuel .wgrh{flex-wrap:wrap;row-gap:2px}
+  .wlc:not(.por) .whud .wfuel .wfnav a,.wlc:not(.por) .whud .wfuel .wfnav button{white-space:normal!important;line-height:1.2}
+  .wlc:not(.por) .whud .whgr .wgrs{display:flex!important;flex-wrap:nowrap!important;overflow-x:auto;overflow-y:hidden;max-height:40px;gap:6px;scrollbar-width:thin}
+  .wlc:not(.por) .whud .whgr .wgrs>*{flex:none!important;white-space:nowrap!important;width:auto!important;min-width:0}
+}
+/* užšie PC (1100–1279 px): nafta a ceny každá cez celú šírku panela, aby sa ceny nestláčali */
+@media (min-width:1100px) and (max-width:1279px) and (min-height:640px){
+  .wlc:not(.por){--wC:clamp(340px,30vw,380px);--wG:16px}
+  .wlc:not(.por) .whud>.whpr{grid-column:1/-1!important}
+  .wlc:not(.por) .whud>.wfuel{grid-column:1/-1!important}
+  .wlc:not(.por) .whud .wfuel .wfnav{margin-top:2px!important}
+}
