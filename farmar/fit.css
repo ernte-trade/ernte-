@@ -246,3 +246,5 @@ html[data-theme=light] .trdlg .ok{color:#166534;background:rgba(22,163,74,.12)}h
 /* 🗑️ nebezpečné tlačidlo (vymazať obchod) */
 button.danger{border-color:rgba(248,113,113,.65)!important;color:#fecaca!important}
 html[data-theme=light] button.danger{color:#b91c1c!important}
+/* ⚠️ Reklamácia u odberateľa (settle.js, 2. 11.) */
+#app .zrekb{background:rgba(245,158,11,.14);border:1px solid rgba(245,158,11,.6)}
