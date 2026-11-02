@@ -184,6 +184,7 @@ html[data-theme=light] .wlc .wlb,html[data-theme=light] .wlc .whc:not(.wlsp .whc
 @media (min-width:700px){
   .wlc .whud{display:grid!important;grid-template-columns:1fr 1fr;align-items:start}
   .wlc .whud>.whtop,.wlc .whud>.whrow,.wlc .whud>.whpr{grid-column:1/-1}
+  .wlc .whud>.wfuel{grid-column:1/-1} /* 2. 11.: nafta pod počasím na celú šírku */
 }
 /* 11:28 PRÍKAZ MAJITEĽA: skener ešte krikľavejší a žiarivejší (iba Martin) */
 .wimg.wme .wscan{height:130px!important;z-index:4!important;
