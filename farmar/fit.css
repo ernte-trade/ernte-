@@ -331,3 +331,14 @@ body.ds-tab-calc .calcw .calcfr{flex:1;height:auto;min-height:0}
 @media (min-width:1100px) and (min-height:640px){
   .wlc:not(.por) .wlz{margin:0 0 12px var(--wL)!important;width:var(--wC)!important}
 }
+/* 2. 11. 22:58 PRÍKAZ MAJITEĽA – PREHĽAD MAJITEĽA (poradie cez order v mriežke #app, moduly sa vkladajú kam chcú):
+   hore Prehľad ERNTE · VALKO (ceny → Kde predať → Posledné upozornenia → Čo riešiť → Obchody → Zisky → Komodity · evidencia → Podrobnosti),
+   úplne dole Kredit ERNTE AI, Claude pracuje sám, Pridať na plochu a ako posledné Upozornenia do mobilu */
+#app:has(>.hub.owh)>*{order:3}
+#app:has(>.hub.owh)>nav.tabs,#app:has(>.hub.owh)>.rokbar,#app:has(>.hub.owh)>.secbar,#app:has(>.hub.owh)>.hero{order:0}
+#app:has(>.hub.owh)>.fdesc.ftab{order:1}
+#app:has(>.hub.owh)>.hub.owh{order:2}
+#app:has(>.hub.owh)>.kcr{order:7}
+#app:has(>.hub.owh)>.cnav{order:8}
+#app:has(>.hub.owh)>.instc{order:9}
+#app:has(>.hub.owh)>#ow-pushc{order:10}

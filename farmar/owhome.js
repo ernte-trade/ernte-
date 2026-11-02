@@ -101,18 +101,21 @@ function navHTML(){const M=STATE.mkt,L=[];
 // ---- 6. podrobnosti ----
 function detailsHTML(){const X=window.HUBX;let h="";
   if(X){try{h+=X.riskHTML().replace('id="hs-risk" open>','id="hs-risk">')}catch(x){}try{h+=X.tgHTML(Array.isArray(X.H.tg)?X.H.tg:[])}catch(x){}try{h+=X.dueHTML()}catch(x){}}
-  if(window.opushParts){let l="",c="";try{l=opushParts.list()}catch(x){}try{c=opushParts.card()}catch(x){}h+=`<div id="ow-push" class="owpush">${l}${c}</div>`}
   return h}
+/* 2. 11. 22:58 PRÍKAZ MAJITEĽA: 🔔 Posledné upozornenia hneď pod Kde predať (pod Naše ceny), 🔔 Upozornenia do mobilu ÚPLNE POSLEDNÉ na Prehľade */
+function pushListHTML(){if(!window.opushParts)return "";let l="";try{l=opushParts.list()}catch(x){}return l?`<div id="ow-push" class="owpush">${l}</div>`:""}
+function pushCardHTML(){if(!window.opushParts)return "";let c="";try{c=opushParts.card()}catch(x){}return c?`<div id="ow-pushc" class="owpush owpushc">${c}</div>`:""}
 
 window.owHome=function(){css();
   let h=`<div class="hub owh"><div class="owhd"><div><small>${e(new Date().toLocaleDateString("sk-SK",{weekday:"long",day:"numeric",month:"long"}))}</small><h2 class="hubt">Prehľad ERNTE · VALKO</h2></div><button type="button" class="hubr" data-hubre="1" aria-label="Obnoviť prehľad">↻</button></div>`;
   h+=sec("💶","Naše ceny · nákup a predaj","🔒 iba Martin a Jana",pricesHTML(),"ow-ceny");
+  h+=pushListHTML();
   h+=sec("🔔","Čo riešiť","",todoHTML());
   h+=sec("🤝","Obchody","",dealsHTML());
   h+=sec("💰","Zisky ERNTE","🔒 iba Martin a Jana",profitHTML());
   h+=sec("🧭","Komodity · služby · evidencia","",navHTML());
   h+=`<section class="owsec owdet"><h3 class="owsh"><span>📋 Podrobnosti</span></h3>${detailsHTML()}</section>`;
-  return h+`</div>`};
+  return h+`</div>`+pushCardHTML()};
 
 document.addEventListener("click",ev=>{const x=ev.target.closest&&ev.target.closest("[data-owgo]");if(!x||!ON())return;const g=x.dataset.owgo;ev.preventDefault();
   if(g.charAt(0)==="#"){const el=document.getElementById(g.slice(1));if(el){if(el.tagName==="DETAILS")el.open=true;el.scrollIntoView({behavior:"smooth",block:"start"})}return}
