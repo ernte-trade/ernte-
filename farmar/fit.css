@@ -266,3 +266,15 @@ body.ds-tab-calc .calcw{display:flex!important;flex-direction:column;background:
 html[data-theme=light] body.ds-tab-calc .calcw{background:#f4f6fb}
 body.ds-tab-calc .calcw .calcsw{margin:8px 10px 6px;flex:none}
 body.ds-tab-calc .calcw .calcfr{flex:1;height:auto;min-height:0}
+/* 2. 11. 18:36 PRÍKAZ MAJITEĽA „krajšie porozdeľuj, usporiadaj“ – úvod LIVE na širokej obrazovke (notebook):
+   ľavý stĺpec (pozdrav + rádio) zarovnaný hore s pravým panelom, širší pravý panel, dlaždice v pároch rovnako vysoké, ceny v 3 stĺpcoch */
+@media (min-width:1100px) and (min-height:640px){
+  .wlc:not(.por){justify-content:flex-start!important;padding-top:calc(56px + env(safe-area-inset-top,0px))}
+  .wlc:not(.por) .whud{width:clamp(480px,38vw,680px)!important;right:28px!important;gap:10px!important;align-items:stretch!important}
+  .wlc:not(.por) .wlb,.wlc:not(.por) .wlsp{margin:0 0 14px 28px!important;width:min(620px,calc(100vw - clamp(480px,38vw,680px) - 96px))!important;max-width:none!important;box-sizing:border-box}
+  .wlc:not(.por) .wlsp{position:relative!important}
+  .wlc:not(.por) .whud .whpl{display:grid!important;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px 16px}
+  .wlc:not(.por) .whud .whpl .wpc{min-width:0}
+  .wlc:not(.por) .whud>.whc{min-width:0}
+}
+@media (min-width:1100px) and (min-height:640px){#spdock.att{bottom:auto!important;height:auto!important;align-content:start}#spdock.att .spdw{align-self:start}}
