@@ -2824,7 +2824,7 @@ function vPrice(){const P=STATE.prices,valid=((STATE.settings||{}).pricelist||{}
   ${(()=>{if(ROLE!=="owner")return "";const E0=MK.filter(m=>{const p=(STATE.prices||[]).find(x=>x.com===m[0]);return !p||p.price==null||!(+p.price>0)});if(!E0.length)return "";const n=E0.length;return `<div class="card pxempty" data-nocut style="border-color:rgba(253,230,138,.55)"><b>⚠️ ${n} ${n===1?"plodina":n<5?"plodiny":"plodín"} bez ceny – farmári ${n===1?"ju":"ich"} nevidia</b><div class="s" style="overflow-wrap:anywhere">${E0.map(m=>esc(m[1])).join(", ")}. Farmár v Cenníku vidí iba plodiny so zadanou cenou. Ak ich chceš ponúkať, doplň cenu nižšie.</div></div>`})()}${window.PADJ?`<div class="card padjn"><b>💶 Tvoje nákupné ceny</b><div class="s">Ceny nižšie sú už upravené pre teba: ${PADJ<0?"−":"+"}${String(Math.abs(PADJ)).replace(".",",")} €/t${PADJN?" ("+esc(PADJN)+")":""}. Za tieto ceny ponúkaj a uzatváraj obchody.</div></div>`:""}<form class="card f" id="fPrice"><div class="w s">Výkupné ceny FCA farma bez DPH. Prázdne = farmár komoditu nevidí. Po uložení ich hneď vidia všetci prihlásení farmári.</div>
   <div class="w ds-ptiles">${MK.map(m=>{const p=P.find(x=>x.com===m[0]),has=p&&p.price!=null;return `<label class="ds-tile${has?"":" emp"}"><span class="pn">${esc(m[1])}</span><span class="pv"><input name="p_${m[0]}" inputmode="decimal" value="${has?String(p.price).replace(".",","):""}" placeholder="nezadané" aria-label="${esc(m[1])} €/t"><i>€/t</i></span>${burzaTile(m[0],has?p.price:null)}${window.fwdLine?fwdLine(m[0]):""}${ROLE==="owner"&&window.sellTileHTML?sellTileHTML(m[0],has?p.price:null):""}</label>`}).join("")}</div>
   <label class="w ds-valid ${vc}">Platí do<input name="valid" type="date" value="${esc(valid)}"><small>${esc(vt)}</small></label><div class="w btns"><button class="pri" type="submit">Uložiť a zverejniť</button></div></form>`}
-function vDeals(){const F=STATE.farmers.filter(f=>f.active),pre=DEALF||{},OWN=ROLE==="owner";
+function vDeals(){const F=STATE.farmers,pre=DEALF||{},OWN=ROLE==="owner";
   let h=`<form class="card f" id="fDeal"><div class="w t">Nový obchod</div>
    <div class="w dfp"><label>Farmár – napíš meno alebo ID<input id="dfq" autocomplete="off" placeholder="napr. Hronec alebo C0102" value="${esc(((F.find(f=>f.id===pre.farmer_id)||{}).name)||"")}"></label><input type="hidden" name="farmer" value="${esc(F.some(f=>f.id===pre.farmer_id)?pre.farmer_id:"")}"><div class="dfl" id="dfl"></div></div>
    <label>Komodita<select name="com" id="dCom">${MK.map(m=>`<option value="${m[0]}"${pre.com===m[0]?" selected":""}>${esc(m[1])}</option>`).join("")}</select></label>
@@ -2851,7 +2851,7 @@ function vDeals(){const F=STATE.farmers.filter(f=>f.active),pre=DEALF||{},OWN=RO
 // cena zmluvy nad zverejneným cenníkom → návrh sa podpíše až po schválení majiteľom (databáza deal_price_guard)
 // ✏️ úprava celého obchodu (majiteľ) – farmár, komodita, množstvo, cena, termín, poznámka; zmeny sa zapíšu do histórie (deal_edits)
 let DEALE=null;
-function dealEditForm(d){const F=STATE.farmers.filter(f=>f.active||f.id===d.farmer_id).sort((a,b)=>String(a.name).localeCompare(String(b.name),"sk"));
+function dealEditForm(d){const F=STATE.farmers.slice().sort((a,b)=>String(a.name).localeCompare(String(b.name),"sk"));
   return `<form class="f sub dedf" data-dfe="${esc(d.id)}"><div class="w t">✏️ Upraviť obchod ${esc(d.no)}</div>
    <label class="w">Farmár<select name="farmer_id">${F.map(f=>`<option value="${esc(f.id)}"${f.id===d.farmer_id?" selected":""}>${esc(f.name)}</option>`).join("")}</select></label>
    <label>Komodita<select name="com">${MK.map(m=>`<option value="${m[0]}"${d.com===m[0]?" selected":""}>${esc(m[1])}</option>`).join("")}</select></label>
@@ -2991,9 +2991,10 @@ if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",
 
 // výber farmára v Novom obchode (vyhľadávanie namiesto dlhého zoznamu)
 function dfList(q){const L=document.getElementById("dfl");if(!L)return;const n=s=>String(s||"").normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase().trim(),v=n(q);
-  const F=(STATE.farmers||[]).filter(f=>f.active!==false&&String(f.name||"").trim()).sort((a,b)=>String(a.name).trim().localeCompare(String(b.name).trim(),"sk"));
+  /* 2. 11. príkaz majiteľa: v Novom obchode všetci farmári, aj bez prihlásenia do aplikácie (AGROSPOL…) */
+  const F=(STATE.farmers||[]).filter(f=>String(f.name||"").trim()).sort((a,b)=>String(a.name).trim().localeCompare(String(b.name).trim(),"sk"));
   const M=v?F.filter(f=>n(f.name+" "+(f.code||"")+" "+(f.addr||"")).includes(v)):F;
-  L.innerHTML=M.slice(0,40).map(f=>`<button type="button" data-dfp="${esc(f.id)}"><b>${esc(String(f.name).trim())}</b><small>${esc([f.code,f.addr].filter(Boolean).join(" · "))}</small></button>`).join("")+(M.length>40?`<div class="s">…a ďalších ${M.length-40}, spresni hľadanie</div>`:"")+(!M.length?`<div class="s">Nenašiel sa žiadny farmár.</div>`:"")}
+  L.innerHTML=M.slice(0,40).map(f=>`<button type="button" data-dfp="${esc(f.id)}"><b>${esc(String(f.name).trim())}</b><small>${esc([f.code,f.addr,f.active===false?"bez prihlásenia do aplikácie":""].filter(Boolean).join(" · "))}</small></button>`).join("")+(M.length>40?`<div class="s">…a ďalších ${M.length-40}, spresni hľadanie</div>`:"")+(!M.length?`<div class="s">Nenašiel sa žiadny farmár.</div>`:"")}
 document.addEventListener("focusin",e=>{if(e.target.id==="dfq")dfList(e.target.value)});
 document.addEventListener("input",e=>{if(e.target.id==="dfq"){const h=e.target.form&&e.target.form.elements.farmer;if(h)h.value="";dfList(e.target.value)}});
 document.addEventListener("click",e=>{const b=e.target.closest("[data-dfp]");if(!b)return;const fm=b.closest("form"),f=(STATE.farmers||[]).find(x=>x.id===b.dataset.dfp);if(!fm||!f)return;fm.elements.farmer.value=f.id;document.getElementById("dfq").value=String(f.name).trim();document.getElementById("dfl").innerHTML=`<div class="s">✓ Vybraný: <b>${esc(String(f.name).trim())}</b></div>`});
@@ -3059,7 +3060,7 @@ document.addEventListener("click",e=>{const b=e.target.closest("[data-dfp]");if(
 <script src="cancel.js?v=20261029-0130"></script>
 <script src="autocennik.js?v=20261101-1750"></script>
 <script src="kpitap.js?v=20261101-1730"></script>
-<script src="rok.js?v=20261102-1040"></script>
+<script src="rok.js?v=20261102-1055"></script>
 <script src="wxs.js?v=20261101-0850"></script>
 <script src="xround.js?v=20261029-0655"></script>
 <script src="navfix.js?v=20261031-1610"></script>
