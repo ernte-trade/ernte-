@@ -10,8 +10,8 @@ const fc=k=>!window.fcan||fcan(k);
 const N=(x,d)=>Number(x).toLocaleString("sk-SK",{minimumFractionDigits:d||0,maximumFractionDigits:d==null?2:d});
 const td=()=>new Date().toLocaleDateString("sv-SE");
 let FV="home";const W={com:null,tons:"",harvest:null,fwd:null,need:true,date:"",time:"08:00",place:"",sent:null,busy:0};
-const T={home:"",predat:"Predať komoditu",hist:"Moje obchody a história",ceny:"Výkupné ceny",odvoz:"Odvoz tovaru",wx:"Počasie",kontakt:"Obchodník a kontakt",sluzby:"Služby strojmi",viac:"Ďalšie"};
-const IC={uvod:"star",predat:"money",hist:"deals",ceny:"price",odvoz:"trans",wx:"wx",kontakt:"phone",sluzby:"agro",viac:"scroll"};
+const T={home:"",predat:"Predať komoditu",hist:"Moje obchody a história",ceny:"Výkupné ceny",odvoz:"Odvoz tovaru",wx:"Počasie",burza:"Burza MATIF a CBOT",kontakt:"Obchodník a kontakt",sluzby:"Služby strojmi",viac:"Ďalšie"};
+const IC={uvod:"star",predat:"money",hist:"deals",ceny:"price",odvoz:"trans",wx:"wx",burza:"chart",kontakt:"phone",sluzby:"agro",viac:"scroll"};
 function secOf(h2){const t=h2.textContent;return /Môj prehľad|požiadavky|Moje obchody/i.test(t)?"hist":/Výkupné ceny/i.test(t)?"ceny":/Počasie/i.test(t)?"wx":/Doprava VALKO|Odvoz/i.test(t)?"odvoz":/Kontakt/i.test(t)?"kontakt":/Žatva|služb|Agro|stroj/i.test(t)?"sluzby":"viac"}
 // ---------- obchodníci (farm_contacts) ----------
 let CT=null;async function loadCT(){if(CT)return CT;try{const r=await sb.rpc("farm_contacts");CT=(!r.error&&Array.isArray(r.data))?r.data:[]}catch(x){CT=[]}return CT}
@@ -33,6 +33,7 @@ function tiles(){const F=F_(),P=(STATE.prices||[]).filter(p=>p.price!=null),top=
   if(fc("f_transport")||fc("f_trucks"))L.push(["odvoz","Odvoz",ntr?`${ntr} auto naplánované`:"objednať kamión"]);
   if(fc("f_prices"))L.push(["ceny","Výkupné ceny","aktuálne, bez DPH"]);
   if(fc("f_wx"))L.push(["wx","Počasie","24 h a 7 dní"]);
+  if(window.fcan&&fcan("f_burza"))L.push(["burza","Burza","MATIF Paríž · CBOT Chicago"]); /* 2. 11. príkaz majiteľa: iba farmár so zapnutým f_burza (Kasinec) */
   L.push(["kontakt","Obchodník","zavolať jedným ťuknutím"]);
   if(document.querySelector('#app [data-fsec="sluzby"]'))L.push(["sluzby","Služby strojmi","žatva, pôda, sejba"]);
   if(document.querySelector('#app [data-fsec="viac"]'))L.push(["viac","Ďalšie","poznámky a ciele"]);
@@ -79,6 +80,25 @@ function paintWz(){const w=wzEl();const a=document.activeElement,k=a&&a.dataset&
   w.innerHTML=wizInner();
   if(k){const i=document.querySelector(`#app .fwz [data-wf="${k}"]`);if(i){i.focus();try{if(pos!=null)i.setSelectionRange(pos,pos)}catch(x){}}}}
 const next=id=>setTimeout(()=>{const e=document.getElementById(id);if(e)e.scrollIntoView({behavior:"smooth",block:"start"})},60);
+// ---------- 📈 BURZA MATIF a CBOT (2. 11. príkaz majiteľa „pusti Kasincovi burzu – MATIF a CBOT len“) ----------
+// verejné kurzy z market.json (iba riadky burzy MATIF/CBOT, najbližší kontrakt) – žiadne fyzické ceny, odberatelia ani naše predajné ceny
+const BZM=[["Euronext (MATIF) repka","MATIF","Repka"],["Euronext (MATIF) pšenica potravinárska","MATIF","Pšenica"],["Euronext (MATIF) kukurica","MATIF","Kukurica"],
+  ["CBOT sója","CBOT","Sója"],["CBoT kukurica","CBOT","Kukurica"],["CBoT pšenica","CBOT","Pšenica"]];
+let BZD=null,BZT=0;
+async function bzLoad(){if(BZD&&Date.now()-BZT<5*60e3)return BZD;try{const r=await fetch("market.json",{cache:"no-store"});if(r.ok){BZD=await r.json();BZT=Date.now()}}catch(x){}return BZD}
+function bzHTML(){if(!BZD)return `<div class="s">Načítavam burzu…</div>`;
+  const R=(BZD.rows||[]).filter(r=>r.kind==="burza");
+  /* kontrakt ako u odberateľov: najbližší, ktorý končí najskôr o 20 dní (kontrakt tohto mesiaca sa preskočí – pred expiráciou skáče) */
+  const MO={jan:0,feb:1,mar:2,apr:3,"máj":4,maj:4,jun:5,"jún":5,jul:6,"júl":6,aug:7,sep:8,okt:9,nov:10,dec:11};
+  const soon=r=>{const m=String(r.term||"").toLowerCase().match(/^(\S+)\s+(20\d\d)/);if(!m||MO[m[1]]==null)return false;const end=new Date(+m[2],MO[m[1]],15);return end-Date.now()<20*864e5};
+  const L=BZM.map(m=>{const C=R.filter(x=>String(x.market).toLowerCase()===m[0].toLowerCase()&&+x.price>0);const r=C.find(x=>!soon(x))||C[0];return r?[m,r]:null}).filter(Boolean);
+  if(!L.length)return `<div class="s">Kurzy burzy sú zatiaľ nedostupné.</div>`;
+  const row=([m,r])=>`<div class="fbzr"><span><small>${E(m[1])}</small><b>${E(m[2])}</b></span><span class="fbzp"><b class="num">${N(+r.price,2)} €/t</b><small>${E(r.term||"")}${r.date?" · "+E(new Date(r.date+"T12:00").toLocaleDateString("sk-SK",{day:"numeric",month:"numeric"})):""}</small></span></div>`;
+  return `<div class="fbzg"><div><h3>🇫🇷 MATIF Paríž</h3>${L.filter(x=>x[0][1]==="MATIF").map(row).join("")}</div><div><h3>🇺🇸 CBOT Chicago</h3>${L.filter(x=>x[0][1]==="CBOT").map(row).join("")}</div></div>
+   <p class="s fbzn">ℹ️ Burza je verejná cena na trhu (kontrakt, € / t), <b>nie je to naša výkupná cena</b>. Našu cenu pre vás nájdete vo Výkupných cenách.</p>`}
+{const st=document.createElement("style");st.textContent=`.fbzc{display:grid;gap:10px}.fbzg{display:grid;gap:12px}@media(min-width:640px){.fbzg{grid-template-columns:1fr 1fr}}
+.fbzg h3{margin:0 0 6px;font-size:1rem}.fbzr{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:10px 12px;border-radius:14px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);margin-bottom:6px}
+.fbzr span{display:grid;min-width:0}.fbzr small{opacity:.7;font-size:.75rem}.fbzr b{font-size:1.05rem}.fbzp{text-align:right}.fbzp b{font-size:1.15rem}.fbzn{margin:0;opacity:.85}`;document.head.appendChild(st)}
 // ---------- zobrazenie ----------
 function apply(){const app=document.getElementById("app"),F=F_();if(!app||!F)return;
   const hero=app.querySelector(":scope>.hero");if(!hero)return;
@@ -91,6 +111,7 @@ function apply(){const app=document.getElementById("app"),F=F_();if(!app||!F)ret
   if(FV==="predat"){const z=wzEl(),anc=app.querySelector(":scope>.fvbar")||hero;if(anc.nextElementSibling!==z)anc.after(z)}
   else{const z=app.querySelector(":scope>.fwz");if(z)z.remove()}
   if(FV==="kontakt"&&!app.querySelector(":scope>.fctc")){const d=document.createElement("div");d.className="card fctc";d.dataset.fsec="kontakt";d.innerHTML=`<div class="fcts">${ctHTML()}</div>`;(app.querySelector(":scope>.fvbar")||hero).after(d);loadCT().then(()=>{d.innerHTML=`<div class="fcts">${ctHTML()}</div>`})}
+  if(FV==="burza"&&window.fcan&&fcan("f_burza")&&!app.querySelector(":scope>.fbzc")){const d=document.createElement("div");d.className="card fbzc";d.dataset.fsec="burza";d.innerHTML=bzHTML();(app.querySelector(":scope>.fvbar")||hero).after(d);bzLoad().then(()=>{d.innerHTML=bzHTML()})}
   let key="pre";for(const el of app.children){if(el.tagName==="H2"&&!el.dataset.fsec)el.dataset.fsec=secOf(el);
     if(el.tagName==="H2")key=el.dataset.fsec;else if(!el.dataset.fsec&&el.classList.contains("susbtn"))el.dataset.fsec="ceny";
     const k=el.dataset.fsec||(el.tagName==="H2"?key:key),show=k==="*"||k===FV||(FV==="home"&&(k==="pre"||k==="home"));

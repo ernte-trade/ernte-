@@ -321,7 +321,7 @@ async function show(force){const k=kind();if(!k||document.querySelector(".wlc"))
   const POR=()=>innerWidth<1100||innerHeight<640;const por=POR();if(por)el.classList.add("por");
   const rz=()=>{if(!el.isConnected){removeEventListener("resize",rz);return}el.classList.toggle("por",POR())};addEventListener("resize",rz);
   el.innerHTML=`${scene(k,ph,por)}<div class="wlb"><img src="icon-192.png" alt=""><div class="wlt"><small>${E(tag)}</small><b>${g}</b><p>${E(sub)}</p>${joke?`<p class="wjk">💡 <b>Vedeli ste?</b> <span>${E(joke)}</span></p>`:""}<ul class="wlf"></ul>
-   <div class="wla"><button type="button" class="lime" data-wlgo>Hlavná ponuka →</button><button type="button" class="wmore" data-wljoke>💡 Ďalšia zaujímavosť</button></div></div></div>${GRK(k)&&spotOK(k)?`<div class="wlsp">${radioOff()?radioOnHTML():spot()}</div>`:""}
+   <div class="wla"><button type="button" class="lime" data-wlgo>Hlavné menu →</button><button type="button" class="wmore" data-wljoke>💡 Ďalšia zaujímavosť</button></div></div></div>${GRK(k)&&spotOK(k)?`<div class="wlsp">${radioOff()?radioOnHTML():spot()}</div>`:""}
    <button type="button" class="wlx" data-wlx hidden tabindex="-1" aria-hidden="true">✕</button><div class="wltap">${new Date().toLocaleDateString("sk-SK",{weekday:"long",day:"numeric",month:"long"})}</div>`;
   document.body.appendChild(el);
   /* 2. 11. 22:15 PRÍKAZ MAJITEĽA: 💡 zaujímavosti + „Ďalšia zaujímavosť“ úplne dole pod všetkými dlaždicami; pozdrav s menom hore a pevný pri posúvaní */

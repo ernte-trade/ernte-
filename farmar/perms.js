@@ -68,10 +68,10 @@ function peopleX(){for(const x of PEOPLE_X)if(!PEOPLE.some(p=>p[0]===x[0]||norm(
 let PEOPLE=PEOPLE_X.map(x=>x.slice()),PPL=0;async function loadPeople(){PPL=1;try{const r=await sb.from("staff_cfg").select("value").eq("key","team_people").maybeSingle();if(r.data&&Array.isArray(r.data.value)&&r.data.value.length){PEOPLE=r.data.value.slice();peopleX();if(TAB==="team")renderStaff()}}catch(e){PPL=0}}
 const FCAT=[["f_prices","Výkupné ceny (cenník)",""],["f_sell","Ponúknuť komoditu na predaj",""],["f_offer","Navrhnúť vlastnú cenu + fotky zo skladu",""],["f_deals","Moje obchody a dohodnutá cena",""],["f_remain","Zostatok na vývoz (koľko ešte odvezieme)",""],
  ["f_transport","Objednať odvoz",""],["f_trucks","Pridelené autá – ŠPZ, vodič, telefón",""],["f_gps","Poloha auta cestou na nakládku","len keď ju doprava zapne"],
- ["f_notes","Poznámky k vývozu (posielať a čítať)",""],["f_agro","Agro služby – cenník a objednávka prác strojmi",""],["f_wx","Počasie",""],["f_big","Veľké písmo a tlačidlá",""]];
+ ["f_notes","Poznámky k vývozu (posielať a čítať)",""],["f_agro","Agro služby – cenník a objednávka prác strojmi",""],["f_wx","Počasie",""],["f_big","Veľké písmo a tlačidlá",""],["f_burza","📈 Burza MATIF a CBOT v hlavnom menu","verejné kurzy burzy – nie naše výkupné ceny ani odberatelia"]];
 const FREC=["f_prices","f_sell","f_deals","f_remain","f_transport","f_trucks","f_gps","f_notes","f_agro","f_wx","f_big"];
 const FDEF=["f_prices","f_sell","f_offer","f_deals","f_remain","f_trucks","f_gps","f_transport","f_wx","f_big","f_agro"];
-const FNEVER="Farmár nikdy nevidí: odberateľa, miesto vykládky, burzu, predajné ceny, maržu ani iných farmárov.";
+const FNEVER="Farmár nikdy nevidí: odberateľa, miesto vykládky, predajné ceny, maržu ani iných farmárov. Burzu vidí iba verejnú MATIF a CBOT (úvod, v menu iba so zapnutým prístupom).";
 const norm=s=>String(s||"").toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g,"");
 window.PCAT_KEYS=PCAT.map(p=>p[0]);const PKEYS=new Set(PCAT.map(p=>p[0])),LOCKK=new Set(PLOCK.map(p=>p[0]));
 const recOf=p=>{const t=norm((p&&p.title)||"");return t.includes("sekret")||t.includes("asist")?"sekretarka":t.includes("dopr")?"doprava":t.includes("vedu")?"veduci":t.includes("stroj")||t.includes("rolni")||t.includes("traktor")?"strojnik":t.includes("manaz")?"manazer":t.includes("obchod")?"obchodnik":t.includes("faktur")?"fakt":({dispatch:"doprava",admin:"obchodnik",invoice:"fakt"})[p&&p.role]||"obchodnik"};
