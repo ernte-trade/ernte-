@@ -14,6 +14,19 @@ const T={
  requests:[{id:"r1",farmer_id:"f-demo",kind:"sell",com:"soja",tons:50,price:380,status:"v_spracovani",created_at:new Date(d0-3600e3).toISOString()}],
  trips:[{id:"t1",deal_id:"d2",spz:"XX 000 AA",driver:"Vodič Test",day:iso(1),time:"07:00",status:"naplanovana",netto:null}]
 };
+// flotila (vymyslené): 2 autá Región, 1 ťahač EU spárovaný so zoznamom áut Doprava, 1 nespárovaná GPS jednotka
+{const ts=m=>new Date(d0-m*6e4).toISOString(),m0=new Date(d0.getFullYear(),d0.getMonth(),1,8).toISOString();
+ T.cmd_vehicles=[{id:"v1",fleet:"region",plate:"XX111AA",name:"Sklápač Test 1",lat:48.75,lon:21.9,gps_at:ts(5),speed:0,ign:0,tank:300},
+  {id:"v2",fleet:"region",plate:"XX222BB",name:"Sklápač Test 2",lat:48.7,lon:21.8,gps_at:ts(3),speed:45,ign:1,tank:250},
+  {id:"v3",fleet:"eu",plate:"XX333CC",name:"Ťahač Test 3",lat:48.2,lon:20.5,gps_at:ts(2),speed:82,ign:1,tank:600},
+  {id:"9000001",fleet:"region",name:"9000001",pair_state:"nesparovane",lat:48.7,lon:21.8,gps_at:ts(600)}];
+ T.trucks=[{no:"1",spz:"XX 111AA",cmd_id:"v1",driver:"Vodič Test"},{no:"3",spz:"XX333CC",cmd_id:"v3",driver:"Vodič Test 3"}];
+ T.fleet_cfg=[{key:"costs",value:{fixed:140000,rate:1.5,diesel:1.952,toll:0.2677,share:100}}];
+ T.rides=[{ride_id:"rt1",vehicle_id:"v1",plate:"XX111AA",driver:"Vodič Test",start_at:m0,stop_at:m0,distance:180,fuel_consumed:60,fuel_start:300,fuel_stop:240,max_speed:85,start_addr:"Košice",stop_addr:"Michalovce"},
+  {ride_id:"rt2",vehicle_id:"v2",plate:"XX222BB",driver:"Vodič Test 2",start_at:ts(90),stop_at:ts(30),distance:95,fuel_consumed:33,fuel_start:283,fuel_stop:250,max_speed:80,start_addr:"Trebišov",stop_addr:"Zbudza"}];
+ T.fleet_events=[{id:901,vehicle_id:"v1",plate:"XX111AA",kind:"fuel_drop",at:ts(200),t_from:ts(400),t_to:ts(100),liters:48,lvl_from:300,lvl_to:252,place:"Dvor Test",note:"státie · hladina ustálená 300 → 252 l · čistý pokles 48 l · motor bežal 0,5 h → voľnobeh ≈ 2 l · 4 krokov snímača zlúčených do jednej udalosti",src_key:"stp:v1:1",st:"novy"},
+  {id:902,vehicle_id:"v2",plate:"XX222BB",kind:"fuel_drop",at:ts(210),liters:40,flag:"chyba_dat",flag_note:"podozrenie na chybu dát – rovnaký pokles v rovnakom čase (±20 min) na 3 autách; bez € a bez upozornenia",src_key:"stp:v2:1"}];
+ T.pos_log=[{vehicle_id:"v3",at:ts(1),lat:48.2,lon:20.5,speed:82}];}
 function Q(tab){let rows=(T[tab]||[]).slice(),single=false;const q={
   select(){return q},eq(k,v){rows=rows.filter(r=>r[k]===undefined||r[k]===v);return q},neq(){return q},gte(){return q},lte(){return q},lt(){return q},gt(){return q},in(){return q},is(){return q},ilike(){return q},like(){return q},or(){return q},not(){return q},filter(){return q},contains(){return q},match(){return q},textSearch(){return q},
   order(){return q},limit(){return q},range(){return q},returns(){return q},csv(){return q},
