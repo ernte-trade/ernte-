@@ -2840,7 +2840,10 @@ function vDeals(){const F=STATE.farmers.filter(f=>f.active),pre=DEALF||{},OWN=RO
     ${dealOver(d)}<div class="btns"><button type="button" data-cpdf="${esc(d.id)}">📄 Kúpna zmluva PDF</button>${OWN?`<button type="button" data-dfull="${esc(d.id)}">✏️ Upraviť obchod</button><button type="button" data-darch="${esc(d.id)}" data-on="${d.archived?0:1}">${d.archived?"♻️ Obnoviť z archívu":"🗄️ Archivovať"}</button>`:""}${MAIN_OK()?`<button type="button" class="danger" data-ddel="${esc(d.id)}">🗑️ Vymazať</button>`:""}</div>
     ${OWN&&DEALE===d.id?dealEditForm(d):""}
     ${ro?"":`<form class="f sub" data-dedit="${esc(d.id)}"><label>Stav<select name="status">${Object.keys(DST).map(k=>`<option value="${k}"${d.status===k?" selected":""}>${esc(DST[k][0])}</option>`).join("")}</select></label><label>Odvezené t<input name="delivered_t" inputmode="decimal" value="${String(d.delivered_t??0).replace(".",",")}"></label>${OWN?`<label class="w">Predajná cena €/t (vidíš iba ty)<input name="sell" inputmode="decimal" placeholder="nezadané" value="${sell!=null?String(sell).replace(".",","):""}"></label>`:""}<div class="w btns"><button type="submit">Uložiť zmenu</button></div></form>`}</div>`};
-  h+=STATE.deals.map(d=>dCard(d)).join("");
+  // 📅 rok úrody: pri „Všetko“ zoskupené po rokoch (najnovší hore)
+  if(window.ROK&&!ROK()&&window.rokOf){const G={};STATE.deals.forEach(d=>{const y=rokOf(d)||"bez roka";(G[y]=G[y]||[]).push(d)});const ys=Object.keys(G).sort((a,b)=>b.localeCompare(a));
+    h+=ys.map(y=>(ys.length>1?`<h3 class="rokh">📅 ${esc(y)} <small>${G[y].length}</small></h3>`:"")+G[y].map(d=>dCard(d)).join("")).join("")}
+  else h+=STATE.deals.map(d=>dCard(d)).join("");
   const DT=STATE.dealsTest||[],DA=STATE.dealsArch||[];
   if(DT.length)h+=`<details class="card dcw"><summary><b>🧪 Testovacie obchody</b><small>${DT.length} · mimo súčtov, štatistík a upozornení</small></summary>${DT.map(d=>dCard(d)).join("")}</details>`;
   if(DA.length&&OWN)h+=`<details class="card dcw"><summary><b>🗄️ Archív obchodov</b><small>${DA.length} · nezmazané, mimo súčtov</small></summary>${DA.map(d=>dCard(d,1)).join("")}</details>`;
@@ -3002,7 +3005,7 @@ document.addEventListener("click",e=>{const b=e.target.closest("[data-dfp]");if(
 <script src="fterms.js?v=20261031-0915"></script>
 <script src="hub.js?v=20261028-2150"></script>
 <script src="brand.js?v=20261101-1340"></script>
-<script src="settle.js?v=20261102-0010"></script>
+<script src="settle.js?v=20261102-1040"></script>
 <script src="mic.js?v=20261030-1700"></script>
 <script src="qd.js?v=20261031-1120"></script>
 <script src="firmy.js?v=20261031-0700"></script>
@@ -3021,7 +3024,7 @@ document.addEventListener("click",e=>{const b=e.target.closest("[data-dfp]");if(
 <script src="welcome.js?v=20261102-0905"></script>
 <script src="ernmaps.js?v=20261102-0850" defer></script>
 <script src="waze.js?v=20261102-0850" defer></script>
-<script src="odb.js?v=20261101-1800"></script>
+<script src="odb.js?v=20261102-1040"></script>
 <script src="zuctmail.js?v=20261101-1800"></script>
 <script src="zdash.js?v=20261027-1620"></script>
 <script src="contract.js?v=20261102-0010"></script>
@@ -3056,12 +3059,13 @@ document.addEventListener("click",e=>{const b=e.target.closest("[data-dfp]");if(
 <script src="cancel.js?v=20261029-0130"></script>
 <script src="autocennik.js?v=20261101-1750"></script>
 <script src="kpitap.js?v=20261101-1730"></script>
+<script src="rok.js?v=20261102-1040"></script>
 <script src="wxs.js?v=20261101-0850"></script>
 <script src="xround.js?v=20261029-0655"></script>
 <script src="navfix.js?v=20261031-1610"></script>
 <script src="fwd.js?v=20261029-0930"></script>
 <script src="dealwatch.js?v=20261031-0700"></script>
-<script src="predzml.js?v=20261102-0120"></script>
+<script src="predzml.js?v=20261102-1040"></script>
 <script src="trhpred.js?v=20261102-0141"></script>
 <script src="mailgraph.js?v=20261102-0200"></script>
 <script src="apptest.js?v=20261102-0200"></script>

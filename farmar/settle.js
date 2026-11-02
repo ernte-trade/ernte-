@@ -76,7 +76,7 @@ document.addEventListener("submit",async e=>{const fm=e.target;if(!fm.dataset||f
   catch(x){toast("Chyba: "+(x.message||x),7000)}finally{fm._b=0;if(typeof busy==="function")busy(b,false)}},true);
 
 function farmHTML(){const F=(STATE.farmers||[]).filter(f=>String(f.name||"").trim()).sort((a,b)=>String(a.name).localeCompare(String(b.name),"sk")),q=nz(Z.fq);
-  const C=Z.C&&!Z.C.err?Z.C:null,K=C?C.contracts||[]:[],coms=[...new Set(K.map(k=>k.com))];
+  const C=Z.C&&!Z.C.err?Z.C:null,K=C?(C.contracts||[]).filter(k=>!window.rokOk||rokOk(k)):[],coms=[...new Set(K.map(k=>k.com))];
   if(C&&K.length){if(Z.com!=="*"&&!coms.includes(Z.com))Z.com=coms[0];const KC=K.filter(k=>Z.com==="*"||k.com===Z.com);if(Z.deal!=="*"&&!KC.some(k=>k.id===Z.deal))Z.deal=Z.com==="*"?"*":(KC.find(k=>k.remain_t>0.01)||KC[0]).id}
   let h=`<div class="card f zform"><div class="w t">Zúčtovanie dodávateľa</div>
    <label class="w">Zákazník (farmár)<input id="zfq" list="zfl" value="${esc(Z.fq)}" placeholder="meno alebo ID, napr. C0102" autocomplete="off"></label><datalist id="zfl">${F.map(f=>`<option value="${esc(f.name)}">${esc(f.code||"")}</option>`).join("")}</datalist>

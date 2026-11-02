@@ -68,7 +68,7 @@ function saleHTML(s,ro){const A=s.alloc||[],at=A.reduce((a,x)=>a+(+x.tons||0),0)
    <div class="btns">${ro?"":`<button type="button" data-pzedit="${E(s.id)}">✏️ Upraviť</button>`}<button type="button" data-pzarch="${E(s.id)}" data-on="${s.archived?0:1}">${s.archived?"♻️ Obnoviť z archívu":"🗄️ Archivovať"}</button></div>
    ${D.edit===s.id?formHTML(s):""}</div>`}
 
-function html(){const B=D.B,S=B?(B.sales||[]):[],act=S.filter(s=>!s.archived),arch=S.filter(s=>s.archived);
+function html(){const B=D.B,S=B?(B.sales||[]).filter(s=>!window.rokOk||rokOk(s)):[],act=S.filter(s=>!s.archived),arch=S.filter(s=>s.archived);
   const sum=B&&B.sum&&B.sum.spolu,big=B&&B.sum&&B.sum.pozicie?Object.values(B.sum.pozicie).some(x=>Math.abs(+x.otvorena_t||0)>500):false;
   return `<details class="card pzw${big?" al":""}" id="pzCard"${D.open?" open":""}><summary><span class="pzsum"><b>💼 Predaj – predajné zmluvy</b><small>${B?`${act.length} ${act.length===1?"zmluva":act.length>=2&&act.length<=4?"zmluvy":"zmlúv"}${sum?` · otvorená pozícia ${sg(sum.otvorena_t)} t`:""}`:"Načítavam…"} · iba ty</small></span></summary>
    ${D.err?`<div class="pzm neg">Nepodarilo sa načítať: ${E(D.err)}</div>`:""}

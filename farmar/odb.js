@@ -6,6 +6,8 @@ const O={q:"",LA:null,ed:null,M:null,imp:null,L:null,busy:false,d0:"",d1:"",only
 try{O.buyer=localStorage.getItem("ernte-odb-buyer")||"Agro-Somotor s.r.o."}catch(x){O.buyer="Agro-Somotor s.r.o."}
 const iso=d=>d.toISOString().slice(0,10);
 if(!O.d0){const t=new Date();O.d1=iso(t);t.setDate(t.getDate()-21);O.d0=iso(t)}
+// 📅 rok úrody (rok.js): zmena roka nastaví obdobie Od–Do na celý rok
+window.addEventListener("ernterok",()=>{const b=window.rokBounds&&rokBounds();if(b){O.d0=b.d0;O.d1=b.d1}else{O.d0="2020-01-01";O.d1=iso(new Date())}O.L=null;try{window.zdashReload&&zdashReload()}catch(x){}});
 const nz=s=>String(s||"").normalize("NFD").replace(/[̀-ͯ]/g,"").toLowerCase().trim();
 function comOf(n){n=nz(n);if(/soj|szoja/.test(n))return "soja";if(/psen|buza/.test(n))return /krm/.test(n)?"psenica_k":"psenica_p";if(/kukur|kukor/.test(n))return "kukurica";
   if(/rep|repce/.test(n))return "repka";if(/jacm|arpa/.test(n))return /slad/.test(n)?"jacmen_s":"jacmen_k";if(/slnec|napra/.test(n))return "lo";if(/cirok/.test(n))return "cirok";return null}
