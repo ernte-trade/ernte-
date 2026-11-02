@@ -7,25 +7,25 @@
 const E=s=>String(s==null?"":s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const OWN=()=>typeof ROLE!=="undefined"&&ROLE==="owner"&&!(typeof FARMER!=="undefined"&&FARMER);
 const T=(m,ms)=>{try{if(typeof toast==="function")toast(m,ms||5000);else alert(m)}catch(x){}};
-const PR=[["ernte","Zmluvy, zúčtovania, faktúry","jana.valkova@ernte.sk"],["ponuky","Ponuky a dopyty","ernte@ernte.sk"],["danube","Danube – zmluvy (Gmail)","danube.commodities.kft@gmail.com"],["valko","VALKO – doprava",""]];
+const PR=[["ernte","Zmluvy, zúčtovania, faktúry","jana.valkova@ernte.sk"],["ponuky","Ponuky a dopyty","ernte@ernte.sk"],["danube","Danube – zmluvy (Gmail)","danube.commodities.kft@gmail.com"],["valko","VALKO – doprava","valko@valko-logistics.sk"]];
 let ST=null,busy=false,open={};
 const dt=x=>x?new Date(x).toLocaleString("sk-SK",{day:"numeric",month:"numeric",hour:"2-digit",minute:"2-digit"}):"–";
 async function load(){if(busy)return;busy=true;try{const r=await sb.rpc("mail_state");ST=r.error?{err:r.error.message}:(r.data||{})}catch(e){ST={err:String(e&&e.message||e)}}busy=false;paint()}
 function paint(){const el=document.getElementById("mgWrap");if(el)el.outerHTML=html()}
-function card(p){const k=p[0],s=(ST&&ST[k])||{},g=s.kind==="graph",ok=s.ok;const ten=s.tenant||"ernte.sk",cid=s.client_id||"";
+function card(p){const k=p[0],s=(ST&&ST[k])||{},g=s.kind==="graph",ok=s.ok;const ten=s.tenant||(k==="valko"?"valko-logistics.sk":"ernte.sk"),cid=s.client_id||"",gm=k==="danube";
   const cons=cid?`https://login.microsoftonline.com/${encodeURIComponent(ten)}/adminconsent?client_id=${encodeURIComponent(cid)}`:"";
   const st=!s.kind?`<span class="mgb mgn">nenastavené</span>`:ok?`<span class="mgb ${s.last_err&&(!s.last_ok||s.last_err.at>s.last_ok)?"mgw":"mgo"}">${g?"Microsoft Graph":"SMTP"}</span>`:`<span class="mgb mgn">chýba heslo / secret</span>`;
   let h=`<div class="mgc"><div class="mgh"><b>${E(p[1])}</b>${st}</div><div class="s mgt">Schránka: <b>${E(s.from||s.user||p[2]||"–")}</b></div>
    <div class="mgk"><div><small>Posledné odoslané</small><b>${dt(s.last_ok)}</b></div><div><small>Neodoslané vo fronte</small><b>${s.fronta||0}</b></div><div><small>Neaktuálne (iba záznam)</small><b>${s.neaktualne||0}</b></div></div>`;
   if(s.last_err)h+=`<div class="mgerr"><small>Posledná chyba ${dt(s.last_err.at)}</small><div>${E(s.last_err.err||"")}</div></div>`;
-  h+=`<div class="btns mgbt">${s.kind?`<button type="button" class="pri" data-mgtest="${k}">📨 Poslať testovací e-mail</button>`:""}${(s.fronta||0)>0?`<button type="button" data-mgre="${k}">🔁 Poslať znova neodoslané (${s.fronta})</button>`:""}<button type="button" data-mgopen="${k}">${open[k]?"▲ Skryť nastavenie":"⚙️ Microsoft Graph"}</button></div>`;
-  if(open[k])h+=`<form class="f mgf" data-mgf="${k}"><div class="w s">Postup pre správcu Microsoft 365 (raz):<ol class="mgol">
+  h+=`<div class="btns mgbt">${s.kind?`<button type="button" class="pri" data-mgtest="${k}">📨 Poslať testovací e-mail</button>`:""}${(s.fronta||0)>0?`<button type="button" data-mgre="${k}">🔁 Poslať znova neodoslané (${s.fronta})</button>`:""}${gm?"":`<button type="button" data-mgopen="${k}">${open[k]?"▲ Skryť nastavenie":"⚙️ Microsoft Graph"}</button>`}</div>${gm?`<div class="s">Gmail – Microsoft Graph sa tu nepoužíva. Odosiela sa cez SMTP Gmailu s heslom aplikácie (Google účet → Zabezpečenie → Heslá aplikácií), zadáva sa cez odkaz #nastav-email-danube.</div>`:""}`;
+  if(open[k]&&!gm)h+=`<form class="f mgf" data-mgf="${k}"><div class="w s">Postup pre správcu Microsoft 365 (raz):<ol class="mgol">
      <li>Microsoft Entra → <b>Registrácie aplikácií</b> → Nová registrácia „ERNTE odosielanie“ → skopíruj <b>ID aplikácie (Client ID)</b> a <b>ID adresára (Tenant ID)</b>.</li>
      <li>Certifikáty a tajomstvá → Nové tajomstvo klienta → skopíruj <b>Hodnotu</b> (Client secret).</li>
      <li>Oprávnenia rozhrania API → Microsoft Graph → <b>Aplikačné</b> → <b>Mail.Send</b>.</li>
      <li>Ulož údaje nižšie a ťukni <b>Súhlas správcu</b> (prihlási sa globálny správca a potvrdí).</li>
      <li>Obmedzenie iba na odosielaciu schránku (Exchange Online PowerShell):<code class="mgcode">New-ApplicationAccessPolicy -AppId ${E(cid||"<Client ID>")} -PolicyScopeGroupId ${E(s.from||p[2]||"<schránka>")} -AccessRight RestrictAccess -Description "ERNTE odosielanie"</code></li></ol></div>
-     <label>Tenant ID / doména<input name="tenant" autocapitalize="off" value="${E(s.tenant||"ernte.sk")}"></label>
+     <label>Tenant ID / doména<input name="tenant" autocapitalize="off" value="${E(ten)}"></label>
      <label>Client ID (ID aplikácie)<input name="client_id" autocapitalize="off" value="${E(cid)}" placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"></label>
      <label>Client secret (hodnota)<input name="secret" type="password" autocomplete="new-password" placeholder="${g?"uložené – vyplň iba pri zmene":""}"></label>
      <label>Odosielacia schránka<input name="from" type="email" autocapitalize="off" value="${E(s.from||p[2])}"></label>
