@@ -48,4 +48,12 @@ html[data-theme=light] .rokbar{background:rgba(255,255,255,.88)}.rokbar .roknew{
 .rokbar button{min-height:36px!important;padding:4px 14px!important;border-radius:999px!important;font-weight:700;font-size:.86rem;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.18)}
 .rokbar button[aria-pressed=true]{background:linear-gradient(135deg,#a3e635,#22d3ee);color:#0b1020;border-color:transparent}
 .rokh{display:flex;align-items:center;gap:8px;margin:14px 2px 6px;font-size:1rem}.rokh::after{content:"";flex:1;height:1px;background:rgba(255,255,255,.15)}`;document.head.appendChild(s)}
+/* 2. 11. príkaz majiteľa „odkaz priamo tam“: …/farmar/#novy-obchod[=C0013] → Obchody → Nový obchod (+ farmár podľa kódu/mena) */
+{const m=/^#novy-obchod(?:=([^&]+))?/i.exec(location.hash||"");if(m){const q=m[1]?decodeURIComponent(m[1]):"";try{sessionStorage.setItem("ernte-tab","deals")}catch(e){}
+  let n=0;const t=setInterval(()=>{if(++n>1200){clearInterval(t);return}const b=document.querySelector("[data-roknew]"),f=document.getElementById("fDeal");
+    if(!b||!f||[...document.querySelectorAll(".wlc")].some(w=>w.getClientRects().length))return;clearInterval(t);b.click();
+    if(q){let c=0;const fill=()=>{const f=document.getElementById("fDeal");if(!f)return;const k=s=>String(s||"").normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase().trim(),v=k(q),F=(typeof STATE!=="undefined"&&STATE.farmers)||[];
+      const x=F.find(z=>k(z.code)===v)||F.find(z=>k(z.name)===v);if(!x)return;if(f.elements.farmer.value!==x.id){f.elements.farmer.value=x.id;const i=document.getElementById("dfq");if(i)i.value=String(x.name).trim();const L=document.getElementById("dfl");if(L)L.innerHTML=`<div class="s">✓ Vybraný: <b>${String(x.name).trim().replace(/</g,"&lt;")}</b></div>`}};
+      const ft=setInterval(()=>{fill();if(++c>12)clearInterval(ft)},250)}
+    try{history.replaceState(null,"",location.pathname+location.search)}catch(e){}},250)}}
 })();
