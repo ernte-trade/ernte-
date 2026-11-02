@@ -10,22 +10,46 @@ const CFG={
   farm:{def:"",S:[["reg",":scope > .card.fsall","🔎 Údaje z registra"],["ppa",":scope > .card.ppa","🌾 Pôda z PPA"],["fpc",":scope > details.card.fpc","👁️ Čo vidia farmári"]]}
 };
 const KEY=t=>"ernte-sec-"+t;
-const getSel=t=>{try{const v=sessionStorage.getItem(KEY(t));return v===null?CFG[t].def:v}catch(x){return CFG[t].def}};
+const DEF=t=>CFG[t]?CFG[t].def:"*";
+const getSel=t=>{try{const v=sessionStorage.getItem(KEY(t));return v===null?DEF(t):v}catch(x){return DEF(t)}};
 const setSel=(t,v)=>{try{sessionStorage.setItem(KEY(t),v)}catch(x){}};
+/* 2. 11. 11:11 PRÍKAZ MAJITEĽA: „každú dlaždicu daj hore do tlačidla, hneď z hora si vyberiem – v každej sekcii“ → aj ostatné záložky:
+   každá hlavná karta (s nadpisom) = tlačidlo v lište hore; „📋 Všetko“ ukáže všetko (predvolené). */
+const SKIPT={fleet:1,wx:1};
+const NOC=".secbar,.rokbar,.spatbar,.hero,.zfh,.plwarn,[class*=inst],[data-nosec],.fdesc,nav,.hrow,script,style";
+const lab=el=>{const h=el.matches("h2,h3")?el:el.querySelector("h2,h3,summary,.row .t,.t,b.sth,legend")||el.querySelector(":scope > b, :scope > strong, :scope > div > b, :scope > .row > b");
+  let x="";if(h){const c=h.cloneNode(true);c.querySelectorAll("small,.s,.sub,.muted,.fdesc,button,svg,img").forEach(z=>z.remove());x=String(c.textContent||"").replace(/\s+/g," ").trim()}if(!x)return "";x=x.replace(/›$/,"").split(" · ")[0].trim();return x.length>30?x.slice(0,29).trim()+"…":x};
+const CARD=".card,section.card,details.card,form.card";
+function items(box,deep){const K=[...box.children].filter(e=>!e.matches(NOC)),L=[];if(deep>3)return L;
+  const nH=K.filter(e=>e.matches("h2")).length;let g=null;
+  for(const e of K){if(e.matches("h2")){if(nH<2){g=null;continue}const x=lab(e);g=x?{x,els:[e]}:null;if(g)L.push(g);continue}
+    if(g){g.els.push(e);continue}
+    if(e.matches(CARD)){const x=lab(e);if(x)L.push({x,els:[e]});continue}
+    // obal (Zúčtovanie/Danube .zt, Prehľad .hub …) → sekcie vo vnútri
+    let I=[];if([...e.children].filter(c=>c.matches(CARD)||c.matches("h2")).length>=2)I=items(e,deep+1);
+    if(I.length)L.push(...I);else if(!e.matches(".acn-wrap,.pban,.ernNew,[id^=ern]")&&e.children.length>=2){const x=lab(e);if(x)L.push({x,els:[e]})}}
+  return L}
+function auto(app,t){if(SKIPT[t])return null;const L=[],seen={};
+  for(const it of items(app,0)){if(seen[it.x])continue;seen[it.x]=1;L.push(["a:"+it.x.replace(/[\d\s()]+/g,""),it.els,it.x])}
+  return L.length>=3&&L.length<=16?L:null}
 function apply(){const app=document.getElementById("app");if(!app)return;
-  const t=typeof TAB!=="undefined"?TAB:"",C=CFG[t];
+  const t=typeof TAB!=="undefined"?TAB:"";let C=CFG[t];
+  if(!C&&OWN()&&!window.ERNTE_VIEWAS){app.querySelectorAll(".sbh").forEach(e=>e.classList.remove("sbh"));const A=auto(app,t);if(A)C={def:"*",auto:A}}
   if(!OWN()||!C||window.ERNTE_VIEWAS){app.querySelectorAll(":scope > .secbar").forEach(b=>b.remove());app.querySelectorAll(".sbh").forEach(e=>e.classList.remove("sbh"));return}
-  const found=C.S.map(([k,sel,lab])=>[k,app.querySelector(sel),lab]).filter(x=>x[1]);
+  let found=C.auto?C.auto:C.S.map(([k,sel,lab])=>[k,app.querySelector(sel),lab]).filter(x=>x[1]);
+  /* ďalšie karty záložky (Obchodné návrhy AI, Môj plán, Predaj…) tiež ako tlačidlá; pri predvolenom výbere ostávajú viditeľné */
+  if(!C.auto){const E=found.map(x=>x[1]),X=(items(app,0)||[]).filter(it=>!it.els.some(z=>E.some(c=>c===z||c.contains(z)||z.contains(c)))).map(it=>["x:"+it.x.replace(/[\d\s()]+/g,""),it.els,it.x,1]);found=found.concat(X)}
   if(found.length<2){app.querySelectorAll(":scope > .secbar").forEach(b=>b.remove());return}
-  let cur=getSel(t);if(cur&&!found.some(x=>x[0]===cur))cur=found[0][0];
+  let cur=getSel(t);if(C.auto&&cur!=="*"&&!found.some(x=>x[0]===cur))cur="*";else if(!C.auto&&cur&&cur!=="*"&&!found.some(x=>x[0]===cur))cur="";
   const act=document.activeElement;
-  for(const [k,el] of found){const keep=k===cur||(act&&el.contains(act)&&act!==document.body);el.classList.toggle("sbh",!keep)}
-  let bar=app.querySelector(":scope > .secbar");const html=found.map(([k,,lab])=>`<button type="button" data-secb="${k}" aria-pressed="${k===cur}">${lab}</button>`).join("");
+  for(const [k,el,,xx] of found){const E=Array.isArray(el)?el:[el],keep=cur==="*"||k===cur||(xx&&!cur)||(act&&act!==document.body&&E.some(z=>z.contains(act)));E.forEach(z=>z.classList.toggle("sbh",!keep))}
+  let bar=app.querySelector(":scope > .secbar");const html=`<button type="button" data-secb="*" aria-pressed="${cur==="*"}">📋 Všetko</button>`+found.map(([k,,lab])=>`<button type="button" data-secb="${String(k).replace(/"/g,"&quot;")}" aria-pressed="${k===cur}">${String(lab).replace(/</g,"&lt;")}</button>`).join("");
   if(!bar){bar=document.createElement("div");bar.className="secbar";bar.setAttribute("role","toolbar");bar.setAttribute("aria-label","Sekcie");}
   if(bar.dataset.h!==html+t){bar.innerHTML=html;bar.dataset.h=html+t}
-  const first=found[0][1];if(bar.nextElementSibling!==first||bar.parentNode!==app)app.insertBefore(bar,first)}
+  const top=[...app.children].filter(e=>e.matches("nav.tabs,.rokbar,.spatbar,.uvodb")&&!e.classList.contains("sbh")),anc=top.length?top[top.length-1]:null;
+  if(anc){if(bar.parentNode!==app||bar.previousElementSibling!==anc)anc.after(bar)}else{const f0=found[0][1],first=Array.isArray(f0)?f0[0]:f0;if(bar.nextElementSibling!==first||bar.parentNode!==app)app.insertBefore(bar,first)}}
 document.addEventListener("click",e=>{const b=e.target.closest&&e.target.closest("[data-secb]");if(!b)return;e.preventDefault();
-  const t=TAB,k=b.dataset.secb,cur=getSel(t);setSel(t,cur===k?"":k);apply();
+  const t=TAB,k=b.dataset.secb,cur=getSel(t),au=!CFG[t];setSel(t,au?(cur===k?"*":k):(cur===k?(k==="*"?"":""):k));apply();
   const bar=document.querySelector("#app > .secbar");if(bar&&cur!==k){const y=bar.getBoundingClientRect().top+scrollY-70;if(Math.abs(scrollY-y)>40)window.scrollTo({top:y,behavior:"smooth"})}});
 {const s=document.createElement("style");s.textContent=`.sbh{display:none!important}
 .secbar{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin:4px 0 12px}

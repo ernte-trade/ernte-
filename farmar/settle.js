@@ -86,7 +86,7 @@ function farmHTML(){const F=(STATE.farmers||[]).filter(f=>String(f.name||"").tri
    ${Z.d0||Z.d1?`<div class="w btns"><button type="button" data-zclr="1">✕ Celá zmluva (bez dátumu)</button></div>`:`<div class="w s">Bez dátumu = celá zmluva. Zadaj od–do, ak zúčtovávaš len časť dodávok (napr. za týždeň).</div>`}</div>`;
   if(!Z.farm)return h+`<div id="zflBox">${zflList()}</div>`;
   if(!Z.C){loadC();return h+`<div class="card"><div class="s">Počítam zúčtovanie…</div></div>`}if(Z.C.err)return h+`<div class="card"><div class="s">${/settle_contracts/.test(Z.C.err)?"Zúčtovanie sa zapne po aktualizácii databázy (pár minút).":esc(Z.C.err)}</div></div>`;
-  const f=C.farmer||{};h+=`<div class="card zfh"><div><b>${esc(f.name||"")}</b><small>${esc([f.code,f.addr,f.phone].filter(Boolean).join(" · "))}</small></div><button type="button" data-zfarm="">Iný farmár</button></div>`;
+  const f=C.farmer||{};h+=`<div class="card zfh"><div><b>${esc(f.name||"")}</b><small>${esc([f.code,f.addr,f.phone].filter(Boolean).join(" · "))}</small></div><div class="zfhb"><button type="button" class="zrekb" data-zrektop="1">⚠️ Reklamácia</button><button type="button" data-zfarm="">Iný farmár</button></div></div>`;
   h+=nocHTML(f);
   if(!K.length)return h+`<div class="card"><div class="s">Farmár nemá žiadnu zmluvu.${(Z.noc||{})[f.id]&&(Z.noc[f.id]||[]).length?" Vytvor ju vyššie z jeho lístkov.":""}</div></div>`;
   if(Z.deal==="*")return h+allHTML(K.filter(x=>Z.com==="*"||x.com===Z.com));
@@ -256,6 +256,8 @@ document.addEventListener("click",async e=>{if(typeof ROLE==="undefined"||ROLE!=
   if(x=t.closest("[data-zfarm]")){if(x.dataset.zfarm){const ff=(STATE.farmers||[]).find(y=>y.id===x.dataset.zfarm);if(ff)Z.fq=ff.name}Z.farm=x.dataset.zfarm;Z.C=null;Z.L={};Z.open=null;Z.com="";Z.deal="";if(!Z.farm)Z.fq="";renderStaff();return}
   if(x=t.closest("[data-zopen]")){const id=x.dataset.zopen;Z.open=Z.open===id?null:id;renderStaff();if(Z.open&&!Z.L[id]){await loadL(id);renderStaff()}return}
   if(t.closest("[data-zpdfall]")){allPdf();return}
+  /* 2. 11. 11:13 „kde je tlačidlo reklamácia“ – hneď hore pri farmárovi: vybraná zmluva, inak všetky zmluvy komodity */
+  if(t.closest("[data-zrektop]")){const CS=(Z.C&&Z.C.contracts)||[],one=Z.deal&&Z.deal!=="*"&&CS.find(y=>y.id===Z.deal);rekPdf(one?[one]:CS.filter(x=>Z.com==="*"||x.com===Z.com),t.closest("[data-zrektop]"));return}
   if(t.closest("[data-zrekall]")){const KS=((Z.C&&Z.C.contracts)||[]).filter(x=>Z.com==="*"||x.com===Z.com);rekPdf(KS,t.closest("[data-zrekall]"));return}
   if(x=t.closest("[data-zrek]")){const k=Z.C&&(Z.C.contracts||[]).find(y=>y.id===x.dataset.zrek);if(k)rekPdf([k],x);return}
   if(x=t.closest("[data-zpdf]")){const id=x.dataset.zpdf,k=Z.C&&Z.C.contracts.find(y=>y.id===id);if(!k)return;const L=periodOf(Z.L[id]||await loadL(id));
