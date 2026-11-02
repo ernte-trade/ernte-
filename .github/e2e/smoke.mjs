@@ -54,7 +54,7 @@ await Promise.all(ROLES.map(async r => { for (const w of WIDTHS) {
     if (run.load_ms != null) { R.load.push(run.load_ms); if (run.load_ms > 3000) R.warns.push(`${r.id} ${w}px: načítanie ${(run.load_ms / 1000).toFixed(1).replace(".", ",")} s (nad 3 s)`); }
     await pg.waitForTimeout(Math.max(0, 4000 - (Date.now() - t0)));
     // zavrieť úvod LIVE, ak sa ukázal
-    await pg.evaluate(() => { const g = [...document.querySelectorAll("button,a")].find(x => /Poďme na to/.test(x.innerText || "")); g && g.click(); });
+    await pg.evaluate(() => { const g = [...document.querySelectorAll("button,a")].find(x => /Poďme na to|Hlavná ponuka/.test(x.innerText || "")); g && g.click(); });
     await pg.waitForTimeout(800);
     const st = await pg.evaluate(() => { const a = document.getElementById("app"); const t = (a && a.innerText || "").trim(); return { len: t.length, loading: /^Načítavam/.test(t) || (t.length < 400 && /Načítavam/.test(t)), login: !!document.querySelector("#app input[type=email]") && !document.querySelector("[data-tab],[data-ftile],[data-fsec]") }; });
     if (st.len < 40 || st.loading) await fail(`aplikácia sa nenačítala (${st.loading ? "Načítavam…" : "prázdna"})`);
