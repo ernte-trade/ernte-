@@ -811,7 +811,7 @@ html[data-theme=light] .ftbl th{color:#0f172a}html[data-theme=light] .fdban{colo
 <link rel="stylesheet" href="trus.css?v=20261101-0635">
 <link rel="stylesheet" href="ev.css?v=20261027-1600">
 <link rel="stylesheet" href="ui.css?v=20261029-0030">
-<link rel="stylesheet" href="fit.css?v=20261102-1125">
+<link rel="stylesheet" href="fit.css?v=20261102-1140">
 </head>
 <body>
 <div class="wrap">
@@ -851,6 +851,9 @@ const esc=t=>String(t??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&
 const num=s=>{if(s==null||s==="")return NaN;if(typeof s==="number")return s;let t=String(s).replace(/[\s\u00a0]/g,"");if(t.includes(","))t=t.replace(/\./g,"").replace(",",".");return Number(t)};
 const fmt=(x,d=2)=>Number.isFinite(+x)&&x!==null&&x!==""?(+x).toLocaleString("sk-SK",{minimumFractionDigits:d,maximumFractionDigits:d}):"–";
 const dSK=d=>{if(!d)return "";const m=String(d).match(/^(\d{4})-(\d{2})-(\d{2})/);return m?`${+m[3]}. ${+m[2]}. ${m[1]}`:String(d)};
+/* 2. 11. príkaz majiteľa: pri každej zmluve kto ju vytvoril, dátum a čas (deals.created_by – zapisuje databáza podľa prihlásenia) */
+const dealBy=d=>{if(!d||!d.created_at)return "";const t=new Date(d.created_at);if(isNaN(t))return "";const w=t.toLocaleDateString("sk-SK",{day:"numeric",month:"numeric",year:"numeric"})+" "+t.toLocaleTimeString("sk-SK",{hour:"2-digit",minute:"2-digit"});
+  return `<small class="dsby">👤 ${d.created_by?"vytvoril(a) <b>"+esc(d.created_by)+"</b> · ":"vytvorené "}${esc(w)}</small>`};
 const dtSK=d=>d?new Date(d).toLocaleString("sk-SK",{day:"numeric",month:"numeric",hour:"2-digit",minute:"2-digit"}):"";
 const comName=c=>(MK.find(m=>m[0]===c)||[c,c||"–"])[1];
 const specLine=c=>{const s=SPEC[c];return s?`vlhkosť max. ${String(s[0]).replace(".",",")} %, nečistoty max. ${s[1]} %${s[2]?", Non-GMO":""}`:""};
@@ -2834,7 +2837,7 @@ function vDeals(){const F=STATE.farmers,pre=DEALF||{},OWN=ROLE==="owner";
    <label class="w">Poznámka – 👁️ vidí aj farmár (interné veci sem nepíš)<input name="note" value="${esc(pre.note||"")}"></label>
    <div class="w btns"><button class="pri" type="submit">Uložiť obchod</button>${DEALF?`<button type="button" data-clrdeal>Zrušiť</button>`:""}</div></form>`;
   const dCard=(d,ro)=>{const df=OWN?(STATE.dfin||{})[d.id]:null,sell=df&&df.sell_price!=null?+df.sell_price:null,m=sell!=null?sell-(+d.price):null;
-    return `<div class="card"><div class="ds-hd"><span class="ds-ic" aria-hidden="true">🤝</span><span class="ds-ttl"><b>${esc(fName(d.farmer_id))}</b><small>${esc(d.no)}${d.term?" · termín "+esc(d.term):""}</small></span>${pill(DST[d.status]||[d.status])}</div>
+    return `<div class="card"><div class="ds-hd"><span class="ds-ic" aria-hidden="true">🤝</span><span class="ds-ttl"><b>${esc(fName(d.farmer_id))}</b><small>${esc(d.no)}${d.term?" · termín "+esc(d.term):""}</small>${dealBy(d)}</span>${pill(DST[d.status]||[d.status])}</div>
     <div class="ds-chips">${dsChip("Plodina",esc(comName(d.com)))}${dsChip("Množstvo",fmt(d.tons)+" t")}${dsChip("Odvezené",fmt(d.delivered_t)+" t")}${dsChip("Nákup",fmt(d.price)+" €/t")}${OWN?(sell!=null?dsChip("Predaj",fmt(sell)+" €/t","",1)+dsChip("Marža €/t",dsSg2(m),m>=0?"pos":"neg",1)+dsChip("Marža spolu",dsSg(m*(+d.tons))+" €",m>=0?"pos":"neg",1)
       :ro?dsChip("Predaj · marža","nezadané","na",1):`<button type="button" class="ds-chip ow dsell" data-dsell="${esc(d.id)}"><small>Predaj · marža</small><b>＋ zadať predajnú cenu</b></button>`):""}</div>
     ${dealOver(d)}<div class="btns"><button type="button" data-cpdf="${esc(d.id)}">📄 Kúpna zmluva PDF</button>${OWN?`<button type="button" data-dfull="${esc(d.id)}">✏️ Upraviť obchod</button><button type="button" data-darch="${esc(d.id)}" data-on="${d.archived?0:1}">${d.archived?"♻️ Obnoviť z archívu":"🗄️ Archivovať"}</button>`:""}${MAIN_OK()?`<button type="button" class="danger" data-ddel="${esc(d.id)}">🗑️ Vymazať</button>`:""}</div>

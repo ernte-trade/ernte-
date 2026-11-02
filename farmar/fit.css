@@ -252,3 +252,7 @@ html[data-theme=light] button.danger{color:#b91c1c!important}
 .zfh{flex-wrap:wrap}.zfh>.zfhb{display:flex!important;gap:8px;flex-wrap:wrap;justify-content:flex-end;flex:none;max-width:100%}
 .zfh>.zfhb button{min-height:44px;white-space:nowrap}
 @media(max-width:480px){.zfh>.zfhb{flex:1 1 100%;justify-content:stretch}.zfh>.zfhb button{flex:1}}
+
+/* 2. 11.: kto vytvoril zmluvu – pod číslom zmluvy, celý text (zalomí sa, neoreže) */
+.ds-ttl .dsby{display:block;white-space:normal!important;overflow:visible!important;text-overflow:clip!important;margin-top:2px;opacity:.85;font-size:.82em}
+.ds-ttl .dsby b{font-weight:700}
