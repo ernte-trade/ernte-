@@ -474,34 +474,34 @@ def meteo():
                 rn, mn, mx, fr = _met_no(la, lo)
             except Exception as e:
                 err.append(f"MET {r}: {str(e)[:60]}"); vals.append(None); continue
-            try:
-                ps = _nasa_past(la, lo)
-            except Exception as e:
-                err.append(f"NASA {r}: {str(e)[:60]}"); ps = 0.0
-            vals.append((ps, rn, mn, mx, fr))
+            vals.append((None, rn, mn, mx, fr))  # NASA POWER má v robots.txt zákaz → minulé zrážky sa nezapisujú (žiadna falošná nula)
         if not any(vals):
             raise RuntimeError("počasie bez údajov – " + "; ".join(err[:3]))
-        src = "MET Norway (api.met.no, CC BY 4.0) + NASA POWER (verejná doména)" + (f" · chyby: {'; '.join(err[:2])}" if err else "")
+        src = "MET Norway (api.met.no, CC BY 4.0) – predpoveď 7 dní; minulé zrážky a sucho bez zdroja" + (f" · chyby: {'; '.join(err[:2])}" if err else "")
     agg = {}
     for (r, _, _), v in zip(pts, vals):
         if not v:
             continue
         a = agg.setdefault(r, {"p_past": [], "p_next": [], "tmin": [], "tmax": [], "frost": []})
         for k, x in zip(("p_past", "p_next", "tmin", "tmax", "frost"), v):
-            a[k].append(x)
+            if x is not None:
+                a[k].append(x)
     n = 0
     d = TODAY.isoformat()
     for r, a in agg.items():
         if not a["p_next"]:
             continue
         av = lambda x: sum(x) / len(x)
-        pn, ppast, tmin, tmax, frost = av(a["p_next"]), av(a["p_past"]), min(a["tmin"]), max(a["tmax"]), max(a["frost"])
+        pn, tmin, tmax, frost = av(a["p_next"]), min(a["tmin"]), max(a["tmax"]), max(a["frost"])
+        ppast = av(a["p_past"]) if a["p_past"] else None
         n += add("meteo", r, "zrazky_7d_mm", pn, "mm", d)
-        n += add("meteo", r, "zrazky_minul_7d_mm", ppast, "mm", d)
+        if ppast is not None:
+            n += add("meteo", r, "zrazky_minul_7d_mm", ppast, "mm", d)
         n += add("meteo", r, "tmin_7d", tmin, "°C", d)
         n += add("meteo", r, "tmax_7d", tmax, "°C", d)
         n += add("meteo", r, "mraz_dni_7d", frost, "dni", d)
-        n += add("meteo", r, "sucho", 1 if (pn + ppast) < 10 and tmax >= 28 else 0, "0/1", d)
+        if ppast is not None:
+            n += add("meteo", r, "sucho", 1 if (pn + ppast) < 10 and tmax >= 28 else 0, "0/1", d)
     return n, src
 
 
@@ -528,7 +528,7 @@ cutm = (TODAY - dt.timedelta(days=30)).isoformat()
 rows = [r for r in ROWS.values() if r["d"] >= (cutm if r["s"] == "meteo" else cut)]
 rows.sort(key=lambda r: (r["s"], r["c"], r["i"], r["d"]))
 out = {"at": iso(), "ver": 1, "src": SRC, "d": rows,
-       "credit": "ECB; CFTC; USDA (verejná doména); EK Agri-food data portal (CC BY 4.0); EIA; MET Norway (CC BY 4.0); NASA POWER; bot Trhové ceny"}
+       "credit": "ECB; CFTC; USDA (verejná doména); EK Agri-food data portal (CC BY 4.0); EIA; MET Norway (CC BY 4.0); bot Trhové ceny"}
 out.update(EXTRA)
 json.dump(out, open(OUT_P, "w"), ensure_ascii=False, separators=(",", ":"))
 print(json.dumps({k: {"st": v.get("st"), "n": v.get("n"), "msg": v.get("msg")} for k, v in SRC.items()}, ensure_ascii=False, indent=1))
