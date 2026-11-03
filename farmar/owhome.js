@@ -81,6 +81,7 @@ function profitHTML(){const X=window.HUBX,R=X&&X.H.risk,L=[];
   if(MAIN()&&window.ziskOpen)L.push(tile({i:"🔍",l:"Kde zarábame a strácame",v:"→",s:"komodity · odberatelia · farmári · úniky",go:"#zisk",c:"acc"}));
   if(window.vZuct)L.push(tile({i:"🧾",l:"Zúčtovanie",v:"→",s:"lístky · faktúry · PDF",go:"zuct"}));
   if(MAIN()&&STATE.me&&STATE.me.hlavny!==false)L.push(tile({i:"🔮",l:"Algomancia",v:"→",s:"AI veštba · kedy predať",go:"pred",c:"acc"}));
+  if(MAIN()&&window.aixHTML)L.push(tile({i:"📊",l:"Agro Index",v:"→",s:"regionálne ceny · báza · doprava (PIN)",go:"pred",c:"acc"}));
   return `<div class="owg">${L.join("")}</div>`}
 
 // ---- 5. komodity, služby, evidencia, burza ----

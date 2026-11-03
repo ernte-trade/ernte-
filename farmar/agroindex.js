@@ -81,6 +81,7 @@ window.aixHTML=function(){if(!OK())return "";css();
   <div class="s" style="font-size:.8rem">Súprava 40 t, 25 t nákladu, 32 l/100 km, ostatné náklady 0,95 €/km, prázdny návrat.</div>
   <h4>Čo by sa predávalo</h4><ul><li>✓ regionálne indexy cien a bázy, index dopravy, súhrnná kvalita a objemy</li><li>✕ nikdy: farmári (GDPR), ponuky odberateľov a konkurencie, naše aktuálne ceny a modely, burza AHDB bez súhlasu</li></ul>
   <div class="s" style="font-size:.78rem">Zdroje: AHDB, Poľnoinfo, Európska komisia, AKI PÁIR, Börse Wien, Agrotender, fuel-prices.eu / EK Weekly Oil Bulletin (CC BY 4.0), ECB.</div></details>`};
+document.addEventListener("click",ev=>{const t=ev.target.closest&&ev.target.closest('[data-owgo="pred"]');if(t&&/Agro Index/.test(t.textContent||""))try{sessionStorage.setItem("ernte-aix-open","1")}catch(_){}},true);
 document.addEventListener("toggle",ev=>{const d=ev.target;if(d&&d.matches&&d.matches("[data-aix]"))try{sessionStorage.setItem("ernte-aix-open",d.open?"1":"0")}catch(_){}},true);
 setInterval(()=>{if(OK()&&D.at&&Date.now()-D.at>30*6e4)D.at=0},6e4);
 })();
