@@ -26,49 +26,29 @@ const plain=h=>{const d=document.createElement("div");d.innerHTML=h;return (d.te
 // ---- okno: prečítať → zaškrtnúť → meno → podpis prstom ----
 function modal(user){return new Promise(async res=>{
   const html=await text();const d=document.createElement("div");d.className="gdm";d.setAttribute("role","dialog");d.setAttribute("aria-modal","true");d.setAttribute("aria-label","Ochrana osobných údajov – súhlas");
-  d.innerHTML=`<div class="gdbox"><div class="gdhd"><span class="gdic">🛡️</span><div><b>Ochrana osobných údajov</b><small>Pred vstupom do aplikácie si prečítajte celé poučenie a podpíšte súhlas · verzia ${E(VER.split("-").reverse().join(". "))}</small></div></div>
+  d.innerHTML=`<div class="gdbox"><div class="gdhd"><span class="gdic">🛡️</span><div><b>Ochrana osobných údajov</b><small>Pred vstupom do aplikácie potvrďte súhlas s podmienkami · verzia ${E(VER.split("-").reverse().join(". "))}</small></div></div>
    <div class="gdtxt" tabindex="0">${html}<div class="gdend">— koniec poučenia —</div></div>
-   <div class="gdprog"><i></i><span>Prečítajte až na koniec ↓</span></div>
-   <form class="gdform off" novalidate>
-    <label class="gdchk"><input type="checkbox" name="ok"><span class="gdk" aria-hidden="true">✓</span><span>Prečítal(a) som si celé poučenie o ochrane osobných údajov ERNTE spol. s r.o. a VALKO s.r.o., rozumiem mu a <b>súhlasím</b> so spracúvaním mojich osobných údajov v rozsahu a na účely v ňom uvedené. Súhlasím, že tento súhlas aj ďalšie dokumenty v aplikácii (napr. kúpne zmluvy) podpisujem elektronicky – podpisom prstom v aplikácii ERNTE, ktorý má rovnaké účinky ako vlastnoručný podpis. Súhlas môžem kedykoľvek odvolať na jana.valkova@ernte.sk.</span></label>
-    <label class="gdname">Meno a priezvisko (štatutár / osoba, ktorá podpisuje)<input name="nm" autocomplete="name" maxlength="120" placeholder="napr. Ján Novák"></label>
-    <div class="gdsigw"><div class="gdsigl"><span>✍️ Podpis prstom</span><button type="button" class="gdclr">Vymazať</button></div><canvas class="gdsig" aria-label="Podpisové pole"></canvas></div>
+   <div class="gdprog"><i></i><span>Poučenie si môžete prečítať posunutím textu ↓</span></div>
+   <form class="gdform" novalidate>
     <div class="gderr" role="alert"></div>
-    <button class="pri gdgo" type="submit">✍️ Podpisujem a súhlasím</button>
+    <button class="pri gdgo" type="submit">✅ Súhlasím s podmienkami</button>
     <button class="gdno" type="button">Nesúhlasím – odhlásiť sa</button>
-    <small class="gdmeta">Prihlásený: ${E(user&&user.email||"")} · uloží sa meno, podpis, čas a zariadenie ako doklad o súhlase.</small>
+    <small class="gdmeta">Prihlásený: ${E(user&&user.email||"")} · uloží sa čas, verzia poučenia a zariadenie ako doklad o súhlase.</small>
    </form></div>`;
   document.body.appendChild(d);document.documentElement.classList.add("gdlock");
-  const tx=d.querySelector(".gdtxt"),fm=d.querySelector(".gdform"),pr=d.querySelector(".gdprog"),er=d.querySelector(".gderr"),cv=d.querySelector(".gdsig");
-  let read=false;const chk=()=>{const p=Math.min(1,(tx.scrollTop+tx.clientHeight)/Math.max(1,tx.scrollHeight));pr.querySelector("i").style.width=Math.round(p*100)+"%";
-    if(!read&&tx.scrollTop+tx.clientHeight>=tx.scrollHeight-30){read=true;fm.classList.remove("off");pr.classList.add("ok");pr.querySelector("span").textContent="✓ Prečítané – teraz zaškrtnite, napíšte meno a podpíšte sa";d.classList.add("rd");er.classList.remove("on");requestAnimationFrame(()=>{size();fm.scrollIntoView({block:"start",behavior:"smooth"})})}};
-  tx.addEventListener("scroll",chk,{passive:true});setTimeout(chk,300);
-  fm.addEventListener("focusin",()=>{if(!read){tx.focus();bad("Najprv si prečítajte celé poučenie – posuňte text až na koniec.")}});
-  // podpis
-  const cx=cv.getContext("2d");let pts=0,drawing=false,last=null;
-  const size=()=>{const r=cv.getBoundingClientRect(),k=Math.min(3,window.devicePixelRatio||1);if(!r.width)return;const img=pts?cv.toDataURL():null;cv.width=Math.round(r.width*k);cv.height=Math.round(r.height*k);
-    cx.setTransform(k,0,0,k,0,0);cx.lineWidth=2.4;cx.lineCap="round";cx.lineJoin="round";cx.strokeStyle="#0b1b3a";if(img){const i=new Image();i.onload=()=>{cx.setTransform(1,0,0,1,0,0);cx.drawImage(i,0,0,cv.width,cv.height);cx.setTransform(k,0,0,k,0,0)};i.src=img}};
-  requestAnimationFrame(size);window.addEventListener("resize",size);
-  const at=e=>{const r=cv.getBoundingClientRect();return {x:e.clientX-r.left,y:e.clientY-r.top}};
-  cv.addEventListener("pointerdown",e=>{if(!read){bad("Najprv si prečítajte celé poučenie – posuňte text až na koniec.");return}e.preventDefault();cv.setPointerCapture(e.pointerId);drawing=true;last=at(e);cx.beginPath();cx.arc(last.x,last.y,1.1,0,7);cx.fillStyle="#0b1b3a";cx.fill();pts++});
-  cv.addEventListener("pointermove",e=>{if(!drawing)return;e.preventDefault();const p=at(e);cx.beginPath();cx.moveTo(last.x,last.y);cx.lineTo(p.x,p.y);cx.stroke();last=p;pts++});
-  ["pointerup","pointercancel","pointerleave"].forEach(k=>cv.addEventListener(k,()=>{drawing=false}));
-  d.querySelector(".gdclr").onclick=()=>{cx.save();cx.setTransform(1,0,0,1,0,0);cx.clearRect(0,0,cv.width,cv.height);cx.restore();pts=0};
+  const tx=d.querySelector(".gdtxt"),fm=d.querySelector(".gdform"),pr=d.querySelector(".gdprog"),er=d.querySelector(".gderr");
+  // 3. 11. príkaz majiteľa: bez podpisu prstom a bez mena – iba tlačidlo „Súhlasím s podmienkami“
+  const chk=()=>{const p=Math.min(1,(tx.scrollTop+tx.clientHeight)/Math.max(1,tx.scrollHeight));pr.querySelector("i").style.width=Math.round(p*100)+"%"};
+  tx.addEventListener("scroll",chk,{passive:true});setTimeout(chk,300);d.classList.add("rd");
   function bad(m){er.textContent="⚠️ "+m;er.classList.add("on")}
   d.querySelector(".gdno").onclick=async()=>{if(!confirm("Bez súhlasu s ochranou osobných údajov nie je možné aplikáciu používať. Odhlásiť sa?"))return;try{await sb.auth.signOut()}catch(x){}location.reload()};
   fm.addEventListener("submit",async e=>{e.preventDefault();e.stopPropagation();er.classList.remove("on");
-    if(!read){bad("Prečítajte si poučenie až na koniec.");return}
-    if(!fm.ok.checked){bad("Zaškrtnite súhlas – ťuknite na políčko.");return}
-    const nm=fm.nm.value.trim();if(nm.length<3||!/\s/.test(nm)){bad("Napíšte meno aj priezvisko.");fm.nm.focus();return}
-    if(pts<12){bad("Podpíšte sa prstom do bieleho rámčeka.");return}
-    const bt=fm.querySelector(".gdgo");bt.disabled=true;bt.textContent="Ukladám podpis…";
-    // podpis zmenšený (max 600 px šírka), aby záznam nebol veľký
-    let sig;try{const k=Math.min(1,600/cv.width),c2=document.createElement("canvas");c2.width=Math.round(cv.width*k);c2.height=Math.round(cv.height*k);c2.getContext("2d").drawImage(cv,0,0,c2.width,c2.height);sig=c2.toDataURL("image/png")}catch(x){sig=cv.toDataURL("image/png")}
+    const bt=fm.querySelector(".gdgo");bt.disabled=true;bt.textContent="Ukladám súhlas…";
     const h=await sha(plain(html));
-    const r=await sb.rpc("gdpr_sign",{p_name:nm,p_sig:sig,p_ver:VER,p_hash:h,p_ua:navigator.userAgent.slice(0,300)});
-    if(r.error){bt.disabled=false;bt.textContent="✍️ Podpisujem a súhlasím";bad(nofn(r.error.message)?"Podpisovanie sa práve zapína – skúste o pár minút.":(r.error.message||"Nepodarilo sa uložiť – skúste znova."));return}
-    window.ERNTE_GDPR_OK=1;done=true;d.remove();document.documentElement.classList.remove("gdlock");window.removeEventListener("resize",size);
-    if(typeof toast==="function")toast("✓ Súhlas podpísaný – ďakujeme.",3500);res()});
+    const r=await sb.rpc("gdpr_agree",{p_ver:VER,p_hash:h,p_ua:navigator.userAgent.slice(0,300)});
+    if(r.error){bt.disabled=false;bt.textContent="✅ Súhlasím s podmienkami";bad(nofn(r.error.message)?"Súhlas sa práve zapína – skúste o pár minút.":(r.error.message||"Nepodarilo sa uložiť – skúste znova."));return}
+    window.ERNTE_GDPR_OK=1;done=true;d.remove();document.documentElement.classList.remove("gdlock");
+    if(typeof toast==="function")toast("✓ Súhlas uložený – ďakujeme.",3500);res()});
 })}
 
 async function gate(user){if(done||skip()||!user)return;if(busy)return busy;
@@ -112,7 +92,7 @@ async function pdf(id){const r=await sb.from("gdpr_sign").select("*").eq("id",id
   const css=typeof brandCss==="function"?brandCss("ernte"):"";const w=window.open("");if(!w)return;
   w.document.write(`<!doctype html><html lang="sk"><head><meta charset="utf-8"><title>GDPR súhlas ${E(s.name)} ${E(String(s.at).slice(0,10))}</title><style>${css}body{font:13px/1.5 system-ui,sans-serif;color:#111;margin:24px}h1{font-size:18px}h2{font-size:14px;margin:14px 0 4px}table{border-collapse:collapse;width:100%;font-size:11px}td,th{border:1px solid #ccc;padding:4px;vertical-align:top}.box{border:2px solid #0b1b3a;border-radius:8px;padding:12px;margin:16px 0;page-break-inside:avoid}.sig{height:110px;border-bottom:1px solid #333}.meta{font-size:11px;color:#444}.txt{font-size:11.5px}</style></head><body>${h}
    <div class="box"><b>Vyhlásenie dotknutej osoby</b><p>Ja, <b>${E(s.name)}</b> (prihlásenie ${E(s.email)}), potvrdzujem, že som si prečítal(a) celé poučenie o ochrane osobných údajov ERNTE spol. s r.o. a VALKO s.r.o. uvedené nižšie, rozumiem mu a súhlasím so spracúvaním mojich osobných údajov v rozsahu a na účely v ňom uvedené. Súhlasím s elektronickým podpisovaním dokumentov v aplikácii ERNTE (podpis prstom) s rovnakými účinkami ako vlastnoručný podpis. Súhlas môžem kedykoľvek odvolať.</p>
-   <img class="sig" src="${E(s.sig||"")}" alt="podpis"><div class="meta">Podpísané elektronicky v aplikácii ERNTE Trade & Logistic: ${E(dt(s.at))} · verzia poučenia ${E(s.ver)} · odtlačok textu SHA-256 ${E(s.txt_hash||"–")}<br>Zariadenie: ${E(s.ua||"–")}</div></div>
+   ${/^data:image/.test(s.sig||"")?`<img class="sig" src="${E(s.sig)}" alt="podpis">`:`<p><b>✅ Súhlas potvrdený tlačidlom „Súhlasím s podmienkami“.</b></p>`}<div class="meta">Podpísané elektronicky v aplikácii ERNTE Trade & Logistic: ${E(dt(s.at))} · verzia poučenia ${E(s.ver)} · odtlačok textu SHA-256 ${E(s.txt_hash||"–")}<br>Zariadenie: ${E(s.ua||"–")}</div></div>
    <div class="txt">${html}</div></body></html>`);w.document.close()}
 document.addEventListener("click",e=>{const t=e.target.closest&&e.target.closest("[data-gdtg],[data-gdpdf]");if(!t||!OWN())return;e.preventDefault();
   if(t.dataset.gdtg){G.open=!G.open;paint();if(G.open)load();return}if(t.dataset.gdpdf)pdf(t.dataset.gdpdf)});
