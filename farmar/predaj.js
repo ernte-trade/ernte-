@@ -46,8 +46,8 @@ function options(com,buy){const out=[],B=D.B||[];
   for(const o of D.O){if(o.com!==com)continue;const k=o.buyer+"|"+(o.site||"")+"|"+o.del;if(seen.has(k))continue;seen.add(k);const b=B.find(x=>x.id===o.buyer);if(!b)continue;
     let p=+o.price,bz=null;if(b.float_burza&&o.bz_val!=null){const n=bzNow(o.bz_sym||BZ[com]);if(n){bz={d:n.v-(+o.bz_val),n:n.n};p+=bz.d}}
     push(b,o.site,siteOf(b,o.site)||((b.sites||[]).find(s=>s.n===o.site)),o.del,p,o.d,"ponuka odberateľa",{bz,term:o.period})}
-  // 2) ponuky konkurencie (ich výkupná cena = za toľko by kúpili od nás)
-  const KK=D.K.filter(x=>x.com===com&&!x.sell&&+x.price>0&&age(x.d)<=MAXAGE&&!/nad\s*500/i.test(x.term||"")&&!/hamburg|z[aá]pad/i.test((x.who||"")+" "+(x.place||""))).sort((a,b)=>String(b.d||"").localeCompare(String(a.d||""))||String(b.at||"").localeCompare(String(a.at||"")));
+  // 2) ponuky konkurencie (ich výkupná cena = za toľko by kúpili od nás); bez ponúk na neskorší odber (3. 11.: LO FCA 512 = odber 1.–3. 2027, nie dnešný predaj)
+  const KK=D.K.filter(x=>x.com===com&&!x.sell&&+x.price>0&&age(x.d)<=MAXAGE&&!/nad\s*500/i.test(x.term||"")&&!/odber\s*[0-9]/i.test(x.term||"")&&!/hamburg|z[aá]pad/i.test((x.who||"")+" "+(x.place||""))).sort((a,b)=>String(b.d||"").localeCompare(String(a.d||""))||String(b.at||"").localeCompare(String(a.at||"")));
   for(const x of KK){const b=buyerOf(x.who);if(!b)continue;const del=String(x.del||"").toUpperCase()||"DAP",fca=del==="FCA"||del==="EXW",site=fca?{n:"FCA farma"}:siteOf(b,(x.place||"")+" "+(x.term||"")+" "+(x.who||""));
     const k=b.id+"|"+(site&&site.n||"")+"|"+del+"|"+(x.term||"");if(seen.has(k))continue;seen.add(k);
     let p=+x.price,bz=null;if(b.float_burza&&x.b!=null){const n=bzNow(BZ[com]);if(n){const np=n.v+(+x.b);bz={d:np-p,n:n.n};p=np}}
