@@ -398,23 +398,17 @@ REG = {"SK": [(48.75, 21.92), (48.31, 18.09)], "HU": [(47.53, 21.63), (46.25, 20
        "FR": [(48.45, 1.49), (49.26, 4.03)], "US": [(41.59, -93.62), (40.12, -88.24)], "BR": [(-12.55, -55.71), (-24.96, -53.46)]}
 
 
-def meteo():
-    key = os.environ.get("OPENMETEO_APIKEY", "").strip()
-    pts = [(r, la, lo) for r, L in REG.items() for la, lo in L]
-    host = "https://customer-api.open-meteo.com" if key else "https://api.open-meteo.com"
+def _meteo_om(pts, key):
+    """Open-Meteo customer API (iba s predplatným OPENMETEO_APIKEY) → [(p_past, p_next, tmin, tmax, frost)] pre každý bod."""
     q = {"latitude": ",".join(str(p[1]) for p in pts), "longitude": ",".join(str(p[2]) for p in pts),
-         "daily": "precipitation_sum,temperature_2m_min,temperature_2m_max", "past_days": "7", "forecast_days": "7", "timezone": "UTC"}
-    if key:
-        q["apikey"] = key
-    t = get(host + "/v1/forecast?" + urllib.parse.urlencode(q), timeout=60)
-    L = json.loads(t)
+         "daily": "precipitation_sum,temperature_2m_min,temperature_2m_max", "past_days": "7", "forecast_days": "7", "timezone": "UTC", "apikey": key}
+    L = json.loads(get("https://customer-api.open-meteo.com/v1/forecast?" + urllib.parse.urlencode(q), timeout=60))
     if isinstance(L, dict):
         L = [L]
-    agg = {}
-    for (r, _, _), o in zip(pts, L):
+    out = []
+    for o in L:
         dd = (o.get("daily") or {})
         days = dd.get("time") or []
-        a = agg.setdefault(r, {"p_past": [], "p_next": [], "tmin": [], "tmax": [], "frost": []})
         pp, tn, tx = dd.get("precipitation_sum") or [], dd.get("temperature_2m_min") or [], dd.get("temperature_2m_max") or []
         sp, sn, mn, mx, fr = 0.0, 0.0, 99.0, -99.0, 0
         for i, d in enumerate(days):
@@ -424,11 +418,77 @@ def meteo():
             else:
                 sn += p
                 if i < len(tn) and tn[i] is not None:
-                    mn = min(mn, tn[i])
-                    fr += 1 if tn[i] < 0 else 0
+                    mn = min(mn, tn[i]); fr += 1 if tn[i] < 0 else 0
                 if i < len(tx) and tx[i] is not None:
                     mx = max(mx, tx[i])
-        a["p_past"].append(sp); a["p_next"].append(sn); a["tmin"].append(mn); a["tmax"].append(mx); a["frost"].append(fr)
+        out.append((sp, sn, mn, mx, fr))
+    return out
+
+
+def _met_no(la, lo):
+    """MET Norway Locationforecast 2.0 (api.met.no, CC BY 4.0, aj komerčne; UA s kontaktom) → (zrážky 7 dní, tmin, tmax, mrazové dni)."""
+    t = get(f"https://api.met.no/weatherapi/locationforecast/2.0/compact?lat={la:.4f}&lon={lo:.4f}", timeout=60)
+    ts = (json.loads(t).get("properties") or {}).get("timeseries") or []
+    end = NOW + dt.timedelta(days=7)
+    rain, cov, tmin_d = 0.0, None, {}
+    tmin, tmax = 99.0, -99.0
+    for x in ts:
+        tt = pt(x.get("time", ""))
+        if not tt or tt < NOW - dt.timedelta(hours=1) or tt >= end:
+            continue
+        dat = x.get("data") or {}
+        T = ((dat.get("instant") or {}).get("details") or {}).get("air_temperature")
+        if T is not None:
+            tmin, tmax = min(tmin, T), max(tmax, T)
+            k = tt.date().isoformat(); tmin_d[k] = min(tmin_d.get(k, 99.0), T)
+        if cov is not None and tt < cov:
+            continue  # tento čas už pokrýva predošlý 6-hodinový úsek
+        for h, key in ((1, "next_1_hours"), (6, "next_6_hours")):
+            v = ((dat.get(key) or {}).get("details") or {}).get("precipitation_amount")
+            if v is not None:
+                rain += float(v); cov = tt + dt.timedelta(hours=h); break
+    if tmax < -90:
+        raise ValueError("MET Norway: prázdna predpoveď")
+    return rain, tmin, tmax, sum(1 for v in tmin_d.values() if v < 0)
+
+
+def _nasa_past(la, lo):
+    """NASA POWER (verejná doména) – zrážky posledných 7 dní (údaje meškajú 1–3 dni, chýbajúce = −999 sa nerátajú)."""
+    a, b = (TODAY - dt.timedelta(days=7)).strftime("%Y%m%d"), (TODAY - dt.timedelta(days=1)).strftime("%Y%m%d")
+    q = {"parameters": "PRECTOTCORR", "community": "AG", "latitude": f"{la:.4f}", "longitude": f"{lo:.4f}", "start": a, "end": b, "format": "JSON"}
+    t = get("https://power.larc.nasa.gov/api/temporal/daily/point?" + urllib.parse.urlencode(q), timeout=90)
+    v = (((json.loads(t).get("properties") or {}).get("parameter") or {}).get("PRECTOTCORR") or {})
+    return sum(x for x in v.values() if x is not None and x > -900)
+
+
+def meteo():
+    key = os.environ.get("OPENMETEO_APIKEY", "").strip()
+    pts = [(r, la, lo) for r, L in REG.items() for la, lo in L]
+    if key:
+        vals, src = _meteo_om(pts, key), "Open-Meteo (customer API)"
+    else:
+        # 3. 11.: bezplatné Open-Meteo API zakázalo robotov (robots.txt) a je iba na nekomerčné použitie → MET Norway + NASA POWER
+        vals, err = [], []
+        for r, la, lo in pts:
+            try:
+                rn, mn, mx, fr = _met_no(la, lo)
+            except Exception as e:
+                err.append(f"MET {r}: {str(e)[:60]}"); vals.append(None); continue
+            try:
+                ps = _nasa_past(la, lo)
+            except Exception as e:
+                err.append(f"NASA {r}: {str(e)[:60]}"); ps = 0.0
+            vals.append((ps, rn, mn, mx, fr))
+        if not any(vals):
+            raise RuntimeError("počasie bez údajov – " + "; ".join(err[:3]))
+        src = "MET Norway (api.met.no, CC BY 4.0) + NASA POWER (verejná doména)" + (f" · chyby: {'; '.join(err[:2])}" if err else "")
+    agg = {}
+    for (r, _, _), v in zip(pts, vals):
+        if not v:
+            continue
+        a = agg.setdefault(r, {"p_past": [], "p_next": [], "tmin": [], "tmax": [], "frost": []})
+        for k, x in zip(("p_past", "p_next", "tmin", "tmax", "frost"), v):
+            a[k].append(x)
     n = 0
     d = TODAY.isoformat()
     for r, a in agg.items():
@@ -442,7 +502,7 @@ def meteo():
         n += add("meteo", r, "tmax_7d", tmax, "°C", d)
         n += add("meteo", r, "mraz_dni_7d", frost, "dni", d)
         n += add("meteo", r, "sucho", 1 if (pn + ppast) < 10 and tmax >= 28 else 0, "0/1", d)
-    return n, ("Open-Meteo (customer API)" if key else "Open-Meteo bezplatné API – licencia: iba nekomerčné použitie, pre firmu treba predplatné (OPENMETEO_APIKEY)")
+    return n, src
 
 
 # ---------- spustenie ----------
@@ -468,7 +528,7 @@ cutm = (TODAY - dt.timedelta(days=30)).isoformat()
 rows = [r for r in ROWS.values() if r["d"] >= (cutm if r["s"] == "meteo" else cut)]
 rows.sort(key=lambda r: (r["s"], r["c"], r["i"], r["d"]))
 out = {"at": iso(), "ver": 1, "src": SRC, "d": rows,
-       "credit": "ECB; CFTC; USDA (verejná doména); EK Agri-food data portal (CC BY 4.0); EIA; Open-Meteo.com (CC BY 4.0); bot Trhové ceny"}
+       "credit": "ECB; CFTC; USDA (verejná doména); EK Agri-food data portal (CC BY 4.0); EIA; MET Norway (CC BY 4.0); NASA POWER; bot Trhové ceny"}
 out.update(EXTRA)
 json.dump(out, open(OUT_P, "w"), ensure_ascii=False, separators=(",", ":"))
 print(json.dumps({k: {"st": v.get("st"), "n": v.get("n"), "msg": v.get("msg")} for k, v in SRC.items()}, ensure_ascii=False, indent=1))
