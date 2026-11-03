@@ -7,19 +7,19 @@
 const E=s=>String(s==null?"":s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const OWN=()=>typeof ROLE!=="undefined"&&ROLE==="owner"&&!(typeof FARMER!=="undefined"&&FARMER);
 const T=(m,ms)=>{try{if(typeof toast==="function")toast(m,ms||5000);else alert(m)}catch(x){}};
-const PR=[["ernte","Zmluvy, zúčtovania, faktúry","jana.valkova@ernte.sk"],["ponuky","Ponuky a dopyty","ernte@ernte.sk"],["danube","Danube – zmluvy (Gmail)","danube.commodities.kft@gmail.com"],["valko","VALKO – doprava","valko@valko-logistics.sk"]];
+const PR=[["ernte","Zmluvy, zúčtovania, faktúry","erntevykup@gmail.com"],["ponuky","Ponuky a dopyty","erntespol@gmail.com"],["danube","Danube – zmluvy (Gmail)","danube.commodities.kft@gmail.com"],["valko","VALKO – doprava","valko@valko-logistics.sk"]];
 let ST=null,busy=false,open={};
 const dt=x=>x?new Date(x).toLocaleString("sk-SK",{day:"numeric",month:"numeric",hour:"2-digit",minute:"2-digit"}):"–";
 async function load(){if(busy)return;busy=true;try{const r=await sb.rpc("mail_state");ST=r.error?{err:r.error.message}:(r.data||{})}catch(e){ST={err:String(e&&e.message||e)}}busy=false;paint()}
 function paint(){const el=document.getElementById("mgWrap");if(el)el.outerHTML=html()}
-function card(p){const k=p[0],s=(ST&&ST[k])||{},g=s.kind==="graph",ok=s.ok;const ten=s.tenant||(k==="valko"?"valko-logistics.sk":"ernte.sk"),cid=s.client_id||"",gm=k==="danube";
+function card(p){const k=p[0],s=(ST&&ST[k])||{},g=s.kind==="graph",ok=s.ok;const ten=s.tenant||(k==="valko"?"valko-logistics.sk":"ernte.sk"),cid=s.client_id||"",gm=["danube","ernte","ponuky"].includes(k);
   if(open[k]===undefined&&g&&!ok)open[k]=true;
   const cons=cid?`https://login.microsoftonline.com/${encodeURIComponent(ten)}/adminconsent?client_id=${encodeURIComponent(cid)}`:"";
   const st=!s.kind?`<span class="mgb mgn">nenastavené</span>`:ok?`<span class="mgb ${s.last_err&&(!s.last_ok||s.last_err.at>s.last_ok)?"mgw":"mgo"}">${g?"Microsoft Graph":"SMTP"}</span>`:`<span class="mgb mgn">chýba heslo / secret</span>`;
   let h=`<div class="mgc"><div class="mgh"><b>${E(p[1])}</b>${st}</div><div class="s mgt">Schránka: <b>${E(s.from||s.user||p[2]||"–")}</b></div>
    <div class="mgk"><div><small>Posledné odoslané</small><b>${dt(s.last_ok)}</b></div><div><small>Neodoslané vo fronte</small><b>${s.fronta||0}</b></div><div><small>Neaktuálne (iba záznam)</small><b>${s.neaktualne||0}</b></div></div>`;
   if(s.last_err)h+=`<div class="mgerr"><small>Posledná chyba ${dt(s.last_err.at)}</small><div>${E(s.last_err.err||"")}</div></div>`;
-  h+=`<div class="btns mgbt">${ok?`<button type="button" class="pri" data-mgtest="${k}">📨 Poslať testovací e-mail</button>`:""}${(s.fronta||0)>0?`<button type="button" data-mgre="${k}">🔁 Poslať znova neodoslané (${s.fronta})</button>`:""}${gm?"":`<button type="button" data-mgopen="${k}">${open[k]?"▲ Skryť nastavenie":"⚙️ Microsoft Graph"}</button>`}</div>${gm?`<div class="s">Gmail – Microsoft Graph sa tu nepoužíva. Odosiela sa cez SMTP Gmailu s heslom aplikácie (Google účet → Zabezpečenie → Heslá aplikácií), zadáva sa cez odkaz #nastav-email-danube.</div>`:""}`;
+  h+=`<div class="btns mgbt">${ok?`<button type="button" class="pri" data-mgtest="${k}">📨 Poslať testovací e-mail</button>`:""}${(s.fronta||0)>0?`<button type="button" data-mgre="${k}">🔁 Poslať znova neodoslané (${s.fronta})</button>`:""}${gm?"":`<button type="button" data-mgopen="${k}">${open[k]?"▲ Skryť nastavenie":"⚙️ Microsoft Graph"}</button>`}</div>${gm?`<div class="s">Gmail (3. 11. príkaz majiteľa) – odosiela sa cez Gmail s <b>heslom aplikácie</b> (Google účet → Zabezpečenie → Dvojstupňové overenie → Heslá aplikácií).</div><div class="btns mgbt"><a class="btn pri" href="#nastav-email${k==="ernte"?"":"-"+k}" onclick="setTimeout(()=>location.reload(),50)">📧 Nastaviť Gmail ${E(p[2])}</a></div>`:""}`;
   if(open[k]&&!gm)h+=`<form class="f mgf" data-mgf="${k}"><div class="w s">Postup pre správcu Microsoft 365 (raz):<ol class="mgol">
      <li>Microsoft Entra → <b>Registrácie aplikácií</b> → Nová registrácia „ERNTE odosielanie“ → skopíruj <b>ID aplikácie (Client ID)</b> a <b>ID adresára (Tenant ID)</b>.</li>
      <li>Certifikáty a tajomstvá → Nové tajomstvo klienta → skopíruj <b>Hodnotu</b> (Client secret).</li>

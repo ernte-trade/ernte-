@@ -61,8 +61,8 @@ document.addEventListener("click",e=>{const b=e.target.closest&&e.target.closest
   if(k==="x")close();else if(k==="print")doPrint();else if(k==="pdf")savePdf();else if(k==="share")sendPdf();else if(k==="mail")mailBox();else if(k==="msend")mailDirect();else if(k==="mcfg")mailCfgSave();else if(k==="mx"){const b=document.getElementById("pvMail");if(b)b.remove()}else if(k==="mold"){const b=document.getElementById("pvMail");if(b)b.remove();mailPdf()}});
 // 📧 odoslanie priamo z aplikácie (schránka ERNTE cez databázu → GitHub Actions); bez nastavenia → zdieľanie / pošta
 let MR=null;
-const PRF={ernte:{t:"Zmluvy, zúčtovania a faktúry – ERNTE",host:"smtp.office365.com",port:587,user:"jana.valkova@ernte.sk",name:"ERNTE spol. s r.o.",kind:"Microsoft 365"},
-  ponuky:{t:"Ponuky a dopyty – ERNTE",host:"smtp.office365.com",port:587,user:"ernte@ernte.sk",name:"ERNTE spol. s r.o.",kind:"Microsoft 365"},
+const PRF={ernte:{t:"Zmluvy, zúčtovania a faktúry – ERNTE",host:"smtp.gmail.com",port:465,user:"erntevykup@gmail.com",name:"ERNTE spol. s r.o.",kind:"Gmail – zadaj <b>heslo aplikácie</b> (16 znakov): Google účet → Zabezpečenie → Dvojstupňové overenie → Heslá aplikácií"},
+  ponuky:{t:"Ponuky a dopyty – ERNTE",host:"smtp.gmail.com",port:465,user:"erntespol@gmail.com",name:"ERNTE spol. s r.o.",kind:"Gmail – zadaj <b>heslo aplikácie</b> (16 znakov): Google účet → Zabezpečenie → Dvojstupňové overenie → Heslá aplikácií"},
   danube:{t:"Danube Trade – zmluvy",host:"smtp.gmail.com",port:465,user:"danube.commodities.kft@gmail.com",name:"Danube Commodities Kft.",kind:"Gmail – zadaj <b>heslo aplikácie</b>: Google účet → Zabezpečenie → Dvojstupňové overenie → Heslá aplikácií"},
   valko:{t:"VALKO – doprava (CMR, jazdy)",host:"smtp.office365.com",port:587,user:"",ph:"…@valko-logistics.sk",name:"VALKO s.r.o.",kind:"schránka @valko-logistics.sk – server a port uprav podľa poskytovateľa"}};
 const PF=k=>PRF[k]||PRF.ernte;window.ernteMailProfiles=PRF;
@@ -70,7 +70,7 @@ async function mailReady(prof){try{const r=await sb.rpc("mail_ready",{p_prof:pro
 async function mailBox(){const M=V&&V.M;if(!M)return;const old=document.getElementById("pvMail");if(old)old.remove();const P=PF(M.prof),DN=M.prof==="danube";await mailReady(M.prof);
   const d=document.createElement("div");d.id="pvMail";d.className="pvmail";
   if(!MR.ok&&MR.main){d.innerHTML=`<div class="pvmb"><b>📧 Nastav odosielanie e-mailov (raz)</b><div class="pvs">Zadaj prístup k schránke, z ktorej sa budú posielať zmluvy. Heslo sa uloží iba do trezoru databázy. Pri schránke @ernte.sk (Microsoft 365) zadaj heslo k schránke; ak má zapnuté dvojstupňové overenie, použi <b>heslo aplikácie</b>.</div>
-    <label>Schránka<select id="pvmPre">${DN?`<option value="smtp.gmail.com|465">Gmail (Danube)</option><option value="smtp.office365.com|587">Microsoft 365</option>`:`<option value="smtp.office365.com|587">Microsoft 365 (@ernte.sk)</option><option value="smtp.gmail.com|465">Gmail</option>`}<option value="smtp.websupport.sk|465">Websupport</option><option value="smtp.seznam.cz|465">Seznam</option><option value="|465">Iný server…</option></select></label>
+    <label>Schránka<select id="pvmPre">${DN?`<option value="smtp.gmail.com|465">Gmail (Danube)</option><option value="smtp.office365.com|587">Microsoft 365</option>`:`<option value="smtp.gmail.com|465">Gmail</option><option value="smtp.office365.com|587">Microsoft 365 (@ernte.sk)</option>`}<option value="smtp.websupport.sk|465">Websupport</option><option value="smtp.seznam.cz|465">Seznam</option><option value="|465">Iný server…</option></select></label>
     <label>SMTP server<input id="pvmHost" value="${P.host}" autocapitalize="off"></label><label>Port<input id="pvmPort" value="${P.port}" inputmode="numeric"></label>
     <label>E-mail (prihlasovacie meno)<input id="pvmUser" type="email" autocapitalize="off" placeholder="${P.ph||""}" value="${P.user}"></label><label>Heslo / heslo aplikácie<input id="pvmPass" type="password" autocomplete="new-password"></label>
     <label>Meno odosielateľa<input id="pvmName" value="${P.name}"></label>
@@ -82,7 +82,7 @@ async function mailBox(){const M=V&&V.M;if(!M)return;const old=document.getEleme
    ${M.cc&&M.cc.length?`<div class="pvs">📨 Kópia: ${esc(M.cc.join(", "))}</div>`:""}<div class="pvs">Odošle sa zo schránky ${esc(MR.from||"ERNTE")} s PDF v prílohe.</div>
    <div class="pvbt"><button type="button" class="pvpri" data-pv="msend">📤 Odoslať</button><button type="button" data-pv="mx">Zrušiť</button></div></div>`;
   V.ov.appendChild(d)}
-async function mailCfgSave(){const g=i=>(document.getElementById(i)||{}).value||"";const r=await sb.rpc("mail_cfg_set",{p_prof:(V&&V.M&&V.M.prof)||"ernte",p:{host:g("pvmHost"),port:g("pvmPort"),user:g("pvmUser"),pass:g("pvmPass"),from:g("pvmUser"),name:g("pvmName")}});
+async function mailCfgSave(){const g=i=>(document.getElementById(i)||{}).value||"";const r=await sb.rpc("mail_cfg_set",{p_prof:(V&&V.M&&V.M.prof)||"ernte",p:{host:g("pvmHost"),port:g("pvmPort"),user:g("pvmUser"),pass:g("pvmPass"),from:g("pvmUser"),name:g("pvmName"),kind:"smtp"}});
   if(r.error){tmsg("Nepodarilo sa: "+r.error.message,7000);return}tmsg("✓ Odosielanie e-mailov nastavené.",4000);mailBox()}
 async function mailDirect(){const M=V&&V.M;const to=((document.getElementById("pvmTo")||{}).value||"").trim(),subj=(document.getElementById("pvmSubj")||{}).value||M.subj,body=(document.getElementById("pvmBody")||{}).value||M.body;
   if(!/^[^@\s]+@[^@\s]+\.[a-z]{2,}$/i.test(to)){tmsg("Zadaj e-mail farmára.",5000);return}
@@ -118,7 +118,7 @@ async function setupLink(force){let f=typeof force==="string"?force:"";if(!f)try
     <div class="pvbt"><button type="button" class="pvpri" id="pvsSave">💾 Uložiť</button><button type="button" id="pvsX">Zavrieť</button></div></div>`;
   document.body.appendChild(o);const close=()=>{o.remove();try{history.replaceState(null,"",location.pathname+location.search)}catch(x){}};
   o.querySelector("#pvsX").onclick=close;o.querySelector("#pvsSave").onclick=async()=>{const g=i=>o.querySelector(i).value;if(!/@/.test(g("#pvmUser"))){tmsg("Zadaj e-mailovú adresu schránky.",5000);return}if(!g("#pvmPass")){tmsg("Zadaj heslo k schránke.",5000);return}
-    const r=await sb.rpc("mail_cfg_set",{p_prof:f,p:{host:g("#pvmHost"),port:g("#pvmPort"),user:g("#pvmUser"),pass:g("#pvmPass"),from:g("#pvmUser"),name:g("#pvmName")}});
+    const r=await sb.rpc("mail_cfg_set",{p_prof:f,p:{host:g("#pvmHost"),port:g("#pvmPort"),user:g("#pvmUser"),pass:g("#pvmPass"),from:g("#pvmUser"),name:g("#pvmName"),kind:"smtp"}});
     if(r.error){tmsg("Nepodarilo sa: "+r.error.message,8000);return}tmsg("✅ Uložené – "+P.t+" sa bude posielať z "+g("#pvmUser"),8000);try{sessionStorage.removeItem("ernte-mailask")}catch(x){}close();setTimeout(ask,800)}}
 // po prihlásení majiteľa (Martin, Jana): ponuka nastaviť schránky, ktoré ešte nie sú nastavené
 async function ask(){try{if(sessionStorage.getItem("ernte-mailask"))return}catch(x){}
