@@ -9,7 +9,9 @@ const DUE=[
  ["2027-01-01","🧾","Povinná e-faktúra B2B na Slovensku (Peppol) – ERNTE aj VALKO","§76a zákona 222/2004 Z. z."],
  ["2027-01-01","🛣️","Nový štátny mýtny systém SK – výmena palubných jednotiek","VALKO"],
  ["2027-06-30","🌱","EUDR pre mikro a malé podniky","Nariadenie (EÚ) 2025/2650"],
- ["2027-07-09","📲","eFTI – úrady musia prijímať elektronické prepravné doklady (eCMR)","Nariadenie (EÚ) 2020/1056"]];
+ ["2027-07-09","📲","eFTI – úrady musia prijímať elektronické prepravné doklady (eCMR)","Nariadenie (EÚ) 2020/1056"],
+ ["2027-08-29","📜","GMP+ certifikát ERNTE (SK24/00000134) – dohodnúť recertifikačný audit so SGS (platí do 29. 9. 2027)","ERNTE · SGS Nederland"],
+ ["2027-09-24","📜","ISCC EU certifikát ERNTE (DE100-22413126) – obnoviť audit so SGS (platí do 24. 10. 2027)","ERNTE · SGS Germany"]];
 window.ERNTE_DUE=DUE;
 const MOB=[42,56]; // dni: upozornenie / porušenie (8 týždňov)
 async function load(){if(H.busy)return;H.busy=true;const q=[];
