@@ -58,7 +58,8 @@ function setup(){ScriptApp.getProjectTriggers().forEach(function(t){ScriptApp.de
 function posta(){var me=ACCT;try{me=Session.getEffectiveUser().getEmail()||ACCT}catch(e){}var r=rpc('gmail_take',{p_key:KEY,p_acct:me}),x={};try{x=JSON.parse(r.getContentText())}catch(e){return}
   (x.jobs||[]).forEach(function(j){try{var o={name:j.from_name||'ERNTE spol. s r.o.'};if(j.reply_to&&/@/.test(j.reply_to))o.replyTo=j.reply_to;
     if(j.att){o.attachments=[Utilities.newBlob(Utilities.base64Decode(String(j.att).replace(/^data:[^,]+,/,'')),'application/pdf',j.att_name||'Dokument.pdf')]}
-    GmailApp.sendEmail(j.to,j.subject||'ERNTE',j.body||'',o);rpc('mail_job_done',{p_id:j.id,p_ok:true,p_err:null});}
+    var sent=false;if(j.reply_msgid){try{GmailApp.getMessageById(j.reply_msgid).reply(j.body||'',o);sent=true}catch(e){}}
+    if(!sent)GmailApp.sendEmail(j.to,j.subject||'ERNTE',j.body||'',o);rpc('mail_job_done',{p_id:j.id,p_ok:true,p_err:null});}
   catch(e){rpc('mail_job_done',{p_id:j.id,p_ok:false,p_err:'Gmail: '+String(e).slice(0,250)})}});}
 function rpc(f,b){return UrlFetchApp.fetch(URL+f,{method:'post',contentType:'application/json',headers:{apikey:AK,Authorization:'Bearer '+AK},payload:JSON.stringify(b),muteHttpExceptions:true});}
 function run(){var P=PropertiesService.getScriptProperties(),done=JSON.parse(P.getProperty('done')||'{}'),n=0,err='';
@@ -68,7 +69,15 @@ function run(){var P=PropertiesService.getScriptProperties(),done=JSON.parse(P.g
       var x=r.getContentText();if(r.getResponseCode()>=300||/zly kluc|limit/.test(x)){ok=false;err=x.slice(0,200)}else if(/ok/.test(x))n++;});
     if(ok)done[id]=Date.now();});});}catch(e){err=String(e).slice(0,200)}
   var k=Object.keys(done);if(k.length>500)k.sort(function(a,b){return done[a]-done[b]}).slice(0,k.length-500).forEach(function(x){delete done[x]});
-  P.setProperty('done',JSON.stringify(done));try{fotky()}catch(e){}rpc('zuct_inbox_ping',{p_key:KEY,p_n:n,p_err:err||null});}
+  P.setProperty('done',JSON.stringify(done));try{fotky()}catch(e){}try{odpovede()}catch(e){}rpc('zuct_inbox_ping',{p_key:KEY,p_n:n,p_err:err||null});}
+// 📨 odpovede klientov, ktorých sme oslovili – aplikácia (Claude) im odpíše priamo v tomto vlákne
+function odpovede(){var P=PropertiesService.getScriptProperties(),done=JSON.parse(P.getProperty('doner')||'{}'),n=0,me=ACCT;try{me=Session.getEffectiveUser().getEmail()||ACCT}catch(e){}
+  GmailApp.search('in:inbox newer_than:30d -from:me',0,40).forEach(function(t){t.getMessages().forEach(function(m){var id=m.getId();if(done[id])return;var f=String(m.getFrom()||'');
+    if(f.toLowerCase().indexOf(String(me).toLowerCase())>=0){done[id]=Date.now();return}
+    var r=rpc('lead_reply_put',{p_key:KEY,p_msgid:id,p_thread:t.getId(),p_from:f,p_subject:m.getSubject(),p_date:m.getDate().toISOString(),p_body:String(m.getPlainBody()||'').slice(0,12000),p_acct:me});
+    if(r.getResponseCode()<300&&String(r.getContentText()).indexOf('zly kluc')<0){done[id]=Date.now();n++}});});
+  var k=Object.keys(done);if(k.length>800)k.sort(function(a,b){return done[a]-done[b]}).slice(0,k.length-800).forEach(function(x){delete done[x]});P.setProperty('doner',JSON.stringify(done));
+  rpc('lead_reply_ping',{p_key:KEY,p_n:n});}
 // 📷 fotodokumentácia k reklamácii (jpg/png/heic/webp, PDF iba v e-mailoch o reklamácii) – priloží sa k lístkom v zúčtovaní
 function fotky(){var P=PropertiesService.getScriptProperties(),done=JSON.parse(P.getProperty('donef')||'{}');
   GmailApp.search(Q.replace('newer_than:60d','newer_than:21d'),0,30).forEach(function(t){t.getMessages().forEach(function(m){var id=m.getId();if(done[id])return;var ok=true,rk=/reklam|foto/i.test(m.getSubject()||'');
