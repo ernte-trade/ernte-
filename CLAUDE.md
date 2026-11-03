@@ -142,6 +142,7 @@ s pripojeným repozitárom `ernte-trade/ernte-`.
   `konk.buyers` {meno:{dop}}; vidí iba Martin; zapíše sa aj do `sell_offers` (`konk_sell_offer`, FCA + DAP) pre „Kde predať“. Nikdy ju nerátať ako konkurenčnú výkupnú cenu.
 
 ### 🏆 Predaj a odberatelia (Kde predať)
+- **📊 ERNTE AGRO INDEX (3. 11. 21:10 príkaz majiteľa „zapracuj pod heslom do mojej app“, `agroindex.js` → `window.aixHTML()`, vložené hore v Algomancii `pred.js` – iba MAIN_OK a za PIN-om):** ukážka produktu na predaj dát – regionálny index výkupných cien (priemer východné SK, HU sever/Alföld/priemer, hranica UA/HU), báza voči burze (kontrakt končiaci najskôr o 20 dní – končiaci MATIF kukurica nov sa preskočí), graf burzy 90 dní (`burza-hist`), ceny podľa regiónu, index dopravy (nafta `fuel-data`, €/t na 50–400 km). Iba verejné zdroje z bota, žiadne mená firiem; predávať iba súhrnne s oneskorením 14 dní, nikdy farmárov, ponuky odberateľov/konkurencie, naše ceny, AHDB bez súhlasu.
 - **Pravidlo majiteľa (trvalé): KDE PREDAŤ – NAJVYŠŠÍ ZISK** (`predaj.js`, `sell_buyers`, `sell_offers`, `sell_data`, iba majiteľ): ku každej zverejnenej nákupnej cene odporúčanie odberateľa
   s najvyšším ziskom = cena odberateľa (ponuky odberateľov posunuté s burzou, ponuky z Konkurenčných cien, skutočné predaje z vážnych lístkov) − doprava z regiónu (vzorec Kalkulačky) − nákup.
   Modely odberateľov a mená iba v DB. Nové ponuky odberateľov vkladať do `sell_offers` (formulár v Prehľade).

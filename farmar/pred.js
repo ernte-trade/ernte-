@@ -431,7 +431,7 @@ window.vPred=function(){if(!OWN())return "";
   const all=coms().map(evalCom),sel=S.sel;
   let h=`<div class="card prd-top"><div class="row"><b>🔮 Algomancia · AI veštenie obchodu</b><span class="btns"><button type="button" class="copy" data-prdref>↻</button><button type="button" class="copy" data-prdpin>Zmeniť PIN</button>${bioAvail()&&!bioId()?`<button type="button" class="copy" data-prdbioset>🔐 Odomykať odtlačkom</button>`:""}<button type="button" class="copy" data-prdlock>🔒 Zamknúť</button></span></div>
    <div class="s">Kde kúpiť, kam predať a kedy – z ponúk farmárov, tvojho cenníka, trhov (HU, SK, UA hranica), burzy, ponúk a zmlúv odberateľov a nákladov dopravy.${S.mj&&S.mj.updatedAt?` Trhy: ${e(new Date(S.mj.updatedAt).toLocaleDateString("sk-SK"))}.`:""}</div>${S.err?`<div class="prd-w">⚠️ ${e(S.err)}</div>`:""}</div>`;
-  h+=aiCard(all)+tarotCard();
+  h+=(window.aixHTML?window.aixHTML():"")+aiCard(all)+tarotCard();
   h+=msg(all);
   h+=all.filter(r=>r.src.length||r.snk.some(s=>!s.ind)||r.trend.now!=null).map(comCard).join("")||`<div class="card"><div class="s">Zatiaľ chýbajú ceny.</div></div>`;
   h+=natalCard()+accCard()+quotes()+cfgCard()+review();
