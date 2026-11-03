@@ -8,7 +8,7 @@ const I={y:new Date().getFullYear(),d:null,busy:false,sec:"kontrola",ed:null,q:"
 const nf=(n,d=3)=>n==null||n===""?"–":(+n).toLocaleString("sk-SK",{maximumFractionDigits:d});
 const dt=s=>s?new Date(s).toLocaleDateString("sk-SK"):"–";
 const rr=()=>{if(typeof TAB!=="undefined"&&TAB==="iscc"&&typeof renderStaff==="function")renderStaff()};
-async function load(){if(I.busy)return;I.busy=true;try{const {data,error}=await sb.rpc("iscc_overview",{p_year:I.y});I.d=error?{err:/iscc_overview/.test(error.message)?"Zapne sa po aktualizácii databázy (pár minút).":error.message}:data}catch(x){I.d={err:String(x.message||x)}}I.busy=false;rr()}
+async function load(){if(I.busy)return;I.busy=true;try{sb.rpc("deliv_geo_check").then(r=>{I.geo=r.error||!Array.isArray(r.data)?[]:r.data;rr()}).catch(()=>{});const {data,error}=await sb.rpc("iscc_overview",{p_year:I.y});I.d=error?{err:/iscc_overview/.test(error.message)?"Zapne sa po aktualizácii databázy (pár minút).":error.message}:data}catch(x){I.d={err:String(x.message||x)}}I.busy=false;rr()}
 const FL=f=>f&&f.length?`<ul class="isf">${f.map(x=>`<li>⚠️ ${e(x)}</li>`).join("")}</ul>`:`<div class="isok">✅ bez výhrad</div>`;
 const KV=(k,v)=>`<div><small>${e(k)}</small><b>${v}</b></div>`;
 const geo=(la,lo)=>la&&lo?`<a href="https://www.google.com/maps/search/?api=1&query=${la},${lo}" target="_blank" rel="noopener">📍 ${(+la).toFixed(5)}, ${(+lo).toFixed(5)}</a>`:"–";
@@ -53,6 +53,9 @@ window.vIscc=function(){if(!OK())return `<div class="card"><div class="s">ISCC C
     const isG=f=>/^GHG prázdne/.test(f),GE=E.filter(x=>!x.ghg&&x.ghg_auto);
     if(GE.length)h+=`<div class="card isc"><b class="sth">🌿 GHG chýba v ${GE.length} riadkoch evidencie</b><div class="s">Hodnota sa dá vziať z tabuľky GHG podľa produktu a regiónu NUTS 2 farmy (napr. sója = DDV, predvolená hodnota). Zapíše sa do evidencie aj do auditnej stopy.</div><div class="btns"><button type="button" class="pri" data-isghgall>🌿 Zapísať GHG z tabuľky do ${GE.length} riadkov</button></div></div>`;
     const L=[...F.filter(x=>x.flags.length).map(x=>["🌾 "+x.name,x.flags,"farmy"]),...E.filter(x=>x.flags.filter(f=>!isG(f)).length).map(x=>["📒 "+x.name,x.flags.filter(f=>!isG(f)),"evid"]),...M.map(x=>["➕ "+x.name,[`dodal ${nf(x.t)} t ${x.prod} (${x.n} lístkov, ${dt(x.d0)}–${dt(x.d1)}) – v evidencii chýba${x.in_farms?"":", nie je ani v zozname fariem"}`],"chyba"])];
+    const GX=I.geo||[];if(GX.length)h+=`<div class="card isc"><b class="sth">🚛 Lístky na kontrolu podľa GPS (${GX.length})</b><div class="s">Kamión nakladal pri zemepisnom bode iného farmára, než ku ktorému je lístok pridelený. Nič sa nemení samo – skontroluj a vyber.</div>
+      ${GX.map(g=>`<div class="isrow"><b>${e(g.ticket)} · ${dt(g.day)} · ${e(g.com)} · ${nf((g.net||0)/1000)} t${g.plate?" · "+e(g.plate):""}</b><div class="s">Pridelený: <b>${e(g.assigned)}</b> (nakládka ${nf(g.da/1000,1)} km od neho) · GPS sedí na <b>${e(g.near)}</b> (${nf(g.db,0)} m${g.nsrc&&/ISCC/.test(g.nsrc)?", pole ISCC":""}) · <a href="https://www.google.com/maps/search/?api=1&query=${g.lat},${g.lon}" target="_blank" rel="noopener">📍 nakládka</a></div>
+       <div class="btns"><button type="button" data-isgmv="${e(g.ticket)}|${g.nid}|${e(g.near)}">↪️ Presunúť na ${e(g.near)}</button><button type="button" data-isgok="${e(g.ticket)}">✔️ Ponechať ${e(g.assigned)}</button></div></div>`).join("")}</div>`;
     h+=`<div class="card isc"><b class="sth">⚠️ Pred auditom treba vyriešiť (${L.length})</b>${L.length?L.map(r=>`<div class="isrow"><b>${e(r[0])}</b>${FL(r[1])}<button type="button" class="islnk" data-issec="${r[2]}">Otvoriť ›</button></div>`).join(""):`<div class="isok">✅ Všetko v poriadku.</div>`}</div>`}
   if(I.sec==="farmy")h+=F.filter(hit).map(farmCard).join("")||`<div class="card"><div class="s">Nič sa nenašlo.</div></div>`;
   if(I.sec==="evid")h+=E.filter(hit).map(evCard).join("")||`<div class="card"><div class="s">Nič sa nenašlo.</div></div>`;
@@ -91,6 +94,9 @@ document.addEventListener("click",async ev=>{const t=ev.target;let x;
   if(x=t.closest("[data-ised]")){I.ed=x.dataset.ised||null;rr();return}
   if(t.closest("[data-isexp]")){try{await exportX()}catch(er){toast("⚠️ "+er.message)}return}
   if(x=t.closest("[data-isfile]")){file(x.dataset.isfile);return}
+  if(x=t.closest("[data-isgmv]")){const [tk,fid,nm]=x.dataset.isgmv.split("|");if(!confirm(`Presunúť lístok ${tk} na ${nm}? Prepočítajú sa zmluvy oboch farmárov.`))return;x.disabled=true;
+    try{const {error}=await sb.rpc("deliveries_assign",{p_tickets:[tk],p_farmer:fid});if(error)throw error;toast("↪️ Presunuté");await load()}catch(er){x.disabled=false;toast("⚠️ "+er.message)}return}
+  if(x=t.closest("[data-isgok]")){x.disabled=true;try{const {error}=await sb.rpc("deliv_geo_keep",{p_ticket:x.dataset.isgok});if(error)throw error;toast("✔️ Ponechané");await load()}catch(er){x.disabled=false;toast("⚠️ "+er.message)}return}
   if(x=t.closest("[data-isghgall]")){const GE=(I.d.evid||[]).filter(r=>!r.ghg&&r.ghg_auto);if(!confirm(`Zapísať GHG z tabuľky do ${GE.length} riadkov evidencie?`))return;x.disabled=true;let n=0;
     try{for(const r of GE){await set("evid",r.id,"ghg",r.ghg_auto);n++}toast(`🌿 GHG zapísané (${n})`)}catch(er){toast("⚠️ "+er.message)}await load();return}
   if(x=t.closest("[data-isghg]")){x.disabled=true;try{await set("evid",+x.dataset.isghg,"ghg",x.dataset.v);toast("🌿 GHG zapísané");await load()}catch(er){x.disabled=false;toast("⚠️ "+er.message)}return}
