@@ -84,9 +84,10 @@ function farmHTML(){const F=(STATE.farmers||[]).filter(f=>String(f.name||"").tri
    <label>Číslo zmluvy<select id="zdeal"><option value="*"${Z.deal==="*"?" selected":""}>📚 Všetky zmluvy (${K.filter(k=>Z.com==="*"||k.com===Z.com).length})</option>${K.filter(k=>Z.com==="*"||k.com===Z.com).map(k=>`<option value="${esc(k.id)}"${k.id===Z.deal?" selected":""}>${esc(k.no)} · ${fmt(k.tons,0)} t${k.remain_t<=0.01?" ✓":""}</option>`).join("")}</select></label>`:""}
    <label>Dátum od<input type="date" id="zd0" value="${esc(Z.d0)}"></label><label>Dátum do<input type="date" id="zd1" value="${esc(Z.d1)}"></label>
    ${Z.d0||Z.d1?`<div class="w btns"><button type="button" data-zclr="1">✕ Celá zmluva (bez dátumu)</button></div>`:`<div class="w s">Bez dátumu = celá zmluva. Zadaj od–do, ak zúčtovávaš len časť dodávok (napr. za týždeň).</div>`}</div>`;
+  if(typeof ROLE!=="undefined"&&ROLE==="owner")h+=`<div class="btns zrkbar"><button type="button" class="zrkbtn" data-rkall="1">${Z.rkOpen?"✕ Skryť reklamácie":"🧾 Uznané reklamácie"}</button></div>`+rkAllHTML();
   if(!Z.farm)return h+`<div id="zflBox">${zflList()}</div>`;
   if(!Z.C){loadC();return h+`<div class="card"><div class="s">Počítam zúčtovanie…</div></div>`}if(Z.C.err)return h+`<div class="card"><div class="s">${/settle_contracts/.test(Z.C.err)?"Zúčtovanie sa zapne po aktualizácii databázy (pár minút).":esc(Z.C.err)}</div></div>`;
-  const f=C.farmer||{};h+=`<div class="card zfh"><div><b>${esc(f.name||"")}</b><small>${esc([f.code,f.addr,f.phone].filter(Boolean).join(" · "))}</small></div><div class="zfhb"><button type="button" class="zrekb" data-zrektop="1">⚠️ Reklamácia</button><button type="button" data-zfarm="">Iný farmár</button></div></div>`;
+  const f=C.farmer||{};h+=`<div class="card zfh"><div><b>${esc(f.name||"")}</b><small>${esc([f.code,f.addr,f.phone].filter(Boolean).join(" · "))}</small></div><div class="zfhb"><button type="button" class="zrekb" data-zrektop="1">⚠️ Reklamácia</button>${Object.keys(Z.RK||{}).length?`<button type="button" class="zrkbtn" data-rkpdf="*">🧾 Reklamačné zúčtovanie</button>`:""}<button type="button" data-zfarm="">Iný farmár</button></div></div>`;
   h+=nocHTML(f);
   if(!K.length)return h+`<div class="card"><div class="s">Farmár nemá žiadnu zmluvu.${(Z.noc||{})[f.id]&&(Z.noc[f.id]||[]).length?" Vytvor ju vyššie z jeho lístkov.":""}</div></div>`;
   if(Z.deal==="*")return h+allHTML(K.filter(x=>Z.com==="*"||x.com===Z.com));
@@ -100,7 +101,7 @@ function farmHTML(){const F=(STATE.farmers||[]).filter(f=>String(f.name||"").tri
    <b class="sth">Zmluva</b>
    <div class="zsg">${[["Zmluva",fmt(k.tons,0)+" t"],["Dodané (fakt.)",fmt(k.delivered_t,2)+" t"],[over?"Prebytok":"Dodať",fmt(Math.abs(k.remain_t),2)+" t",over?"wn":""],["% naplnenia",fmt(k.fill||0,1)+" %"],["Tolerancia ±"+fmt(k.tol_pct??5,0)+" %",fmt(tolOf(k),2)+" t"],["Min. na splnenie",fmt((+k.tons||0)-tolOf(k),2)+" t"],["Stav zmluvy",tolSt(k)[1],tolSt(k)[0]==="ok"?"hl":"wn"],["Lístkov zmluvy",String(LA.length)]].map(x=>`<div class="${x[2]||""}"><small>${x[0]}</small><b>${x[1]}</b></div>`).join("")}</div>
    <div class="opbar"><i style="width:${Math.min(100,k.fill||0)}%"></i></div><div class="s"><b>Stav fakturácie:</b> ${esc(st)}${per?` · obdobie tvorí ${A.w?fmt(S.w/A.w*100,1):"0"} % dodaného`:""}${k.wheat_bands?`<br>Pásma pšenice: ${k.wheat_bands.map(b=>(b.min?"od "+fmt(b.min,1)+" %":"do")+" → "+fmt(b.price,0)+" €/t").join(" · ")}`:""}</div>
-   <div class="btns"><button type="button" class="pri" data-zpdf="${esc(k.id)}">🖨️ Zúčtovanie PDF${per?" za obdobie":""}</button><button type="button" data-cpdf="${esc(k.id)}">📄 Kúpna zmluva PDF</button><button type="button" class="zrekb" data-zrek="${esc(k.id)}">⚠️ Reklamácia u odberateľa</button>${f.phone?`<button type="button" class="lime" data-zwa="${esc(k.id)}">WhatsApp farmárovi</button>`:""}</div>
+   <div class="btns"><button type="button" class="pri" data-zpdf="${esc(k.id)}">🖨️ Zúčtovanie PDF${per?" za obdobie":""}</button><button type="button" data-cpdf="${esc(k.id)}">📄 Kúpna zmluva PDF</button><button type="button" class="zrekb" data-zrek="${esc(k.id)}">⚠️ Reklamácia u odberateľa</button>${RKof(LA).length?`<button type="button" class="zrkbtn" data-rkpdf="${esc(k.id)}">🧾 Reklamačné zúčtovanie</button>`:""}${f.phone?`<button type="button" class="lime" data-zwa="${esc(k.id)}">WhatsApp farmárovi</button>`:""}</div>
    <b class="sth">Vážne lístky${per?" za obdobie":""} (${P.length})</b>${linesTable(P)}${rkHTML(P)}</div>`;
   return h}
 // 📚 všetky zmluvy farmára naraz (príkaz majiteľa 1. 11. 22:37): súhrn za všetky + karta každej zmluvy + jedno PDF so všetkými
@@ -152,12 +153,57 @@ const rkBadge=x=>{const c=(Z.RK||{})[x.ticket];if(!c)return "";return c.ok?`<sma
 Z.PH=Z.PH||{};
 async function rkPhotos(R){const ids=[...new Set(R.flatMap(c=>(c.foto||[]).map(f=>f.id)))].filter(id=>!Z.PH[id]);
   for(const id of ids){try{const r=await sb.rpc("claim_photo",{p_id:id});if(!r.error&&r.data&&r.data.b64){const f=r.data.f||"",m=/\.png$/i.test(f)?"image/png":/\.webp$/i.test(f)?"image/webp":/\.pdf$/i.test(f)?"application/pdf":"image/jpeg";Z.PH[id]={f,u:"data:"+m+";base64,"+r.data.b64,pdf:/\.pdf$/i.test(f)}}}catch(e){}}}
+// fotky ku konkrétnemu lístku (číslo lístka v názve súboru); bez čísla → patria ku všetkým lístkom z toho e-mailu
+const rkNum=t=>String(t||"").replace(/^.*\//,"").replace(/^0+/,"");
+function rkFotoOf(c,R){const all=c.foto||[],nums=(R||[c]).map(x=>rkNum(x.t)),has=(f,n)=>new RegExp("(^|\\D)0*"+n+"(\\D|$)").test(f.f||"");
+  const own=all.filter(f=>has(f,rkNum(c.t)));return own.length?own:all.filter(f=>!nums.some(n=>has(f,n)))}
+// pôvodný výpočet lístka (pred uznaním) – rovnaký vzorec ako databáza (settle_lines)
+function rkCalc(x,p){const j=+x.gross_kg||0,P=+x.price||0,m=x.moisture_pct,nm=+x.norm||14,R=RT(),sk=j*(1-p/100),uk=m!=null&&m>nm?sk*(100-m)/(100-nm):sk,xe=p>0?j/1000*R.c:0,ye=m!=null&&m>nm?sk/1000*(m-nm)*R.d:0;
+  return {kg:P>0?uk-(xe+ye)/P*1000:uk,eur:P>0?uk/1000*P-xe-ye:0}}
+function rkDiff(x,c){if(!c||!c.ok||c.new==null||c.db==null||Math.abs(c.db-c.new)<0.005)return null;const a=rkCalc(x,+c.db),b=rkCalc(x,+c.new);
+  const nk=+x.invoice_kg||0,ne=+x.invoice_eur||0;return {ok:nk-(b.kg-a.kg),oe:ne-(b.eur-a.eur),nk,ne,dk:b.kg-a.kg,de:b.eur-a.eur}}
+// 🧾 REKLAMAČNÉ ZÚČTOVANIE (3. 11. 15:25 príkaz majiteľa): uznané aj neuznané reklamácie s hodnotami, pôvodná → nová váha a suma, rozdiel na dofakturovanie, fotky pri lístku
+async function rkPdf(KS){const C=Z.C;if(!C)return;const F=C.farmer||{};KS=KS.filter(k=>k);for(const k of KS)if(!Z.L[k.id])await loadL(k.id);
+  const parts=KS.map(k=>({k,L:(Z.L[k.id]||[]).filter(x=>(Z.RK||{})[x.ticket])})).filter(p=>p.L.length);if(!parts.length){toast("Tento farmár nemá žiadne reklamované lístky.",4000);return}
+  await rkPhotos(parts.flatMap(p=>RKof(p.L)));
+  let TK=0,TE=0,nOk=0,nNo=0;
+  const sec=parts.map(({k,L})=>{const R=RKof(L);let sk=0,se=0;
+    const rows=L.map(x=>{const c=Z.RK[x.ticket],d=rkDiff(x,c);if(c.ok)nOk++;else nNo++;if(d){sk+=d.dk;se+=d.de}
+      const ph=rkFotoOf(c,R).map(f=>Z.PH[f.id]).filter(P=>P&&!P.pdf);
+      return `<tr class="${c.ok?"ok":"no"}"><td>${esc(dSK(x.day))}</td><td>${esc(x.ticket)}</td><td>${fmt(x.gross_kg,0)}</td><td>${fmt(c.z,2)} %</td><td>${fmt(c.c,2)} %</td><td>${c.ok?"✅ uznané":"❌ neuznané"}</td>
+        <td>${d?fmt(c.db,2)+" → <b>"+fmt(c.new,2)+" %</b>":fmt(x.impurity_pct,2)+" %"}</td><td>${d?fmt(d.ok,0):fmt(x.invoice_kg,0)}</td><td><b>${fmt(x.invoice_kg,0)}</b></td><td>${d?"+"+fmt(d.dk,0):"–"}</td>
+        <td>${d?fmt(d.oe):fmt(x.invoice_eur)}</td><td><b>${fmt(x.invoice_eur)}</b></td><td>${d?"+"+fmt(d.de):"–"}</td></tr>${ph.length?`<tr class="phr"><td colspan="13"><div class="phs">${ph.map(P=>`<img src="${P.u}" alt="${esc(P.f)}">`).join("")}</div><small>Fotodokumentácia k lístku ${esc(x.ticket)}</small></td></tr>`:""}`}).join("");
+    TK+=sk;TE+=se;
+    return `<h2>Zmluva ${esc(k.no)} · ${esc(comName(k.com))} · cena ${fmt(k.price)} €/t</h2><div class="tw"><table><thead><tr><th>Dátum</th><th>Lístok</th><th>Netto kg</th><th>Zrážka pôvodne</th><th>Zrážka po kontrole</th><th>Rozhodnutie</th><th>Nečistoty v zúčtovaní</th><th>Fakt. váha pôvodne kg</th><th>Fakt. váha nová kg</th><th>Rozdiel kg</th><th>Suma pôvodne €</th><th>Suma nová €</th><th>Rozdiel €</th></tr></thead><tbody>${rows}</tbody>
+      <tfoot><tr><td colspan="9">Spolu zmluva ${esc(k.no)}</td><td>${sk>0.5?"+"+fmt(sk,0):"–"}</td><td></td><td></td><td>${se>0.005?"+"+fmt(se):"–"}</td></tr></tfoot></table></div>`}).join("");
+  const html=`<!doctype html><html lang="sk"><head><meta charset="utf-8"><title>Reklamačné zúčtovanie – ${esc(F.name||"")}</title><style>
+  @page{size:A4 landscape;margin:8mm}*{box-sizing:border-box}html{color-scheme:light}body{background:#fff;font:11px/1.4 -apple-system,Segoe UI,Roboto,Arial,sans-serif;color:#111;margin:0 auto;padding:10px;max-width:281mm}
+  h2{font-size:13px;margin:16px 0 6px;color:#2f5d0a}.tw{overflow-x:auto;max-width:100%}table{border-collapse:collapse;width:100%;font-size:9.6px}th,td{border:1px solid #ddd;padding:3px 4px;text-align:right}td{white-space:nowrap}th{background:#f2f6ec;white-space:normal;vertical-align:bottom}
+  th:nth-child(-n+2),td:nth-child(-n+2),td:nth-child(6),th:nth-child(6){text-align:left}tr.ok td{background:#f3f9ea}tr.no td{color:#555}tfoot td{font-weight:700;background:#f7f7f7}tr{page-break-inside:avoid}
+  tr.phr td{text-align:left;background:#fff;white-space:normal}.phs{display:flex;flex-wrap:wrap;gap:6px}.phs img{height:46mm;max-width:31%;object-fit:contain;border:1px solid #ddd;border-radius:4px}
+  .box{display:flex;flex-wrap:wrap;gap:8px 26px;margin:12px 0;padding:10px 14px;border:2px solid #5a8f1c;border-radius:10px;background:#f3f9ea}.box small{display:block;color:#555}.box b{font-size:17px;color:#2f5d0a}
+  .ft{margin-top:12px;color:#444;font-size:10.5px;line-height:1.5}.pb{margin-top:16px}@media print{.pb{display:none}body{padding:0;max-width:none}.tw{overflow:visible}}${window.brandCss?brandCss("ernte"):""}</style></head><body>
+  ${window.brandHead?brandHead("ernte","Reklamačné zúčtovanie – uznané reklamácie",`Dodávateľ ${esc(F.name||"")} · vystavené ${new Date().toLocaleDateString("sk-SK")}`):"<h1>ERNTE spol. s r.o. – Reklamačné zúčtovanie</h1>"}
+  <div><b>Dodávateľ:</b> ${esc(F.name||"")}${F.code?" ("+esc(F.code)+")":""}${F.addr?" · "+esc(F.addr):""}</div>
+  <div class="ft">Na základe reklamácie kvality u odberateľa boli reklamované lístky znovu skontrolované. Pri <b>uznaných</b> lístkoch sa zrážka za nečistoty počíta podľa kontroly (nižšia hodnota) – fakturačná váha a suma sa zvyšujú. Pri <b>neuznaných</b> lístkoch ostáva pôvodné zúčtovanie bez zmeny.</div>
+  <div class="box"><div><small>Uznané lístky</small><b>${nOk}</b></div><div><small>Neuznané lístky</small><b>${nNo}</b></div><div><small>Fakturačná váha navyše</small><b>${TK>0.5?"+"+fmt(TK,0)+" kg":"0 kg"}</b></div><div><small>Na dofakturovanie (bez DPH)</small><b>${TE>0.005?"+"+fmt(TE)+" €":"0,00 €"}</b></div></div>
+  ${sec}
+  <div class="ft"><b>Fakturácia:</b> dodávateľ vystaví dodatočnú faktúru (ťarchopis) na rozdiel fakturačnej váhy <b>${fmt(TK/1000,3)} t</b> v sume <b>${fmt(TE)} € bez DPH</b> (zmluvná cena × rozdiel váhy). Nová fakturačná váha a suma každého lístka sú v stĺpcoch „nová“ – rovnaké hodnoty sú v aktuálnom zúčtovaní zmluvy. Ceny bez DPH.</div>
+  <div class="pb"><button onclick="print()" style="font-size:15px;padding:10px 18px">🖨️ Tlačiť / uložiť ako PDF</button></div></body></html>`;
+  openPdf(html)}
+// prehľad všetkých farmárov s reklamáciami (tlačidlo „🧾 Uznané reklamácie“)
+function rkAllHTML(){if(!Z.rkOpen)return "";const O=Z.rkAll;if(!O){sb.rpc("claims_overview").then(r=>{Z.rkAll=r.error?{err:r.error.message}:(r.data||[]);renderStaff()});return `<div class="card zrk"><div class="s">Načítavam reklamácie…</div></div>`}
+  if(O.err)return `<div class="card zrk"><div class="s">${/claims_overview/.test(O.err)?"Zapne sa po aktualizácii databázy (pár minút).":esc(O.err)}</div></div>`;
+  if(!O.length)return `<div class="card zrk"><div class="s">Zatiaľ žiadne vyhodnotené reklamácie.</div></div>`;
+  return `<div class="card zrk"><b class="sth">🧾 Reklamácie u odberateľa – po farmároch</b><div class="s">Uznané zrážky sú už prepočítané v zúčtovaní farmára. Ťukni na farmára → 🧾 Reklamačné zúčtovanie (PDF s pôvodnou a novou váhou a sumou, na dofakturovanie) alebo celé zúčtovanie.</div>
+   <div class="zrkt"><table><thead><tr><th>Farmár</th><th>Uznané</th><th>Neuznané</th><th>Váha navyše</th><th>Lístky</th><th></th></tr></thead><tbody>${O.map(o=>`<tr class="${o.ok?"ok":""}"><td>${esc(o.farmer)}</td><td>${o.ok}</td><td>${o.n-o.ok}</td><td>${o.kg>0?"+"+fmt(o.kg,0)+" kg":"–"}</td><td style="white-space:normal;text-align:left">${o.tk.map(t=>`${t.ok?"✅":"❌"} ${esc(String(t.t).replace(/^MB26\//,""))}`).join(" ")}</td><td><button type="button" class="pri" data-zfarm="${esc(o.fid)}">Otvoriť</button></td></tr>`).join("")}</tbody></table></div></div>`}
 function rkHTML(L,pdf){const R=RKof(L);if(!R.length)return "";const ok=R.filter(c=>c.ok),G={};L.forEach(x=>G[x.ticket]=x);
   const kgOf=c=>{const x=G[c.t];return c.ok&&x&&c.db!=null&&c.new!=null?(+x.gross_kg||0)*((+c.db)-(+c.new))/100:0},kgT=ok.reduce((a,c)=>a+kgOf(c),0);
   const F=[...new Map(R.flatMap(c=>c.foto||[]).map(f=>[f.id,f])).values()];
   if(!pdf&&F.some(f=>!Z.PH[f.id])&&!Z.phBusy){Z.phBusy=1;rkPhotos(R).then(()=>{Z.phBusy=0;if(typeof renderStaff==="function"&&!(window.formBusy&&formBusy()))renderStaff()})}
   const rows=R.map(c=>{const x=G[c.t]||{};return `<tr class="${c.ok?"ok":""}"><td>${esc(dSK(x.day))}</td><td>${esc(c.t)}</td><td>${fmt(c.z,2)} %</td><td>${fmt(c.c,2)} %</td><td>${c.ok?"✅ uznané":"❌ neuznané"}</td><td>${c.ok&&c.new!=null&&Math.abs(c.db-c.new)>0.005?`${fmt(c.db,2)} → <b>${fmt(c.new,2)} %</b>`:c.ok?`${fmt(c.db,2)} % (už nižšie)`:`${fmt(c.db,2)} % (bez zmeny)`}</td><td>${c.ok&&kgOf(c)>0.5?"+"+fmt(kgOf(c),0)+" kg":"–"}</td></tr>`}).join("");
-  const ph=F.length?`<div class="zrkph">${F.map(f=>{const P=Z.PH[f.id];return P?(P.pdf?(pdf?"":`<a href="#" data-rkph="${f.id}">📄 ${esc(f.f)}</a>`):`<img src="${P.u}" alt="${esc(f.f)}" ${pdf?"":`data-rkph="${f.id}"`}>`):(pdf?"":`<span>📷 ${esc(f.f)}…</span>`)}).join("")}</div>`:(pdf?"":`<div class="s">📷 Fotodokumentácia: po aktualizácii skriptu v Gmaile (📥 → Nastavenie Gmailu) sa fotky z e-mailu priložia samy.</div>`);
+  const one=f=>{const P=Z.PH[f.id];return P?(P.pdf?(pdf?"":`<a href="#" data-rkph="${f.id}">📄 ${esc(f.f)}</a>`):`<img src="${P.u}" alt="${esc(f.f)}" ${pdf?"":`data-rkph="${f.id}"`}>`):(pdf?"":`<span>📷 ${esc(f.f)}…</span>`)};
+  const ph=F.length?R.map(c=>{const T=rkFotoOf(c,R);return T.length?`<div class="zrkpt"><small>📷 Lístok ${esc(c.t)} · ${c.ok?"✅ uznané":"❌ neuznané"}</small><div class="zrkph">${T.map(one).join("")}</div></div>`:""}).join(""):(pdf?"":`<div class="s">📷 Fotodokumentácia: po aktualizácii skriptu v Gmaile (📥 → Nastavenie Gmailu) sa fotky z e-mailu priložia samy.</div>`);
   return `<div class="${pdf?"rkp":"zrk"}"><${pdf?"h3":"b class=\"sth\""}>🧾 Reklamácia u odberateľa – vyhodnotenie (${R.length} ${R.length===1?"lístok":R.length<5?"lístky":"lístkov"})</${pdf?"h3":"b"}>
    <div class="${pdf?"":"s"}">Odberateľ skontroloval reklamované lístky: <b>uznané ${ok.length}</b>, neuznané ${R.length-ok.length}. Pri uznaných sa v tomto zúčtovaní počíta zrážka za nečistoty podľa kontroly (nižšia hodnota)${kgT>0.5?` – fakturačná váha vyššia o <b>${fmt(kgT,0)} kg</b>`:""}; neuznané ostávajú bez zmeny.</div>
    <div class="${pdf?"tw":"zrkt"}"><table><thead><tr><th>Dátum</th><th>Lístok</th><th>Zrážka pôvodne</th><th>Po kontrole</th><th>Rozhodnutie</th><th>Nečistoty v zúčtovaní</th><th>Váha navyše</th></tr></thead><tbody>${rows}</tbody></table></div>${ph}</div>`}
@@ -306,7 +352,9 @@ document.addEventListener("click",async e=>{if(typeof ROLE==="undefined"||ROLE!=
   if(x=t.closest("[data-zpk]")){Z.paste.kind=x.dataset.zpk;Z.paste.prev=null;renderStaff();return}
   if(t.closest("[data-zprev]")){preview();return}
   if(x=t.closest("[data-zsave]")){await savePaste(x);return}
-  if(x=t.closest("[data-zfarm]")){if(x.dataset.zfarm){const ff=(STATE.farmers||[]).find(y=>y.id===x.dataset.zfarm);if(ff)Z.fq=ff.name}Z.farm=x.dataset.zfarm;Z.C=null;Z.L={};Z.open=null;Z.com="";Z.deal="";if(!Z.farm)Z.fq="";renderStaff();return}
+  if(x=t.closest("[data-zfarm]")){if(x.dataset.zfarm){const ff=(STATE.farmers||[]).find(y=>y.id===x.dataset.zfarm);if(ff)Z.fq=ff.name}Z.farm=x.dataset.zfarm;Z.rkOpen=false;Z.C=null;Z.L={};Z.open=null;Z.com="";Z.deal="";if(!Z.farm)Z.fq="";renderStaff();return}
+  if(x=t.closest("[data-rkall]")){Z.rkOpen=!Z.rkOpen;Z.rkAll=null;renderStaff();return}
+  if(x=t.closest("[data-rkpdf]")){const v=x.dataset.rkpdf,CS=(Z.C&&Z.C.contracts)||[];const sp=x.innerHTML;x.disabled=true;x.innerHTML="⏳ Pripravujem…";try{await rkPdf(v==="*"?CS:[CS.find(y=>y.id===v)])}finally{x.disabled=false;x.innerHTML=sp}return}
   if(x=t.closest("[data-rkph]")){e.preventDefault&&e.preventDefault();const P=Z.PH[x.dataset.rkph];if(P)openPdf(P.pdf?`<!doctype html><html><body style="margin:0"><iframe src="${P.u}" style="border:0;width:100vw;height:100vh"></iframe></body></html>`:`<!doctype html><html><head><meta name="viewport" content="width=device-width,initial-scale=1"><title>${esc(P.f)}</title></head><body style="margin:0;background:#111"><img src="${P.u}" style="display:block;max-width:100%;margin:0 auto"></body></html>`);return}
   if(x=t.closest("[data-zopen]")){const id=x.dataset.zopen;Z.open=Z.open===id?null:id;renderStaff();if(Z.open&&!Z.L[id]){await loadL(id);renderStaff()}return}
   if(t.closest("[data-zpdfall]")){allPdf();return}
