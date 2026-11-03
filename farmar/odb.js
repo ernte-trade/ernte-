@@ -18,14 +18,14 @@ const N=v=>{if(v==null||v==="")return null;const x=typeof v==="number"?v:num(Str
 // čítanie Excelu odberateľa: hárky po komoditách, sekcia tovaru + sekcia Sušenie (body vlhkosti, kg)
 // 3. 11. 18:01 PRÍKAZ MAJITEĽA: Agro-Somotor má v stĺpci „Nečistoty (%)“ súčet čistenie + zrážka za vlhkosť (napr. 11,6 = 8,1 čistenie + 3,5 sušenie).
 // Do nečistôt patrí IBA čistenie – zrážku za vlhkosť ráta zúčtovanie samo zo vzorca. Poradie: sekcia „Čistenie“ → stĺpec − % zo sekcie „Sušenie“ (= vlhkosť − norma) → stĺpec.
-const noteImp=o=>{const m=String(o||"").match(/Tiszt[a-zá-ű ]*?(?:miatti\s+levon[aá]s)?\s*:\s*([0-9]+(?:[.,][0-9]+)?)\s*%/i);return m?+m[1].replace(",","."):null};
+const noteImp=o=>{/* iba informatívne – laboratórium pred čistením */const m=String(o||"").match(/Tiszt[a-zá-ű ]*?(?:miatti\s+levon[aá]s)?\s*:\s*([0-9]+(?:[.,][0-9]+)?)\s*%/i);return m?+m[1].replace(",","."):null};
 function parseWB(X,wb){const rows=[],dry={},cln={},bad=[];
   for(const sn of wb.SheetNames){const A=X.utils.sheet_to_json(wb.Sheets[sn],{header:1,raw:true,defval:null});let mode=null,sec=sn,cu=null;
     for(const r0 of A){const r=(r0||[]).concat(Array(12).fill(null));const tk=typeof r[1]==="string"?r[1].trim():"";const d=xDate(r[0]);
       if(d&&/^[A-Z]{1,4}\d*\/?\d+/.test(tk)){
         if(mode==="dry"||/sz[aá]r[ií]t|su[sš]en/i.test(String(r[2]||""))){dry[tk]={dp:N(r[5]),dk:N(r[7]),dd:N(r[6])};continue}
         if(mode==="clean"||/tiszt[ií]t|[čc]isten/i.test(String(r[2]||""))){cln[tk]={cp:N(r[5]),ck:N(r[7])};continue}/* 3. 11.: riadok „Levonás szárítás“ mimo sekcie sušenia prepísal lístok */
-        if(N(r[4])==null&&!r[2])continue;/* bez hrubej váhy a tovaru = riadok čistenia/sušenia, nie dodávka */
+        if(N(r[4])==null&&!r[2]){if(N(r[6])!=null&&!dry[tk])dry[tk]={dp:N(r[5]),dk:N(r[7]),dd:N(r[6])};continue}/* bez hrubej váhy a tovaru = riadok sušenia v tej istej sekcii (napr. „Munka1“) */
         const k=comOf(r[2]||sec)||comOf(sn);if(!k){bad.push(tk);continue}
         const pr=N(r[8]);rows.push({t:tk,d,k,p:String(r[3]||"").replace(/\s/g,"")||null,g:N(r[4]),i:N(r[5])!=null?Math.round(N(r[5])*100)/100:null,n:N(r[7]),
           s:pr==null?null:pr<5?Math.round(pr*100000)/100:pr,v:N(r[9]),o:String(r[10]||"").replace(/_x000D_|\r|\n/g," ").trim()||null,cu});continue}
@@ -33,7 +33,7 @@ function parseWB(X,wb){const rows=[],dry={},cln={},bad=[];
         if(r[0]&&/^[A-Z]{2}\d{3,}$/.test(r[0].trim())){cu=r[1].trim();continue}
         if(/su[sš]en|sz[aá]r[ií]t/i.test(r[1]))mode="dry";else if(/^\s*([čc]istenie|tiszt[ií]t[aá]s)\s*$/i.test(r[1]))mode="clean";else{mode="goods";sec=r[1]}}}}
   const r2=v=>Math.round(v*100)/100;
-  for(const x of rows){const q=dry[x.t],c=cln[x.t],ni=noteImp(x.o);if(q){x.dp=q.dp;x.dk=q.dk}
+  for(const x of rows){const q=dry[x.t],c=cln[x.t];if(q){x.dp=q.dp!=null&&q.dp<60?q.dp:null;x.dk=q.dk}/* stĺpec býva aj 100 − zrážka (99,9; 80,9) – to nie je vlhkosť */
     if(x.i==null)continue;const i0=x.i;
     if(c&&c.cp!=null)x.i=r2(c.cp);else if(q&&q.dd!=null)x.i=Math.max(0,r2(x.i-q.dd));/* poznámka (laboratórium pri príjme) môže byť pred čistením – nepoužiť */
     if(x.i!==i0)x.i0=i0}
