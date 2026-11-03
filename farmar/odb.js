@@ -20,7 +20,7 @@ function parseWB(X,wb){const rows=[],dry={},bad=[];
   for(const sn of wb.SheetNames){const A=X.utils.sheet_to_json(wb.Sheets[sn],{header:1,raw:true,defval:null});let mode=null,sec=sn,cu=null;
     for(const r0 of A){const r=(r0||[]).concat(Array(12).fill(null));const tk=typeof r[1]==="string"?r[1].trim():"";const d=xDate(r[0]);
       if(d&&/^[A-Z]{1,4}\d*\/?\d+/.test(tk)){
-        if(mode==="dry"){dry[tk]={dp:N(r[5]),dk:N(r[7])};continue}
+        if(mode==="dry"||/sz[aá]r[ií]t|su[sš]en/i.test(String(r[2]||""))){dry[tk]={dp:N(r[5]),dk:N(r[7])};continue}/* 3. 11.: riadok „Levonás szárítás“ mimo sekcie sušenia prepísal lístok */
         const k=comOf(r[2]||sec)||comOf(sn);if(!k){bad.push(tk);continue}
         const pr=N(r[8]);rows.push({t:tk,d,k,p:String(r[3]||"").replace(/\s/g,"")||null,g:N(r[4]),i:N(r[5])!=null?Math.round(N(r[5])*100)/100:null,n:N(r[7]),
           s:pr==null?null:pr<5?Math.round(pr*100000)/100:pr,v:N(r[9]),o:String(r[10]||"").replace(/_x000D_|\r|\n/g," ").trim()||null,cu});continue}

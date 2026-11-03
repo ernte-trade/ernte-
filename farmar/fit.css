@@ -342,3 +342,10 @@ body.ds-tab-calc .calcw .calcfr{flex:1;height:auto;min-height:0}
 #app:has(>.hub.owh)>.cnav{order:8}
 #app:has(>.hub.owh)>.instc{order:9}
 #app:has(>.hub.owh)>#ow-pushc{order:10}
+/* 🧾 3. 11. reklamácia u odberateľa – vyhodnotenie pri lístkoch v zúčtovaní farmára */
+#app .zrk{margin-top:12px;border:1px solid #f0c36d;border-radius:12px;padding:10px 12px;background:rgba(255,193,7,.07)}
+#app .zrk table td:nth-child(5){text-align:left}#app .zrk tr.ok td{background:rgba(139,195,74,.12)}
+#app .zrkb{display:block;font-size:.72em;line-height:1.2;color:#b26a00;white-space:normal}#app .zrkb.ok{color:#2f7d1c}
+#app .zrkph{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}#app .zrkph img{width:calc(33.33% - 6px);max-width:220px;aspect-ratio:1;object-fit:cover;border-radius:10px;border:1px solid var(--line,#ddd);cursor:zoom-in}
+#app .zrkph a,#app .zrkph span{font-size:.85em;padding:6px 10px;border:1px solid var(--line,#ddd);border-radius:8px}
+#app .zrk{min-width:0;max-width:100%;box-sizing:border-box}#app .zrkt{overflow-x:auto;max-width:100%;-webkit-overflow-scrolling:touch}#app .zrkt table{min-width:560px;width:100%;border-collapse:collapse;font-size:.86em}#app .zrkt th,#app .zrkt td{padding:6px 8px;border-bottom:1px solid var(--line,rgba(255,255,255,.1));text-align:right;white-space:nowrap}#app .zrkt th:nth-child(-n+2),#app .zrkt td:nth-child(-n+2){text-align:left}

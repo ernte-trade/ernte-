@@ -11,14 +11,34 @@ const hm=t=>{if(!t)return "";const d=new Date(t);return d.toLocaleDateString("sk
 const BUYER="Agro-Somotor s.r.o.";
 async function list(){try{const r=await sb.rpc("zuct_inbox_list");Z.L=r.error?{err:r.error.message}:r.data}catch(x){Z.L={err:String(x)}}}
 function b2a(b64){const s=atob(b64),u=new Uint8Array(s.length);for(let i=0;i<s.length;i++)u[i]=s.charCodeAt(i);return u}
+// 🧾 3. 11. príkaz majiteľa: súbor „Reklamácia“ (Rozhodnutie uznám / neuznám) = vyhodnotenie reklamácie, NIE zúčtovanie
+// parser reklamácie odberateľa (Agro-Somotor „Reklamácia“ – Rozhodnutie uznám / neuznám)
+function parseRek(X,wb){const out={},nz=s=>String(s==null?"":s).toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g,"").replace(/\s+/g," ").trim();
+  const N=v=>{if(v==null||v==="")return null;if(typeof v==="number")return v;const n=parseFloat(String(v).replace(/\s/g,"").replace(",","."));return isFinite(n)?n:null};
+  const TK=v=>{if(v==null)return null;let s=String(v).trim().toUpperCase();if(/^\d{3,6}$/.test(s))return "MB26/"+s.padStart(6,"0");return /^[A-Z]{1,4}\d*\/\d+$/.test(s)?s:null};
+  let any=false;
+  for(const sn of wb.SheetNames){const A=X.utils.sheet_to_json(wb.Sheets[sn],{header:1,raw:true,defval:null});let H=null;
+    for(const r of A){const c=(r||[]).map(nz);
+      if(c.includes("rozhodnutie")&&c.some(x=>/^c\.? ?vl/.test(x))){const f=(re,not)=>c.findIndex(x=>re.test(x)&&!(not&&not.test(x)));
+        H={t:f(/^c\.? ?vl/),z:f(/^zuctovanie$/),n:f(/^necistoty ?%?$/),b:f(/^zlomky.*semena ?%?$/),s:f(/^susenie/),tot:f(/\+.*susenie/),d:c.indexOf("rozhodnutie"),
+           g:f(/^hruba vaha/),kg:f(/^vaha kg/),p:f(/^jedn\.? ?cena/),v:f(/^hodnota/),pz:f(/^poznamka/)};any=true;continue}
+      if(!H)continue;const t=TK(r[H.t]);if(!t)continue;const dec=nz(r[H.d]);if(!/uzn/.test(dec))continue;
+      const z=N(r[H.z]),tot=N(r[H.tot]);if(z==null||tot==null)continue;
+      out[t]={t,sheet:sn,ok:/^uzn/.test(dec),z:+z.toFixed(4),c:+tot.toFixed(4),n:N(r[H.n]),b:N(r[H.b]),s:N(r[H.s]),g:N(r[H.g]),p:N(r[H.p]),
+        why:(H.d+1<r.length&&typeof r[H.d+1]==="string"&&r[H.d+1].trim())||(H.pz>=0&&typeof r[H.pz]==="string"&&r[H.pz].trim()!=="-"?r[H.pz].trim():null)||null}}}
+  return any?Object.values(out):null}
+window.odbParseRek=parseRek;
 // spracuje všetky čakajúce súbory (prevzatie v databáze → nikdy dvakrát)
 async function run(){if(!OWN()||Z.busy||typeof sb==="undefined"||!sb)return;Z.busy=true;let any=false;
   try{for(let i=0;i<10;i++){const c=await sb.rpc("zuct_inbox_claim");if(c.error||!c.data)break;const it=c.data;any=true;let res={},st="hotovo";
-      try{if(!window.odbParseWB)throw new Error("modul Zúčtovanie odberateľa sa nenačítal");const X=await fcXlsxLib();const wb=X.read(b2a(it.b64),{type:"array",cellDates:false});const P=window.odbParseWB(X,wb);
+      try{if(!window.odbParseWB)throw new Error("modul Zúčtovanie odberateľa sa nenačítal");const X=await fcXlsxLib();const wb=X.read(b2a(it.b64),{type:"array",cellDates:false});const RK=parseRek(X,wb);
+        if(RK){const q=await sb.rpc("buyer_claims_put",{p_inbox:it.id,p_rows:RK});if(q.error)throw new Error(q.error.message);st="reklamacia";res=q.data||{reklamacia:true};
+          if(typeof toast==="function")toast(`🧾 Reklamácia – vyhodnotenie od odberateľa (${it.fname}): uznané ${res.uznane||0}, neuznané ${res.neuznane||0}. Uznané zrážky sú prepočítané v Zúčtovaní farmára.`,10000)}
+        else{const P=window.odbParseWB(X,wb);
         if(!P.rows.length){st="preskoc";res={info:"v súbore nie sú vážne lístky"}}
         else{const tot={nove:0,aktualizovane:0,nerozdelene:0};let r,au={};
           for(let j=0;j<P.rows.length;j+=200){r=await sb.rpc("buyer_import",{rows:P.rows.slice(j,j+200),p_buyer:BUYER});if(r.error)throw new Error(r.error.message);for(const k in tot)tot[k]+=+r.data[k]||0;au=(r.data&&r.data.auto)||au}
-          const ds=P.rows.map(x=>x.d).sort();res={listky:P.rows.length,nove:tot.nove,aktualizovane:tot.aktualizovane,pridelene:au.pridelene||0,navrhy:au.navrhy||0,zostava:au.zostava!=null?au.zostava:tot.nerozdelene,od:ds[0],do:ds[ds.length-1],nezname:P.bad.slice(0,20)}}}
+          const ds=P.rows.map(x=>x.d).sort();res={listky:P.rows.length,nove:tot.nove,aktualizovane:tot.aktualizovane,pridelene:au.pridelene||0,navrhy:au.navrhy||0,zostava:au.zostava!=null?au.zostava:tot.nerozdelene,od:ds[0],do:ds[ds.length-1],nezname:P.bad.slice(0,20)}}}}
       catch(x){st="chyba";res={err:String(x&&x.message||x).slice(0,300)}}
       await sb.rpc("zuct_inbox_done",{p_id:it.id,p_status:st,p_result:res});
       if(st==="hotovo"&&typeof toast==="function")toast(`📥 Zúčtovanie z Gmailu nahraté (${it.fname}): ${res.nove} nových, ${res.aktualizovane} aktualizovaných lístkov, pridelené samo ${res.pridelene}, nerozdelené ${res.zostava}.`,10000)}}
@@ -48,15 +68,23 @@ function run(){var P=PropertiesService.getScriptProperties(),done=JSON.parse(P.g
       var x=r.getContentText();if(r.getResponseCode()>=300||/zly kluc|limit/.test(x)){ok=false;err=x.slice(0,200)}else if(/ok/.test(x))n++;});
     if(ok)done[id]=Date.now();});});}catch(e){err=String(e).slice(0,200)}
   var k=Object.keys(done);if(k.length>500)k.sort(function(a,b){return done[a]-done[b]}).slice(0,k.length-500).forEach(function(x){delete done[x]});
-  P.setProperty('done',JSON.stringify(done));rpc('zuct_inbox_ping',{p_key:KEY,p_n:n,p_err:err||null});}
+  P.setProperty('done',JSON.stringify(done));try{fotky()}catch(e){}rpc('zuct_inbox_ping',{p_key:KEY,p_n:n,p_err:err||null});}
+// 📷 fotodokumentácia k reklamácii (jpg/png/heic/webp, PDF iba v e-mailoch o reklamácii) – priloží sa k lístkom v zúčtovaní
+function fotky(){var P=PropertiesService.getScriptProperties(),done=JSON.parse(P.getProperty('donef')||'{}');
+  GmailApp.search(Q.replace('newer_than:60d','newer_than:21d'),0,30).forEach(function(t){t.getMessages().forEach(function(m){var id=m.getId();if(done[id])return;var ok=true,rk=/reklam|foto/i.test(m.getSubject()||'');
+    m.getAttachments().forEach(function(a){var nm=a.getName()||'foto.jpg';if(!(/\\.(jpe?g|png|heic|heif|webp)$/i.test(nm)||(rk&&/\\.pdf$/i.test(nm))))return;if(a.getSize()>9000000)return;
+      var r=rpc('zuct_inbox_put',{p_key:KEY,p_msgid:id,p_from:m.getFrom(),p_subject:m.getSubject(),p_date:m.getDate().toISOString(),p_name:nm,p_b64:Utilities.base64Encode(a.getBytes())});
+      if(r.getResponseCode()>=300||/zly kluc|limit/.test(r.getContentText()))ok=false;});
+    if(ok)done[id]=Date.now();});});
+  var k=Object.keys(done);if(k.length>500)k.sort(function(a,b){return done[a]-done[b]}).slice(0,k.length-500).forEach(function(x){delete done[x]});P.setProperty('donef',JSON.stringify(done));}
 `}
 window.zuctMailHTML=function(){if(!OWN())return "";if(!Z.L){if(!Z.busy)list().then(()=>{if(typeof renderStaff==="function"&&TAB==="zuct")renderStaff()});return `<div class="card zmc"><b>📥 Automaticky z Gmailu</b><div class="s">Načítavam…</div></div>`}
   const L=Z.L;if(L.err)return `<div class="card zmc"><b>📥 Automaticky z Gmailu</b><div class="s">${/zuct_inbox/.test(L.err)?"Zapne sa po aktualizácii databázy (pár minút).":E(L.err)}</div></div>`;
   const p=L.ping,live=p&&p.seen&&Date.now()-Date.parse(p.seen)<75*60e3,I=L.items||[];
-  const st={nove:"⏳ čaká",import:"⏳ nahrávam",hotovo:"✅ nahraté",chyba:"⚠️ chyba",preskoc:"↷ bez lístkov"};
+  const st={nove:"⏳ čaká",import:"⏳ nahrávam",hotovo:"✅ zúčtovanie",chyba:"⚠️ chyba",preskoc:"↷ bez lístkov",reklamacia:"🧾 reklamácia",foto:"📷 foto"};
   return `<div class="card zmc"><div class="zmh"><b>📥 Automaticky z Gmailu</b><span class="pill ${live?"":"w"}">${live?"🟢 pripojené":p?"🟠 skript nebeží":"⚪ nepripojené"}</span></div>
    <div class="s">Excel so zúčtovaním od <b>Mária Jaczka</b> (m.jaczko@gmail.com, Agro-Somotor) na <b>erntespol@gmail.com</b> sa stiahne sám každých 15 minút a aplikácia ho nahrá sem – lístky sa aktualizujú, pridelenie farmárom ostane, nové sa skúsia prideliť samy. Príde upozornenie do mobilu.${p&&p.seen?` Gmail naposledy skontrolovaný ${hm(p.seen)}.`:""}${p&&p.err?` <b class="zme">${E(p.err)}</b>`:""}</div>
-   ${I.length?`<div class="zml">${I.slice(0,6).map(x=>`<div><span>${st[x.status]||E(x.status)}</span><b>${E(x.fname)}</b><small>${hm(x.received||x.at)}${x.result&&x.result.listky?` · ${x.result.listky} lístkov · ${x.result.nove} nových · nerozdelené ${x.result.zostava}`:""}${x.result&&x.result.err?` · ${E(x.result.err)}`:""}${x.result&&x.result.info?` · ${E(x.result.info)}`:""}</small></div>`).join("")}</div>`:""}
+   ${I.length?`<div class="zml">${I.slice(0,6).map(x=>`<div><span>${st[x.status]||E(x.status)}</span><b>${E(x.fname)}</b><small>${hm(x.received||x.at)}${x.result&&x.result.listky&&!x.result.reklamacia?` · ${x.result.listky} lístkov · ${x.result.nove} nových · nerozdelené ${x.result.zostava}`:""}${x.result&&x.result.err?` · ${E(x.result.err)}`:""}${x.result&&x.result.info?` · ${E(x.result.info)}`:""}${x.result&&x.result.reklamacia&&x.result.listky?` · vyhodnotenie reklamácie: uznané ${x.result.uznane}, neuznané ${x.result.neuznane} → prepočítané v Zúčtovaní farmára`:""}${x.foto?` · 📷 ${x.foto} ${x.foto===1?"fotka":x.foto<5?"fotky":"fotiek"}`:""}</small></div>`).join("")}</div>`:""}
    <div class="btns">${MAIN()?`<button type="button" class="${p?"":"lime"}" data-zmset>${p?"⚙️ Nastavenie Gmailu":"🔗 Pripojiť Gmail erntespol@gmail.com"}</button>`:""}<button type="button" data-zmrun>↻ Skontrolovať teraz</button></div>
    ${Z.show&&Z.key?setupHTML():""}</div>`};
 function setupHTML(){return `<div class="zms"><b>Jednorazové pripojenie (3 minúty, v počítači alebo v prehliadači mobilu)</b><ol>
