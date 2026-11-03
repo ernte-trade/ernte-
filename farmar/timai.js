@@ -44,10 +44,10 @@ function repHtml(){const R=D.rep;if(!R)return `<div class="card tacard" id="taCa
 
 // ---------- 🤝 obchodné návrhy (záložka Obchody) ----------
 async function loadLd(){if(!LEADS()||D.busy.l)return;D.busy.l=1;try{const r=await sb.rpc("sales_leads_list");D.ld=r.error?{L:[],err:r.error.message}:(r.data||{L:[]});D.lAt=Date.now()}catch(x){D.ld=D.ld||{L:[]}}finally{D.busy.l=0}paint()}
-const OPEN=x=>["navrh","preklad","posiela","chyba"].includes(x.status);
+const OPEN=x=>["navrh","preklad","schvalit","posiela","chyba"].includes(x.status);
 function lead(x){const ed=D.ed[x.id],ln=LN[x.lang]||("v jazyku "+(x.lang||"krajiny"));
   const badge=x.kind==="dopyt"?`<span class="ldk dop">🛒 Dopyt – nakúpiť</span>`:`<span class="ldk pon">📦 Ponuka – predať</span>`;
-  const st=x.status==="preklad"?`<div class="ldst">⏳ AI prekladá upravený text ${E(ln)}…</div>`:x.status==="posiela"?`<div class="ldst">📤 Odosiela sa…</div>`:x.status==="chyba"?`<div class="ldst er">⚠️ ${E(x.err||"Neodoslané")}</div>`:x.err?`<div class="ldst er">⚠️ ${E(x.err)}</div>`:"";
+  const st=x.status==="preklad"?`<div class="ldst">⏳ AI prekladá upravený text ${E(ln)}…</div>`:x.status==="posiela"?`<div class="ldst">📤 Odosiela sa…</div>`:x.status==="schvalit"?`<div class="ldst ldsch">📨 ${MAIN()?"Čaká na tvoje schválenie":"Čaká na schválenie Martinom – odošle ho iba on"}${x.sub_by?` · poslal ${E(x.sub_by)}`:""}${x.sub_at?` ${E(dt(x.sub_at))}`:""}${x.sub_note?`<br>💬 ${E(x.sub_note)}`:""}</div>`:x.status==="chyba"?`<div class="ldst er">⚠️ ${E(x.err||"Neodoslané")}</div>`:x.err?`<div class="ldst er">⚠️ ${E(x.err)}</div>`:"";
   const head=`<div class="ldh"><span class="ldf">${FL[x.country]||"🌍"}</span><div class="ldn"><b>${E(x.company)}</b><small>${E([x.city,x.com].filter(Boolean).join(" · "))}</small></div></div>
    <div class="ldm">${badge}${x.web?`<a href="${E(/^https?:/i.test(x.web)?x.web:"https://"+x.web)}" target="_blank" rel="noopener">🌐 web</a>`:""}${x.phone?`<span>📞 ${E(x.phone)}</span>`:""}</div>
    ${x.why?`<div class="ldw">💡 ${E(x.why)}</div>`:""}`;
@@ -57,18 +57,20 @@ function lead(x){const ed=D.ed[x.id],ln=LN[x.lang]||("v jazyku "+(x.lang||"kraji
     <label class="ldl">Text (po slovensky)<textarea rows="10" data-lde="body">${E(ed.body)}</textarea></label>
     <div class="s">Po uložení AI text znova preloží ${E(ln)}. Potom ho odošleš.</div>
     <div class="btns"><button type="button" class="lime" data-ldsave="${E(x.id)}">💾 Uložiť a preložiť</button><button type="button" class="ghost" data-ldcancel="${E(x.id)}">Zrušiť úpravu</button></div></div>`;
-  const can=x.status==="navrh"||x.status==="chyba",sure=D.sure===x.id;
+  const M=MAIN(),can=x.status==="navrh"||x.status==="chyba"||(M&&x.status==="schvalit"),sure=D.sure===x.id;
+  const go=M?`<button type="button" class="${sure?"warn":"lime"}" data-ldsend="${E(x.id)}" ${x.email?"":"disabled"}>${sure?"Naozaj odoslať? Ťukni znova":"✅ Skontrolované – odoslať "+E(ln)}</button>${x.status==="schvalit"?`<button type="button" class="ghost" data-ldret="${E(x.id)}">↩️ Vrátiť na úpravu</button>`:""}`
+    :`<button type="button" class="lime" data-ldsub="${E(x.id)}" ${x.email?"":"disabled"}>📨 Poslať Martinovi na schválenie</button>`;
   return `<div class="ldr" data-lid="${E(x.id)}">${head}
    <div class="ldto">✉️ Komu: <b>${x.email?E(x.email):"— chýba e-mail, doplň v úprave"}</b><small>odpovede prídu na ${E((D.ld&&D.ld.reply_to)||"ernte@ernte.sk")}</small></div>
    <div class="ldsub">📝 ${E(x.subj_sk||"")}</div><div class="ldb">${E(x.body_sk||"")}</div>
    <details class="ldloc"><summary>${FL[x.country]||"🌍"} Text, ktorý odíde ${E(ln)}</summary><div class="ldsub">${E(x.subj_loc||"")}</div><div class="ldb">${E(x.body_loc||"")}</div></details>
    ${st}
-   ${can?`<div class="btns"><button type="button" class="${sure?"warn":"lime"}" data-ldsend="${E(x.id)}" ${x.email?"":"disabled"}>${sure?"Naozaj odoslať? Ťukni znova":"✅ Skontrolované – odoslať "+E(ln)}</button>
-     <button type="button" class="ghost" data-lded="${E(x.id)}">✏️ Upraviť</button><button type="button" class="ghost" data-ldrej="${E(x.id)}">🚫 Zamietnuť</button>${x.email?`<button type="button" class="ghost" data-ldopt="${E(x.id)}">🔕 Firma sa odhlásila</button>`:""}</div><div class="s" style="font-size:.74rem">⚖️ Na koniec e-mailu sa pridá poučenie podľa GDPR (čl. 14) v jazyku firmy a možnosť odhlásenia.</div>`:""}</div>`}
+   ${can?`<div class="btns">${go}
+     <button type="button" class="ghost" data-lded="${E(x.id)}">✏️ Upraviť</button><button type="button" class="ghost" data-ldrej="${E(x.id)}">🚫 Zamietnuť</button>${x.email?`<button type="button" class="ghost" data-ldopt="${E(x.id)}">🔕 Firma sa odhlásila</button>`:""}</div><div class="s" style="font-size:.74rem">${M?"":"Odosiela iba Martin – po schválení odíde z erntespol@gmail.com. "}⚖️ Na koniec e-mailu sa pridá poučenie podľa GDPR (čl. 14) v jazyku firmy a možnosť odhlásenia.</div>`:""}</div>`}
 function ldHtml(){const R=D.ld;if(!R)return `<div class="card ldcard" id="ldCard"><h2>🤝 Obchodné návrhy AI</h2><div class="s">Načítavam…</div></div>`;
-  const L=R.L||[],O=L.filter(OPEN),H=L.filter(x=>!OPEN(x)),st=R.state||{},run=st.at&&!st.done;
+  const L=R.L||[],O=L.filter(OPEN).sort((a,b)=>(b.status==="schvalit")-(a.status==="schvalit")),nS=O.filter(x=>x.status==="schvalit").length,H=L.filter(x=>!OPEN(x)),st=R.state||{},run=st.at&&!st.done;
   const hist=H.map(x=>`<div class="ldhi"><span>${FL[x.country]||"🌍"}</span><b>${E(x.company)}</b><small>${x.status==="odoslany"?"✅ odoslané":"🚫 zamietnuté"} ${E(dt(x.decided_at||x.created_at))}</small></div>`).join("");
-  return `<div class="card ldcard" id="ldCard"><h2>🤝 Obchodné návrhy AI${O.length?` · <span class="cnt">${O.length} čaká</span>`:""}</h2>
+  return `<div class="card ldcard" id="ldCard"><h2>🤝 Obchodné návrhy AI${O.length?` · <span class="cnt">${O.length} čaká</span>`:""}${nS&&MAIN()?` · <span class="cnt">📨 ${nS} na schválenie</span>`:""}</h2>
    ${O.length?O.map(lead).join(""):`<div class="s">${run?"⏳ AI práve hľadá firmy a píše e-maily (pár minút)…":"Žiadny návrh nečaká. Nové pripraví AI v pondelok, stredu a piatok ráno."}</div>`}
    ${st.err&&st.done&&!O.length?`<div class="s taerr">Posledné hľadanie sa nepodarilo: ${E(String(st.err).slice(0,140))}</div>`:""}
    ${hist?`<details class="tadet"><summary>🗂 Odoslané a zamietnuté (${H.length})</summary>${hist}</details>`:""}
@@ -91,7 +93,7 @@ function paint(){if(typeof TAB==="undefined")return;
 // ---------- tlačidlá ----------
 function edOf(el){const r=el.closest("[data-lid]");return r?D.ed[r.dataset.lid]:null}
 document.addEventListener("input",e=>{const t=e.target;if(!t.dataset||!t.dataset.lde)return;const ed=edOf(t);if(ed)ed[t.dataset.lde]=t.value},true);
-document.addEventListener("click",async e=>{const b=e.target.closest&&e.target.closest("[data-tnx],[data-tanow],[data-ldsend],[data-lded],[data-ldcancel],[data-ldsave],[data-ldrej],[data-ldnow],[data-ldopt]");if(!b)return;
+document.addEventListener("click",async e=>{const b=e.target.closest&&e.target.closest("[data-tnx],[data-tanow],[data-ldsend],[data-lded],[data-ldcancel],[data-ldsave],[data-ldrej],[data-ldnow],[data-ldopt],[data-ldsub],[data-ldret]");if(!b)return;
   e.preventDefault();e.stopPropagation();const ds=b.dataset;
   if(ds.tnx){const el=document.getElementById("tnBub");if(el){el.classList.add("out");setTimeout(()=>el.remove(),220)}D.nud=(D.nud||[]).filter(x=>String(x.id)!==ds.tnx);
     try{await sb.rpc("team_nudge_close",{p_id:+ds.tnx})}catch(x){}setTimeout(paintNud,260);return}
@@ -100,7 +102,11 @@ document.addEventListener("click",async e=>{const b=e.target.closest&&e.target.c
     tst(r.data==="čerstvé"?"Tím bol skontrolovaný pred chvíľou – report je hore.":r.data==="chýba kľúč"?"Chýba kľúč ERNTE AI (Podpora → nastavenie).":"⏳ AI kontroluje tím – report príde o pár minút.",5000);D.rAt=0;loadRep();return}
   if("ldnow" in ds){b.disabled=true;const r=await sb.rpc("sales_ai_now");if(r.error){b.disabled=false;tst("Nepodarilo sa: "+r.error.message,6000);return}
     tst(r.data==="čerstvé"?"AI hľadala firmy pred menej ako 2 hodinami – skús neskôr.":r.data==="chýba kľúč"?"Chýba kľúč ERNTE AI.":"🔎 AI hľadá firmy a píše e-maily – o pár minút sú tu.",5000);D.lAt=0;loadLd();return}
-  const L=(D.ld&&D.ld.L)||[],x=L.find(z=>String(z.id)===String(ds.ldsend||ds.lded||ds.ldcancel||ds.ldsave||ds.ldrej));if(!x)return;
+  const L=(D.ld&&D.ld.L)||[],x=L.find(z=>String(z.id)===String(ds.ldsend||ds.lded||ds.ldcancel||ds.ldsave||ds.ldrej||ds.ldsub||ds.ldret));if(!x)return;
+  if(ds.ldsub){const n=prompt(`Poslať ${x.kind==="dopyt"?"dopyt":"ponuku"} pre ${x.company} Martinovi na schválenie.\nPoznámka pre Martina (nepovinné):`,"");if(n===null)return;b.disabled=true;
+    const r=await sb.rpc("sales_lead_submit",{p_id:x.id,p_note:n||null});if(r.error){b.disabled=false;tst("Nepodarilo sa: "+r.error.message,6000);return}tst("📨 Poslané Martinovi na schválenie – odošle ho on.",4000);loadLd();return}
+  if(ds.ldret){const n=prompt(`Vrátiť návrh pre ${x.company} na úpravu – čo zmeniť?`,"");if(n===null)return;b.disabled=true;
+    const r=await sb.rpc("sales_lead_return",{p_id:x.id,p_note:n||null});if(r.error){b.disabled=false;tst("Nepodarilo sa: "+r.error.message,6000);return}tst("↩️ Vrátené na úpravu.",3000);loadLd();return}
   if(ds.lded){D.ed[x.id]={email:x.email||"",subj:x.subj_sk||"",body:x.body_sk||""};paint();return}
   if(ds.ldcancel){delete D.ed[x.id];paint();return}
   if(ds.ldsave){const ed=D.ed[x.id];b.disabled=true;const r=await sb.rpc("sales_lead_save",{p_id:x.id,p_subj:ed.subj,p_body:ed.body,p_email:ed.email});
@@ -143,7 +149,7 @@ document.addEventListener("click",async e=>{const b=e.target.closest&&e.target.c
 .ldsub{font-weight:700;margin:8px 0 4px;overflow-wrap:anywhere}
 .ldb{white-space:pre-wrap;overflow-wrap:anywhere;font-size:.92rem;line-height:1.5;padding:10px 12px;border-radius:14px;background:rgba(0,0,0,.25);border:1px solid rgba(255,255,255,.07)}
 .ldloc{margin-top:8px}.ldloc summary{cursor:pointer;font-weight:700;min-height:40px;display:flex;align-items:center}
-.ldst{margin-top:8px;font-weight:600;color:#67e8f9}.ldst.er{color:#fca5a5}
+.ldst{margin-top:8px;font-weight:600;color:#67e8f9}.ldst.er{color:#fca5a5}.ldst.ldsch{color:#fde68a;background:rgba(250,204,21,.1);border:1px solid rgba(250,204,21,.35);border-radius:10px;padding:8px 10px;overflow-wrap:anywhere}
 .ldl{display:grid;gap:4px;margin:8px 0;font-size:.85rem;opacity:.95}.ldl input,.ldl textarea{width:100%;box-sizing:border-box;font:500 .95rem/1.45 system-ui;color:#fff;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.2);border-radius:12px;padding:10px}
 .ldl input{min-height:46px}
 .ldr .btns button{min-height:44px;white-space:normal}
