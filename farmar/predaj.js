@@ -68,8 +68,14 @@ window.sellAllOpts=allOpts;
 // pri nákupnej cene v Cenníku (iba majiteľ): všetky možnosti predaja so ziskom a dopravou
 window.sellTileHTML=function(com,buy){if(!OWN()||buy==null||!(+buy>0))return "";if(!D.B){if(!D.busy&&Date.now()-D.at>60e3)load();return ""}
   const L=allOpts(com,+buy);if(!L.length)return `<span class="stl"><small>Kde predať: žiadny odberateľ nemá túto komoditu</small></span>`;
-  const Y=L.filter(o=>!o.none&&o.net!=null),N=L.filter(o=>o.none);
-  return `<span class="stl">${Y.map((o,i)=>`<small class="${o.profit>=0?"ps":"ng"}${i===0?(o.profit>=0?" sbest":" sworst"):""}">${i===0?(o.profit>=0?`<i>🏆 odporúča ekonomika</i>`:`<i class="neg">⚠️ všetko v mínuse – najmenšia strata</i>`):""}<b>${sg(o.profit)}</b> ${E(o.b.name)}${o.siteName?" "+E(o.siteName):""} · ${E(o.del)} ${f0(o.price)}${o.dop?` − dopr. ${f0(o.dop)}`:""} = ${f0(o.net)}</small>`).join("")||`<small>Žiadna platná ponuka odberateľa</small>`}
+  const Y=L.filter(o=>!o.none&&o.net!=null),N=L.filter(o=>o.none),B=Y[0],R=Y.slice(1);
+  const nm=o=>E(o.b.name)+(o.siteName?" "+E(o.siteName):""),calc=o=>`${E(o.del)} ${f0(o.price)}${o.dop?` − doprava ${f0(o.dop)}`:""} = ${f0(o.net)} €/t`;
+  const top=B?`<span class="sbig ${B.profit>=0?"ok":"bad"}"><i>${B.profit>=0?"🏆 NAJVIAC ZAROBÍME":"⚠️ VŠADE STRATA – najmenšia"}</i>
+     <b class="sbn">${nm(B)}</b><b class="sbp">${sg(B.profit)} €/t</b>
+     <small>${calc(B)} · náš nákup ${f0(+buy)} €/t</small>
+     <small class="sb100">na 100 t: <b>${sg(Math.round(B.profit*100))} €</b></small></span>`:`<small>Žiadna platná ponuka odberateľa</small>`;
+  const rest=R.length?`<span class="srest"><small class="srh">Ďalšie možnosti predaja</small>${R.map(o=>`<span class="sr ${o.profit>=0?"ps":"ng"}"><b>${sg(o.profit)}</b><span>${nm(o)}<small>${calc(o)}${B&&B.profit!=null&&o.profit!=null?` · o ${f0(B.profit-o.profit)} €/t menej`:""}</small></span></span>`).join("")}</span>`:"";
+  return `<span class="stl">${top}${rest}
     ${N.length?`<details class="stnd"><summary>+ ${N.length} bez ponuky (koľko musia dať)</summary>${N.map(o=>`<small class="stn">${E(o.b.name)}${o.siteName?" "+E(o.siteName):""}${o.del==="FCA"?` · FCA → treba ≥ ${f0(o.need)}`:o.dop!=null?` · dopr. ${f0(o.dop)} € → treba ≥ ${f0(o.need)}`:""}</small>`).join("")}</details>`:""}</span>`};
 function missing(com,opts){const have=new Set(opts.map(o=>o.b.id));return (D.B||[]).filter(b=>(b.coms||[]).includes(com)&&!have.has(b.id))}
 // PRÍKAZ MAJITEĽA (30. 10.): nákupná cena nikdy nad najlepší predaj po našej doprave − marža (predvolene 10 €/t)
@@ -233,6 +239,15 @@ html[data-theme=light] .swr .ps,html[data-theme=light] .swal .cnt{color:#15803d}
 .stl .sworst{border:1px dashed rgba(251,146,60,.7);border-radius:10px;padding:4px 6px}.stl .sworst i{display:block;font-style:normal;font-weight:800;font-size:.7rem}.stl i.neg,.sbtag.neg{color:#fdba74!important}.srow.sworst{border:2px dashed rgba(251,146,60,.75)!important}
 .srow.sbest{background:rgba(74,222,128,.14)!important;border:2px solid rgba(74,222,128,.75)!important}.sbtag{font-style:normal;font-weight:800;color:#86efac;font-size:.78rem}
 html[data-theme=light] .stl .sbest i,html[data-theme=light] .sbtag{color:#15803d}
+.stl .sbig{display:grid;gap:3px;text-align:center;padding:10px 8px;border-radius:14px;background:rgba(74,222,128,.14);border:2px solid rgba(74,222,128,.75)}
+.stl .sbig.bad{background:rgba(251,146,60,.12);border:2px dashed rgba(251,146,60,.8)}
+.stl .sbig i{font-style:normal;font-weight:800;font-size:.78rem;letter-spacing:.03em;color:#86efac}.stl .sbig.bad i{color:#fdba74}
+.stl .sbig .sbn{font-size:1.02rem;line-height:1.25;overflow-wrap:anywhere}.stl .sbig .sbp{font-size:1.7rem;line-height:1.1;color:#86efac}.stl .sbig.bad .sbp{color:#fca5a5}
+.stl .sbig small{font-size:.78rem;opacity:.9}.stl .sbig .sb100 b{font-size:.9rem;color:inherit}
+.stl .srest{display:grid;gap:4px;margin-top:6px}.stl .srh{font-weight:700;opacity:.7;text-align:center}
+.stl .sr{display:grid;grid-template-columns:auto 1fr;gap:8px;align-items:center;padding:6px 8px;border-radius:10px;border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.03)}
+.stl .sr>b{font-size:.95rem;min-width:40px;text-align:center}.stl .sr.ps>b{color:#86efac}.stl .sr.ng>b{color:#fca5a5}.stl .sr span{display:grid;gap:1px;min-width:0;overflow-wrap:anywhere}.stl .sr small{opacity:.75;font-size:.72rem}
+html[data-theme=light] .stl .sbig i,html[data-theme=light] .stl .sbig .sbp,html[data-theme=light] .stl .sr.ps>b{color:#15803d}html[data-theme=light] .stl .sr{border-color:rgba(0,0,0,.12);background:rgba(0,0,0,.03)}
 .stl .stn{opacity:.65}.stnd summary{cursor:pointer;font-size:.74rem!important;font-weight:600;opacity:.8;list-style:none;padding:2px 0}.stnd summary::-webkit-details-marker{display:none}
 .scoms{display:flex;flex-wrap:wrap;gap:4px;margin-top:4px}.scm{min-height:30px!important;padding:2px 9px!important;border-radius:999px!important;font-size:.74rem!important;opacity:.55}.scm.on{opacity:1;background:rgba(134,239,172,.2)!important;border-color:rgba(134,239,172,.6)!important}.smiss div{margin-top:3px}
 .owrec{display:block;margin-top:4px;font-size:.78rem;font-weight:700}.owrec.ps{color:#86efac}.owrec.ng{color:#fca5a5}.sform{margin-top:8px}.sscan{display:grid;gap:6px;padding:12px;border-radius:16px;border:1px solid rgba(165,243,252,.4);background:linear-gradient(135deg,rgba(165,243,252,.12),rgba(139,92,246,.10))}.sscan small{opacity:.8}.sfile{cursor:pointer;display:inline-flex;align-items:center;justify-content:center}.srows{display:grid;gap:8px}.srowf{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:6px 8px;padding:10px;border-radius:14px;border:1px solid rgba(255,255,255,.1);background:rgba(255,255,255,.03)}.srowf .w{grid-column:1/-1}.sck{display:flex;align-items:center;gap:6px;grid-column:1/-1;font-weight:700}`;document.head.appendChild(s)}
