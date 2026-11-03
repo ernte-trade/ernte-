@@ -96,7 +96,7 @@ s pripojeným repozitárom `ernte-trade/ernte-`.
   (DDP − doprava `admDop`, predvolene 10 €/t), inak 64. Západ (Hamburg) sa nepočíta. Zverejňuje iba databáza (`soja_adm_tick`, pg_cron `soja-adm`
   každých 30 min); klient sóju nezverejňuje (žiadne preskakovanie cien). Ručná cena sóje sa neukladá.
 - **Pravidlo majiteľa (trvalé): REPKA, KUKURICA, LO SLNEČNICA = Interagros − 10 €/t.** Naša výkupná cena = posledná ponuka Interagros
-  (v „Konkurenčné ceny“; FCA prednostne, inak DAP; bez „nad 500 t“, neskoršieho odberu a DAP Parchovany) mínus `iaMinus` (10 €).
+  (v „Konkurenčné ceny“; FCA prednostne, inak DAP; bez „nad 500 t“, neskoršieho odberu, DAP Parchovany a **bez mokrej – iba suchá (3. 11. príkaz majiteľa)**) mínus `iaMinus` (10 €).
   Zverejňuje iba databáza (`ia_tick`, pg_cron `interagros` každých 30 min, `ia_run` hneď po vložení ponuky); klient ich nezverejňuje, ručná cena sa neukladá.
 - **Pravidlo majiteľa (trvalé, 30. 10.): NÁKUP VIAZANÝ NA PREDAJ** – zverejnená nákupná cena nikdy nad najlepší predaj po našej doprave − marža (`sellcap.m`, 10 €/t),
   pre všetky komodity. Strop počíta aplikácia majiteľa z „Kde predať“ (`predaj.js` → `caps()`, kalk_store `pricelist/sellcap`, platí 3 dni); databáza `price_cap()`
