@@ -26,12 +26,12 @@ async function run(){if(!OWN()||Z.busy||typeof sb==="undefined"||!sb)return;Z.bu
   Z.busy=false;Z.at=Date.now();await list();if(any){try{window.zdashReload&&zdashReload()}catch(x){}}if(typeof TAB!=="undefined"&&TAB==="zuct"&&typeof renderStaff==="function"&&!(window.formBusy&&formBusy()))renderStaff()}
 window.zuctMailRun=run;
 // skript pre Google účet erntespol@gmail.com (kľúč doplnený)
-function script(k){const C=window.ERNTE_CONFIG||{};return `// ERNTE – zúčtovanie od Agro-Somotora z Gmailu do aplikácie (každých 15 min) + odosielanie e-mailov z aplikácie cez tento Gmail (každých 5 min)
+function script(k,acct){const C=window.ERNTE_CONFIG||{};return `// ERNTE – zúčtovanie od Agro-Somotora z Gmailu do aplikácie (každých 15 min) + odosielanie e-mailov z aplikácie cez tento Gmail (každých 5 min)
 // 1) Vlož celý tento text, ulož (Ctrl+S). 2) Hore vyber funkciu "setup" a klikni ▶ Spustiť. 3) Povoľ prístup k Gmailu (Rozšírené → Prejsť na projekt).
 const URL='${C.SUPABASE_URL||"https://cflliscddsgleyeykzje.supabase.co"}/rest/v1/rpc/';
 const AK='${C.SUPABASE_KEY||""}';
 const KEY='${k}';
-const ACCT='erntespol@gmail.com'; // v účte erntevykup prepíš na 'erntevykup@gmail.com'
+const ACCT='${acct||"erntespol@gmail.com"}';
 const Q='has:attachment newer_than:60d (from:m.jaczko@gmail.com OR from:agrosomotor.sk OR from:vojkafarm.sk)';
 function setup(){ScriptApp.getProjectTriggers().forEach(function(t){ScriptApp.deleteTrigger(t)});ScriptApp.newTrigger('run').timeBased().everyMinutes(15).create();ScriptApp.newTrigger('posta').timeBased().everyMinutes(5).create();run();posta();}
 // 📧 e-maily z aplikácie (ponuky, zmluvy, zúčtovania) odošle tento Gmail – bez hesla aplikácie
@@ -71,7 +71,7 @@ document.addEventListener("click",async e=>{const b=e.target.closest&&e.target.c
   if(!MAIN())return;
   if(b.dataset.zmset!==undefined||b.dataset.zmnew!==undefined){if(b.dataset.zmnew!==undefined&&!confirm("Vytvoriť nový kľúč? Starý skript prestane fungovať – musíš doň vložiť nový."))return;
     const r=await sb.rpc("zuct_inbox_key",{p_new:b.dataset.zmnew!==undefined});if(r.error){toast("Nepodarilo sa: "+r.error.message,6000);return}Z.key=r.data;Z.show=b.dataset.zmset!==undefined?!Z.show||b.dataset.zmnew!==undefined:true;renderStaff();return}
-  if(b.dataset.zmcopy!==undefined){const t=script(Z.key);try{await navigator.clipboard.writeText(t);toast("📋 Skript skopírovaný – vlož ho na script.google.com.",5000)}catch(x){const a=document.querySelector(".zmt");if(a){a.focus();a.select()}toast("Označ text v okne a skopíruj ho.",4000)}}},true);
+  if(b.dataset.zmcopy!==undefined){const t=script(Z.key,b.dataset.gscopy||"erntespol@gmail.com");try{await navigator.clipboard.writeText(t);toast("📋 Skript pre "+(b.dataset.gscopy||"erntespol@gmail.com")+" skopírovaný – vlož ho na script.google.com.",5000)}catch(x){const a=document.querySelector(".zmt");if(a){a.focus();a.select()}toast("Označ text v okne a skopíruj ho.",4000)}}},true);
 // 🔗 priamy odkaz …/farmar/#gmail-skript – okno so skriptom a postupom (iba Martin)
 async function gsOpen(){if(!MAIN()||document.getElementById("gsOv"))return;let k=Z.key;if(!k){const r=await sb.rpc("zuct_inbox_key",{p_new:false});if(r.error){toast("Nepodarilo sa: "+r.error.message,6000);return}k=Z.key=r.data}
   const d=document.createElement("div");d.id="gsOv";d.className="gsov";d.innerHTML=`<div class="gsbox"><div class="zmh"><b>📧 Gmail – posielanie e-mailov bez hesla</b><button type="button" class="gsx" data-gsx>✕</button></div>
@@ -81,11 +81,11 @@ async function gsOpen(){if(!MAIN()||document.getElementById("gsOv"))return;let k
    <li>Hore v zozname funkcií vyber <b>setup</b> → <b>▶ Spustiť</b>.</li>
    <li>Google sa spýta na povolenie: <b>Skontrolovať povolenia</b> → erntespol → <b>Rozšírené</b> → <b>Prejsť na projekt</b> → <b>Povoliť</b> (teraz aj „Odosielať e-maily“).</li>
    <li>Hotovo – e-maily z aplikácie idú z Gmailu do 5 minút, neodoslané ponuky sa pošlú samy. Zmluvy a zúčtovania pôjdu z <b>erntevykup@gmail.com</b>, keď ten istý skript vložíš aj tam (nový projekt v tom účte, kroky 2–5); dovtedy idú z erntespol.</li></ol>
-   <div class="btns"><button type="button" class="lime" data-gscopy>📋 Kopírovať skript</button></div>
+   <div class="btns"><button type="button" class="lime" data-gscopy="erntespol@gmail.com">📋 Skript pre erntespol (ponuky)</button><button type="button" class="lime" data-gscopy="erntevykup@gmail.com">📋 Skript pre erntevykup (zmluvy, zúčtovania)</button></div><div class="s">Každý skript vlož do svojho Google účtu – nič v ňom netreba meniť.</div>
    <textarea class="zmt" readonly data-nocut rows="5">${E(script(k))}</textarea></div>`;document.body.appendChild(d)}
 document.addEventListener("click",async e=>{const b=e.target.closest&&e.target.closest("[data-gsx],[data-gscopy]");if(!b)return;e.preventDefault();
   if(b.dataset.gsx!==undefined){const o=document.getElementById("gsOv");o&&o.remove();if(location.hash==="#gmail-skript")history.replaceState(null,"",location.pathname+location.search);return}
-  const t=script(Z.key);try{await navigator.clipboard.writeText(t);toast("📋 Skript skopírovaný – vlož ho na script.google.com.",5000)}catch(x){const a=document.querySelector("#gsOv .zmt");if(a){a.focus();a.select()}toast("Označ text v okne a skopíruj ho.",4000)}},true);
+  const t=script(Z.key,b.dataset.gscopy||"erntespol@gmail.com");try{await navigator.clipboard.writeText(t);toast("📋 Skript pre "+(b.dataset.gscopy||"erntespol@gmail.com")+" skopírovaný – vlož ho na script.google.com.",5000)}catch(x){const a=document.querySelector("#gsOv .zmt");if(a){a.focus();a.select()}toast("Označ text v okne a skopíruj ho.",4000)}},true);
 {const gs=setInterval(()=>{if(location.hash!=="#gmail-skript"){return}if(MAIN()&&typeof sb!=="undefined"&&sb){clearInterval(gs);gsOpen()}},1500);setTimeout(()=>clearInterval(gs),5*60e3);
  window.addEventListener("hashchange",()=>{if(location.hash==="#gmail-skript")gsOpen()})}
 window.gmailSkript=gsOpen;
