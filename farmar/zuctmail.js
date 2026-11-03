@@ -26,13 +26,19 @@ async function run(){if(!OWN()||Z.busy||typeof sb==="undefined"||!sb)return;Z.bu
   Z.busy=false;Z.at=Date.now();await list();if(any){try{window.zdashReload&&zdashReload()}catch(x){}}if(typeof TAB!=="undefined"&&TAB==="zuct"&&typeof renderStaff==="function"&&!(window.formBusy&&formBusy()))renderStaff()}
 window.zuctMailRun=run;
 // skript pre Google účet erntespol@gmail.com (kľúč doplnený)
-function script(k){const C=window.ERNTE_CONFIG||{};return `// ERNTE – zúčtovanie od Agro-Somotora z Gmailu do aplikácie (každých 15 min)
+function script(k){const C=window.ERNTE_CONFIG||{};return `// ERNTE – zúčtovanie od Agro-Somotora z Gmailu do aplikácie (každých 15 min) + odosielanie e-mailov z aplikácie cez tento Gmail (každých 5 min)
 // 1) Vlož celý tento text, ulož (Ctrl+S). 2) Hore vyber funkciu "setup" a klikni ▶ Spustiť. 3) Povoľ prístup k Gmailu (Rozšírené → Prejsť na projekt).
 const URL='${C.SUPABASE_URL||"https://cflliscddsgleyeykzje.supabase.co"}/rest/v1/rpc/';
 const AK='${C.SUPABASE_KEY||""}';
 const KEY='${k}';
 const Q='has:attachment newer_than:60d (from:m.jaczko@gmail.com OR from:agrosomotor.sk OR from:vojkafarm.sk)';
-function setup(){ScriptApp.getProjectTriggers().forEach(function(t){ScriptApp.deleteTrigger(t)});ScriptApp.newTrigger('run').timeBased().everyMinutes(15).create();run();}
+function setup(){ScriptApp.getProjectTriggers().forEach(function(t){ScriptApp.deleteTrigger(t)});ScriptApp.newTrigger('run').timeBased().everyMinutes(15).create();ScriptApp.newTrigger('posta').timeBased().everyMinutes(5).create();run();posta();}
+// 📧 e-maily z aplikácie (ponuky, zmluvy, zúčtovania) odošle tento Gmail – bez hesla aplikácie
+function posta(){var me=Session.getEffectiveUser().getEmail(),r=rpc('gmail_take',{p_key:KEY,p_acct:me}),x={};try{x=JSON.parse(r.getContentText())}catch(e){return}
+  (x.jobs||[]).forEach(function(j){try{var o={name:j.from_name||'ERNTE spol. s r.o.'};if(j.reply_to&&/@/.test(j.reply_to))o.replyTo=j.reply_to;
+    if(j.att){o.attachments=[Utilities.newBlob(Utilities.base64Decode(String(j.att).replace(/^data:[^,]+,/,'')),'application/pdf',j.att_name||'Dokument.pdf')]}
+    GmailApp.sendEmail(j.to,j.subject||'ERNTE',j.body||'',o);rpc('mail_job_done',{p_id:j.id,p_ok:true,p_err:null});}
+  catch(e){rpc('mail_job_done',{p_id:j.id,p_ok:false,p_err:'Gmail: '+String(e).slice(0,250)})}});}
 function rpc(f,b){return UrlFetchApp.fetch(URL+f,{method:'post',contentType:'application/json',headers:{apikey:AK,Authorization:'Bearer '+AK},payload:JSON.stringify(b),muteHttpExceptions:true});}
 function run(){var P=PropertiesService.getScriptProperties(),done=JSON.parse(P.getProperty('done')||'{}'),n=0,err='';
   try{GmailApp.search(Q,0,40).forEach(function(t){t.getMessages().forEach(function(m){var id=m.getId();if(done[id])return;var ok=true;
@@ -65,11 +71,29 @@ document.addEventListener("click",async e=>{const b=e.target.closest&&e.target.c
   if(b.dataset.zmset!==undefined||b.dataset.zmnew!==undefined){if(b.dataset.zmnew!==undefined&&!confirm("Vytvoriť nový kľúč? Starý skript prestane fungovať – musíš doň vložiť nový."))return;
     const r=await sb.rpc("zuct_inbox_key",{p_new:b.dataset.zmnew!==undefined});if(r.error){toast("Nepodarilo sa: "+r.error.message,6000);return}Z.key=r.data;Z.show=b.dataset.zmset!==undefined?!Z.show||b.dataset.zmnew!==undefined:true;renderStaff();return}
   if(b.dataset.zmcopy!==undefined){const t=script(Z.key);try{await navigator.clipboard.writeText(t);toast("📋 Skript skopírovaný – vlož ho na script.google.com.",5000)}catch(x){const a=document.querySelector(".zmt");if(a){a.focus();a.select()}toast("Označ text v okne a skopíruj ho.",4000)}}},true);
+// 🔗 priamy odkaz …/farmar/#gmail-skript – okno so skriptom a postupom (iba Martin)
+async function gsOpen(){if(!MAIN()||document.getElementById("gsOv"))return;let k=Z.key;if(!k){const r=await sb.rpc("zuct_inbox_key",{p_new:false});if(r.error){toast("Nepodarilo sa: "+r.error.message,6000);return}k=Z.key=r.data}
+  const d=document.createElement("div");d.id="gsOv";d.className="gsov";d.innerHTML=`<div class="gsbox"><div class="zmh"><b>📧 Gmail – posielanie e-mailov bez hesla</b><button type="button" class="gsx" data-gsx>✕</button></div>
+   <ol><li>Ťukni <b>📋 Kopírovať skript</b> (nižšie).</li>
+   <li>Otvor <a href="https://script.google.com/home" target="_blank" rel="noopener">script.google.com</a> (účet <b>erntespol@gmail.com</b>) → projekt <b>„Projekt bez mena“</b> → súbor <b>Kód.gs</b>.</li>
+   <li>Označ v ňom <b>všetko</b> (podrž prst → Vybrať všetko) a <b>zmaž</b>. Vlož skopírovaný skript. Ulož 💾.</li>
+   <li>Hore v zozname funkcií vyber <b>setup</b> → <b>▶ Spustiť</b>.</li>
+   <li>Google sa spýta na povolenie: <b>Skontrolovať povolenia</b> → erntespol → <b>Rozšírené</b> → <b>Prejsť na projekt</b> → <b>Povoliť</b> (teraz aj „Odosielať e-maily“).</li>
+   <li>Hotovo – e-maily z aplikácie idú z Gmailu do 5 minút, neodoslané ponuky sa pošlú samy. Zmluvy a zúčtovania pôjdu z <b>erntevykup@gmail.com</b>, keď ten istý skript vložíš aj tam (nový projekt v tom účte, kroky 2–5); dovtedy idú z erntespol.</li></ol>
+   <div class="btns"><button type="button" class="lime" data-gscopy>📋 Kopírovať skript</button></div>
+   <textarea class="zmt" readonly data-nocut rows="5">${E(script(k))}</textarea></div>`;document.body.appendChild(d)}
+document.addEventListener("click",async e=>{const b=e.target.closest&&e.target.closest("[data-gsx],[data-gscopy]");if(!b)return;e.preventDefault();
+  if(b.dataset.gsx!==undefined){const o=document.getElementById("gsOv");o&&o.remove();if(location.hash==="#gmail-skript")history.replaceState(null,"",location.pathname+location.search);return}
+  const t=script(Z.key);try{await navigator.clipboard.writeText(t);toast("📋 Skript skopírovaný – vlož ho na script.google.com.",5000)}catch(x){const a=document.querySelector("#gsOv .zmt");if(a){a.focus();a.select()}toast("Označ text v okne a skopíruj ho.",4000)}},true);
+{const gs=setInterval(()=>{if(location.hash!=="#gmail-skript"){return}if(MAIN()&&typeof sb!=="undefined"&&sb){clearInterval(gs);gsOpen()}},1500);setTimeout(()=>clearInterval(gs),5*60e3);
+ window.addEventListener("hashchange",()=>{if(location.hash==="#gmail-skript")gsOpen()})}
+window.gmailSkript=gsOpen;
 // automaticky: po štarte, každých 5 min a pri návrate do aplikácie (iba majiteľ – Martin alebo Jana)
 const st=setInterval(()=>{if(OWN()&&typeof sb!=="undefined"&&sb&&typeof STATE!=="undefined"&&STATE.deals){clearInterval(st);setTimeout(run,6000);setInterval(()=>{if(!document.hidden)run()},5*60e3);
   document.addEventListener("visibilitychange",()=>{if(!document.hidden&&Date.now()-Z.at>60e3)run()})}},2000);setTimeout(()=>clearInterval(st),10*60e3);
 {const s=document.createElement("style");s.textContent=`.zmc{display:grid;gap:8px}.zmh{display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap}.zme{color:#fca5a5}
 .zml{display:grid;gap:4px}.zml>div{display:grid;grid-template-columns:auto 1fr;gap:2px 8px;padding:6px 10px;border-radius:12px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);font-size:.82rem}.zml b{overflow-wrap:anywhere}.zml small{grid-column:1/-1;opacity:.7}
 .zms{display:grid;gap:8px;padding:10px 12px;border-radius:14px;border:1px solid rgba(182,255,59,.4);background:rgba(182,255,59,.06)}.zms ol{margin:0;padding-left:20px;display:grid;gap:6px;font-size:.86rem;line-height:1.45}.zms a{color:#a5f3fc}
+.gsov{position:fixed;inset:0;z-index:9990;background:rgba(0,0,0,.6);display:flex;align-items:flex-start;justify-content:center;padding:max(12px,env(safe-area-inset-top)) 10px 12px;overflow:auto}.gsbox{width:min(560px,100%);display:grid;gap:10px;padding:14px;border-radius:18px;background:#0f1a14;border:1px solid rgba(182,255,59,.4)}.gsbox ol{margin:0;padding-left:20px;display:grid;gap:7px;font-size:.88rem;line-height:1.45}.gsbox a{color:#a5f3fc}.gsx{width:38px;height:38px;border-radius:50%;padding:0;flex:none}
 .zmt{width:100%;min-height:120px;font:12px/1.4 ui-monospace,Menlo,monospace!important;white-space:pre;overflow:auto;resize:vertical}`;document.head.appendChild(s)}
 })();
