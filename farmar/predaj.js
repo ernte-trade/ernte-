@@ -108,7 +108,7 @@ window.sellRecHTML=function(){if(!OWN())return "";if(!D.B){if(!D.busy)load();ret
      ${(()=>{const N=allOpts(p.com,buy).filter(o=>o.none);return N.length?`<div class="smiss"><b>Bez platnej ponuky</b> (vykupujú ${E(nm(p.com))}):${N.map(o=>`<div>${E(o.b.name)}${o.siteName?" · "+E(o.siteName):""}${o.del==="FCA"?` – FCA u farmára (dopravu platia oni), aby sme zarobili ${MARGIN()} €/t, musia dať aspoň <b>${f0(o.need)} €/t</b> FCA`:o.dop!=null?` – naša doprava ${f0(o.dop)} €/t, aby sme zarobili ${MARGIN()} €/t, musia dať aspoň <b>${f0(o.need)} €/t</b> DAP`:""}</div>`).join("")}</div>`:""})()}</details>`}
   h+=`<details class="smod"><summary>📚 Modely odberateľov – podľa čoho rátajú</summary><div class="s">Ťuknutím na komoditu nastavíš, čo odberateľ vykupuje (zelené = vykupuje).</div>${(D.B||[]).map(b=>`<div class="srow"><b>${E(b.name)}</b>${(b.sites||[]).length?` <small>· ${(b.sites||[]).map(s=>E(s.n)+" ~"+f0(dop(s))+" €/t doprava").join(" · ")}</small>`:""}<small>${E(b.model||"")}</small>
      <span class="scoms">${(typeof MK!=="undefined"?MK:[]).map(m=>`<button type="button" class="scm${(b.coms||[]).includes(m[0])?" on":""}" data-scom="${E(b.id)}|${m[0]}">${E(m[1])}</button>`).join("")}</span></div>`).join("")}</details>`;
-  h+=D.form?formHTML():`<div class="btns"><button type="button" class="lime" data-sform="1">➕ Vložiť ponuku odberateľa</button><button type="button" data-sref>↻ Prepočítať</button></div>`;
+  h+=D.form?formHTML():`<div class="btns"><button type="button" class="lime" data-sform="1">➕ Pridať odberateľské ceny</button><button type="button" data-sref>↻ Prepočítať</button></div>`;
   return h+`</div>`};
 function newRow(o){return Object.assign({on:true,com:"repka",site:"",del:"DDP",price:"",period:"",note:""},o||{})}
 const COMS=["repka","psenica_p","psenica_k","soja","jacmen_k","jacmen_s","kukurica","lo","ho","cirok"];
@@ -132,6 +132,11 @@ function formHTML(){const B=D.B||[],F=D.form,C=(typeof MK!=="undefined"?MK:[]).f
    <div class="w s">Nový odberateľ sa založí sám. Ak odberateľ ráta z burzy, uloží sa aj dnešná burza – ponuka sa potom sama posúva s burzou.</div>
    <div class="w btns"><button class="pri" type="submit">💾 Uložiť ponuku</button><button type="button" class="ghost" data-sform="0">Zrušiť</button></div></form>`}
 const nzs=t=>String(t||"").normalize("NFD").replace(/[̀-ͯ]/g,"").toLowerCase().replace(/[^a-z0-9]+/g," ").trim();
+// komodita z ponuky (aj skratky odberateľov: SFS = slnečnica LO, HO, RPS = repka)
+function comOf(k){const t=String(k||"").trim();if(COMS.includes(t))return t;const n=nzs(t);
+  if(/\bho\b|high ?oleic|vysokoolej/.test(n))return "ho";if(/\bsfs\b|sunflower|slnecn|napraforgo/.test(n))return "lo";if(/\brps\b|rape|repk|repce|canola/.test(n))return "repka";
+  if(/soy|soj|szoja/.test(n))return "soja";if(/corn|maize|kukur|kukoric/.test(n))return "kukurica";if(/barley|jacm|arpa/.test(n))return /malt|slad|sor/.test(n)?"jacmen_s":"jacmen_k";
+  if(/feed|krmn|takarm/.test(n)&&/wheat|psen|buza/.test(n))return "psenica_k";if(/wheat|psen|buza/.test(n))return "psenica_p";if(/sorg|ciro|cirok/.test(n))return "cirok";return "repka"}
 function findBuyer(name){const n=nzs(name);if(!n)return null;const B=D.B||[];return B.find(b=>nzs(b.name)===n)||B.find(b=>b.rx&&new RegExp(b.rx,"i").test(name))||B.find(b=>nzs(b.name).includes(n)||n.includes(nzs(b.name)))||null}
 function syncForm(){const f=document.getElementById("sForm");if(!f||!D.form)return;D.form.buyer=f.buyer.value;D.form.d=f.d.value;
   f.querySelectorAll(".srowf").forEach(el=>{const r=D.form.rows[+el.dataset.si];if(!r)return;el.querySelectorAll("[data-sk]").forEach(x=>{r[x.dataset.sk]=x.type==="checkbox"?x.checked:x.value})})}
@@ -144,14 +149,16 @@ async function scan(file){syncForm();D.form.scan="busy";renderStaff();
     const sid=r.data,t0=Date.now();let g;while(Date.now()-t0<190e3){await new Promise(z=>setTimeout(z,2500));g=await sb.rpc("sell_scan_get",{sid});if(g.error)throw new Error(g.error.message);if(g.data.status!=="wait")break}
     if(!g||g.data.status==="wait")throw new Error("Čítanie trvá príliš dlho – skús znova.");if(g.data.status==="err")throw new Error(g.data.err||"Nepodarilo sa prečítať.");
     const R=g.data.result||{},P=Array.isArray(R.ponuky)?R.ponuky:[];if(!P.length)throw new Error("V prílohe som nenašiel žiadne ceny.");
-    if(R.odberatel)D.form.buyer=(findBuyer(R.odberatel)||{name:R.odberatel}).name;if(/^\d{4}-\d\d-\d\d$/.test(R.datum||""))D.form.d=R.datum;
-    D.form.rows=P.filter(x=>+x.cena>0).map(x=>newRow({com:COMS.includes(x.komodita)?x.komodita:"repka",site:x.miesto||"",del:["DDP","DAP","FCA"].includes(String(x.parita||"").toUpperCase())?String(x.parita).toUpperCase():"DDP",
+    if(R.odberatel)D.form.buyer=(findBuyer(R.odberatel)||{name:R.odberatel}).name;
+    else{const txt=P.map(x=>x.miesto||"").join(" "),hit=(D.B||[]).find(b=>(b.sites||[]).some(st=>st.rx&&new RegExp(st.rx,"i").test(txt)));if(hit)D.form.buyer=hit.name}if(/^\d{4}-\d\d-\d\d$/.test(R.datum||""))D.form.d=R.datum;
+    D.form.rows=P.filter(x=>+x.cena>0).map(x=>newRow({com:comOf(x.komodita),site:x.miesto||"",del:["DDP","DAP","FCA"].includes(String(x.parita||"").toUpperCase())?String(x.parita).toUpperCase():"DDP",
       price:String(x.cena).replace(".",","),cur:String(x.mena||"EUR").toUpperCase()==="HUF"?"HUF":"EUR",period:x.obdobie||"",note:[x.pozn,R.burza].filter(Boolean).join(" · ")}));
     D.form.scan=`✓ Načítaných ${D.form.rows.length} cien – skontroluj a ulož.`}
   catch(x){D.form.scan="⚠️ "+(x&&x.message||x)}renderStaff()}
 document.addEventListener("click",e=>{const t=e.target.closest&&e.target.closest("[data-sform],[data-sref],[data-sadd]");if(!t||!OWN())return;e.preventDefault();
   if(t.dataset.sref!==undefined){D.at=0;load();return}if(t.dataset.sadd!==undefined){syncForm();D.form.rows.push(newRow());renderStaff();return}
-  D.form=t.dataset.sform==="1"?{buyer:"",rows:[newRow()]}:false;renderStaff();if(D.form)setTimeout(()=>{const f=document.getElementById("sForm");if(f)f.scrollIntoView({block:"start",behavior:"smooth"})},60)},true);
+  D.form=t.dataset.sform==="1"?{buyer:"",rows:[newRow()]}:false;if(D.form&&typeof TAB!=="undefined"&&TAB!=="home")TAB="home";renderStaff();
+  if(D.form){let n=0;const sc=()=>{const f=document.getElementById("sForm");if(f){f.scrollIntoView({block:"start",behavior:"smooth"});return}if(++n<20)setTimeout(sc,150)};setTimeout(sc,60)}},true);
 document.addEventListener("change",e=>{const x=e.target;if(!x.dataset||!D.form)return;if(x.dataset.sscan!==undefined&&x.files&&x.files[0]){scan(x.files[0]);x.value="";return}
   if(x.dataset.sbuy!==undefined){const b=findBuyer(x.value),l=document.getElementById("sSites");if(l)l.innerHTML=(b&&b.sites||[]).map(s=>`<option value="${E(s.n)}">`).join("")}},true);
 document.addEventListener("submit",async e=>{const f=e.target;if(f.id!=="sForm"||!OWN())return;e.preventDefault();e.stopPropagation();syncForm();const btn=f.querySelector("button[type=submit]");
@@ -167,7 +174,52 @@ document.addEventListener("submit",async e=>{const f=e.target;if(f.id!=="sForm"|
     const q=await sb.from("sell_offers").insert(rows);if(q.error)throw new Error(q.error.message);
     toast(`✓ Uložené ${rows.length} ${rows.length===1?"cena":rows.length<5?"ceny":"cien"} – prepočítavam.`,4000);D.form=false;D.at=0;load()}
   catch(x){toast("Nepodarilo sa uložiť: "+(x&&x.message||x),7000)}finally{if(typeof busy==="function")busy(btn,false)}},true);
-{const s=document.createElement("style");s.textContent=`.srec .srt{display:block;font-size:1.05rem;margin-bottom:4px}.srec .s{margin:4px 0 8px}
+
+// ===== 💰 UPOZORNENIE: KDE LEPŠIE PREDAŤ NAŠE NÁKUPY (3. 11. príkaz majiteľa) =====
+// Otvorené nákupy od farmárov (deal_watch_list – bez predajnej ceny) × všetky ponuky odberateľov (posunuté s burzou, − naša doprava).
+// Karta na Prehľade a v Obchodoch; pri novej / lepšej možnosti predaja zvýraznenie 🆕 + upozornenie, kým Martin nepotvrdí „Beriem na vedomie“.
+const W={L:null,at:0,busy:false,told:""};const WK="ernte-sell-al";
+const wSeen=()=>{try{return JSON.parse(localStorage.getItem(WK)||"{}")||{}}catch(x){return {}}};
+async function wLoad(){if(!OWN()||W.busy||typeof sb==="undefined")return;W.busy=true;try{const r=await sb.rpc("deal_watch_list");W.L=r.error?[]:(r.data||[])}catch(x){W.L=W.L||[]}W.at=Date.now();W.busy=false;wSch()}
+function wCalc(){if(!D.B||!W.L)return [];const G={};
+  for(const x of W.L){if(!x.com||!(+x.tons>0)||!(+x.buy>0))continue;const g=G[x.com]=G[x.com]||{com:x.com,t:0,v:0,n:0};g.t+=+x.tons;g.v+=x.tons*x.buy;g.n++}
+  const S=wSeen(),out=[];
+  for(const c in G){const g=G[c],buy=g.v/g.t,O=options(c,buy).filter(o=>o.profit!=null&&!/^skutočný/.test(o.src||""));if(!O.length)continue;
+    const b=O[0],sig=b.b.id+"|"+(b.siteName||"")+"|"+b.del,s=S[c],isNew=!s||(s.sig!==sig&&b.net>(+s.net||0))||b.net>=(+s.net||0)+3;
+    out.push({com:c,tons:g.t,n:g.n,buy,best:b,next:O[1]||null,sig,isNew})}
+  return out.sort((a,b)=>(b.isNew-a.isNew)||(b.best.profit*b.tons-a.best.profit*a.tons))}
+const wOpt=o=>`${E(o.b.name)}${o.siteName?" "+E(o.siteName):""} ${E(o.del)} ${f0(o.price)}${o.dop?` − doprava ${f0(o.dop)}`:""} = <b>${f0(o.net)} €/t</b>`;
+function wHTML(){const A=wCalc();if(!A.length)return "";const nw=A.filter(x=>x.isNew);
+  return `<div class="card swal${nw.length?" al":""}" id="swAl" data-nosec><b class="srt">💰 Kde predať naše nákupy${nw.length?` · <span class="cnt">🆕 ${nw.length} ${nw.length===1?"lepšia možnosť":nw.length<5?"lepšie možnosti":"lepších možností"}</span>`:""}</b>
+   <div class="s">Otvorené nákupy od farmárov bez predajnej ceny × najlepšia ponuka odberateľa po našej doprave.</div>
+   ${A.map(x=>{const p=x.best.profit;return `<div class="swr${x.isNew?" nw":""}"><div class="srh"><b>${x.isNew?"🆕 ":""}${E(nm(x.com))} · ${f0(x.tons)} t</b><span class="${p>=0?"ps":"ng"}">${sg(p)} €/t · spolu ${sg(p*x.tons)} €</span></div>
+     <small>nakúpené ${x.n}× ⌀ ${f0(x.buy)} €/t → 🏆 ${wOpt(x.best)} · ${E(x.best.src)} ${dk(x.best.d)}${x.best.term?" · "+E(x.best.term):""}</small>
+     ${x.next?`<small class="swn">2. možnosť: ${wOpt(x.next)} (${sg(x.next.net-x.best.net)} €/t)</small>`:""}
+     ${p<0?`<small class="ng">⚠️ Všetky ponuky sú pod nákupom – zatiaľ nepredávať, pýtať vyššiu cenu.</small>`:""}</div>`}).join("")}
+   <div class="btns">${nw.length?`<button type="button" class="lime" data-swack>✓ Beriem na vedomie</button>`:""}<button type="button" data-sform="1">➕ Pridať odberateľské ceny</button></div></div>`}
+function wPaint(){if(!OWN()||typeof TAB==="undefined"||(TAB!=="home"&&TAB!=="deals"))return;const app=document.getElementById("app");if(!app)return;
+  const h=wHTML(),old=document.getElementById("swAl");
+  if(old){if(!h){old.remove();return}if(old.dataset.h===h)return;const d=document.createElement("div");d.innerHTML=h;d.firstElementChild.dataset.h=h;old.replaceWith(d.firstElementChild);}
+  else if(h){const d=document.createElement("div");d.innerHTML=h;const el=d.firstElementChild;el.dataset.h=h;const a=TAB==="deals"?(app.querySelector("#dwCard")||app.querySelector("#fDeal")):(app.querySelector("#dwHome")||app.querySelector(".hub,.owh"));
+    if(a)a.before(el);else{const nav=app.querySelector("nav.tabs");(nav||app.firstElementChild).after(el)}}
+  const nw=wCalc().filter(x=>x.isNew),k=nw.map(x=>x.com+":"+x.sig+":"+Math.round(x.best.net)).join(",");
+  if(nw.length&&k!==W.told&&typeof toast==="function"){W.told=k;const x=nw[0];toast(`💰 Lepší predaj: ${nm(x.com)} ${f0(x.tons)} t → ${x.best.b.name}${x.best.siteName?" "+x.best.siteName:""} ${f0(x.best.net)} €/t (${sg(x.best.profit)} €/t)`,9000)}}
+let wq=0;function wSch(){if(wq)return;wq=(window.ernteSoon||requestAnimationFrame)(()=>{wq=0;try{if(!OWN()||typeof TAB==="undefined"||(TAB!=="home"&&TAB!=="deals"))return;if(!D.B){if(!D.busy&&Date.now()-D.at>60e3)load();return}
+  if(W.L===null||Date.now()-W.at>5*60e3)wLoad();wPaint()}catch(x){}})}
+window.sellAlertsHTML=wHTML;
+document.addEventListener("click",e=>{const t=e.target.closest&&e.target.closest("[data-swack]");if(!t||!OWN())return;e.preventDefault();const S=wSeen();
+  for(const x of wCalc())S[x.com]={sig:x.sig,net:Math.round(x.best.net*10)/10,at:new Date().toISOString()};try{localStorage.setItem(WK,JSON.stringify(S))}catch(x){}
+  toast("✓ Beriem na vedomie – ozve sa pri lepšej ponuke.",4000);const o=document.getElementById("swAl");if(o)o.remove();wPaint()},true);
+// Cenník (iba Martin): tlačidlo ➕ Pridať odberateľské ceny hore
+function pBtn(){if(!OWN()||typeof TAB==="undefined"||TAB!=="price")return;const app=document.getElementById("app");if(!app||document.getElementById("swAdd"))return;
+  const d=document.createElement("div");d.id="swAdd";d.className="btns swadd";d.dataset.nosec="";d.innerHTML=`<button type="button" class="lime" data-sform="1">➕ Pridať odberateľské ceny</button>`;
+  const a=app.querySelector(".hero")||app.querySelector("nav.tabs");if(a)a.after(d);else app.prepend(d)}
+(function wBoot(){const app=document.getElementById("app");if(!app){setTimeout(wBoot,500);return}new MutationObserver(()=>{wSch();(window.ernteSoon||requestAnimationFrame)(()=>{try{pBtn()}catch(x){}})}).observe(app,{childList:true});wSch()})();
+setInterval(()=>{if(OWN())wLoad()},10*60e3);
+{const s=document.createElement("style");s.textContent=`.swal.al{border-color:rgba(134,239,172,.6)!important;box-shadow:0 0 0 1px rgba(134,239,172,.35)}.swal .cnt{color:#86efac}.swr{padding:8px 0;border-top:1px solid rgba(255,255,255,.08);display:grid;gap:3px}
+.swr .srh{display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap}.swr small{overflow-wrap:anywhere;line-height:1.4}.swr .ps{color:#86efac}.swr .ng{color:#fca5a5}.swr.nw{background:rgba(134,239,172,.06);border-radius:12px;padding:8px}.swn{opacity:.7}.swadd{margin:8px 0}
+html[data-theme=light] .swr .ps,html[data-theme=light] .swal .cnt{color:#15803d}html[data-theme=light] .swr .ng{color:#b91c1c}
+.srec .srt{display:block;font-size:1.05rem;margin-bottom:4px}.srec .s{margin:4px 0 8px}
 .scom{border-top:1px solid rgba(255,255,255,.08);padding:8px 0}.scom summary{display:flex;justify-content:space-between;align-items:center;gap:10px;cursor:pointer;list-style:none}.scom summary::-webkit-details-marker{display:none}
 .scom .sn{display:grid}.scom .sn small{opacity:.7;font-size:.78rem}.scom .sb{text-align:right;display:grid;font-size:.86rem}.scom .sb b{font-size:1.05rem}.sb.ps b,.srow.ps .srh span{color:#86efac}.sb.ng b,.srow.ng .srh span{color:#fca5a5}
 .srow{display:grid;gap:2px;padding:7px 10px;margin:6px 0;border-radius:12px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08)}.srow .srh{display:flex;justify-content:space-between;gap:8px}.srow small{opacity:.8;overflow-wrap:anywhere;line-height:1.4}
