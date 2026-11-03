@@ -1139,6 +1139,12 @@ function padjSet(aj){const d=aj&&!aj.error&&aj.data||{};window.PADJ=ROLE!=="owne
 const fName=id=>{const f=STATE.farmers.find(x=>x.id===id);return f?f.name:"?"};
 // ===== NÁPOVEDA „Ako to funguje“ =====
 const HELP={
+ iscc:{t:"ISCC Certifikácia",i:"🌱",r:"Zoznam fariem a ISCC evidencia s kontrolou pred auditom. Vidíte iba ty a Jana.",s:[
+ ["⚠️ Na kontrolu","Všetko, čo by auditor vytkol: dodávka pred podpisom samohodnotenia, farmár mimo zoznamu fariem, chýbajúce číslo deklarácie, rozdiel množstva oproti vážnym lístkom, preklep v čísle zmluvy."],
+ ["🌾 Zoznam fariem","Samohodnotenie, výmera, súradnice poľa (📍 otvorí mapu), LUC, Cross Compliance a párovanie s farmárom v aplikácii. Súradnice sa uložia aj farmárovi pre dopravu."],
+ ["📒 Evidencia","Príjem od farmára a predaj, spárované s vážnymi lístkami a kúpnymi zmluvami. ✏️ Upraviť zmení pole a zapíše ho do auditnej stopy."],
+ ["➕ Chýba v evidencii","Farmár dodal podľa lístkov, ale v evidencii nie je. Pridaním vznikne riadok s množstvom z lístkov; číslo deklarácie doplníš ručne."],
+ ["🧾 Auditná stopa a súbory","Každá úprava: kto, kedy, pôvodná a nová hodnota. Pôvodné Excely sú uložené nezmenené, export pre audítora v rovnakom tvare."]]},
 klient:{t:"Klientská zóna",i:"👥",r:"Iba klienti a členovia tímu, ktorým chýbajú údaje. Doplníš ich a zmiznú zo zoznamu.",s:[
  ["✏️ Doplniť údaje","Pri každom klientovi vidíš, čo chýba (IČO, DIČ, adresa, telefón, e-mail, IBAN). Vyplň a ťukni Uložiť doplnené. Existujúce údaje sa nikdy neprepíšu – iba prázdne polia."],
  ["➕ Nový klient","Vyber firmu (ERNTE alebo DANUBE), napíš názov a IČO – názov a adresa sa doplnia z registra. Ak klient už existuje, aplikácia ťa upozorní."],
@@ -1448,7 +1454,7 @@ function priceBanner(){const v=((STATE.settings||{}).pricelist||{}).valid;
   if(d<=7)return `<div class="pban w"><b>Cenník platí do ${esc(dSK(v))}, obnov ho</b><span>${d<1?"Platí už len dnes.":d===1?"Platí ešte zajtra.":"Zostáva "+d+" "+(d<5?"dni":"dní")+"."}</span></div>`;
   return ""}
 // ===== DIZAJN „sklo – diamant“: zdieľané pomocné funkcie (iba vzhľad) =====
-const TICO={klient:"👥",inv:"📈",cal:"📅",test:"🧪",qd:"🤝",pred:"🔮",danube:"🌊",nov:"🆕",evid:"📒",trus:"🐔",agro:"🚜",zuct:"🧾",home:"🏠",req:"📥",price:"💶",trans:"🚚",fleet:"🚛",deals:"🤝",farm:"👨‍🌾",wx:"🌦️",team:"👥",calc:"🧮"};
+const TICO={iscc:"🌱",klient:"👥",inv:"📈",cal:"📅",test:"🧪",qd:"🤝",pred:"🔮",danube:"🌊",nov:"🆕",evid:"📒",trus:"🐔",agro:"🚜",zuct:"🧾",home:"🏠",req:"📥",price:"💶",trans:"🚚",fleet:"🚛",deals:"🤝",farm:"👨‍🌾",wx:"🌦️",team:"👥",calc:"🧮"};
 const dsF2=x=>Number.isFinite(+x)?(+x).toLocaleString("sk-SK",{minimumFractionDigits:2,maximumFractionDigits:2}):"–";
 const dsSg=x=>(x>=0?"+":"−")+Math.round(Math.abs(x)).toLocaleString("sk-SK");
 const dsSg2=x=>(x>=0?"+":"−")+dsF2(Math.abs(x));
@@ -1510,12 +1516,13 @@ function renderStaff(){const nNew=(STATE.reqs||[]).filter(r=>r.status==="nova").
   if(ROLE==="dispatch")tabs=tabs.filter(t=>["req","trans","fleet","wx"].includes(t[0]));
   if(ROLE==="invoice")tabs=tabs.filter(t=>t[0]!=="fleet")}
   if(!MAIN_OK())tabs=tabs.filter(t=>t[0]!=="pred"&&t[0]!=="test");
+  if(window.vIscc&&ROLE==="owner"&&!window.ERNTE_TEST&&!window.ERNTE_VIEWAS&&!tabs.some(t=>t[0]==="iscc"))tabs.push(["iscc","ISCC Certifikácia"]);
   if(MAIN_OK()&&window.vCal&&!tabs.some(t=>t[0]==="cal")){const n=window.calOpenCount?calOpenCount():0;const i=tabs.findIndex(t=>t[0]==="home");tabs.splice(i>=0?i+1:1,0,["cal",`Kalendár${n?` <span class="cnt">${n}</span>`:""}`])}
   if(window.vTest&&MAIN_OK()&&!window.ERNTE_TEST&&!window.ERNTE_VIEWAS&&!tabs.some(t=>t[0]==="test"))tabs.push(["test","Test"]);if(window.vInvest&&MAIN_OK()&&!window.ERNTE_TEST&&!window.ERNTE_VIEWAS&&!tabs.some(t=>t[0]==="inv"))tabs.push(["inv","Investovanie"]);if(window.vQd&&(ROLE==="owner"||(typeof can==="function"&&can("deals")))&&!tabs.some(t=>t[0]==="qd"))tabs.unshift(["qd","Uzatvoriť obchod"]);if(window.vKlient&&(ROLE==="owner"||(typeof can==="function"&&can("klient")))&&!tabs.some(t=>t[0]==="klient")){const q=tabs.findIndex(t=>t[0]==="qd");tabs.splice(ROLE==="owner"?tabs.length:Math.max(0,q),0,["klient","Klientská zóna"])}if(!tabs.some(t=>t[0]===TAB))TAB=tabs[0][0];
   let h=`<nav class="tabs" aria-label="Hlavná navigácia">${tabs.map(t=>{const lb=String(t[1]).split(' <span class="cnt">');return `<button type="button" data-tab="${t[0]}" aria-pressed="${TAB===t[0]}"><span class="ti" aria-hidden="true">${TICO[t[0]]||"•"}</span><span class="tl">${lb[0]}</span>${lb[1]?'<span class="cnt">'+lb[1]:""}</button>`}).join("")}</nav>`;
   h+=`<div class="hrow"><button type="button" class="ds-theme" data-dstheme aria-label="Prepnúť svetlý / tmavý režim" title="Svetlý / tmavý režim">${document.documentElement.dataset.theme==="light"?"🌙":"☀️"}</button>${window.bigBtn?bigBtn():""}${helpBtn(TAB)}</div>`;
   if(tabs.some(t=>t[0]==="price")&&(TAB==="price"||TAB==="req"))h+=priceBanner();
-  if(TAB==="wx"&&!WXD)loadWx().then(renderStaff);if(TAB==="fleet"&&!STATE.fleet)loadFleet().then(renderStaff);if(TAB==="team"&&!STATE.staff)loadTeam().then(renderStaff);h+=({req:vReq,price:vPrice,trans:vTrans,deals:vDeals,farm:vFarm,wx:wxCard,fleet:vFleet,team:vTeam,calc:()=>window.vCalc?vCalc():"",home:()=>window.vHome?vHome():"",zuct:()=>window.vZuct?vZuct():"",agro:()=>window.vAgro?vAgro():"",trus:()=>window.vTrus?vTrus():"",evid:()=>window.vEvid?vEvid():"",nov:()=>window.vNovinky?vNovinky():"",danube:()=>window.vDanube?vDanube():"",qd:()=>window.vQd?vQd():"",klient:()=>window.vKlient?vKlient():"",test:()=>window.vTest?vTest():"",cal:()=>window.vCal?vCal():"",pred:()=>window.vPred?vPred():"",inv:()=>window.vInvest?vInvest():""})[TAB]();if(TAB==="req")h+=pwCard();$("app").innerHTML=h;mountR();dsAfter()}
+  if(TAB==="wx"&&!WXD)loadWx().then(renderStaff);if(TAB==="fleet"&&!STATE.fleet)loadFleet().then(renderStaff);if(TAB==="team"&&!STATE.staff)loadTeam().then(renderStaff);h+=({req:vReq,price:vPrice,trans:vTrans,deals:vDeals,farm:vFarm,wx:wxCard,fleet:vFleet,team:vTeam,calc:()=>window.vCalc?vCalc():"",home:()=>window.vHome?vHome():"",zuct:()=>window.vZuct?vZuct():"",agro:()=>window.vAgro?vAgro():"",trus:()=>window.vTrus?vTrus():"",evid:()=>window.vEvid?vEvid():"",nov:()=>window.vNovinky?vNovinky():"",danube:()=>window.vDanube?vDanube():"",qd:()=>window.vQd?vQd():"",klient:()=>window.vKlient?vKlient():"",test:()=>window.vTest?vTest():"",cal:()=>window.vCal?vCal():"",pred:()=>window.vPred?vPred():"",inv:()=>window.vInvest?vInvest():"",iscc:()=>window.vIscc?vIscc():""})[TAB]();if(TAB==="req")h+=pwCard();$("app").innerHTML=h;mountR();dsAfter()}
 function vReq(){const R=ROLE==="owner"||!window.can||can("req")?STATE.reqs:STATE.reqs.filter(r=>r.kind==="transport");if(!R.length)return `<div class="card"><div class="s">Zatiaľ žiadne požiadavky od farmárov.</div></div>`;
   const pri=r=>r.kind==="transport"?(r.deal_id?0:1):0,bySt=st=>R.filter(r=>r.status===st).sort((a,b)=>pri(a)-pri(b)),ord=[...bySt("nova"),...bySt("v_spracovani"),...R.filter(r=>r.status!=="nova"&&r.status!=="v_spracovani")],OWN=ROLE==="owner",RI={sell:"🌾",transport:"🚚",agree:"✍️",message:"💬"};
   return ord.map(r=>{const fr=STATE.farmers.find(x=>x.id===r.farmer_id)||{},d=r.deal_id?STATE.deals.find(x=>x.id===r.deal_id):null;
@@ -3008,7 +3015,7 @@ document.addEventListener("input",e=>{if(e.target.id==="dfq"){const h=e.target.f
 document.addEventListener("click",e=>{const b=e.target.closest("[data-dfp]");if(!b)return;const fm=b.closest("form"),f=(STATE.farmers||[]).find(x=>x.id===b.dataset.dfp);if(!fm||!f)return;fm.elements.farmer.value=f.id;document.getElementById("dfq").value=String(f.name).trim();document.getElementById("dfl").innerHTML=`<div class="s">✓ Vybraný: <b>${esc(String(f.name).trim())}</b></div>`});
 </script>
 <script src="ai.js?v=20261103-2100"></script>
-<script src="perms.js?v=20261102-2250"></script>
+<script src="perms.js?v=20261104-0030"></script>
 <script src="gdprsign.js?v=20261103-0825"></script>
 <script src="bonus.js?v=20261028-0110"></script>
 <script src="fterms.js?v=20261031-0915"></script>
@@ -3026,6 +3033,7 @@ document.addEventListener("click",e=>{const b=e.target.closest("[data-dfp]");if(
 <script src="spat.js?v=20261031-0700" defer></script>
 <script src="testview.js?v=20261028-2255"></script>
 <script src="cal.js?v=20261031-0700"></script>
+<script src="iscc.js?v=20261104-0030"></script>
 <script src="dismiss.js?v=20261031-0700"></script>
 <script src="spdock.js?v=20261028-2217"></script>
 <script src="odberatel.js?v=20261029-2320"></script>
@@ -3053,7 +3061,7 @@ document.addEventListener("click",e=>{const b=e.target.closest("[data-dfp]");if(
 <script src="danube.js?v=20261031-1120"></script>
 <script src="installapp.js?v=20261031-0700"></script>
 <script src="bio.js?v=20261031-0720"></script>
-<script src="fndesc.js?v=20261103-2350"></script>
+<script src="fndesc.js?v=20261104-0030"></script>
 <script src="sign.js?v=20261030-0930"></script>
 <script src="outbox.js?v=20261029-0130"></script>
 <script src="invitecard.js?v=20261031-1200"></script>
