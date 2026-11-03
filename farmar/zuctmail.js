@@ -31,10 +31,11 @@ function script(k){const C=window.ERNTE_CONFIG||{};return `// ERNTE – zúčtov
 const URL='${C.SUPABASE_URL||"https://cflliscddsgleyeykzje.supabase.co"}/rest/v1/rpc/';
 const AK='${C.SUPABASE_KEY||""}';
 const KEY='${k}';
+const ACCT='erntespol@gmail.com'; // v účte erntevykup prepíš na 'erntevykup@gmail.com'
 const Q='has:attachment newer_than:60d (from:m.jaczko@gmail.com OR from:agrosomotor.sk OR from:vojkafarm.sk)';
 function setup(){ScriptApp.getProjectTriggers().forEach(function(t){ScriptApp.deleteTrigger(t)});ScriptApp.newTrigger('run').timeBased().everyMinutes(15).create();ScriptApp.newTrigger('posta').timeBased().everyMinutes(5).create();run();posta();}
 // 📧 e-maily z aplikácie (ponuky, zmluvy, zúčtovania) odošle tento Gmail – bez hesla aplikácie
-function posta(){var me=Session.getEffectiveUser().getEmail(),r=rpc('gmail_take',{p_key:KEY,p_acct:me}),x={};try{x=JSON.parse(r.getContentText())}catch(e){return}
+function posta(){var me=ACCT;try{me=Session.getEffectiveUser().getEmail()||ACCT}catch(e){}var r=rpc('gmail_take',{p_key:KEY,p_acct:me}),x={};try{x=JSON.parse(r.getContentText())}catch(e){return}
   (x.jobs||[]).forEach(function(j){try{var o={name:j.from_name||'ERNTE spol. s r.o.'};if(j.reply_to&&/@/.test(j.reply_to))o.replyTo=j.reply_to;
     if(j.att){o.attachments=[Utilities.newBlob(Utilities.base64Decode(String(j.att).replace(/^data:[^,]+,/,'')),'application/pdf',j.att_name||'Dokument.pdf')]}
     GmailApp.sendEmail(j.to,j.subject||'ERNTE',j.body||'',o);rpc('mail_job_done',{p_id:j.id,p_ok:true,p_err:null});}
