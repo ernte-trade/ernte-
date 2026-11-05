@@ -40,10 +40,28 @@ create or replace function public.odb_site(p_sites jsonb, p_site text) returns j
 create or replace function public.odb_rx(p text) returns text language sql immutable as $$ select replace(coalesce(p,''),'\b','\y') $$;
 
 -- 📋 všetky platné ceny odberateľov (posledná na odberateľa | komoditu | miesto | paritu | obdobie, max p_dni) s net-backom
+-- otvorená pozícia (5. 11.): nakúpené a ešte nevyvezené − predané a nekryté
+create or replace function public.odb_open() returns jsonb language sql stable security definer set search_path=public as $$
+  with al as (select a.deal_id, sum(a.tons) t from deal_sale_alloc a join sale_contracts s on s.id=a.sale_id where not s.archived and s.status not in ('navrh','zrusena') group by 1),
+  d as (select d.com, d.price, greatest(d.tons-coalesce(d.delivered_t,0)-greatest(coalesce(al.t,0)-coalesce(d.delivered_t,0),0),0) t
+        from deals d left join al on al.deal_id=d.id
+        where deal_live(d) and d.status in ('podpisany','odvoz') and d.price>0 and d.tons-coalesce(d.delivered_t,0)>greatest(0.05*d.tons,1)),
+  sa as (select a.sale_id, sum(a.tons) t from deal_sale_alloc a group by 1),
+  s as (select s.com, greatest(s.tons-coalesce(s.delivered_t,0)-coalesce(sa.t,0),0) t from sale_contracts s left join sa on sa.sale_id=s.id
+        where not s.archived and s.status='podpisana'),
+  c as (select com from d union select com from s)
+  select coalesce(jsonb_object_agg(c.com, jsonb_build_object(
+      'nevyvezene_t',coalesce((select round(sum(t),1) from d where d.com=c.com),0),
+      'predane_nekryte_t',coalesce((select round(sum(t),1) from s where s.com=c.com),0),
+      'otvorena_t',round(coalesce((select sum(t) from d where d.com=c.com),0)-coalesce((select sum(t) from s where s.com=c.com),0),1),
+      'nepredane_priemer_nakup_eur_t',(select round(sum(t*price)/nullif(sum(t),0),2) from d where d.com=c.com))),'{}'::jsonb) from c
+$$;
+revoke all on function public.odb_open() from public, anon, authenticated;
+
 create or replace function public.odb_list(p_dni int default 45) returns jsonb language plpgsql stable security definer set search_path=public as $$
 declare ss jsonb; res jsonb;
 begin
-  begin ss:=coalesce(sale_summary()->'pozicie','{}'::jsonb); exception when others then ss:='{}'::jsonb; end;
+  begin ss:=coalesce(odb_open(),'{}'::jsonb); exception when others then ss:='{}'::jsonb; end;
   with o as (select distinct on (o.buyer,o.com,coalesce(o.site,''),o.del,coalesce(o.period,'')) o.*, b.name bname, b.sites bsites, b.float_burza fb, upper(coalesce(b.parita,'')) bpar
              from sell_offers o join sell_buyers b on b.id=o.buyer and b.active
              where o.d>=current_date-p_dni order by o.buyer,o.com,coalesce(o.site,''),o.del,coalesce(o.period,''),o.d desc,o.id desc),
@@ -244,7 +262,7 @@ revoke all on function public.odb_web_tick() from public, anon, authenticated;
 create or replace function public.odb_alerts() returns int language plpgsql security definer set search_path=public as $$
 declare ss jsonb; L jsonb; c text; b jsonb; t numeric; a numeric; told jsonb; k text; n int:=0; loc timestamp:=now() at time zone 'Europe/Bratislava'; old text:=''; xx jsonb; nm text;
 begin
-  begin ss:=coalesce(sale_summary()->'pozicie','{}'::jsonb); exception when others then return 0; end;
+  begin ss:=coalesce(odb_open(),'{}'::jsonb); exception when others then return 0; end;
   L:=odb_list(21);
   select value into told from ai_state where key='odb_told'; told:=coalesce(told,'{}'::jsonb);
   -- 💰 predaj teraz: otvorená pozícia > 100 t a najlepší net-back ≥ priemerný nákup nepredaných + 8 €/t
