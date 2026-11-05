@@ -52,7 +52,7 @@ begin
                odb_site(o.bsites,o.site) st
              from o left join market_px m on m.sym=odb_bz(coalesce(o.bz_sym,o.com)) and m.eur_t>0),
        y as (select x.*, x.price+coalesce(x.sh,0) p,
-               case when x.del in ('FCA','EXW') or x.bpar='FCA' then 0 else sell_dop(x.st) end dop from x)
+               case when x.del in ('FCA','EXW') then 0 else sell_dop(x.st) end dop from x)
   select coalesce(jsonb_agg(jsonb_build_object('id',y.id,'buyer',y.buyer,'b',y.bname,'com',y.com,'site',coalesce(y.site,y.st->>'n',''),'del',y.del,'price0',y.price,'shift',y.sh,
       'price',round(y.p,2),'dop',y.dop,'net',case when y.dop is not null then round(y.p-y.dop,2) end,'d',y.d,'period',y.period,'valid_to',y.valid_to,'src',coalesce(y.src,case when y.created_by='konk' then 'konk' else 'rucne' end),
       'note',y.note,'bd',odb_bdays(y.d),'stale',odb_bdays(y.d)>3,'expired',y.valid_to<current_date,'fwd',coalesce(y.period,'') ~* '^\s*odber',
