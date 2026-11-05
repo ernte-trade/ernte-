@@ -61,7 +61,8 @@ begin
     'month',(select coalesce(jsonb_agg(z order by z.m),'[]'::jsonb) from (
         select to_char(day,'YYYY-MM') m, round(sum(fkg)/1000,1) t, round(sum(mg)) margin, round(sum(mg)/nullif(sum(fkg)/1000,0),2) per_t from ok group by 1) z),
     'leak',jsonb_build_object(
-        'weight',(select jsonb_build_object('t',round(coalesce(sum(fkg-bkg) filter (where fkg>bkg),0)/1000,1),'eur',round(coalesce(sum((fkg-bkg)/1000*sp) filter (where fkg>bkg),0)),'n',count(*) filter (where fkg-bkg>0.02*fkg))
+        'weight',(select jsonb_build_object('t',round(coalesce(sum(fkg-bkg) filter (where fkg>bkg),0)/1000,1),'eur',round(coalesce(sum((fkg-bkg)/1000*sp) filter (where fkg>bkg),0)),'n',count(*) filter (where fkg-bkg>0.02*fkg),
+                  'net_t',round(coalesce(sum(fkg-bkg),0)/1000,1))
                   from ok where fkg is not null and bkg is not null),
         'weight_top',(select coalesce(jsonb_agg(z order by z.eur desc),'[]'::jsonb) from (
             select ticket, day, com, farmer, buyer, round(fkg) fkg, round(bkg) bkg, round((fkg-bkg)/nullif(fkg,0)*100,1) pct, round((fkg-bkg)/1000*sp) eur
@@ -127,14 +128,17 @@ begin
 
   -- 📦 zostáva vyviezť: nakúpené a nedodané t × (najlepší predaj po doprave dnes − nákupná cena) – odhad, nie je v zisku
   begin
-    with o as (select d.com, sum(d.tons-coalesce(d.delivered_t,0)) t, sum((d.tons-coalesce(d.delivered_t,0))*d.price)/nullif(sum(d.tons-coalesce(d.delivered_t,0)),0) p
-         from deals d left join farmers f on f.id=d.farmer_id
-         where d.status in ('podpisany','odvoz') and not coalesce(d.archived,false) and not is_test_name(coalesce(f.name,'')) and d.tons>coalesce(d.delivered_t,0) and d.price>0 group by d.com),
-    b as (select z->>'com' com, max((z->>'net')::numeric) net from jsonb_array_elements(coalesce(odb_list(21),'[]'::jsonb)) z
-          where z->>'net' is not null and not coalesce((z->>'fwd')::boolean,false) and not coalesce((z->>'stale')::boolean,false) group by 1)
-    select coalesce(jsonb_agg(jsonb_build_object('com',o.com,'t',round(o.t,1),'nakup',round(o.p,2),'predaj',b.net,
-        'vysledok',case when b.net is not null then round((b.net-o.p)*o.t) end) order by o.t desc),'[]'::jsonb)
-      into sk from o left join b on b.com=o.com;
+    with d0x as (select d.*, (select ernte_term_last(d.term)) tl from deals d left join farmers f on f.id=d.farmer_id
+         where d.status in ('podpisany','odvoz') and not coalesce(d.archived,false) and not is_test_name(coalesce(f.name,''))
+           and d.price>0 and d.tons-coalesce(d.delivered_t,0)>greatest(0.05*d.tons,1)),
+    o as (select com, coalesce(tl>current_date+60,false) fw, sum(tons-coalesce(delivered_t,0)) t,
+            sum((tons-coalesce(delivered_t,0))*price)/nullif(sum(tons-coalesce(delivered_t,0)),0) p, count(*) n
+         from d0x group by 1,2),
+    b as (select z->>'com' com, coalesce((z->>'fwd')::boolean,false) fw, max((z->>'net')::numeric) net from jsonb_array_elements(coalesce(odb_list(21),'[]'::jsonb)) z
+          where z->>'net' is not null and not coalesce((z->>'stale')::boolean,false) group by 1,2)
+    select coalesce(jsonb_agg(jsonb_build_object('com',o.com,'fwd',o.fw,'n',o.n,'t',round(o.t,1),'nakup',round(o.p,2),'predaj',b.net,
+        'vysledok',case when b.net is not null then round((b.net-o.p)*o.t) end) order by o.fw, o.t desc),'[]'::jsonb)
+      into sk from o left join b on b.com=o.com and b.fw=o.fw;
   exception when others then sk:=jsonb_build_array(jsonb_build_object('chyba',sqlerrm)); end;
 
   tot:=ob-dop+fz+tz+az;
@@ -157,9 +161,10 @@ begin
   if coalesce((L->'weight'->>'eur')::numeric,0)>=300 then
     rc:=rc||jsonb_build_array(jsonb_build_object('k','strata','i','⚖️','eur',-(L->'weight'->>'eur')::numeric,'go','#zisk-weight',
       't','Váha: farmárom o '||zk_fmt((L->'weight'->>'t')::numeric,1)||' t viac, než prevzal odberateľ',
-      'd','Asi '||zk_fmt((L->'weight'->>'eur')::numeric)||' € ('||coalesce(L->'weight'->>'n','0')||' '||zk_pl(coalesce((L->'weight'->>'n')::numeric,0),'lístok','lístky','lístkov')||' s rozdielom nad 2 %). Skontroluj, či zúčtovanie farmára má na lístku rovnaké nečistoty a vlhkosť ako zúčtovanie odberateľa (zmluva čl. IV), a pri chybe odberateľa podaj reklamáciu.'));
+      'd','Asi '||zk_fmt((L->'weight'->>'eur')::numeric)||' € ('||coalesce(L->'weight'->>'n','0')||' '||zk_pl(coalesce((L->'weight'->>'n')::numeric,0),'lístok','lístky','lístkov')||' s rozdielom nad 2 %)'
+        ||case when coalesce((L->'weight'->>'net_t')::numeric,0)<0 then '; na iných lístkoch je to naopak – spolu odberateľ prevzal o '||zk_fmt(-(L->'weight'->>'net_t')::numeric,1)||' t viac, než sme zaplatili farmárom' else '' end||'. Skontroluj, či zúčtovanie farmára má na lístku rovnaké nečistoty a vlhkosť ako zúčtovanie odberateľa (zmluva čl. IV), a pri chybe odberateľa podaj reklamáciu.'));
   end if;
-  if coalesce((L->'dry'->>'n')::int,0)>0 then
+  if coalesce((L->'dry'->>'eur')::numeric,0)>=100 then
     rc:=rc||jsonb_build_array(jsonb_build_object('k','strata','i','💧','eur',-(L->'dry'->>'eur')::numeric,'go','zuct',
       't','Sušenie: '||zk_fmt((L->'dry'->>'t')::numeric,1)||' t strhol odberateľ, farmárovi sa neodpočítalo',
       'd',coalesce(L->'dry'->>'n','0')||' '||zk_pl(coalesce((L->'dry'->>'n')::numeric,0),'lístok','lístky','lístkov')||', asi '||zk_fmt((L->'dry'->>'eur')::numeric)||' €. Podľa zmluvy (čl. IV) sa vlhkosť nad normu odpočíta vo fakturačnej váhe – doplň vlhkosť na lístkoch (Zúčtovanie → lístky odberateľa), aby zúčtovanie farmára sedelo so zmluvou.'));
@@ -196,15 +201,15 @@ begin
   for x in select * from jsonb_array_elements(sk) loop
     continue when x ? 'chyba' or x->>'vysledok' is null or abs((x->>'vysledok')::numeric)<500;
     rc:=rc||jsonb_build_array(jsonb_build_object('k',case when (x->>'vysledok')::numeric<0 then 'strata' else 'zisk' end,'i','📦','eur',(x->>'vysledok')::numeric,'go','price',
-      't','Zostáva vyviezť: '||zk_fmt((x->>'t')::numeric)||' t '||cennik_nm(x->>'com'),
-      'd','Nakúpené za '||zk_fmt((x->>'nakup')::numeric,2)||' €/t, dnes najlepší predaj po doprave '||zk_fmt((x->>'predaj')::numeric,2)||' €/t → '||zk_fmt((x->>'vysledok')::numeric)||' € (odhad, nie je v zisku). '
+      't','Zostáva vyviezť: '||zk_fmt((x->>'t')::numeric)||' t '||cennik_nm(x->>'com')||case when (x->>'fwd')::boolean then ' (neskorší odber)' else '' end,
+      'd','Nakúpené za '||zk_fmt((x->>'nakup')::numeric,2)||' €/t, '||case when (x->>'fwd')::boolean then 'najlepší predaj na neskorší odber po doprave ' else 'dnes najlepší predaj po doprave ' end||zk_fmt((x->>'predaj')::numeric,2)||' €/t → '||zk_fmt((x->>'vysledok')::numeric)||' € (odhad, nie je v zisku). '
         ||case when (x->>'vysledok')::numeric<0 then 'Zváž predaj skôr, než cena klesne ďalej, alebo zaisti cenu predajnou zmluvou.' else 'Zaisti túto cenu predajnou zmluvou, kým platí.' end));
   end loop;
   n:=coalesce((T->>'n_ok')::int,0);
   if n>0 and coalesce((T->>'trn_n')::int,0)<n*0.5 then
     rc:=rc||jsonb_build_array(jsonb_build_object('k','udaje','i','📍','eur',null,'go','zuct',
       't','Doprava obilia je odhad iba z '||coalesce(T->>'trn_n','0')||' '||zk_pl(coalesce((T->>'trn_n')::numeric,0),'lístka','lístkov','lístkov')||' z '||n,
-      'd','Ostatné lístky nemajú priradenú GPS jazdu – skutočné náklady na dopravu sú vyššie. Prideľ jazdy k lístkom (Zúčtovanie → lístky odberateľa).'));
+      'd','Ostatné lístky nemajú priradenú GPS jazdu našich áut – viezol ich niekto iný (FCA), alebo jazda nie je spárovaná. Ak sme ich viezli my, doprava stojí viac – prideľ jazdy k lístkom (Zúčtovanie → lístky odberateľa).'));
   end if;
   if coalesce((L->>'no_sell_t')::numeric,0)>0 then
     rc:=rc||jsonb_build_array(jsonb_build_object('k','udaje','i','❓','eur',null,'go','zuct',
