@@ -148,18 +148,65 @@ def term_ym(t):
     return f"{m.group(2)}-{mo:02d}" if mo else None
 
 
+# posledný obchodný deň kontraktu (ako mk_expiry v databáze; sviatky burzy sa neberú do úvahy – ± 1 deň)
+def _bprev(d):
+    while d.weekday() >= 5:
+        d -= dt.timedelta(days=1)
+    return d
+
+
+def _bnext(d):
+    while d.weekday() >= 5:
+        d += dt.timedelta(days=1)
+    return d
+
+
+def expiry(s, c, y, m):
+    first = dt.date(y, m, 1)
+    if s == "cbot":
+        return _bprev(first + dt.timedelta(days=13))       # CBOT: pracovný deň pred 15.
+    if c == "repka":
+        return _bprev(first - dt.timedelta(days=1))        # MATIF repka: posledný pracovný deň mesiaca pred dodaním
+    if c == "psenica":
+        return _bnext(first + dt.timedelta(days=9))        # MATIF pšenica: 10. deň mesiaca dodania
+    if c == "kukurica":
+        return _bnext(first + dt.timedelta(days=4))        # MATIF kukurica: 5. deň mesiaca dodania
+    return first
+
+
+CMONTHS = {("matif", "repka"): [2, 5, 8, 11], ("matif", "psenica"): [3, 5, 9, 12], ("matif", "kukurica"): [3, 6, 8, 11],
+           ("cbot", "soja"): [1, 3, 5, 7, 8, 9, 11], ("cbot", "kukurica"): [3, 5, 7, 9, 12], ("cbot", "psenica"): [3, 5, 7, 9, 12]}
+MIN_DAYS = 10  # úloha majiteľa 5. 11.: kontrakt s menej ako 10 dňami do konca (alebo < 1 000 lotov) nie je „najbližší“ – berie sa nasledujúci
+
+
+def nearby_ym(s, c, d):
+    """najbližší NEKONČIACI kontrakt v deň d: prvý mesiac kontraktu s ≥ MIN_DAYS dňami do posledného obchodného dňa"""
+    for y in (d.year, d.year + 1, d.year + 2):
+        for m in CMONTHS.get((s, c), []):
+            if (expiry(s, c, y, m) - d).days >= MIN_DAYS:
+                return f"{y}-{m:02d}"
+    return None
+
+
+def front_exp(s, c, d):
+    """posledný obchodný deň predného kontraktu v deň d (Poľnoinfo ukazuje predný kontrakt až do expirácie)"""
+    for y in (d.year, d.year + 1):
+        for m in CMONTHS.get((s, c), []):
+            e = expiry(s, c, y, m)
+            if e >= d:
+                return e
+    return None
+
+
 def from_market():
     j = json.load(open(MARKET_P))
     n = 0
     HK = {"matif_repka": ("matif", "repka"), "matif_psenica": ("matif", "psenica"), "matif_kukurica": ("matif", "kukurica"),
           "cbot_soja": ("cbot", "soja"), "cbot_kukurica": ("cbot", "kukurica"), "cbot_psenica": ("cbot", "psenica")}
-    for h in j.get("hist") or []:
-        for k, (s, c) in HK.items():
-            if h.get(k):
-                n += add(s, c, "close_nearby", h[k], "€/t", h.get("d"))  # „close“ (kontrakt ako odberatelia) zapisuje databáza z market_px
-        if h.get("gasoil"):
-            n += add("gasoil", "gasoil", "close", h["gasoil"], "€/t", h.get("d"))
     CM = {"repka": "repka", "psenica_p": "psenica", "kukurica": "kukurica", "soja": "soja"}
+    hist = [h for h in (j.get("hist") or []) if re.match(r"^\d{4}-\d\d-\d\d$", str(h.get("d") or ""))]
+    # burzové riadky: (zdroj, komodita) → [(kontrakt RRRR-MM, cena, dátum, otvorené pozície)]
+    rows = []
     for r in j.get("rows") or []:
         if r.get("kind") != "burza" or r.get("c") not in CM:
             continue
@@ -167,9 +214,41 @@ def from_market():
         if re.search(r"náhrada", mk, re.I):
             continue
         s = "cbot" if re.search(r"cbo?t", mk, re.I) else ("matif" if re.search(r"euronext|matif", mk, re.I) else None)
-        ym = term_ym(r.get("term"))
-        if s and ym:
-            n += add(s, CM[r["c"]], "kontrakt " + ym, r.get("price"), "€/t", r.get("date"))
+        if s:
+            rows.append((s, CM[r["c"]], term_ym(r.get("term")), r.get("price"), str(r.get("date") or "")[:10], num(r.get("oi"))))
+    last = {}
+    for s, c, ym, p, d, oi in rows:
+        if re.match(r"^\d{4}-\d\d-\d\d$", d):
+            last[s] = max(last.get(s, ""), d)
+    # close_nearby sa počíta vždy znova z market.json (staré zápisy z obdobia histórie bota sa nahradia, nič nestaré sa neposiela znova)
+    if hist:
+        h0 = min(h["d"] for h in hist)
+        for key in [k for k in ROWS if k[0] in ("matif", "cbot") and k[2] == "close_nearby" and k[3] >= h0]:
+            del ROWS[key]
+    for h in hist:
+        d = dt.date.fromisoformat(h["d"])
+        if d.weekday() >= 5:
+            continue
+        for k, (s, c) in HK.items():
+            if not h.get(k):
+                continue
+            if last.get(s) and h["d"] > last[s]:
+                continue  # ranná kópia včerajšieho záveru zapísaná pod dnešný dátum – nie je to záver tohto dňa
+            e = front_exp(s, c, d)
+            if e and (e - d).days < MIN_DAYS:
+                continue  # predný kontrakt končí – nie je to „najbližší“ (berie sa nasledujúci z riadkov nižšie)
+            n += add(s, c, "close_nearby", h[k], "€/t", h["d"])  # „close“ (kontrakt ako odberatelia) zapisuje databáza z market_px
+        if h.get("gasoil"):
+            n += add("gasoil", "gasoil", "close", h["gasoil"], "€/t", h.get("d"))
+    # najbližší NEKONČIACI kontrakt z riadkov (≥ 10 dní do konca, ≥ 1 000 lotov ak sú známe) → close_nearby v deň jeho záveru
+    for s, c, ym, p, d, oi in rows:
+        if not ym or not re.match(r"^\d{4}-\d\d-\d\d$", d) or num(p) is None:
+            continue
+        if ym == nearby_ym(s, c, dt.date.fromisoformat(d)) and not (oi is not None and oi < 1000):
+            n += add(s, c, "close_nearby", p, "€/t", d)
+    for s, c, ym, p, d, oi in rows:
+        if ym:
+            n += add(s, c, "kontrakt " + ym, p, "€/t", d)
     g = (j.get("fuel") or {}).get("gasoil") or {}
     if g.get("eur"):
         n += add("gasoil", "gasoil", "close", g["eur"], "€/t", g.get("date"))
@@ -178,7 +257,7 @@ def from_market():
         add("ecb", "fx", "eurusd", fx["usd"], "USD", fx["date"])
         if fx.get("huf"):
             add("ecb", "fx", "eurhuf", fx["huf"], "HUF", fx["date"])
-    return n, "bot Trhové ceny (market.json): závery najbližšieho kontraktu + krivka kontraktov"
+    return n, "bot Trhové ceny (market.json): závery najbližšieho nekončiaceho kontraktu (≥ 10 dní do expirácie) + krivka kontraktov"
 
 
 # ---------- ECB referenčné kurzy (data-api.ecb.europa.eu, bezplatné, uvádzať zdroj ECB) ----------
