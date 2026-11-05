@@ -67,7 +67,7 @@ async function loadBrand(){const k=ls(LSK);if(!k||typeof sb==="undefined"||isF()
   try{const r=await sb.rpc("portal_brand",{p_kod:k});if(r.error)return;if(r.data&&r.data.name){lss(LSB,JSON.stringify(r.data));applyVars(r.data);decorLogin()}else{lss(LSK,null);lss(LSB,null);applyVars(null)}}catch(x){}}
 function decorLogin(){const b=brand();if(!b||isF())return;css();applyVars(b);const A=document.getElementById("app");const c=A&&A.querySelector(":scope>.center");if(!c)return;
   if(c.querySelector(".tplg"))return;const h=c.querySelector(".hero");if(!h)return;c.classList.add("tplog");
-  h.insertAdjacentHTML("beforebegin",`<div class="tplg">${logoHTML(b)}<div><small>${E(T("hdr"))} · ERNTE</small><b>${E(b.name)}</b></div></div>`)}
+  h.insertAdjacentHTML("beforebegin",`<div class="tplg" data-noi18n>${logoHTML(b)}<div><small>${E(T("hdr"))} · ERNTE</small><b>${E(b.name)}</b></div></div>`)}
 function wrapLogin(){const o=window.showLogin;if(typeof o!=="function"||o.__tp)return;const w=function(){const r=o.apply(this,arguments);try{decorLogin()}catch(x){}return r};
   Object.keys(o).forEach(k=>{if(!(k in w))w[k]=o[k]});w.__tp=1;window.showLogin=w}
 
@@ -149,11 +149,11 @@ function docsHTML(){const D=(typeof STATE!=="undefined"&&STATE.deals)||[],run=D.
   return `<div class="card tpc tpdocs"><h3>${E(T("docs"))}</h3><p>${E(T("docsp"))}</p>${D.length?`<div class="s">${E(T("deals",{n:D.length,t:N(left,0)}))}</div>`:""}
    <div class="tpbtns"><button type="button" class="tpbtn pri" data-tpstd>${E(T("open"))} ›</button></div></div>`}
 function heroHTML(){const M=TP.me||brand()||{},l=LG();
-  return `<div class="hero tph"><div class="tphl">${logoHTML(M)}</div><div class="tpht"><small>${E(T("hdr"))} · ERNTE Trade &amp; Logistic</small><b>${E(M.name||(isF()?FARMER.name:""))}</b></div>
+  return `<div class="hero tph" data-noi18n><div class="tphl">${logoHTML(M)}</div><div class="tpht"><small>${E(T("hdr"))} · ERNTE Trade &amp; Logistic</small><b>${E(M.name||(isF()?FARMER.name:""))}</b></div>
    <div class="tplang" role="group" aria-label="Jazyk"><button type="button" data-tplang="sk" class="${l==="sk"?"on":""}" aria-pressed="${l==="sk"}">🇸🇰 SK</button><button type="button" data-tplang="hu" class="${l==="hu"?"on":""}" aria-pressed="${l==="hu"}">🇭🇺 HU</button></div></div>`}
 function portal(){const A=document.getElementById("app");if(!A)return;css();const M=TP.me;applyVars(M&&M.on?M:brand());document.documentElement.classList.add("trader");
   if(!M){A.innerHTML=heroHTML()+`<div class="card tpc"><div class="s">${E(T("load"))}</div></div>`;return}
-  A.innerHTML=heroHTML()+`<div class="tpg">${sellHTML()}${cenyHTML()}${trHTML()}${bzHTML()}${docsHTML()}</div><p class="tpfoot">🔒 ${E(T("foot"))}</p>`;
+  A.innerHTML=heroHTML()+`<div class="tpg" data-noi18n>${sellHTML()}${cenyHTML()}${trHTML()}${bzHTML()}${docsHTML()}</div><p class="tpfoot" data-noi18n>🔒 ${E(T("foot"))}</p>`;
   TP.map=null;TP.mk={};mountMap();if(!TP.tr||Date.now()-TP.trAt>30e3)trLoad();bzLoad()}
 function stdBar(){const A=document.getElementById("app");if(!A)return;const h=A.querySelector(":scope>.hero");if(!h||A.querySelector(":scope>.tpback"))return;
   h.insertAdjacentHTML("afterend",`<div class="fvbar tpback"><button type="button" data-tpback>${E(T("back"))}</button><b>${E(T("docs").replace(/^📄\s*/,""))}</b></div>`)}

@@ -14,11 +14,13 @@ function setPrice(){if(U.cTouched||(window.ernteTrader&&ernteTrader.is()))return
 function rer(){if(typeof FARMER!=="undefined"&&FARMER&&typeof renderFarmer==="function")renderFarmer();else if(typeof renderStaff==="function")renderStaff()}
 
 // výpočet na 1 dodávku (t)
-function calc(com,j,w,p,b,price){const R=U.R,nm=+(R.norm[com]??14),lim=+(R.broken_limit??5);
+/* 5. 11.: rovnaký vzorec ako zúčtovanie (settle_lines, príkaz majiteľa 2. 11. 22:30): M_fyz = M × (1 − N/100) × (100 − V)/(100 − V_c),
+   čistenie iba nad prípustné nečistoty (imp_limit), náklady čistenia a sušenia sa prepočítajú na kg a odrátajú vo fakturačnej váhe */
+function calc(com,j,w,p,b,price){const R=U.R,nm=+(R.norm[com]??14),lim=+(R.broken_limit??5),il=+((R.imp_limit||{})[com]??0);
   p=Math.max(0,p||0);const q=com==="kukurica"?Math.max(0,(b||0)-lim):0;
-  const sk=j*(1-(p+q)/100);                                  // po čistení
-  const uk=w!=null&&w>nm?sk-sk*(w-nm)/(100-w):sk;            // po sušení (presný vzorec)
-  const xe=p>0?j*(+R.clean):0, ye=w!=null&&w>nm?sk*(w-nm)*(+R.dry):0;
+  const sk=j*(1-p/100);                                      // po čistení
+  const uk=w!=null&&w>nm?sk*(100-w)/(100-nm):sk;             // po sušení (vzorec zúčtovania)
+  const xe=p>il?j*(+R.clean):0, ye=w!=null&&w>nm?sk*(w-nm)*(+R.dry):0;
   const tech=price>0?(xe+ye)/price:0, inv=Math.max(0,uk-tech);
   return {nm,q,sk,uk,xe,ye,tech,inv,eur:inv*(price||0),voda:sk-uk,nec:j-sk,full:j*(price||0)}}
 
@@ -51,6 +53,8 @@ function outHTML(){const j=num(U.t),w=num(U.w),p=num(U.p),b=num(U.b),c=num(U.c);
      ${rows.map(m=>{const x=calc(U.com,j,m,p,b,c);return `<tr${w!=null&&Math.round(w)===m?' class="susme"':""}><td>${m} %</td><td class="r">${f2(x.inv,2)}</td><td class="r">${f2(x.eur,0)}</td></tr>`}).join("")}</tbody></table></div>
      <div class="s">💡 Každé percento vlhkosti nad normu vás pri ${f2(j,0)} t stojí približne <b>${f2(calc(U.com,j,r.nm,p,b,c).eur-calc(U.com,j,r.nm+1,p,b,c).eur)} €</b>.</div></details>`}
   return h}
+/* 💶 odhad pre „Predať“ (farmapp.js, návrh Claude č. 7): t, vlhkosť %, nečistoty %, cena → {inv t, eur} podľa zmluvy */
+window.susCalc=(com,t,w,p,price)=>{if(!U.R){loadR();return null}return calc(com,+t||0,w,p,0,+price||0)};
 window.susForceOpen=()=>{if(!U.open){U.open=true;if(!U.R)loadR()}};
 document.addEventListener("click",ev=>{const x=ev.target.closest&&ev.target.closest("[data-susopen]");if(!x)return;U.open=!U.open;if(U.open&&!U.R)loadR();rer()});
 document.addEventListener("toggle",ev=>{if(ev.target.dataset&&ev.target.dataset.sussens!=null)U.sens=ev.target.open},true);

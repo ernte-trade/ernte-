@@ -54,6 +54,7 @@ function wizard(){const F=F_(),P=(STATE.prices||[]).filter(p=>p.price!=null&&p.p
   h+=`<div class="fst" id="fs2"><span class="fsn">2</span><b>Koľko ton?</b></div><div class="fqt">${[25,50,100,200,500].map(t=>`<button type="button" class="${+W.tons===t?"on":""}" data-wt="${t}">${t} t${t===25?"<small>1 kamión</small>":""}</button>`).join("")}</div>
    <label class="fin">alebo napíšte presne<input data-wf="tons" inputmode="decimal" value="${E(W.tons)}" placeholder="napr. 80" autocomplete="off"></label>`;
   if(!(+String(W.tons).replace(",",".")>0))return h+`</div>`;
+  if(p&&p.price)h+=`<div class="fest"><div class="festv">${estV()}</div><details class="festd"${W.vl||W.ne?" open":""}><summary>➕ Spresniť podľa vlhkosti a nečistôt</summary><div class="fdt"><label class="fin">Vlhkosť %<input data-wf="vl" inputmode="decimal" value="${E(W.vl||"")}" placeholder="napr. 15" autocomplete="off"></label><label class="fin">Nečistoty %<input data-wf="ne" inputmode="decimal" value="${E(W.ne||"")}" placeholder="napr. 2" autocomplete="off"></label></div></details><div class="s">Orientačne – presná suma je až zo zúčtovania po vážení.</div></div>`;
   h+=`<div class="fst" id="fs3"><span class="fsn">3</span><b>Kedy odber?</b></div><div class="fhv">
    <button type="button" class="${W.harvest==="stara"?"on":""}" data-wh="stara"><img src="img/foto/pkg.jpg" alt="" width="44" height="44"><b>Stará úroda – mám na sklade</b><small>odvoz hneď · ${N(p.price,0)} €/t</small></button>
    ${fw.length?fw.map((x,i)=>`<button type="button" class="${W.harvest==="nova"&&W.fwd===i?"on":""}" data-wh="nova" data-wfw="${i}"><img src="img/foto/sheaf.jpg" alt="" width="44" height="44"><b>Nová úroda · odber ${E(x.p)}</b><small>${N(x.price,0)} €/t</small></button>`).join("")
@@ -74,6 +75,14 @@ function wizard(){const F=F_(),P=(STATE.prices||[]).filter(p=>p.price!=null&&p.p
   return h}
 const dSK2=d=>{const m=String(d||"").match(/^(\d{4})-(\d{2})-(\d{2})/);return m?`${+m[3]}. ${+m[2]}. ${m[1]}`:""};
 // sprievodca je stále ten istý prvok – prekreslenie z pozadia (formkeep, obnovenie) ho iba vráti späť, ťuknutie sa nestratí
+/* 💶 Odhad, koľko dostanem (návrh Claude č. 7): tony × dnešná cena; s vlhkosťou a nečistotami odpočet podľa zmluvy (sus.js susCalc = vzorec zúčtovania) */
+function estV(){const P=(STATE.prices||[]).filter(p=>p.price!=null),p=P.find(x=>x.com===W.com),t=+String(W.tons).replace(",",".");if(!p||!p.price||!(t>0))return "";
+  const f=v=>{const x=parseFloat(String(v==null?"":v).replace(",","."));return isFinite(x)?x:null},vl=f(W.vl),ne=f(W.ne);
+  let h=`<div class="festr"><span>💶 Odhad pri dnešnej cene</span><b>${N(t)} t × ${N(p.price,0)} €/t ≈ ${N(t*p.price,0)} €</b></div>`;
+  if((vl!=null||ne!=null)&&window.susCalc){const c=susCalc(W.com,t,vl,ne||0,+p.price);
+    if(c)h+=`<div class="festr"><span>po čistení a sušení podľa zmluvy</span><b>≈ ${N(c.eur,0)} € <small>(fakturačná váha ${N(c.inv,2)} t)</small></b></div>`;
+    else{h+=`<div class="festr"><span>počítam podľa zmluvy…</span><b></b></div>`;setTimeout(()=>{const v=document.querySelector("#app .fwz .festv");if(v)v.innerHTML=estV()},900)}}
+  return h}
 let WZ=null;function wzEl(){if(!WZ){WZ=document.createElement("div");WZ.className="fwz";WZ.dataset.fsec="predat";WZ.innerHTML=wizInner()}return WZ}
 const wizInner=()=>{const d=document.createElement("div");d.innerHTML=wizard();return d.firstElementChild.innerHTML};
 function paintWz(){const w=wzEl();const a=document.activeElement,k=a&&a.dataset&&a.dataset.wf,pos=k&&a.selectionStart;
@@ -148,7 +157,8 @@ document.addEventListener("click",async e=>{if(!F_())return;let t=e.target.close
     if(typeof loadFarmer==="function")loadFarmer().catch(()=>{});return}},true);
 document.addEventListener("input",e=>{const k=e.target.dataset&&e.target.dataset.wf;if(!k||!F_())return;const was=+String(W.tons).replace(",",".")>0,wd=!!W.date;W[k]=e.target.value;
   if((k==="tons"&&was!==(+String(W.tons).replace(",",".")>0))||(k==="date"&&wd!==!!W.date))paintWz();
-  if(k==="date"&&W.date)next("fs5")},true);
+  if(k==="date"&&W.date)next("fs5");
+  if(k==="tons"||k==="vl"||k==="ne"){const v=document.querySelector("#app .fwz .festv");if(v)v.innerHTML=estV()}},true);
 // ---------- obalenie renderFarmer ----------
 function wrap(){const o=window.renderFarmer;if(typeof o!=="function"||o.__fapp)return false;
   const w=function(){const y0=window.scrollY;const r=o.apply(this,arguments);try{if(F_()){apply();if(FV!=="home"&&Math.abs(window.scrollY-y0)>2)window.scrollTo(0,y0);if(!CT)loadCT().then(()=>{if(FV==="kontakt"||W.sent)renderFarmer()})}}catch(x){console.warn(x)}return r};
@@ -186,6 +196,9 @@ if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",
 .fsum{display:grid;gap:0;border-radius:20px;border:1px solid rgba(255,255,255,.18);background:rgba(255,255,255,.05);overflow:hidden}
 .fsum>div{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:11px 14px;border-bottom:1px solid rgba(255,255,255,.08);flex-wrap:wrap}.fsum>div:last-child{border-bottom:0}.fsum span{opacity:.75}.fsum b{text-align:right;display:flex;align-items:center;gap:8px;flex-wrap:wrap;justify-content:flex-end}
 .ftot{background:rgba(182,255,59,.12)}.ftot b{font-size:1.2rem;color:#d9ff8a}
+.fest{display:grid;gap:8px;padding:12px;border-radius:18px;border:1px solid rgba(182,255,59,.3);background:rgba(182,255,59,.06)}
+.festv{display:grid;gap:6px}.festr{display:grid;grid-template-columns:minmax(0,1fr);gap:2px}.festr span{font-size:.82rem;opacity:.8}.festr b{font-size:1.05rem;overflow-wrap:anywhere}.festr small{font-weight:600;opacity:.75}
+.festd summary{cursor:pointer;min-height:40px;display:flex;align-items:center;font-weight:700}.festd .fdt{margin-top:6px}
 .fsend,.fwgo{min-height:64px!important;font-size:1.2rem!important;border-radius:22px!important}
 .fok{display:grid;justify-items:center;gap:8px;text-align:center;padding:20px 10px}.fok b{font:900 1.6rem var(--f-head,system-ui)}.fok p{margin:0;line-height:1.5}
 .fcts{display:grid;gap:10px}.fct{display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:12px;padding:14px;border-radius:20px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.16);color:#fff;text-decoration:none}

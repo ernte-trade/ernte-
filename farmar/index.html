@@ -811,7 +811,7 @@ html[data-theme=light] .ftbl th{color:#0f172a}html[data-theme=light] .fdban{colo
 <link rel="stylesheet" href="trus.css?v=20261101-0635">
 <link rel="stylesheet" href="ev.css?v=20261027-1600">
 <link rel="stylesheet" href="ui.css?v=20261029-0030">
-<link rel="stylesheet" href="fit.css?v=20261103-2230">
+<link rel="stylesheet" href="fit.css?v=20261105-0841">
 </head>
 <body>
 <div class="wrap">
@@ -2790,7 +2790,7 @@ function vTrans(){if(STATE.noTrans)return `<div class="card"><div class="t">Dopr
       <label>Deň<input name="day" type="date" required value="${esc(r.pickup_date||today())}"></label><label>Od koľkej<input name="time" type="time" value="${esc(r.pickup_time||"07:00")}"></label>
       ${!window.can||can("farmer_gps")?`<label class="w pck"><input type="checkbox" name="gps" checked><span>📍 Farmár uvidí polohu auta cestou na nakládku<small>vykládku a odberateľa nikdy nevidí</small></span></label>`:""}<label class="w">Poznámka pre farmára (nepovinné)<input name="note" placeholder="napr. príjazd cez dvor"></label>
       <div class="w btns"><button class="pri" type="submit">Potvrdiť autá farmárovi</button><button type="button" data-assign="">Zrušiť</button></div></form>`
-    :`<div class="btns"><button type="button" class="lime" data-assign="${esc(r.id)}">Prideliť autá</button><button type="button" class="dng" data-rej="${esc(r.id)}">Prerušiť / zamietnuť</button></div>`}</div>`}).join(""):"";
+    :`<div class="btns"><button type="button" class="lime" data-assign="${esc(r.id)}">Prideliť autá</button>${navBtn(r)}<button type="button" class="dng" data-rej="${esc(r.id)}">Prerušiť / zamietnuť</button></div>`}</div>`}).join(""):"";
   const days=[...new Set(STATE.trips.map(t=>t.day))].sort().reverse();const day=TDAY||days.find(d=>d>=today())||days[0]||today();
   {const mon=String(day).slice(0,7),TM=STATE.trips.filter(t=>String(t.day).slice(0,7)===mon&&t.status!=="zrusena"),M=TM.map(dsTripCalc),kmS=M.reduce((s,x)=>s+(x.km||0),0),nKm=M.filter(x=>x.km).length;
    const mn=new Date(mon+"-15T12:00").toLocaleDateString("sk-SK",{month:"long",year:"numeric"});
@@ -3006,6 +3006,10 @@ if("serviceWorker" in navigator&&location.protocol==="https:"&&!/\/beta\//.test(
 if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",()=>boot());else boot();
 
 // výber farmára v Novom obchode (vyhľadávanie namiesto dlhého zoznamu)
+/* 🧭 Navigovať na nakládku jedným ťuknutím (návrh Claude č. 6, schválil Martin): Google Mapy s polohou farmára (súradnice z karty), inak adresa a miesto nakládky */
+function navBtn(r){const f=(STATE.farmers||[]).find(x=>x.id===r.farmer_id)||{};const pl=String(r.place||"").trim(),gen=/^(sklad( (na )?farm[ey])?|farma|dvor)$/i.test(pl);
+  const q=f.lat&&f.lon?`${f.lat},${f.lon}`:[gen?"":pl,f.addr].filter(Boolean).join(", ");if(!q)return "";
+  return `<a class="navb" href="https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(q)}" target="_blank" rel="noopener" title="${esc(pl||f.addr||"")}">🧭 Navigovať</a>`}
 function dfList(q){const L=document.getElementById("dfl");if(!L)return;const n=s=>String(s||"").normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase().trim(),v=n(q);
   /* 2. 11. príkaz majiteľa: v Novom obchode všetci farmári, aj bez prihlásenia do aplikácie (AGROSPOL…) */
   const F=(STATE.farmers||[]).filter(f=>String(f.name||"").trim()).sort((a,b)=>String(a.name).trim().localeCompare(String(b.name).trim(),"sk"));
@@ -3050,7 +3054,7 @@ document.addEventListener("click",e=>{const b=e.target.closest("[data-dfp]");if(
 <script src="trus.js?v=20261101-0945"></script>
 <script src="ev.js?v=20261029-2150"></script>
 <script src="sklad.js?v=20261027-0800"></script>
-<script src="sus.js?v=20261105-0816"></script>
+<script src="sus.js?v=20261105-0841"></script>
 <script src="praca.js?v=20261029-2210"></script>
 <script src="opush.js?v=20261028-2400"></script>
 <script src="predaj.js?v=20261105-0645"></script>
@@ -3100,7 +3104,7 @@ document.addEventListener("click",e=>{const b=e.target.closest("[data-dfp]");if(
 <script src="fotoico.js?v=20261102-1200"></script>
 <script src="sencor.js?v=20261101-1110"></script>
 <script src="clang.js?v=20261031-1200"></script>
-<script src="farmapp.js?v=20261105-0811"></script>
+<script src="farmapp.js?v=20261105-0841"></script>
 <script src="kid.js?v=20261101-1050"></script>
 <script src="invest.js?v=20261031-1730"></script>
 <script src="kidhome.js?v=20261101-1045"></script>
@@ -3114,7 +3118,9 @@ document.addEventListener("click",e=>{const b=e.target.closest("[data-dfp]");if(
 <script src="voice.js?v=20261031-1650"></script>
 <script src="wxalert.js?v=20261101-0920"></script>
 <script src="zisk.js?v=20261105-0758"></script>
-<script src="obchodnik.js?v=20261105-0827"></script>
+<script src="obchodnik.js?v=20261105-0841"></script>
+<script src="lastprice.js?v=20261105-0841"></script>
+<script src="farmpay.js?v=20261105-0841"></script>
 <script src="pushcenter.js?v=20261029-0010"></script>
 <script src="desktop.js?v=20261028-0900"></script>
 <script src="guard.js?v=20261031-0715"></script>
