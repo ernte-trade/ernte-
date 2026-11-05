@@ -3,7 +3,8 @@
 // keď nevie presne čo, nastaví „pomoc“ → červená výstražná bublina „🆘 Pomoc pri odpísaní klientovi“. Tu sa odpoveď upraví a odošle vo vlákne klienta.
 (function(){
 const e=x=>String(x??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
-const OK=()=>typeof ROLE!=="undefined"&&ROLE==="owner"&&!(typeof FARMER!=="undefined"&&FARMER)&&!window.ERNTE_VIEWAS&&!window.ERNTE_TEST&&typeof sb!=="undefined"&&sb;
+// 5. 11. 07:37 PRÍKAZ MAJITEĽA: e-maily vidí IBA Martin (MAIN_OK), nie Jana
+const OK=()=>typeof ROLE!=="undefined"&&ROLE==="owner"&&!(typeof FARMER!=="undefined"&&FARMER)&&!window.ERNTE_VIEWAS&&!window.ERNTE_TEST&&typeof window.MAIN_OK==="function"&&window.MAIN_OK()&&typeof sb!=="undefined"&&sb;
 const R={items:[],at:0,busy:false,open:false};
 const hm=t=>{try{return new Date(t).toLocaleString("sk-SK",{day:"numeric",month:"numeric",hour:"2-digit",minute:"2-digit"})}catch(x){return ""}};
 const ST={hromadna:["📰","Hromadná pošta"],nova:["📩","Nová"],pomoc:["🆘","Treba tvoju pomoc"],odpovedane:["✅","Odpovedané"],ignor:["↷","Bez odpovede"]};
@@ -17,6 +18,9 @@ function draw(){let b=document.getElementById("lrBub");const H=help();
   const t=`<span class="lri" aria-hidden="true">🆘</span><span class="lrt"><b>Pomoc pri odpísaní klientovi</b><small>${H.length===1?e(H[0].from_name||H[0].from_addr):H.length+" klienti čakajú na odpoveď"}</small></span><span class="lrn">${H.length}</span>`;
   if(b.innerHTML!==t)b.innerHTML=t;
   if(R.open)openSheet(true)}
+const COM={repka:"Repka",psenica_p:"Pšenica potrav.",psenica_k:"Pšenica kŕmna",kukurica:"Kukurica",soja:"Sója",lo:"Slnečnica LO",ho:"Slnečnica HO",jacmen_k:"Jačmeň kŕmny",jacmen_s:"Jačmeň sladovnícky"};
+function modelHTML(x){const f=x.facts||{},O=f.offers||[];if(!O.length&&!f.model)return "";
+  return `<div class="lrmod"><b>📊 Do nášho modelu</b>${f.model?`<div>${e(f.model)}</div>`:""}${O.map((o,i)=>`<div class="lrmo"><span>${e(COM[o.com]||o.com)} · ${e(o.del||"")} ${e(o.site||"")} · <b>${e(o.price)} €/t</b>${o.period?" · "+e(o.period):""}</span>${o.done?`<i class="lrok" title="V Kde predať">✔</i>`:`<button type="button" class="lrmini lrap" data-lrap="${x.id}:${i}" title="Vložiť do Kde predať">➕</button>`}</div>`).join("")}</div>`}
 const sj=x=>{const t=String(x.subject||"");return /^\s*(re|aw|sv|vá|fw|wg)\s*:/i.test(t)?t:"Re: "+t};
 function card(x){const s=ST[x.status]||["•",x.status],can=x.status==="pomoc"||x.status==="nova",wait=x.status==="pomoc"&&x.ask&&!x.draft;
   return `<div class="lrc lr-${e(x.status)}" data-lrid="${x.id}">
@@ -24,6 +28,9 @@ function card(x){const s=ST[x.status]||["•",x.status],can=x.status==="pomoc"||
    <div class="s">${e(x.from_addr)} · ${hm(x.received)} · ${e(x.subject||"")}${x.known===false?" · <i>nový kontakt</i>":""}</div>
    ${x.fwd_by?`<div class="s">↪️ Preposlané z ${e(x.fwd_by)} – odpoveď patrí priamo na ${e(x.from_addr)}.</div>`:""}
    ${x.note?`<div class="lrnote">🤖 ${e(x.note)}</div>`:""}
+   ${x.rec?`<div class="lrrec"><b>🧭 Čo robiť</b>${e(x.rec)}</div>`:""}
+   ${(x.info||[]).length?`<div class="lrinfo"><b>⭐ Dôležité</b>${x.info.map(i=>`<div>• ${e(i)}</div>`).join("")}</div>`:""}
+   ${modelHTML(x)}
    <details${can?" open":""}><summary>📩 Čo napísal</summary><pre class="lrb">${e(String(x.body||"").split(/\n-{3,}\s*(Original|Ursprüngliche|Pôvodná|Eredeti)/i)[0].slice(0,4000))}</pre></details>
    ${can?`<div class="lrto"><span>Komu: <b>${e(x.from_addr)}</b></span><button type="button" class="lrmini" data-lrcp="to:${x.id}">📋</button></div>
     <div class="lrto"><span>Predmet: <b>${e(sj(x))}</b></span><button type="button" class="lrmini" data-lrcp="sj:${x.id}">📋</button></div>
@@ -51,6 +58,8 @@ function openSheet(re){R.open=true;let o=document.getElementById("lrSheet");
 function close(){R.open=false;const o=document.getElementById("lrSheet");if(o)o.remove();if(location.hash==="#odpovede")try{history.replaceState(null,"",location.pathname+location.search)}catch(x){}}
 async function copy(t){try{await navigator.clipboard.writeText(t);return true}catch(x){const a=document.createElement("textarea");a.value=t;a.style.cssText="position:fixed;opacity:0";document.body.appendChild(a);a.select();let ok=false;try{ok=document.execCommand("copy")}catch(y){}a.remove();return ok}}
 const rpc=async(id,body,act)=>{const {error}=await sb.rpc("lead_reply_answer",{p_id:id,p_body:body,p_act:act});if(error)throw error};
+document.addEventListener("click",async ev=>{const t=ev.target.closest&&ev.target.closest("[data-lrap]");if(!t||!OK())return;const [id,i]=t.dataset.lrap.split(":");t.disabled=true;
+  try{const {data,error}=await sb.rpc("lead_offer_apply",{p_id:+id,p_i:+i});if(error)throw error;window.toast&&toast("✔ Ponuka vložená do Kde predať");await load(true)}catch(x){t.disabled=false;window.toast&&toast("⚠️ "+(x.message||x))}});
 document.addEventListener("change",ev=>{const t=ev.target.closest&&ev.target.closest("[data-lrtx]");if(!t||!OK())return;rpc(+t.dataset.lrtx,t.value,"draft").catch(()=>{})});
 document.addEventListener("click",async ev=>{const t=ev.target.closest("[data-lrclose],[data-lrcp],[data-lrdone],[data-lrign],[data-lrgo],[data-lrhome]");if(!t)return;
   if(t.dataset.lrclose!=null)return close();
@@ -66,7 +75,8 @@ document.addEventListener("click",async ev=>{const t=ev.target.closest("[data-lr
   catch(x){t.disabled=false;window.toast&&toast("⚠️ "+(x.message||x))}});
 // 📥 dlaždica Pošta na Prehľade (iba majitelia)
 function homeTile(){if(!OK()||typeof TAB==="undefined"||TAB!=="home")return;const app=document.getElementById("app");if(!app)return;
-  const n=R.items.filter(x=>x.status==="nova"||x.status==="pomoc").length,h=`<button type="button" class="lrhome${n?" on":""}" data-lrhome><span>📥</span><b>Pošta</b><small>${n?n+" na vybavenie":"všetko vybavené"}</small></button>`;
+  const n=R.items.filter(x=>x.status==="nova"||x.status==="pomoc").length;let I=[];R.items.filter(x=>Date.now()-Date.parse(x.received)<14*864e5).forEach(x=>(x.info||[]).forEach(t=>{if(I.length<4)I.push([x,t])}));
+  const h=`<button type="button" class="lrhome${n?" on":""}" data-lrhome><span>📥</span><b>Pošta</b><small>${n?n+" na vybavenie":"všetko vybavené"}</small></button>${I.length?`<div class="lrhi"><b>⭐ Z pošty – dôležité</b>${I.map(([x,t])=>`<div>• ${e(t)} <small>(${e(x.from_name||x.from_addr)})</small></div>`).join("")}</div>`:""}`;
   let el=document.getElementById("lrHome");if(el){if(el.dataset.k!==h){el.dataset.k=h;el.innerHTML=h}if(app.contains(el))return}
   const at=app.querySelector(".hero")||app.querySelector("nav.tabs");if(!at)return;el=document.createElement("div");el.id="lrHome";el.dataset.k=h;el.innerHTML=h;at.insertAdjacentElement("afterend",el)}
 new MutationObserver(()=>(window.ernteSoon||requestAnimationFrame)(homeTile)).observe(document.documentElement,{childList:true,subtree:true});
@@ -109,6 +119,6 @@ const st=document.createElement("style");st.textContent=`
 .lrb{white-space:pre-wrap;word-break:break-word;font:inherit;font-size:13.5px;margin:6px 0;max-height:300px;overflow:auto}
 .lrl{display:block;margin-top:8px;font-size:13px}.lrl textarea{width:100%;box-sizing:border-box;margin-top:4px;font:inherit;font-size:14px}
 .lrsub{margin:16px 0 4px;font-size:15px;cursor:pointer}.lrok{display:inline-grid;place-items:center;width:24px;height:24px;margin-right:6px;border-radius:50%;background:#39ff14;color:#04210a;font-style:normal;font-weight:900;font-size:15px;box-shadow:0 0 10px #39ff14,0 0 22px rgba(57,255,20,.7);vertical-align:-5px}.lrpop{border-radius:22px}.lrpi{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 0;border-top:1px solid rgba(255,255,255,.1)}.lrpi span{display:grid;min-width:0}.lrpi small{opacity:.75;overflow-wrap:anywhere}.lrpi button{flex:0 0 auto}#lrPop{align-items:center;padding:16px}.lrto{display:flex;align-items:center;justify-content:space-between;gap:8px;margin:6px 0;font-size:13px;min-width:0}.lrto span{min-width:0;overflow-wrap:anywhere}.lrmini{width:36px;height:36px;padding:0;border-radius:50%;flex:0 0 auto}.lrask{margin-top:8px}.lrask summary{cursor:pointer;font-weight:700}
-#lrHome{margin:10px 0}.lrhome{width:100%;display:flex;align-items:center;justify-content:center;gap:10px;padding:12px;border-radius:16px;flex-wrap:wrap}.lrhome span{font-size:22px}.lrhome small{opacity:.8}.lrhome.on{border-color:rgba(255,193,99,.8)!important;background:rgba(255,193,99,.14)!important}.lrw{color:#ffc163}
+#lrHome{margin:10px 0}.lrhi{margin-top:8px;padding:10px 12px;border-radius:14px;border:1px solid rgba(255,214,102,.45);background:rgba(255,214,102,.08);font-size:13.5px;line-height:1.45;text-align:left}.lrhi small{opacity:.7}.lrrec,.lrinfo,.lrmod{margin:8px 0;padding:8px 10px;border-radius:10px;font-size:14px;line-height:1.45;display:grid;gap:3px;overflow-wrap:anywhere}.lrrec{background:rgba(96,165,250,.14);border:1px solid rgba(96,165,250,.5)}.lrinfo{background:rgba(255,214,102,.1);border:1px solid rgba(255,214,102,.45)}.lrmod{background:rgba(74,222,128,.1);border:1px solid rgba(74,222,128,.45)}.lrmo{display:flex;align-items:center;justify-content:space-between;gap:8px}.lrmo span{min-width:0}.lrhome{width:100%;display:flex;align-items:center;justify-content:center;gap:10px;padding:12px;border-radius:16px;flex-wrap:wrap}.lrhome span{font-size:22px}.lrhome small{opacity:.8}.lrhome.on{border-color:rgba(255,193,99,.8)!important;background:rgba(255,193,99,.14)!important}.lrw{color:#ffc163}
 `;document.head.appendChild(st);
 })();
