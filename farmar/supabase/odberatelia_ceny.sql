@@ -43,7 +43,7 @@ create or replace function public.odb_rx(p text) returns text language sql immut
 create or replace function public.odb_list(p_dni int default 45) returns jsonb language plpgsql stable security definer set search_path=public as $$
 declare ss jsonb; res jsonb;
 begin
-  begin ss:=sale_summary(); exception when others then ss:='{}'::jsonb; end;
+  begin ss:=coalesce(sale_summary()->'pozicie','{}'::jsonb); exception when others then ss:='{}'::jsonb; end;
   with o as (select distinct on (o.buyer,o.com,coalesce(o.site,''),o.del,coalesce(o.period,'')) o.*, b.name bname, b.sites bsites, b.float_burza fb, upper(coalesce(b.parita,'')) bpar
              from sell_offers o join sell_buyers b on b.id=o.buyer and b.active
              where o.d>=current_date-p_dni order by o.buyer,o.com,coalesce(o.site,''),o.del,coalesce(o.period,''),o.d desc,o.id desc),
@@ -244,7 +244,7 @@ revoke all on function public.odb_web_tick() from public, anon, authenticated;
 create or replace function public.odb_alerts() returns int language plpgsql security definer set search_path=public as $$
 declare ss jsonb; L jsonb; c text; b jsonb; t numeric; a numeric; told jsonb; k text; n int:=0; loc timestamp:=now() at time zone 'Europe/Bratislava'; old text:=''; xx jsonb; nm text;
 begin
-  begin ss:=sale_summary(); exception when others then return 0; end;
+  begin ss:=coalesce(sale_summary()->'pozicie','{}'::jsonb); exception when others then return 0; end;
   L:=odb_list(21);
   select value into told from ai_state where key='odb_told'; told:=coalesce(told,'{}'::jsonb);
   -- 💰 predaj teraz: otvorená pozícia > 100 t a najlepší net-back ≥ priemerný nákup nepredaných + 8 €/t
