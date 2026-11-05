@@ -69,7 +69,7 @@ function run(){var P=PropertiesService.getScriptProperties(),done=JSON.parse(P.g
       var x=r.getContentText();if(r.getResponseCode()>=300||/zly kluc|limit/.test(x)){ok=false;err=x.slice(0,200)}else if(/ok/.test(x))n++;});
     if(ok)done[id]=Date.now();});});}catch(e){err=String(e).slice(0,200)}
   var k=Object.keys(done);if(k.length>500)k.sort(function(a,b){return done[a]-done[b]}).slice(0,k.length-500).forEach(function(x){delete done[x]});
-  P.setProperty('done',JSON.stringify(done));try{fotky()}catch(e){}try{odpovede()}catch(e){}rpc('zuct_inbox_ping',{p_key:KEY,p_n:n,p_err:err||null});}
+  P.setProperty('done',JSON.stringify(done));try{fotky()}catch(e){}try{odpovede()}catch(e){}try{odberatelia()}catch(e){}rpc('zuct_inbox_ping',{p_key:KEY,p_n:n,p_err:err||null});}
 // 📨 odpovede klientov, ktorých sme oslovili – aplikácia (Claude) im odpíše priamo v tomto vlákne
 function odpovede(){var P=PropertiesService.getScriptProperties(),done=JSON.parse(P.getProperty('doner')||'{}'),n=0,me=ACCT;try{me=Session.getEffectiveUser().getEmail()||ACCT}catch(e){}
   GmailApp.search('in:inbox newer_than:30d -from:me',0,40).forEach(function(t){t.getMessages().forEach(function(m){var id=m.getId();if(done[id])return;var f=String(m.getFrom()||'');
@@ -78,6 +78,18 @@ function odpovede(){var P=PropertiesService.getScriptProperties(),done=JSON.pars
     if(r.getResponseCode()<300&&String(r.getContentText()).indexOf('zly kluc')<0){done[id]=Date.now();n++}});});
   var k=Object.keys(done);if(k.length>800)k.sort(function(a,b){return done[a]-done[b]}).slice(0,k.length-800).forEach(function(x){delete done[x]});P.setProperty('doner',JSON.stringify(done));
   rpc('lead_reply_ping',{p_key:KEY,p_n:n});}
+// 🏷️ ceny od odberateľov (Bunge, ADM, Interagros, AGRANA …) – aplikácia z nich vyčíta ceny (Cenník → 🏷️ Ceny odberateľov)
+function odberatelia(){var P=PropertiesService.getScriptProperties(),done=JSON.parse(P.getProperty('doneo')||'{}'),c={},n=0;
+  try{c=JSON.parse(rpc('odb_mail_cfg',{p_key:KEY}).getContentText())}catch(e){return}if(!c||!c.on)return;
+  var rx=(c.rx||[]).map(function(s){try{return new RegExp(s,'i')}catch(e){return null}}).filter(function(r){return r}),dom=(c.dom||[]).map(function(d){return String(d).toLowerCase()});
+  GmailApp.search('in:inbox newer_than:3d -from:me',0,40).forEach(function(t){t.getMessages().forEach(function(m){var id=m.getId();if(done[id])return;var f=String(m.getFrom()||''),a=(f.match(/<([^>]+)>/)||[0,f])[1].toLowerCase(),d=a.split('@')[1]||'';
+    if(!rx.some(function(r){return r.test(f)})&&!dom.some(function(x){return d===x||d.slice(-x.length-1)==='.'+x})){done[id]=Date.now();return}
+    var at=null;m.getAttachments().some(function(x){var nm=String(x.getName()||''),ct=String(x.getContentType()||'');if(x.getSize()>4500000)return false;if(/pdf|image\\/(png|jpe?g|webp|gif)/i.test(ct)||/\\.(pdf|png|jpe?g|webp)$/i.test(nm)){at=x;return true}return false});
+    var r=rpc('odb_inbox_put',{p_key:KEY,p_msgid:id,p_from:f,p_subject:m.getSubject(),p_date:m.getDate().toISOString(),p_body:String(m.getPlainBody()||'').slice(0,20000),
+      p_att_name:at?at.getName():null,p_att_mime:at?at.getContentType():null,p_att_b64:at?Utilities.base64Encode(at.getBytes()):null});
+    var x=String(r.getContentText()||'');if(r.getResponseCode()<300&&!/zly kluc|limit/.test(x)){done[id]=Date.now();if(/ok/.test(x))n++}});});
+  var k=Object.keys(done);if(k.length>800)k.sort(function(a,b){return done[a]-done[b]}).slice(0,k.length-800).forEach(function(x){delete done[x]});P.setProperty('doneo',JSON.stringify(done));
+  rpc('odb_mail_ping',{p_key:KEY,p_n:n});}
 // 📷 fotodokumentácia k reklamácii (jpg/png/heic/webp, PDF iba v e-mailoch o reklamácii) – priloží sa k lístkom v zúčtovaní
 function fotky(){var P=PropertiesService.getScriptProperties(),done=JSON.parse(P.getProperty('donef')||'{}');
   GmailApp.search(Q.replace('newer_than:60d','newer_than:21d'),0,30).forEach(function(t){t.getMessages().forEach(function(m){var id=m.getId();if(done[id])return;var ok=true,rk=/reklam|foto/i.test(m.getSubject()||'');

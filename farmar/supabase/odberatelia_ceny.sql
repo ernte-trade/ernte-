@@ -92,7 +92,7 @@ begin
 end $$;
 revoke all on function public.odb_mail_cfg(text) from public; grant execute on function public.odb_mail_cfg(text) to anon, authenticated;
 
--- ✉️ Gmail skript → e-mail od odberateľa (text + prvá príloha PDF / obrázok)
+-- ✉️ Gmail skript → e-mail od odberateľa (text + prvá príloha PDF / obrázok); bez prílohy a bez 3-miestneho čísla sa AI nevolá
 create or replace function public.odb_inbox_put(p_key text, p_msgid text, p_from text, p_subject text, p_date text, p_body text,
   p_att_name text default null, p_att_mime text default null, p_att_b64 text default null) returns text language plpgsql security definer set search_path=public as $$
 declare a text:=lower(coalesce(substring(coalesce(p_from,'') from '<([^>]+)>'),trim(coalesce(p_from,'')))); b text; n int; id bigint;
@@ -103,13 +103,16 @@ begin
       or exists(select 1 from unnest(coalesce(x.mail_dom,array[]::text[])) d where split_part(a,'@',2)=lower(d) or split_part(a,'@',2) like '%.'||lower(d))) order by x.sort limit 1;
   if b is null and not lead_known(a) then return 'nie odberatel'; end if;
   if p_att_b64 is not null and (length(p_att_b64)>7000000 or coalesce(p_att_mime,'') !~* '(pdf|png|jpe?g|webp|gif)') then p_att_b64:=null; p_att_name:=null; p_att_mime:=null; end if;
-  insert into odb_inbox(kind,msgid,buyer,from_addr,subject,received,body,att_name,att_mime,att_data)
+  insert into odb_inbox(kind,msgid,buyer,from_addr,subject,received,body,att_name,att_mime,att_data,status,err)
     values('email',left(p_msgid,200),b,left(p_from,300),left(p_subject,300),case when p_date ~ '^\d{4}-\d\d-\d\d' then p_date::timestamptz else now() end,left(p_body,20000),
-      left(p_att_name,200),left(p_att_mime,80),p_att_b64)
+      left(p_att_name,200),left(p_att_mime,80),p_att_b64,
+      case when p_att_b64 is null and coalesce(p_subject,'')||' '||coalesce(p_body,'') !~ '\d{3}' then 'ziadne' else 'nova' end,
+      case when p_att_b64 is null and coalesce(p_subject,'')||' '||coalesce(p_body,'') !~ '\d{3}' then 'bez čísel – nečítané AI' end)
     on conflict(msgid) do nothing returning odb_inbox.id into id;
   return case when id is null then 'uz je' else 'ok' end;
 end $$;
 revoke all on function public.odb_inbox_put(text,text,text,text,text,text,text,text,text) from public; grant execute on function public.odb_inbox_put(text,text,text,text,text,text,text,text,text) to anon, authenticated;
+
 create or replace function public.odb_mail_ping(p_key text, p_n int default 0) returns text language plpgsql security definer set search_path=public as $$
 begin
   if not zuct_key_ok(p_key) then return 'zly kluc'; end if;
