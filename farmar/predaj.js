@@ -43,7 +43,7 @@ function options(com,buy){const out=[],B=D.B||[];
     out.push({b,siteName:siteName||(site&&site.n)||"",del,price,d,src,dop:d0,net,profit:net==null?null:net-buy,bz,age:age(d),term:extra&&extra.term||""})};
   // 1) ponuky odberateľov (posunuté s burzou, ak odberateľ ráta z burzy)
   const seen=new Set();
-  for(const o of D.O){if(o.com!==com)continue;const k=o.buyer+"|"+(o.site||"")+"|"+o.del;if(seen.has(k))continue;seen.add(k);const b=B.find(x=>x.id===o.buyer);if(!b)continue;
+  for(const o of D.O){if(o.com!==com||FWD(o.period))continue;const k=o.buyer+"|"+(o.site||"")+"|"+o.del;if(seen.has(k))continue;seen.add(k);const b=B.find(x=>x.id===o.buyer);if(!b)continue;
     let p=+o.price,bz=null;if(b.float_burza&&o.bz_val!=null){const n=bzNow(o.bz_sym||BZ[com]);if(n){bz={d:n.v-(+o.bz_val),n:n.n};p+=bz.d}}
     push(b,o.site,siteOf(b,o.site)||((b.sites||[]).find(s=>s.n===o.site)),o.del,p,o.d,"ponuka odberateľa",{bz,term:o.period})}
   // 2) ponuky konkurencie (ich výkupná cena = za toľko by kúpili od nás); bez ponúk na neskorší odber (3. 11.: LO FCA 512 = odber 1.–3. 2027, nie dnešný predaj)
@@ -57,6 +57,7 @@ function options(com,buy){const out=[],B=D.B||[];
   for(const bn in last){const t=last[bn],b=buyerOf(bn)||{id:"t:"+bn,name:bn,sites:[]},site=(b.sites||[])[0]||null,fca=String(b.parita||"").toUpperCase()==="FCA";push(b,fca?"FCA farma":site&&site.n,fca?{n:"FCA farma"}:site,fca?"FCA":"DAP",+t.s,t.d,"skutočný predaj (vážne lístky)",{})}
   return out.filter(o=>o.age<=Math.max(MAXAGE,o.src.startsWith("skutočný")?45:MAXAGE)).sort((a,b)=>(b.profit??-1e9)-(a.profit??-1e9))}
 // všetci odberatelia, ktorí komoditu vykupujú (sell_buyers.coms) – aj bez platnej ponuky: miesto + naša doprava (vzorec Kalkulačky)
+const FWD=t=>/^\s*odber/i.test(t||"");
 const MARGIN=()=>{try{return +(window.__sellcapM??10)}catch(x){return 10}};
 function allOpts(com,buy){const O=options(com,buy),have=new Set(O.map(o=>o.b.id+"|"+(o.siteName||"")));const out=O.slice();
   for(const b of (D.B||[])){if(!(b.coms||[]).includes(com))continue;const S=(b.sites||[]).length?b.sites:[null];
@@ -117,10 +118,44 @@ window.sellRecHTML=function(){if(!OWN())return "";if(!D.B){if(!D.busy)load();ret
      ${(()=>{const N=allOpts(p.com,buy).filter(o=>o.none);return N.length?`<div class="smiss"><b>Bez platnej ponuky</b> (vykupujú ${E(nm(p.com))}):${N.map(o=>`<div>${E(o.b.name)}${o.siteName?" · "+E(o.siteName):""}${o.del==="FCA"?` – FCA u farmára (dopravu platia oni), aby sme zarobili ${MARGIN()} €/t, musia dať aspoň <b>${f0(o.need)} €/t</b> FCA`:o.dop!=null?` – naša doprava ${f0(o.dop)} €/t, aby sme zarobili ${MARGIN()} €/t, musia dať aspoň <b>${f0(o.need)} €/t</b> DAP`:""}</div>`).join("")}</div>`:""})()}</details>`;
     if(O.length)h+=hc;else hN+=hc}
   if(nN.length)h+=`<details class="scom snone"><summary><span class="sn">⏳ Bez platnej ponuky (${nN.length})<small>${nN.map(E).join(" · ")}</small></span><span class="sb">ukáž ›</span></summary><div class="snin">${hN}</div></details>`;
+  h+=nakHTML();
   h+=`<details class="smod"><summary>📚 Modely odberateľov – podľa čoho rátajú</summary><div class="s">Ťuknutím na komoditu nastavíš, čo odberateľ vykupuje (zelené = vykupuje).</div>${(D.B||[]).map(b=>`<div class="srow"><b>${E(b.name)}</b>${(b.sites||[]).length?` <small>· ${(b.sites||[]).map(s=>E(s.n)+" ~"+f0(dop(s))+" €/t doprava").join(" · ")}</small>`:""}<small>${E(b.model||"")}</small>
      <span class="scoms">${(typeof MK!=="undefined"?MK:[]).map(m=>`<button type="button" class="scm${(b.coms||[]).includes(m[0])?" on":""}" data-scom="${E(b.id)}|${m[0]}">${E(m[1])}</button>`).join("")}</span></div>`).join("")}</details>`;
   h+=D.form?formHTML():`<div class="btns"><button type="button" class="lime" data-sform="1">➕ Pridať odberateľské ceny</button><button type="button" data-sref>↻ Prepočítať</button></div>`;
   return h+`</div>`};
+// ===== 🛒 NÁKUP PRE ODBERATEĽA (5. 11. príkaz majiteľa): pri každom odberateľovi jeho aktuálne ceny (posunuté s burzou), naša doprava, marža
+// a odporúčaná NAŠA nákupná cena = cena odberateľa − doprava − marža; kontrola modelu (báza voči burze) pri každej novej ponuke; na konci vyjadrenie Claude.
+function dopBack(site){if(!site||!site.ke)return null;const f=D.mk&&D.mk.fuel,huf=(D.mk&&D.mk.fx&&D.mk.fx.huf)||366.9;let ekm=1.6;
+  if(f&&f.ref){const xs=[f.sk&&f.sk.netL,f.hu&&f.hu.netL].filter(Number.isFinite);if(xs.length)ekm=f.ref.ekm+f.ref.cons*(xs.reduce((a,b)=>a+b,0)/xs.length-f.ref.netL)}
+  const one=a=>{const [km,sk,hu,at]=a;return (km*ekm+((sk||0)*0.1942+(hu||0)*192.38/huf+(at||0)*0.5724))/25};
+  return Math.round(((one(site.ke)+one(site.po||site.ke))/2)*10)/10}
+function buyOffers(b){const L=[],seen=new Set();
+  for(const o of D.O){if(o.buyer!==b.id||age(o.d)>45)continue;const k=o.com+"|"+(o.site||"")+"|"+o.del+"|"+(o.period||"");if(seen.has(k))continue;seen.add(k);
+    let p=+o.price,bz=null;const n=o.bz_val!=null?bzNow(o.bz_sym||BZ[o.com]):null;if(b.float_burza&&n){bz={d:n.v-(+o.bz_val),n:n.n};p+=bz.d}
+    const fca=o.del==="FCA"||o.del==="EXW",site=fca?null:(siteOf(b,o.site)||(b.sites||[]).find(s=>s.n===o.site)||((b.sites||[]).length===1?b.sites[0]:null));
+    const d0=fca?0:dop(site),d1=fca?0:dopBack(site),M=MARGIN(),basis=o.bz_val!=null?Math.round((+o.price-(+o.bz_val))*10)/10:null,mb=b.basis&&b.basis[o.com];
+    L.push({o,com:o.com,p,bz,d0,d1,M,rec:d0==null?null:Math.floor(p-d0-M),recB:d1==null?null:Math.floor(p-d1-M),fwd:FWD(o.period),basis,mb:mb!=null?+(mb.b??mb):null,site})}
+  return L}
+function ourPrice(com){const P=(typeof STATE!=="undefined"&&STATE.prices)||[];const x=P.find(p=>p.com===com);return x&&+x.price>0?+x.price:null}
+function autoNote(L){const T=L.filter(x=>!x.fwd&&x.rec!=null),out=[];
+  for(const x of T){const our=ourPrice(x.com);if(our==null)continue;const d=x.rec-our;out.push(`${nm(x.com)}: ${d>=0?`pri dnešnej našej cene ${f0(our)} €/t zarobíme ${f0(d+x.M)} €/t – oplatí sa`:`naša cena ${f0(our)} €/t je o ${f0(-d)} €/t vyššia, než unesie ich cena po doprave a marži – teraz sa neoplatí`}`)}
+  const old=L.filter(x=>age(x.o.d)>14);if(old.length)out.push(`ponuka je stará ${age(old[0].o.d)} dní – vyžiadať novú`);
+  return out.length?"Dnes: "+E(out.join("; "))+".":""}
+function nakHTML(){const B=(D.B||[]).filter(b=>b.active!==false);const rows=B.map(b=>({b,L:buyOffers(b)})).filter(x=>x.L.length);if(!rows.length)return "";
+  return `<details class="snak"><summary>🛒 Nákup pre odberateľa – naša odporúčaná nákupná cena (${rows.length})</summary>
+   <div class="s">Pri každom odberateľovi: jeho aktuálna cena (posunutá s burzou) − naša doprava z regiónu farmárov − naša marža ${MARGIN()} €/t = za koľko môžeme kúpiť od farmára FCA.</div>
+   ${rows.map(({b,L})=>{const chk=[];
+     const items=L.map(x=>{const our=ourPrice(x.com),diff=our!=null&&x.rec!=null?our-x.rec:null;
+       if(x.basis!=null&&x.mb!=null&&Math.abs(x.basis-x.mb)>5)chk.push(`⚠️ ${E(nm(x.com))}${x.o.period?" ("+E(x.o.period)+")":""}: báza novej ponuky ${x.basis>=0?"+":"−"}${f0(Math.abs(x.basis))} €/t voči burze, model počíta ${x.mb>=0?"+":"−"}${f0(Math.abs(x.mb))} – model nesedí o ${f0(Math.abs(x.basis-x.mb))} €/t`);
+       else if(x.basis!=null&&x.mb!=null)chk.push(`✅ ${E(nm(x.com))}${x.o.period?" ("+E(x.o.period)+")":""}: model sedí (báza ${x.basis>=0?"+":"−"}${f0(Math.abs(x.basis))}, model ${x.mb>=0?"+":"−"}${f0(Math.abs(x.mb))} €/t)`);
+       return `<div class="snk${x.fwd?" fwd":""}"><div class="snkh"><b>${E(nm(x.com))}</b><small>${E(x.o.del)}${x.site?" "+E(x.site.n):""}${x.o.period?" · "+E(x.o.period):""} · ponuka ${dk(x.o.d)}${x.fwd?" · neskorší odber":""}</small></div>
+        <div class="snkg"><span class="snkb"><i>Ich nákupná cena</i><b>${f0(x.p)} €/t</b>${x.bz?`<small>ponuka ${f0(+x.o.price)} ${x.bz.d>=0?"+":"−"} ${f0(Math.abs(x.bz.d))} burza (${E(x.bz.n)})</small>`:""}</span>
+        <span class="snko"><i>Naša odporúčaná nákupná</i><b>${x.rec==null?"?":f0(x.rec)} €/t</b><small>FCA farma</small></span></div>
+        <small class="snkc">− doprava ${x.d0==null?"? (chýba miesto)":f0(x.d0)+" €/t"}${x.d0?" (25 t, prázdny návrat)":x.o.del==="FCA"?" (odvoz zabezpečí odberateľ)":""} · − marža ${f0(x.M)} €/t${x.recB!=null&&x.d1!==x.d0?` · so spätným nákladom doprava ~${f0(x.d1)} €/t → nákup ${f0(x.recB)} €/t`:""}</small>
+        ${our!=null&&x.rec!=null&&!x.fwd?`<small class="snkc ${diff>0?"ng":"ps"}">Naša zverejnená cena ${f0(our)} €/t → ${diff>0?`o ${f0(diff)} €/t NAD odporúčanou – s týmto odberateľom by sme nezarobili maržu`:`o ${f0(-diff)} €/t pod odporúčanou – zarobíme ${f0(x.M-diff)} €/t`}</small>`:""}</div>`}).join("");
+     return `<details class="snb"><summary><span>${E(b.name)}</span><small>${[...new Set(L.map(x=>nm(x.com)))].map(E).join(" · ")}</small></summary>${items}
+      ${b.model?`<div class="snkm"><b>📚 Model:</b> ${E(b.model)}</div>`:""}${chk.length?`<div class="snkm">${chk.join("<br>")}</div>`:""}
+      <div class="snkn"><b>🤖 Vyjadrenie Claude:</b> ${b.note?E(b.note)+" ":""}${autoNote(L)}</div></details>`}).join("")}</details>`}
 function newRow(o){return Object.assign({on:true,com:"repka",site:"",del:"DDP",price:"",period:"",note:""},o||{})}
 const COMS=["repka","psenica_p","psenica_k","soja","jacmen_k","jacmen_s","kukurica","lo","ho","cirok"];
 function formHTML(){const B=D.B||[],F=D.form,C=(typeof MK!=="undefined"?MK:[]).filter(m=>COMS.includes(m[0])||true);
@@ -234,7 +269,7 @@ html[data-theme=light] .swr .ps,html[data-theme=light] .swal .cnt{color:#15803d}
 .scom{border-top:1px solid rgba(255,255,255,.08);padding:8px 0}.scom summary{display:flex;justify-content:space-between;align-items:center;gap:10px;cursor:pointer;list-style:none}.scom summary::-webkit-details-marker{display:none}
 .snone>summary .sn small{white-space:normal}.snone>summary .sb{white-space:nowrap}.snone[open]>summary .sb{opacity:.5}.snin{padding-left:10px;border-left:2px solid rgba(255,255,255,.1);margin-top:6px}.snin .scom:first-child{border-top:0}.scom .sn{display:grid}.scom .sn small{opacity:.7;font-size:.78rem}.scom .sb{text-align:right;display:grid;font-size:.86rem}.scom .sb b{font-size:1.05rem}.sb.ps b,.srow.ps .srh span{color:#86efac}.sb.ng b,.srow.ng .srh span{color:#fca5a5}
 .srow{display:grid;gap:2px;padding:7px 10px;margin:6px 0;border-radius:12px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08)}.srow .srh{display:flex;justify-content:space-between;gap:8px}.srow small{opacity:.8;overflow-wrap:anywhere;line-height:1.4}
-.srow em{color:#fcd34d;font-style:normal}.smiss{font-size:.8rem;opacity:.75;margin-top:4px}.smiss span{text-decoration:underline dotted}.smod{margin:10px 0}.smod summary{cursor:pointer;font-weight:700}
+.srow em{color:#fcd34d;font-style:normal}.smiss{font-size:.8rem;opacity:.75;margin-top:4px}.smiss span{text-decoration:underline dotted}.smod{margin:10px 0}.snak{margin:10px 0}.snak>summary{cursor:pointer;font-weight:700}.snb{border-top:1px solid rgba(255,255,255,.08);padding:8px 0}.snb>summary{cursor:pointer;display:grid;gap:2px;list-style:none}.snb>summary::-webkit-details-marker{display:none}.snb>summary span{font-weight:800}.snb>summary small{opacity:.7}.snk{display:grid;gap:4px;padding:8px 10px;margin:6px 0;border-radius:12px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);min-width:0}.snk.fwd{border-style:dashed;opacity:.85}.snkh{display:grid}.snkh small,.snkc{opacity:.8;overflow-wrap:anywhere;line-height:1.4}.snkg{display:grid;grid-template-columns:1fr 1fr;gap:6px}.snkg>span{display:grid;gap:1px;text-align:center;padding:6px;border-radius:10px;min-width:0}.snkg i{font-style:normal;font-size:.72rem;font-weight:700;opacity:.85}.snkg b{font-size:1.25rem}.snkg small{font-size:.68rem;opacity:.75;overflow-wrap:anywhere}.snkb{background:rgba(96,165,250,.14);border:1px solid rgba(96,165,250,.6)}.snko{background:rgba(74,222,128,.14);border:2px solid rgba(74,222,128,.75)}.snko b{color:#86efac}.snkc.ng{color:#fca5a5;opacity:1}.snkc.ps{color:#86efac;opacity:1}.snkm,.snkn{font-size:.8rem;line-height:1.45;margin-top:6px;overflow-wrap:anywhere}.snkn{padding:8px 10px;border-radius:12px;background:rgba(165,243,252,.08);border:1px solid rgba(165,243,252,.35)}html[data-theme=light] .snko b,html[data-theme=light] .snkc.ps{color:#15803d}html[data-theme=light] .snkc.ng{color:#b91c1c}.smod summary{cursor:pointer;font-weight:700}
 .stl{display:grid;gap:2px;margin-top:6px;text-align:left;font-size:.74rem;line-height:1.35}.stl small{display:block;overflow-wrap:anywhere;opacity:.9}.stl .ps b{color:#86efac}.stl .ng b{color:#fca5a5}.stl .sbest{background:rgba(74,222,128,.16);border:1px solid rgba(74,222,128,.6);border-radius:10px;padding:4px 6px}.stl .sbest i{display:block;font-style:normal;font-weight:800;color:#86efac;font-size:.7rem}
 .stl .sworst{border:1px dashed rgba(251,146,60,.7);border-radius:10px;padding:4px 6px}.stl .sworst i{display:block;font-style:normal;font-weight:800;font-size:.7rem}.stl i.neg,.sbtag.neg{color:#fdba74!important}.srow.sworst{border:2px dashed rgba(251,146,60,.75)!important}
 .srow.sbest{background:rgba(74,222,128,.14)!important;border:2px solid rgba(74,222,128,.75)!important}.sbtag{font-style:normal;font-weight:800;color:#86efac;font-size:.78rem}
