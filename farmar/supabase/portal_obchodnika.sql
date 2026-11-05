@@ -1,4 +1,4 @@
--- 🤝 PORTÁL OBCHODNÍKA (5. 11. 2026 príkaz majiteľa): obchodné firmy, od ktorých kupujeme tovar (napr. ARIMEX, UBM).
+-- 🤝 PORTÁL OBCHODNÍKA (5. 11. 2026 príkaz majiteľa): obchodné firmy, od ktorých kupujeme tovar.
 -- Prihlásenie ako dodávateľ (farmers), ale vlastný portál vo farbách a s logom firmy:
 --   📈 burza, 💬 orientačná predajná cena pre nich (zverejnená cena − doplatok k doprave nad 160 km tam a späť × €/km ÷ nosnosť),
 --   🚛 kamióny s ich tovarom – poloha IBA od 30 min pred plánovanou nakládkou, v okolí ich miesta nakládky a do odchodu z nakládky
