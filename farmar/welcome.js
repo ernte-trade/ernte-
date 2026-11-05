@@ -311,7 +311,7 @@ async function facts(k){const L=[];try{const S=typeof STATE!=="undefined"?STATE:
  }catch(x){}return L}
 
 /* ---------- zobrazenie ---------- */
-async function show(force){const k=kind();if(!k||document.querySelector(".wlc"))return;if(sGet("ernte-welcome-skip"))return;if(sGet("ernte-wl-ret")){window.__wlRet=1;try{sessionStorage.removeItem("ernte-wl-ret")}catch(x){}}
+async function show(force){const k=kind();if(!k||document.querySelector(".wlc"))return;if(k==="farmar"&&window.ernteTrader&&ernteTrader.is())return; /* 🤝 obchodná firma: namiesto úvodu LIVE hneď portál vo farbách firmy (bez našich výkupných cien) */if(sGet("ernte-welcome-skip"))return;if(sGet("ernte-wl-ret")){window.__wlRet=1;try{sessionStorage.removeItem("ernte-wl-ret")}catch(x){}}
   const ph=phase();const nm=k==="farmar"?(FARMER.name||""):k==="trus"?"":firstName((typeof ME!=="undefined"&&ME&&ME.staffName)||"");
   const who=k==="ja"?"Martin":nm;const g=`${GREET[ph]}${who?", "+E(who):""}!`;
   const FL=FUN[k]||FUN.tim;let ji=Math.floor(Date.now()/864e5)%FL.length;

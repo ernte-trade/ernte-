@@ -7,7 +7,7 @@ const F=k=>!window.fcan||fcan(k);
 const f2=x=>typeof fmt==="function"?fmt(x):String(x);
 const leftOf=d=>Math.max(0,(+d.tons||0)-(+d.delivered_t||0));
 const okOrder=d=>["podpisany","odvoz"].includes(d.status)&&leftOf(d)>0;
-function tiles(){if(typeof FARMER==="undefined"||!FARMER||typeof STATE==="undefined")return "";
+function tiles(){if(typeof FARMER==="undefined"||!FARMER||typeof STATE==="undefined"||(window.ernteTrader&&ernteTrader.is()))return "";
   const D=STATE.deals||[],R=STATE.reqs||[],T=(STATE.trips||[]).filter(t=>!["vylozene","zrusena"].includes(t.status));
   const sign=D.filter(d=>d.status==="navrh").length,ord=D.filter(okOrder),left=ord.reduce((s,d)=>s+leftOf(d),0),open=R.filter(r=>r.status==="nova"||r.status==="v_spracovani").length;
   const nP=(STATE.prices||[]).length;

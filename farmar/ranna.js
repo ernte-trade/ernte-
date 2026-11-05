@@ -118,8 +118,8 @@ function drivers(){const TT=(STATE.trips||[]).filter(x=>x.day===TODAY()&&x.statu
    ${Object.entries(G).map(([p,T])=>{const tx=driverText(p,T),done=sent[td+p];return `<div class="rsdrv"><div class="row"><b>${e(T[0].spz||"auto")} · ${e(p)}</b>${done?`<span class="pill">✓ odoslané</span>`:""}</div><pre>${e(tx)}</pre>
     <div class="rsbtns"><a class="btn" data-rsdrv="${e(p)}" href="sms:${e(p)}?&body=${encodeURIComponent(tx)}">✉️ SMS</a><a class="btn" data-rsdrv="${e(p)}" target="_blank" rel="noopener" href="https://wa.me/${e(p.replace("+",""))}?text=${encodeURIComponent(tx)}">🟢 WhatsApp</a></div></div>`}).join("")}</div></div>`}
 
-window.rsHTML=function(){if(isF())return farmer();if(isS()&&(OWN()||canT()))return (OWN()?owner():"")+(canT()?drivers():"");return ""};
-const has=()=>isF()||OWN()||canT();
+window.rsHTML=function(){if(isF())return window.ernteTrader&&ernteTrader.is()?"":farmer(); /* 🤝 obchodná firma: žiadna ranná správa s našimi výkupnými cenami */if(isS()&&(OWN()||canT()))return (OWN()?owner():"")+(canT()?drivers():"");return ""};
+const has=()=>(isF()&&!(window.ernteTrader&&ernteTrader.is()))||OWN()||canT();
 const seenKey=()=>"ernte-rs-seen",unseen=()=>has()&&ld(seenKey(),"")!==TODAY();
 window.rsSeen=function(){sv(seenKey(),TODAY());if(R._save){R._save();R._save=null}dot()};
 window.rsUnseen=unseen;

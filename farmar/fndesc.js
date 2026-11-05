@@ -144,7 +144,7 @@ function apply(){const app=document.getElementById("app");if(!app)return;
     if(a!==h){const nx2=a.nextElementSibling;if(nx2&&nx2.classList&&nx2.classList.contains("fdesc"))return}
     a.insertAdjacentHTML("afterend",strip("fh2",e(m[1])))});
   // 4) farmár – úvod raz navrchu
-  if(isF()&&!app.querySelector(".fdesc.ffarm")){const hero=app.querySelector(".hero");if(hero)hero.insertAdjacentHTML("afterend",strip("ffarm","Tu vidíte výkupné ceny, môžete ponúknuť komoditu na predaj, objednať odvoz alebo služby, podpísať zmluvu a sledovať dodávky a peniaze. Pod každým nadpisom je krátky popis."))}}
+  if(isF()&&!(window.ernteTrader&&ernteTrader.is())&&!app.querySelector(".fdesc.ffarm")){ /* 🤝 obchodná firma: bez popisu výkupných cien */const hero=app.querySelector(".hero");if(hero)hero.insertAdjacentHTML("afterend",strip("ffarm","Tu vidíte výkupné ceny, môžete ponúknuť komoditu na predaj, objednať odvoz alebo služby, podpísať zmluvu a sledovať dodávky a peniaze. Pod každým nadpisom je krátky popis."))}}
 let q=0;function sched(){if(q)return;q=(window.ernteSoon||requestAnimationFrame)(()=>{q=0;try{apply()}catch(x){}})}
 document.addEventListener("click",ev=>{const b=ev.target.closest&&ev.target.closest(".zbtn[data-evsec],.zbtn[data-trsec],.zbtn[data-asec]");if(!b||typeof TAB==="undefined")return;
   const k=b.dataset.evsec||b.dataset.trsec||b.dataset.asec;SEC[TAB]=k;const sm=b.querySelector("small");SEC["_"+TAB]=sm?sm.textContent:""},true);

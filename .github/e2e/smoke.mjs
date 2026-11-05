@@ -22,6 +22,7 @@ const ROLES = [
   { id: "obchodnik", role: { kind: "staff", staff: { email: "obchod@example.com", name: "Obchodník Test", role: "staff", perms: P("req", "price_view", "deals", "deals_qty", "farm", "market", "wx"), must_change: false } } },
   { id: "doprava", role: { kind: "staff", staff: { email: "doprava@example.com", name: "Doprava Test", role: "dispatch", perms: P("trans", "assign", "fleet", "wx"), must_change: false } } },
   { id: "farmar", role: { kind: "farmer" } },
+  { id: "obchodna_firma", role: { kind: "farmer", trader: true } },
 ];
 const WIDTHS = [344, 390, 412, 690, 900, 1440];
 const SHOTS = process.env.SHOTS || ""; if (SHOTS) fs.mkdirSync(SHOTS, { recursive: true });

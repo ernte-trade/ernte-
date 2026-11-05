@@ -10,7 +10,7 @@ let U={open:false,R:null,com:"",t:"100",w:"",p:"",b:"",c:"",cTouched:false,loadi
 const prices=()=>(typeof STATE!=="undefined"&&STATE.prices)||[];
 async function loadR(){if(U.loading)return;U.loading=true;let r;try{r=await sb.rpc("sus_rules")}catch(x){r={error:x}}U.loading=false;
   U.R=(r.error||!r.data||!r.data.norm)?{norm:{kukurica:14,soja:13},clean:2.5,dry:3.5,broken_limit:5,off:true}:r.data;if(!U.com)U.com=Object.keys(U.R.norm).includes("kukurica")?"kukurica":Object.keys(U.R.norm)[0];setPrice();rer()}
-function setPrice(){if(U.cTouched)return;const p=prices().find(x=>x.com===U.com);U.c=p&&p.price?String(p.price).replace(".",","):""}
+function setPrice(){if(U.cTouched||(window.ernteTrader&&ernteTrader.is()))return; /* 🤝 obchodná firma: cenu si zadá sama (naše výkupné ceny nevidí) */const p=prices().find(x=>x.com===U.com);U.c=p&&p.price?String(p.price).replace(".",","):""}
 function rer(){if(typeof FARMER!=="undefined"&&FARMER&&typeof renderFarmer==="function")renderFarmer();else if(typeof renderStaff==="function")renderStaff()}
 
 // výpočet na 1 dodávku (t)

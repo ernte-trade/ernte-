@@ -5,7 +5,7 @@
 // Pôvodné časti aplikácie ostávajú – zobrazia sa po ťuknutí na dlaždicu (Späť = šípka hore alebo tlačidlo Späť v telefóne).
 (function(){
 const E=s=>String(s==null?"":s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
-const F_=()=>typeof FARMER!=="undefined"&&FARMER?FARMER:null;
+const F_=()=>typeof FARMER!=="undefined"&&FARMER&&!(window.ernteTrader&&ernteTrader.is())?FARMER:null; /* 🤝 obchodná firma má vlastný portál (obchodnik.js) */
 const fc=k=>!window.fcan||fcan(k);
 const N=(x,d)=>Number(x).toLocaleString("sk-SK",{minimumFractionDigits:d||0,maximumFractionDigits:d==null?2:d});
 const td=()=>new Date().toLocaleDateString("sv-SE");
