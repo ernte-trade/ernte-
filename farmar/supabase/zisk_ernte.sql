@@ -147,14 +147,14 @@ begin
   for x in select * from jsonb_array_elements(coalesce(po->'com','[]'::jsonb)) loop
     if (x->>'margin')::numeric<0 then
       rc:=rc||jsonb_build_array(jsonb_build_object('k','strata','i','📉','eur',(x->>'margin')::numeric,'go','price',
-        't',cennik_nm(x->>'com')||': strata '||zk_fmt((x->>'margin')::numeric)||' €',
+        't',cennik_nm(x->>'com')||' – predávame lacnejšie, než nakupujeme',
         'd','Nakúpené priemerne za '||zk_fmt((x->>'avg_buy')::numeric,2)||' €/t, predané za '||zk_fmt((x->>'avg_sell')::numeric,2)||' €/t ('||zk_fmt((x->>'per_t')::numeric,2)||' €/t'
            ||case when (x->>'n_loss')::int>0 then ', '||(x->>'n_loss')||' '||zk_pl((x->>'n_loss')::numeric,'lístok','lístky','lístkov')||' so stratou' else '' end||'). Nakupuj najviac za najlepší predaj po doprave − marža (strop v Cenníku) a predaj zaisti predajnou zmluvou ešte pred nákupom.'));
     end if;
   end loop;
   if coalesce((L->'loss'->>'n')::int,0)>0 then
     rc:=rc||jsonb_build_array(jsonb_build_object('k','strata','i','🧾','eur',(L->'loss'->>'eur')::numeric,'go','#zisk-loss',
-      't',(L->'loss'->>'n')||' '||zk_pl((L->'loss'->>'n')::numeric,'lístok','lístky','lístkov')||' so stratou: '||zk_fmt((L->'loss'->>'eur')::numeric)||' €',
+      't',(L->'loss'->>'n')||' '||zk_pl((L->'loss'->>'n')::numeric,'lístok','lístky','lístkov')||' so stratou',
       'd','Odberateľ zaplatil menej, než sme dali farmárovi. Najväčšie: '||coalesce((select string_agg(z->>'ticket'||' (nákup '||zk_fmt((z->>'bp')::numeric)||' → predaj '||zk_fmt((z->>'sp')::numeric)||' €/t)',', ')
           from (select z from jsonb_array_elements(L->'loss_top') z limit 3) q),'')||'. Pred nákupom over cenu u odberateľa a nekupuj nad ňou.'));
   end if;
@@ -171,7 +171,7 @@ begin
   end if;
   if fz<0 then
     rc:=rc||jsonb_build_array(jsonb_build_object('k','strata','i','🚛','eur',fz,'go','fleet',
-      't','Flotila VALKO: '||zk_fmt(fz)||' €',
+      't','Flotila VALKO je v strate',
       'd','Obrat '||zk_fmt(fo)||' €'||case when fest then ' (odhad z km × sadzba, nie z faktúr)' else '' end||', náklady '||zk_fmt(fn)||' € (z toho pevné '||zk_fmt(fpev)||' €), '||zk_fmt(fkm)||' km. '
         ||'Zadaj skutočný obrat z faktúr, prever pevné náklady a vyťaženosť áut; hľadaj spätné náklady (trus, hnojivá, Danube), aby autá nejazdili prázdne.'));
   end if;
