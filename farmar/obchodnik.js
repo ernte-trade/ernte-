@@ -53,9 +53,9 @@ const TX={
 };
 const HUC={repka:"Repce",lo:"Napraforgó (LO)",ho:"Napraforgó (HO)",soja:"Szója",psenica_p:"Étkezési búza",psenica_k:"Takarmánybúza",jacmen_k:"Takarmányárpa",jacmen_s:"Sörárpa",kukurica:"Kukorica",cirok:"Cirok"};
 const HUB={"MATIF repka":"MATIF repce","MATIF pšenica":"MATIF búza","MATIF kukurica":"MATIF kukorica","CBOT sója":"CBOT szója","CBOT kukurica":"CBOT kukorica","CBOT pšenica":"CBOT búza"};
-function L(){const v=ls(LSL)||(TP.me&&TP.me.lang)||(brand()||{}).lang||"sk";return v==="hu"?"hu":"sk"}
-const T=(k,o)=>{const a=TX[k];let s=a?a[L()==="hu"?1:0]:k;if(o)for(const x in o)s=s.split("{"+x+"}").join(o[x]);return s};
-const CN=c=>L()==="hu"&&HUC[c]?HUC[c]:(typeof comName==="function"?comName(c):c);
+function LG(){const v=ls(LSL)||(TP.me&&TP.me.lang)||(brand()||{}).lang||"sk";return v==="hu"?"hu":"sk"}
+const T=(k,o)=>{const a=TX[k];let s=a?a[LG()==="hu"?1:0]:k;if(o)for(const x in o)s=s.split("{"+x+"}").join(o[x]);return s};
+const CN=c=>LG()==="hu"&&HUC[c]?HUC[c]:(typeof comName==="function"?comName(c):c);
 
 /* ---------- značka (farby, logo) ---------- */
 function brand(){try{return JSON.parse(ls(LSB)||"null")}catch(x){return null}}
@@ -93,8 +93,8 @@ async function trLoad(){if(TP.trBusy||!on())return;TP.trBusy=true;
   TP.trAt=Date.now();TP.trBusy=false;paintTr()}
 const hm=t=>new Date(t).toLocaleTimeString("sk-SK",{hour:"2-digit",minute:"2-digit"});
 function dayTxt(d){const t=new Date().toLocaleDateString("sv-SE"),z=new Date(Date.now()+864e5).toLocaleDateString("sv-SE");if(d===t)return T("dnes");if(d===z)return T("zajtra");
-  return new Date(d+"T12:00").toLocaleDateString(L()==="hu"?"hu-HU":"sk-SK",{weekday:"short",day:"numeric",month:"numeric"})}
-function trRow(x){const st=(TX.st[x.status]||[x.status,x.status])[L()==="hu"?1:0];let b="";
+  return new Date(d+"T12:00").toLocaleDateString(LG()==="hu"?"hu-HU":"sk-SK",{weekday:"short",day:"numeric",month:"numeric"})}
+function trRow(x){const st=(TX.st[x.status]||[x.status,x.status])[LG()==="hu"?1:0];let b="";
   if(x.pos){b=`<div class="tpgps"><span>📍 ${E(x.pos.km!=null?T("km",{km:N(x.pos.km,1)}):"")}</span><span>${E(T("upd",{t:hm(x.pos.at)}))}${x.pos.spd?` · ${N(x.pos.spd,0)} km/h`:""}</span>
      <a href="https://www.google.com/maps?q=${x.pos.lat},${x.pos.lon}" target="_blank" rel="noopener">${E(T("maps"))}</a></div>`}
   else if(x.hide==="po")b=`<div class="tpboard"><b>${E(T("po"))}</b><span>${E(T("pop"))}</span></div>`;
@@ -130,7 +130,7 @@ function bzHTML(){const M=TP.me||{},B=(M.burza||[]).filter(b=>/^(MATIF|CBOT)/i.t
   let h=`<div class="card tpc" id="tpBz"><h3>${E(T("bz"))}</h3><small class="tps">${E(T("bzs"))}</small>`;
   if(!B.length)return h+`<div class="s">${E(T("load"))}</div></div>`;
   return h+B.map(b=>{const k=HK[b.name],pts=k?H.filter(x=>x[k]>0).slice(-30).map(x=>+x[k]):[],df=pts.length>1?pts[pts.length-1]-pts[pts.length-2]:null;
-    return `<div class="tpbzr"><span class="tpbzn"><b>${E(L()==="hu"&&HUB[b.name]?HUB[b.name]:b.name)}</b><small>${E(b.kontrakt||"")}${b.d?" · "+E(new Date(b.d+"T12:00").toLocaleDateString(L()==="hu"?"hu-HU":"sk-SK",{day:"numeric",month:"numeric"})):""}</small></span>
+    return `<div class="tpbzr"><span class="tpbzn"><b>${E(LG()==="hu"&&HUB[b.name]?HUB[b.name]:b.name)}</b><small>${E(b.kontrakt||"")}${b.d?" · "+E(new Date(b.d+"T12:00").toLocaleDateString(LG()==="hu"?"hu-HU":"sk-SK",{day:"numeric",month:"numeric"})):""}</small></span>
       <span class="tpbzg ${df>0?"up":df<0?"dn":""}">${spark(pts)}</span><b class="tpbzv">${N(b.eur_t,2)} <small>€/t</small>${df!=null&&df!==0?`<em class="${df>0?"up":"dn"}">${df>0?"▲":"▼"} ${N(Math.abs(df),2)}</em>`:""}</b></div>`}).join("")+`</div>`}
 
 /* ---------- 💬 orientačné ceny, 📞 kontakt, 📄 dokumenty ---------- */
@@ -148,7 +148,7 @@ function cenyHTML(){const M=TP.me||{},C=M.ceny||[];
 function docsHTML(){const D=(typeof STATE!=="undefined"&&STATE.deals)||[],run=D.filter(d=>["podpisany","odvoz","navrh"].includes(d.status)),left=run.reduce((s,d)=>s+Math.max(0,(+d.tons||0)-(+d.delivered_t||0)),0);
   return `<div class="card tpc tpdocs"><h3>${E(T("docs"))}</h3><p>${E(T("docsp"))}</p>${D.length?`<div class="s">${E(T("deals",{n:D.length,t:N(left,0)}))}</div>`:""}
    <div class="tpbtns"><button type="button" class="tpbtn pri" data-tpstd>${E(T("open"))} ›</button></div></div>`}
-function heroHTML(){const M=TP.me||brand()||{},l=L();
+function heroHTML(){const M=TP.me||brand()||{},l=LG();
   return `<div class="hero tph"><div class="tphl">${logoHTML(M)}</div><div class="tpht"><small>${E(T("hdr"))} · ERNTE Trade &amp; Logistic</small><b>${E(M.name||(isF()?FARMER.name:""))}</b></div>
    <div class="tplang" role="group" aria-label="Jazyk"><button type="button" data-tplang="sk" class="${l==="sk"?"on":""}" aria-pressed="${l==="sk"}">🇸🇰 SK</button><button type="button" data-tplang="hu" class="${l==="hu"?"on":""}" aria-pressed="${l==="hu"}">🇭🇺 HU</button></div></div>`}
 function portal(){const A=document.getElementById("app");if(!A)return;css();const M=TP.me;applyVars(M&&M.on?M:brand());document.documentElement.classList.add("trader");
