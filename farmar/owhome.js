@@ -70,6 +70,8 @@ function dealsHTML(){const R=STATE.reqs||[],nNew=R.filter(r=>r.status==="nova").
 
 // ---- 4. zisky ERNTE ----
 function profitHTML(){const X=window.HUBX,R=X&&X.H.risk,L=[];
+  /* 5. 11. PRÍKAZ MAJITEĽA: 💰 Zisk ERNTE (odberatelia − farmári − doprava + VALKO + trus + agro) → klik = podrobný rozpis (zisk.js) */
+  if(MAIN()&&window.ziskTile){const z=ziskTile();if(z)L.push(tile({i:"💰",l:"Zisk ERNTE",v:z.v,s:z.s,go:"#zisk",c:z.c}))}
   if(R===undefined||!X)L.push(tile({i:"💰",l:"Zisky ERNTE",v:"…",s:"načítavam",go:"#hs-risk"}));
   else if(!R||R.err||!Array.isArray(R.rows))L.push(tile({i:"💰",l:"Zisky ERNTE",v:"–",s:"zapne sa po aktualizácii databázy",go:"#hs-risk"}));
   else{const T={real:0,lock:0,pos:0,tk:0,bt:0};for(const x of R.rows){const pos=x.pos_t!=null?+x.pos_t:(+x.unsold_t||0);T.real+=+x.margin_real||0;T.lock+=+x.margin_locked||0;T.pos+=pos;T.tk+=+x.tickets_t||0;T.bt+=+x.tons||0}
@@ -78,7 +80,7 @@ function profitHTML(){const X=window.HUBX,R=X&&X.H.risk,L=[];
     L.push(tile({i:"🔒",l:"Zamknutá marža",v:F(T.lock,0)+"<small> €</small>",s:"zo zmlúv s odberateľmi",go:"#hs-risk",c:"ok"}));
     L.push(tile({i:"⚖️",l:"Otvorená pozícia",v:(T.pos>0?"+":"")+F(T.pos,0)+"<small> t</small>",s:T.pos>0?"nakúpené, nepredané":T.pos<0?"predané naviac":"všetko kryté",go:"#hs-risk",c:T.pos>0?"w":T.pos<0?"r":""}));
     L.push(tile({i:"📉",l:"Ak burza klesne o 10 €",v:(risk?"−":"")+F(risk,0)+"<small> €</small>",s:"riziko otvorenej pozície",go:"#hs-risk",c:risk?"w":""}))}
-  if(MAIN()&&window.ziskOpen)L.push(tile({i:"🔍",l:"Kde zarábame a strácame",v:"→",s:"komodity · odberatelia · farmári · úniky",go:"#zisk",c:"acc"}));
+  if(MAIN()&&window.ziskOpen&&!window.ziskTile)L.push(tile({i:"🔍",l:"Kde zarábame a strácame",v:"→",s:"komodity · odberatelia · farmári · úniky",go:"#zisk",c:"acc"}));
   if(window.vZuct)L.push(tile({i:"🧾",l:"Zúčtovanie",v:"→",s:"lístky · faktúry · PDF",go:"zuct"}));
   if(MAIN()&&STATE.me&&STATE.me.hlavny!==false)L.push(tile({i:"🔮",l:"Algomancia",v:"→",s:"AI veštba · kedy predať",go:"pred",c:"acc"}));
   if(MAIN()&&window.aixHTML)L.push(tile({i:"📊",l:"Agro Index",v:"→",s:"regionálne ceny · báza · doprava (PIN)",go:"pred",c:"acc"}));
