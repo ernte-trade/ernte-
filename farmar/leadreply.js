@@ -21,9 +21,10 @@ function card(x){const s=ST[x.status]||["•",x.status],can=x.status==="pomoc"||
   return `<div class="lrc lr-${e(x.status)}" data-lrid="${x.id}">
    <div class="lrh"><b>${e(x.from_name||x.from_addr)}</b><span class="pill ${x.status==="pomoc"?"r":x.status==="nova"?"w":""}">${s[0]} ${s[1]}</span></div>
    <div class="s">${e(x.from_addr)} · ${hm(x.received)} · ${e(x.subject||"")}</div>
+   ${x.fwd_by?`<div class="s">↪️ Preposlané z ${e(x.fwd_by)} – odpoveď pôjde priamo na ${e(x.from_addr)} (nie späť na ${e(x.fwd_by)}).</div>`:""}
    ${x.note?`<div class="lrnote">🤖 ${e(x.note)}</div>`:""}
    <details${x.status==="pomoc"?" open":""}><summary>📩 Čo napísal klient</summary><pre class="lrb">${e(String(x.body||"").split(/\n-{3,}\s*(Original|Ursprüngliche|Pôvodná|Eredeti)/i)[0].slice(0,4000))}</pre></details>
-   ${can?`<label class="lrl">Odpoveď (odíde z erntespol@gmail.com priamo do jeho vlákna)<textarea rows="8" data-lrtx="${x.id}">${e(x.draft||"")}</textarea></label>
+   ${can?`<label class="lrl">Odpoveď (odíde z erntespol@gmail.com ${x.fwd_by?"priamo na "+e(x.from_addr):"priamo do jeho vlákna"})<textarea rows="8" data-lrtx="${x.id}">${e(x.draft||"")}</textarea></label>
     <div class="btns"><button type="button" class="pri" data-lrsend="${x.id}">📤 Odoslať odpoveď</button><button type="button" data-lrign="${x.id}">↷ Netreba odpovedať</button></div>`
     :x.draft?`<details><summary>📤 Naša odpoveď${x.job_st?` · ${x.job_st==="odoslany"?"odoslaná":e(x.job_st)}`:""}</summary><pre class="lrb">${e(x.draft)}</pre></details>`:""}
   </div>`}
