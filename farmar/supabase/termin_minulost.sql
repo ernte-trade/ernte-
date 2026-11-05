@@ -1,5 +1,5 @@
 -- 📅 TERMÍN OBCHODU V MINULOSTI (úloha majiteľa 5. 11. 2026, ac3a13c6)
--- 1) K2026/2 (AGROSPOL, kukurica 300 t): termín 30.11.2025 → 30.11.2026 (zápis do histórie obchodu deal_edits)
+-- 1) oprava chybného roka v jednom obchode – iba v zašifrovanej migrácii (údaje obchodu nepatria do verejného repozitára)
 -- 2) ernte_term_last(text) = najneskorší dátum vo voľnom texte termínu („30. 11. 2026“, „1.–15. 12. 2026“, „11/2026“, „november 2026“, ISO)
 -- 3) trigger deals_term_guard: nový obchod alebo zmena termínu otvoreného obchodu (návrh, podpísaný, odvoz) s termínom v minulosti → chyba
 --    „Termín je v minulosti – skontroluj rok“. Odvezené / fakturované / zaplatené / zrušené / archivované obchody (história) sa nekontrolujú;
@@ -50,31 +50,7 @@ end $$;
 drop trigger if exists deals_term_guard on public.deals;
 create trigger deals_term_guard before insert or update of term on public.deals for each row execute function public.deals_term_guard();
 
--- K2026/2: 30.11.2025 → 30.11.2026 (iba ak je tam stále chybný rok)
-do $$ declare o deals; begin
-  select * into o from deals where id='2938e9f2-ef1a-412f-a95a-8676793a3906' and no='K2026/2' and term='30.11.2025';
-  if found then
-    update deals set term='30.11.2026' where id=o.id;
-    insert into deal_edits(deal_id,by_email,old,new) values(o.id,'claude – úloha majiteľa 5. 11.',
-      jsonb_build_object('term',o.term),jsonb_build_object('term','30.11.2026'));
-  end if;
-end $$;
-
 insert into app_novinky(d,titul,kde,kto,aud,popis)
 select '2026-11-05','📅 Termín obchodu v minulosti sa neuloží','Obchody → Nový obchod, ✏️ Upraviť obchod, 🤝 Uzatvoriť obchod, predajné zmluvy','majiteľ a obchodníci',array['owner','staff'],
- 'Keď termín plnenia (aj v texte, napr. „30.11.2025“ alebo „1.–15. 12. 2026“) vychádza do minulosti, aplikácia hneď pod políčkom ukáže „⚠️ Termín je v minulosti – skontroluj rok“ a obchod neuloží. Pri úprave starého obchodu sa kontroluje iba zmenený termín. Obchod K2026/2 (kukurica 300 t) má opravený termín 30. 11. 2026.'
+ 'Keď termín plnenia (aj v texte, napr. „30.11.2025“ alebo „1.–15. 12. 2026“) vychádza do minulosti, aplikácia hneď pod políčkom ukáže „⚠️ Termín je v minulosti – skontroluj rok“ a obchod neuloží. Pri úprave starého obchodu sa kontroluje iba zmenený termín.'
 where not exists(select 1 from app_novinky where titul='📅 Termín obchodu v minulosti sa neuloží');
-
--- kontrola → #83
-do $$ declare o jsonb; begin
-  o:=jsonb_build_object('t','term1','k2',(select jsonb_build_object('term',term,'status',status) from deals where id='2938e9f2-ef1a-412f-a95a-8676793a3906'),
-    'edits',(select jsonb_agg(jsonb_build_object('at',at,'by',by_email,'old',old,'new',new)) from deal_edits where deal_id='2938e9f2-ef1a-412f-a95a-8676793a3906'),
-    'trg',(select count(*) from pg_trigger where tgname='deals_term_guard'),
-    'tests',(select jsonb_object_agg(x,ernte_term_last(x)) from unnest(array['30.11.2025','1.–15. 12. 2026','11/2026','november 2026','do konca októbra 2026','marža 2025, 30.11.2026','okt. 2026','úroda 2025','28.10.2026 – 11.11.2026']) x),
-    'past_open',(select jsonb_agg(jsonb_build_array(no,status,term)) from deals where status in ('navrh','podpisany','odvoz') and not coalesce(archived,false) and ernte_term_last(term)<current_date));
-  perform net.http_post('https://api.github.com/repos/ernte-trade/ernte-/issues/83/comments',jsonb_build_object('body',extensions.armor(extensions.pgp_sym_encrypt(o::text,'ernte-8067b20d83c799287de7ae04'))),'{}'::jsonb,
-    jsonb_build_object('Authorization','Bearer '||ai_secret('github_token'),'Accept','application/vnd.github+json','User-Agent','ernte'));
-exception when others then
-  perform net.http_post('https://api.github.com/repos/ernte-trade/ernte-/issues/83/comments',jsonb_build_object('body',extensions.armor(extensions.pgp_sym_encrypt(jsonb_build_object('t','term1','err',sqlerrm)::text,'ernte-8067b20d83c799287de7ae04'))),'{}'::jsonb,
-    jsonb_build_object('Authorization','Bearer '||ai_secret('github_token'),'Accept','application/vnd.github+json','User-Agent','ernte'));
-end $$;
