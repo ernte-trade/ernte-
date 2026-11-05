@@ -400,3 +400,83 @@ insert into app_novinky(d,titul,kde,kto,aud,popis)
 select '2026-11-05','🏷️ Ceny odberateľov – evidencia, net-back, automaticky z e-mailov a webu','Cenník → 🏷️ Ceny odberateľov','Martin',array['owner'],
  'Všetky ceny odberateľov na jednom mieste: odberateľ, komodita, cena, parita, miesto, termín, platnosť, zdroj (e-mail, PDF, web, ručne) a dátum. Pri každej cene net-back (cena − naša doprava), porovnanie s naším cenníkom a s priemerným nákupom nepredaných ton. Ceny z e-mailov odberateľov (Gmail erntespol) a z ich webových cenníkov (pracovné dni 6–18 h) vyčíta AI samo; cenu od nového odberateľa alebo nezvyčajnú cenu najprv potvrdíš ✓. Keď net-back prevýši priemerný nákup o 8 €/t a viac pri otvorenej pozícii nad 100 t, príde 💰 „Predaj teraz“; cena staršia ako 3 pracovné dni sa označí ⏳ a príde upozornenie.'
 where not exists(select 1 from app_novinky where titul like '🏷️ Ceny odberateľov%');
+
+-- 📐 MODEL NÁKUPNEJ CENY KAŽDÉHO ODBERATEĽA (príkaz majiteľa 5. 11. 07:11): z ich ponúk (sell_offers + Konkurenčné ceny) báza voči burze
+-- (MATIF / CBOT) a ICH NÁKUPNÁ CENA DNES = burza dnes + posledná báza; ADM sója DDP Sečovce = CBOT + báza ADM. Bez ponúk na neskorší odber a nad 500 t.
+create or replace function public.odb_burza_at(p_sym text, p_d date) returns numeric language sql stable security definer set search_path=public as $$
+  select hodnota from trh_data where zdroj=case when p_sym='soja_usc_bu' then 'cbot' else 'matif' end and komodita=case when p_sym='soja_usc_bu' then 'soja' else p_sym end
+    and indikator='close' and platne<=p_d and platne>=p_d-5 order by platne desc limit 1 $$;
+revoke all on function public.odb_burza_at(text,date) from public, anon, authenticated;
+
+create or replace function public.odb_models() returns jsonb language plpgsql stable security definer set search_path=public as $$
+declare k jsonb; res jsonb;
+begin
+  select data->'items' into k from kalk_store where path='pricelist' and id='konk';
+  with b as (select * from sell_buyers where active),
+  so as (select o.buyer bid, o.com, upper(o.del) del, coalesce(nullif(o.site,''),'') site, coalesce(o.period,'') per, o.d, o.price,
+           case when o.bz_val is not null then o.price-o.bz_val else o.price-odb_burza_at(odb_bz(o.com),o.d) end bas, coalesce(o.src,'rucne') src
+         from sell_offers o join b on b.id=o.buyer where o.d>=current_date-180 and o.price>0),
+  ko as (select b.id bid, i->>'com' com, upper(coalesce(nullif(i->>'del',''),'DAP')) del,
+           coalesce(nullif(i->>'place',''),case when coalesce(i->>'who','') ~* 'hamburg|z[aá]pad' then 'Hamburg (západ)' else '' end) site,
+           coalesce(i->>'term','') per, (i->>'d')::date d, (i->>'price')::numeric price,
+           coalesce(case when (i->>'b') ~ '^-?[0-9.]+$' then (i->>'b')::numeric end,
+             case when (i->>'bz') ~ '^[0-9.]+$' and (i->>'bz')::numeric>0 then (i->>'price')::numeric-(i->>'bz')::numeric end,
+             (i->>'price')::numeric-odb_burza_at(odb_bz(i->>'com'),(i->>'d')::date)) bas,
+           'konk' src
+         from jsonb_array_elements(coalesce(k,'[]'::jsonb)) i join b on coalesce(b.rx,'')<>'' and coalesce(i->>'who','') ~* odb_rx(b.rx)
+         where (i->>'price') ~ '^[0-9.]+$' and (i->>'d') ~ '^\d{4}-\d\d-\d\d$' and (i->>'d')::date>=current_date-180),
+  a0 as (select * from so union all select * from ko),
+  -- iba dnešný odber: bez „odber …“, „nad 500 t“ a dodávok v ďalšom roku / štvrťroku
+  a as (select distinct on (bid,com,del,site,d,price) * from a0
+        where com is not null and per !~* '(odber\s*[0-9]|nad\s*500|[1-4]\s*q|q\s*/|/\s*2[7-9]\M|202[7-9])'
+        order by bid,com,del,site,d,price,src),
+  g as (select a.bid, a.com, a.del, a.site, count(*) n, max(a.d) d_last,
+          (array_agg(a.price order by a.d desc))[1] p_last,
+          (array_agg(a.bas order by a.d desc) filter (where a.bas is not null))[1] b_last,
+          (array_agg(a.d order by a.d desc) filter (where a.bas is not null))[1] b_d,
+          (array_agg(a.bas order by a.d desc) filter (where a.bas is not null))[2] b_prev,
+          round(avg(a.bas) filter (where a.bas is not null and a.d>=current_date-45),2) b_avg45,
+          (array_agg(a.src order by a.d desc))[1] src
+        from a group by 1,2,3,4)
+  select coalesce(jsonb_agg(jsonb_build_object('id',b.id,'name',b.name,'fb',b.float_burza,'par',b.parita,'model',b.model,'basis',to_jsonb(b)->'basis',
+      'g',(select coalesce(jsonb_agg(jsonb_build_object('com',g.com,'del',g.del,'site',g.site,'n',g.n,'d',g.d_last,'age',current_date-g.d_last,'p_last',g.p_last,
+            'b',round(g.b_last,2),'b_d',g.b_d,'b_prev',round(g.b_prev,2),'b_avg45',g.b_avg45,'src',g.src,
+            'sym',odb_bz(g.com),'kontrakt',m.contract,'px',m.eur_t,'px_d',m.quote_date,
+            'dnes',case when g.b_last is not null and m.eur_t is not null then round(m.eur_t+g.b_last,2) end) order by g.com,g.del,g.site),'[]'::jsonb)
+         from g left join market_px m on m.sym=odb_bz(g.com) and m.eur_t>0 where g.bid=b.id),
+      'chyba',(select coalesce(jsonb_agg(c order by c),'[]'::jsonb) from unnest(coalesce(b.coms,array[]::text[])) c where not exists(select 1 from g where g.bid=b.id and g.com=c)))
+    order by b.sort, b.name),'[]'::jsonb) into res from b;
+  return res;
+end $$;
+revoke all on function public.odb_models() from public, anon, authenticated;
+
+-- odb_ceny (Cenník → 🏷️ Ceny odberateľov) + modely
+create or replace function public.odb_ceny() returns jsonb language plpgsql stable security definer set search_path=public as $$
+begin
+  if not price_main() then raise exception 'Iba Martin.'; end if;
+  return jsonb_build_object('items',odb_list(45),'models',odb_models(),
+    'navrhy',(select coalesce(jsonb_agg(to_jsonb(n) order by n.at desc),'[]'::jsonb) from odb_navrhy n where n.status='caka'),
+    'inbox',(select coalesce(jsonb_agg(jsonb_build_object('id',i.id,'kind',i.kind,'b',(select name from sell_buyers where id=i.buyer),'from',i.from_addr,'subj',i.subject,'at',i.at,'rc',i.received,
+        'status',i.status,'ok',i.n_ok,'wait',i.n_wait,'err',i.err) order by i.at desc),'[]'::jsonb) from (select * from odb_inbox order by at desc limit 12) i),
+    'buyers',(select coalesce(jsonb_agg(jsonb_build_object('id',b.id,'name',b.name,'url',b.price_url,'dom',b.mail_dom,'web',(select jsonb_build_object('ok_at',w.ok_at,'err',w.err) from odb_web w where w.buyer=b.id)) order by b.sort,b.name),'[]'::jsonb)
+      from sell_buyers b where b.active),
+    'ping',(select value from ai_state where key='odb_mail_ping'),
+    'has_key',exists(select 1 from ai_state where key='zuct_inbox_key'));
+end $$;
+revoke all on function public.odb_ceny() from public, anon; grant execute on function public.odb_ceny() to authenticated;
+
+-- AI poradca: aj modely odberateľov (ich nákupná cena dnes)
+create or replace function public.odb_ceny_ai() returns jsonb language plpgsql stable security definer set search_path=public as $$
+declare L jsonb:=odb_list(21);
+begin
+  return (select coalesce(jsonb_object_agg(c, (select jsonb_build_object('odberatel',x->>'b','cena_eur_t',x->'price','parita',x->>'del','miesto',x->>'site','datum',x->>'d','obdobie',x->>'period',
+      'net_back_eur_t',x->'net','nasa_doprava_eur_t',x->'dop','nas_cennik_eur_t',x->'our','priemerny_nakup_nepredanych_eur_t',x->'avg','otvorene_t',x->'open_t',
+      'marza_voci_nakupu_eur_t',x->'m_avg','neaktualna',(x->>'stale')::boolean,'pracovnych_dni',x->'bd')
+      from jsonb_array_elements(L) x where x->>'com'=c and x->>'net' is not null and not (x->>'fwd')::boolean order by (x->>'stale')::boolean, (x->>'net')::numeric desc limit 1)),'{}'::jsonb)
+    from (select distinct x->>'com' c from jsonb_array_elements(L) x) q)
+    ||jsonb_build_object('modely_odberatelov',(select coalesce(jsonb_agg(jsonb_build_object('odberatel',m->>'name','posuva_sa_s_burzou',m->'fb',
+          'komodity',(select jsonb_agg(jsonb_build_object('komodita',g->>'com','parita',g->>'del','miesto',g->>'site','baza_voci_burze',g->'b','burza_dnes',g->'px','ich_cena_dnes',g->'dnes','posledna_ponuka',g->>'d','ponuk',g->'n')) from jsonb_array_elements(m->'g') g))),'[]'::jsonb)
+        from jsonb_array_elements(odb_models()) m where jsonb_array_length(m->'g')>0),
+      'poznamka','net_back = cena odberateľa (posunutá s burzou) − naša doprava z regiónu farmárov (vzorec Kalkulačky); neaktualna = cena staršia ako 3 pracovné dni; ich_cena_dnes = burza dnes + báza z ich poslednej ponuky. Mená odberateľov sú dôverné.');
+end $$;
+revoke all on function public.odb_ceny_ai() from public, anon, authenticated;

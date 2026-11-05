@@ -30,6 +30,18 @@ function row(x){const s=SRC[x.src]||["✍️",x.src||"ručne"],bad=[];
       <span><i>zdroj</i><b>${s[0]} ${E(s[1])}</b><small>${dk(x.d)}${x.period?" · "+E(x.period):""}${x.valid_to?" · platí do "+dk(x.valid_to):""}</small></span></div>
     ${bad.length?`<div class="obb">${bad.join("")}</div>`:""}${x.note?`<small class="obn">${E(x.note)}</small>`:""}</div>`}
 
+// 📐 model nákupnej ceny každého odberateľa: báza voči burze z ich ponúk → ICH nákupná cena dnes = burza dnes + báza
+const BZN={repka:"MATIF repka",psenica:"MATIF pšenica",kukurica:"MATIF kukurica",soja_usc_bu:"CBOT sója"};
+function modelsHTML(M){const R=M.filter(m=>(m.g||[]).length||(m.chyba||[]).length);if(!R.length)return "";
+  const ln=g=>{const old=g.age>45,bz=BZN[g.sym]||"burza";
+    return `<div class="obm${old?" old":""}"><div class="obmh"><b>${E(nm(g.com))}</b><small>${E(g.del)}${g.site?" "+E(g.site):""}</small><span>${g.dnes!=null?`<b>${n0(g.dnes)} €/t</b><i>ich cena dnes</i>`:`<b>${n0(g.p_last)} €/t</b><i>posledná cena</i>`}</span></div>
+     <small>${g.b!=null&&g.px!=null?`${E(bz)}${g.kontrakt?" "+E(g.kontrakt):""} dnes ${n0(g.px)} ${g.b>=0?"+":"−"} báza ${n0(Math.abs(g.b))} = <b>${n0(g.dnes)} €/t</b>`:`báza voči burze sa nedá spočítať (chýba burza z dňa ponuky) – posledná ponuka ${n0(g.p_last)} €/t`}
+      · ${g.n} ${g.n===1?"ponuka":g.n<5?"ponuky":"ponúk"}, posledná ${dk(g.d)}${g.b_prev!=null&&g.b!=null&&Math.abs(g.b-g.b_prev)>=1?` · báza ${g.b-g.b_prev>0?"stúpla":"klesla"} o ${n0(Math.abs(g.b-g.b_prev))}`:""}${old?` · <em class="obst">stará ${g.age} dní – vyžiadaj novú ponuku</em>`:""}</small></div>`};
+  return `<details class="obmod" open><summary>📐 Model nákupnej ceny odberateľov – ich cena dnes</summary>
+   <div class="s">Z každej ponuky odberateľa sa spočíta báza voči burze (cena − burza v deň ponuky). Ich nákupná cena dnes = burza dnes + posledná báza. Bez ponúk na neskorší odber a nad 500 t.</div>
+   ${R.map(m=>`<div class="obmb"><div class="obmn"><b>${E(m.name)}</b><small>${m.fb?"📈 ráta z burzy":m.par==="FCA"?"🚜 FCA u farmára":"📋 pevný cenník – báza len na porovnanie"}</small></div>
+     ${(m.g||[]).map(ln).join("")}${(m.chyba||[]).length?`<small class="obmc">Bez ponuky (vykupujú): ${(m.chyba||[]).map(c=>E(nm(c))).join(", ")} – vlož ich ponuku, model sa spočíta sám.</small>`:""}</div>`).join("")}</details>`}
+
 function html(){if(!D.v)return `<div class="card obcard" id="odbCard" data-nosec><h2>🏷️ Ceny odberateľov</h2><div class="s">${D.err?E(D.err):"Načítavam…"}</div></div>`;
   const v=D.v,I=v.items||[],N=v.navrhy||[],B=v.buyers||[],X=v.inbox||[],p=v.ping,live=p&&p.seen&&Date.now()-Date.parse(p.seen)<75*60e3;
   const G={};I.forEach(x=>{(G[x.com]=G[x.com]||[]).push(x)});
@@ -39,6 +51,7 @@ function html(){if(!D.v)return `<div class="card obcard" id="odbCard" data-nosec
    <div class="s">Všetky ceny odberateľov na jednom mieste. <b>Net-back</b> = cena odberateľa (posunutá s burzou, ak podľa nej ráta) − naša doprava z regiónu farmárov. Zelená = aspoň o 8 €/t nad priemerným nákupom nepredaných ton (pri otvorených nad 100 t príde 💰 „Predaj teraz“).</div>
    <div class="obk"><span><b>${I.length}</b><small>cien (45 dní)</small></span><span class="${N.length?"w":""}"><b>${N.length}</b><small>čaká na ✓</small></span><span class="${st?"w":""}"><b>${st}</b><small>neaktuálnych</small></span>
     <span class="${live?"":"w"}"><b>${live?"🟢":"🟠"}</b><small>${live?"Gmail číta":"Gmail skript"}</small></span></div>`;
+  h+=modelsHTML(v.models||[]);
   if(!live)h+=`<div class="obw">✉️ Ceny z e-mailov odberateľov sa začnú čítať, keď vložíš <b>nový skript do Gmailu</b> erntespol (ten istý ako pre zúčtovanie – pribudlo v ňom čítanie cien a odpovedí). <button type="button" data-obgs>📋 Otvoriť skript a postup</button></div>`;
   if(N.length)h+=`<div class="obnv"><b>🆕 Čaká na tvoje potvrdenie (${N.length})</b><small>Nový odberateľ alebo cena nezvyčajne ďaleko od ostatných – do výpočtov ide až po ✓.</small>
     ${N.map(n=>`<div class="obnr"><div><b>${E(n.buyer_name||n.buyer||"?")}</b>${n.buyer?"":` <em class="obfw">nový odberateľ</em>`}<br>${E(nm(n.com))} · ${E(n.del||"")} <b>${n0(n.price)} €/t</b>${n.site?" · "+E(n.site):""}${n.period?" · "+E(n.period):""} · ${dk(n.d)}${n.cur&&n.cur!=="EUR"?` <small>(z ${E(n.cur)})</small>`:""}<br><small>⚠️ ${E(n.why||"")}${n.note?" · "+E(n.note):""}</small></div>
@@ -89,6 +102,12 @@ document.addEventListener("submit",async e=>{const f=e.target;if(!f.dataset||!f.
 .obb{display:flex;flex-wrap:wrap;gap:4px}.obst,.obfw{font-style:normal;font-size:.72rem;font-weight:700;padding:2px 8px;border-radius:999px;background:rgba(251,191,36,.16);color:#fcd34d}.obfw{background:rgba(125,211,252,.16);color:#7dd3fc}
 .obn{opacity:.65!important}.ps{color:#86efac}.ng{color:#fca5a5}.obr .obg b.ps{color:#86efac}.obr .obg b.ng{color:#fca5a5}
 .obcfg{display:grid;gap:8px;margin:8px 0}.obf{display:grid;gap:6px;padding:10px;border-radius:14px;border:1px solid rgba(255,255,255,.1);background:rgba(255,255,255,.03)}.obf small{opacity:.75}
+.obmod{margin:8px 0;border-top:1px solid rgba(255,255,255,.08);padding-top:6px}.obmod>summary{cursor:pointer;font-weight:800;min-height:40px;display:flex;align-items:center}
+.obmb{display:grid;gap:4px;padding:8px 0;border-top:1px solid rgba(255,255,255,.06)}.obmn{display:flex;justify-content:space-between;align-items:baseline;gap:8px;flex-wrap:wrap}.obmn small{opacity:.7;font-size:.74rem}
+.obm{display:grid;gap:2px;padding:7px 10px;border-radius:12px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);min-width:0}.obm.old{opacity:.75}
+.obmh{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:2px 8px;align-items:center}.obmh small{opacity:.75;font-size:.76rem;overflow-wrap:anywhere}.obmh span{display:flex;flex-direction:column;align-items:flex-end;text-align:right}
+.obmh span b{font-size:1rem;color:#7dd3fc}.obmh span i{font-style:normal;font-size:.66rem;opacity:.65}.obm>small{line-height:1.4;overflow-wrap:anywhere;opacity:.85}.obmc{opacity:.7}
+html[data-theme=light] .obmh span b{color:#0369a1}
 .obx{margin-top:8px}.obx>summary{cursor:pointer;font-weight:700;min-height:36px;display:flex;align-items:center}.obxr{display:flex;justify-content:space-between;gap:8px;padding:7px 0;border-top:1px solid rgba(255,255,255,.08);font-size:.84rem;line-height:1.35}
 .obxr>span{min-width:0;overflow-wrap:anywhere}.obxs{text-align:right;flex:0 0 auto;max-width:45%;overflow-wrap:anywhere}
 html[data-theme=light] .ps,html[data-theme=light] .obr .obg b.ps{color:#15803d}html[data-theme=light] .ng,html[data-theme=light] .obr .obg b.ng{color:#b91c1c}html[data-theme=light] .obst{color:#92400e}html[data-theme=light] .obfw{color:#0369a1}
