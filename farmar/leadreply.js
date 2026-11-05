@@ -20,7 +20,7 @@ function draw(){let b=document.getElementById("lrBub");const H=help();
 const sj=x=>{const t=String(x.subject||"");return /^\s*(re|aw|sv|vá|fw|wg)\s*:/i.test(t)?t:"Re: "+t};
 function card(x){const s=ST[x.status]||["•",x.status],can=x.status==="pomoc"||x.status==="nova",wait=x.status==="pomoc"&&x.ask&&!x.draft;
   return `<div class="lrc lr-${e(x.status)}" data-lrid="${x.id}">
-   <div class="lrh"><b>${e(x.from_name||x.from_addr)}</b><span class="pill ${x.status==="pomoc"?"r":x.status==="nova"?"w":""}">${wait?"✍️ Claude píše návrh":s[0]+" "+s[1]}</span></div>
+   <div class="lrh"><b>${x.status==="odpovedane"?`<i class="lrok" title="Odpovedané">✔</i>`:""}${e(x.from_name||x.from_addr)}</b><span class="pill ${x.status==="pomoc"?"r":x.status==="nova"?"w":""}">${wait?"✍️ Claude píše návrh":s[0]+" "+s[1]}</span></div>
    <div class="s">${e(x.from_addr)} · ${hm(x.received)} · ${e(x.subject||"")}${x.known===false?" · <i>nový kontakt</i>":""}</div>
    ${x.fwd_by?`<div class="s">↪️ Preposlané z ${e(x.fwd_by)} – odpoveď patrí priamo na ${e(x.from_addr)}.</div>`:""}
    ${x.note?`<div class="lrnote">🤖 ${e(x.note)}</div>`:""}
@@ -74,7 +74,20 @@ function hash(){if(/^#(odpovede|posta)$/.test(location.hash)&&OK()){load(true);o
 window.addEventListener("hashchange",hash);
 document.addEventListener("visibilitychange",()=>{if(!document.hidden)load()});
 setInterval(()=>{if(!document.hidden)load()},180e3);
-const tk=setInterval(()=>{if(OK()){clearInterval(tk);load(true).then(hash)}},1500);setTimeout(()=>clearInterval(tk),120e3);
+// 5. 11. 07:35 PRÍKAZ MAJITEĽA: pri každom prihlásení / otvorení aplikácie upozorni na nové prijaté e-maily s tlačidlom Odpovedať; odpovedané = zelená fajka
+function loginPop(){if(!OK())return;let seen=null;try{seen=sessionStorage.getItem("ernte-posta-pop")}catch(x){}if(seen)return;
+  const N=R.items.filter(x=>x.status==="nova"||x.status==="pomoc"),T=R.items.filter(x=>x.status==="odpovedane"&&x.done_at&&Date.now()-Date.parse(x.done_at)<24*3600e3);
+  if(!N.length)return;try{sessionStorage.setItem("ernte-posta-pop","1")}catch(x){}
+  if((()=>{const w=document.querySelector(".wlc");return w&&w.offsetParent})()){setTimeout(()=>{try{sessionStorage.removeItem("ernte-posta-pop")}catch(x){}loginPop()},4000);return}
+  let o=document.getElementById("lrPop");if(o)o.remove();o=document.createElement("div");o.id="lrPop";o.className="lrov";
+  o.innerHTML=`<div class="lrs lrpop" role="dialog" aria-label="Nové e-maily"><div class="lrsh"><b>📥 Nové e-maily (${N.length})</b><button type="button" class="lrx" data-lrpx aria-label="Zavrieť">✕</button></div>
+   ${N.map(x=>`<div class="lrpi"><span><b>${e(x.from_name||x.from_addr)}</b><small>${hm(x.received)} · ${e(x.subject||"")}</small></span><button type="button" class="pri" data-lrreply="${x.id}">✉️ Odpovedať</button></div>`).join("")}
+   ${T.length?`<div class="lrsub">Dnes odpovedané</div>${T.map(x=>`<div class="lrpi"><span><b><i class="lrok">✔</i>${e(x.from_name||x.from_addr)}</b><small>${e(x.subject||"")}</small></span></div>`).join("")}`:""}
+   <div class="btns"><button type="button" data-lrhome>📥 Celá pošta</button></div></div>`;
+  o.addEventListener("click",ev=>{if(ev.target===o||ev.target.closest("[data-lrpx]"))o.remove()});document.body.appendChild(o)}
+document.addEventListener("click",ev=>{const t=ev.target.closest&&ev.target.closest("[data-lrreply],#lrPop [data-lrhome]");if(!t)return;const p=document.getElementById("lrPop");if(p)p.remove();
+  if(t.dataset.lrreply){openSheet();setTimeout(()=>{const c=document.querySelector(`#lrSheet [data-lrid="${t.dataset.lrreply}"]`);if(c){c.scrollIntoView({block:"start",behavior:"smooth"});const tx=c.querySelector("textarea");if(tx)tx.focus({preventScroll:true})}},80)}},true);
+const tk=setInterval(()=>{if(OK()){clearInterval(tk);load(true).then(()=>{hash();loginPop()})}},1500);setTimeout(()=>clearInterval(tk),120e3);
 window.leadReplies=()=>{load(true);openSheet()};
 const st=document.createElement("style");st.textContent=`
 #lrBub{position:fixed;z-index:9000;left:50%;transform:translateX(-50%);bottom:calc(env(safe-area-inset-bottom,0px) + 178px);display:flex;align-items:center;gap:10px;
@@ -95,7 +108,7 @@ const st=document.createElement("style");st.textContent=`
 .lrnote{margin:8px 0;padding:8px 10px;border-radius:10px;background:rgba(255,193,99,.14);font-size:14px}
 .lrb{white-space:pre-wrap;word-break:break-word;font:inherit;font-size:13.5px;margin:6px 0;max-height:300px;overflow:auto}
 .lrl{display:block;margin-top:8px;font-size:13px}.lrl textarea{width:100%;box-sizing:border-box;margin-top:4px;font:inherit;font-size:14px}
-.lrsub{margin:16px 0 4px;font-size:15px;cursor:pointer}.lrto{display:flex;align-items:center;justify-content:space-between;gap:8px;margin:6px 0;font-size:13px;min-width:0}.lrto span{min-width:0;overflow-wrap:anywhere}.lrmini{width:36px;height:36px;padding:0;border-radius:50%;flex:0 0 auto}.lrask{margin-top:8px}.lrask summary{cursor:pointer;font-weight:700}
+.lrsub{margin:16px 0 4px;font-size:15px;cursor:pointer}.lrok{display:inline-grid;place-items:center;width:24px;height:24px;margin-right:6px;border-radius:50%;background:#39ff14;color:#04210a;font-style:normal;font-weight:900;font-size:15px;box-shadow:0 0 10px #39ff14,0 0 22px rgba(57,255,20,.7);vertical-align:-5px}.lrpop{border-radius:22px}.lrpi{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 0;border-top:1px solid rgba(255,255,255,.1)}.lrpi span{display:grid;min-width:0}.lrpi small{opacity:.75;overflow-wrap:anywhere}.lrpi button{flex:0 0 auto}#lrPop{align-items:center;padding:16px}.lrto{display:flex;align-items:center;justify-content:space-between;gap:8px;margin:6px 0;font-size:13px;min-width:0}.lrto span{min-width:0;overflow-wrap:anywhere}.lrmini{width:36px;height:36px;padding:0;border-radius:50%;flex:0 0 auto}.lrask{margin-top:8px}.lrask summary{cursor:pointer;font-weight:700}
 #lrHome{margin:10px 0}.lrhome{width:100%;display:flex;align-items:center;justify-content:center;gap:10px;padding:12px;border-radius:16px;flex-wrap:wrap}.lrhome span{font-size:22px}.lrhome small{opacity:.8}.lrhome.on{border-color:rgba(255,193,99,.8)!important;background:rgba(255,193,99,.14)!important}.lrw{color:#ffc163}
 `;document.head.appendChild(st);
 })();
