@@ -5,7 +5,7 @@
 const OWN=()=>typeof ROLE!=="undefined"&&ROLE==="owner"&&!(typeof FARMER!=="undefined"&&FARMER);
 const CFG={
   price:{def:"cen",S:[["bzc",":scope > .card.bzc","📈 Burza"],["trh",":scope > .card.trhcard","🔮 Trh a predpoveď"],["kkg",":scope > .card.kkg","🛡️ Kontrola cien"],["acn",":scope > .card.acn-card","🤖 Automatický cenník"],
-    ["cen",":scope > form.card.f:not(.chcard)","💶 Výkupné ceny"],["his",":scope > div.card.chcard","📜 História cien"],["upz",":scope > form.card.chcard","🔔 Upozornenie na zmenu"],["kk",":scope > .card.kkcard","🏷️ Konkurenčné ceny"]]},
+    ["cen",":scope > form.card.f:not(.chcard), :scope > .card.nuc","💶 Výkupné ceny",1],["his",":scope > div.card.chcard","📜 História cien"],["upz",":scope > form.card.chcard","🔔 Upozornenie na zmenu"],["kk",":scope > .card.kkcard","🏷️ Konkurenčné ceny"]]},
   deals:{def:"",S:[["dw",":scope > .card.dwcard","📊 Stráženie nákupov"],["new",":scope > form.card.f","➕ Nový obchod"],["lis",":scope > details.card.hsec","⚖️ Vážne lístky"]]},
   farm:{def:"",S:[["reg",":scope > .card.fsall","🔎 Údaje z registra"],["ppa",":scope > .card.ppa","🌾 Pôda z PPA"],["fpc",":scope > details.card.fpc","👁️ Čo vidia farmári"]]}
 };
@@ -37,9 +37,9 @@ function apply(){const app=document.getElementById("app");if(!app)return;
   const t=typeof TAB!=="undefined"?TAB:"";let C=CFG[t];
   if(!C&&OWN()&&!window.ERNTE_VIEWAS){app.querySelectorAll(".sbh").forEach(e=>e.classList.remove("sbh"));const A=auto(app,t);if(A)C={def:"*",auto:A}}
   if(!OWN()||!C||window.ERNTE_VIEWAS){app.querySelectorAll(":scope > .secbar").forEach(b=>b.remove());app.querySelectorAll(".sbh").forEach(e=>e.classList.remove("sbh"));return}
-  let found=C.auto?C.auto:C.S.map(([k,sel,lab])=>[k,app.querySelector(sel),lab]).filter(x=>x[1]);
+  let found=C.auto?C.auto:C.S.map(([k,sel,lab,mm])=>{if(!mm)return [k,app.querySelector(sel),lab];const L=[...app.querySelectorAll(sel)];return [k,L.length>1?L:L[0],lab]}).filter(x=>x[1]);  /* mm: viac kariet v jednej sekcii (Výkupné ceny + 🌱 Nová úroda) */
   /* ďalšie karty záložky (Obchodné návrhy AI, Môj plán, Predaj…) tiež ako tlačidlá; pri predvolenom výbere ostávajú viditeľné */
-  if(!C.auto){const E=found.map(x=>x[1]),X=(items(app,0)||[]).filter(it=>!it.els.some(z=>E.some(c=>c===z||c.contains(z)||z.contains(c)))).map(it=>["x:"+it.x.replace(/[\d\s()]+/g,""),it.els,it.x,1]);found=found.concat(X)}
+  if(!C.auto){const E=found.flatMap(x=>Array.isArray(x[1])?x[1]:[x[1]]),X=(items(app,0)||[]).filter(it=>!it.els.some(z=>E.some(c=>c===z||c.contains(z)||z.contains(c)))).map(it=>["x:"+it.x.replace(/[\d\s()]+/g,""),it.els,it.x,1]);found=found.concat(X)}
   if(found.length<2){app.querySelectorAll(":scope > .secbar").forEach(b=>b.remove());return}
   LAST={t,found};let cur=getSel(t);if(C.auto&&cur!=="*"&&!found.some(x=>x[0]===cur))cur="*";else if(!C.auto&&cur&&cur!=="*"&&!found.some(x=>x[0]===cur))cur="";
   const act=document.activeElement;
