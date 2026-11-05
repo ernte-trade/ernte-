@@ -12,6 +12,16 @@ op.open(urllib.request.Request(P, headers=UA), timeout=40).read()
 K = {"matif_repka": 94, "matif_psenica": 98, "matif_kukurica": 90, "cbot_soja": 71, "cbot_kukurica": 65, "cbot_psenica": 72}
 end = datetime.date.today(); start = end - datetime.timedelta(days=100)
 S, LOG = {}, []
+# 🌱 krivka kontraktov (5. 11.): všetky mesiace z exportu AHDB (stĺpce za „Nearby“) – posledných 10 dní, € / t → nová úroda (aug/sep/nov ďalšieho roka)
+CURV, HDR = {}, {}
+MON = {"jan": 1, "feb": 2, "mar": 3, "apr": 4, "may": 5, "jun": 6, "jul": 7, "aug": 8, "sep": 9, "oct": 10, "nov": 11, "dec": 12}
+import re
+def ym(h):
+    if isinstance(h, (datetime.datetime, datetime.date)): return f"{h.year}-{h.month:02d}"
+    m = re.search(r"([A-Za-z]{3})[A-Za-z]*[\s\-'/]*(\d{2,4})\b", str(h or ""))
+    if not m or m.group(1).lower() not in MON: return None
+    y = int(m.group(2)); y = y + 2000 if y < 100 else y
+    return f"{y}-{MON[m.group(1).lower()]:02d}"
 for k, ck in K.items():
     S[k] = {}
     try:
@@ -28,7 +38,13 @@ for k, ck in K.items():
             if v in (None, ""):
                 v = next((x for x in row[hdr.index("Nearby") + 1:] if isinstance(x, (int, float))), None)
             if isinstance(v, (int, float)) and v > 0: S[k][d.strftime("%Y-%m-%d")] = round(float(v), 2)
-        LOG.append(f"{k}: {len(S[k])} dní")
+            c = {}
+            for j in range(hdr.index("Nearby") + 1, min(len(hdr), len(row))):
+                t = ym(hdr[j]); x = row[j]
+                if t and isinstance(x, (int, float)) and x > 0: c[t] = round(float(x), 2)
+            if c: CURV.setdefault(k, {})[d.strftime("%Y-%m-%d")] = c
+        HDR[k] = [str(h) for h in (hdr or [])][:40]
+        LOG.append(f"{k}: {len(S[k])} dní, krivka {len(CURV.get(k, {}))} dní")
     except Exception as e:
         LOG.append(f"{k}: chyba {str(e)[:160]}")
 # bot má prednosť pre dni, ktoré má
@@ -41,7 +57,8 @@ except Exception as e:
 days = sorted({d for v in S.values() for d in v})
 rows = [dict({"d": d}, **{k: S[k][d] for k in K if d in S[k]}) for d in days]
 out = {"at": datetime.datetime.utcnow().isoformat() + "Z", "d": rows, "n": {k: len(v) for k, v in S.items()}, "log": LOG,
-       "src": "AHDB Futures prices (ECB, ICE, CME, Euronext, Barchart) – najbližší kontrakt, € / t; posledné dni bot Trhové ceny"}
+       "src": "AHDB Futures prices (ECB, ICE, CME, Euronext, Barchart) – najbližší kontrakt, € / t; posledné dni bot Trhové ceny",
+       "krivka": {k: [{"d": d, "c": v[d]} for d in sorted(v)[-10:]] for k, v in CURV.items()}, "hdr": HDR}
 if sum(out["n"].values()) < 30: sys.exit("málo údajov: " + json.dumps(LOG, ensure_ascii=False))
 json.dump(out, open("hist.json", "w"), ensure_ascii=False)
 print(json.dumps({"n": out["n"], "log": LOG, "last": rows[-2:]}, ensure_ascii=False))
