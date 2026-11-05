@@ -31,23 +31,23 @@ function why(c){const g=D.g&&D.g.items&&D.g.items[c];if(!g)return "";const b=g.b
   return `<details class="nuw"><summary>Prečo táto cena</summary>${fut}${bb}${cl}${pd}${ot}</details>`}
 
 function html(){const v=D.v,L=(v&&v.items)||[],a=ADJ(),M=MAIN();
-  if(!L.length){if(!M)return "";const g=D.g||{};return `<div class="card nuc" id="nuCard"><h2>🌱 Nová úroda – nákupné ceny</h2><div class="s">${D.err?"⚠️ "+E(D.err):g.at?"Zatiaľ bez ceny – chýba krivka burzy novej úrody alebo čerstvá ponuka odberateľa. Prepočet každých 15 min.":"Načítavam…"}</div></div>`}
+  if(!L.length){if(!M)return "";const g=D.g||{};return `<div class="card nuc" id="nuCard"><h2>🌱 Výkup – nová úroda</h2><div class="s">${D.err?"⚠️ "+E(D.err):g.at?"Zatiaľ bez ceny – chýba krivka burzy novej úrody alebo čerstvá ponuka odberateľa. Prepočet každých 15 min.":"Načítavam…"}</div></div>`}
   const y=L.reduce((m,x)=>Math.max(m,+x.y||0),0)||"";
   const rows=L.map(x=>{const p=+x.price+a,g=M&&D.g&&D.g.items&&D.g.items[x.com];
     return `<div class="nur${g&&g.pend?" nup":""}"><div class="nut"><b>${E(nm(x.com))}</b><small>dodanie ${E(x.dod||"")}</small></div><b class="num nuv">${N(p)} €/t</b>${M?why(x.com):""}</div>`}).join("");
   const cfg=M&&D.g?`<details class="nuw nucf"><summary>⚙️ Marža a poistka</summary><div class="nucg"><label>Marža €/t<input data-nucm inputmode="decimal" value="${E(String((D.g.cfg&&D.g.cfg.m)??D.g.m??10).replace(".",","))}"></label><label>Poistka €/t<input data-nucb inputmode="decimal" value="${E(String((D.g.cfg&&D.g.cfg.buf)??D.g.buf??5).replace(".",","))}"></label><button type="button" data-nucfg>💾 Uložiť a prepočítať</button></div><small>Poistka chráni pred slabšou bázou pri žatve. Marža predvolene ako „nákup viazaný na predaj“ (${N(D.g.m)} €/t).</small></details>`:"";
-  return `<div class="card nuc" id="nuCard"><h2>🌱 Nová úroda ${E(y)} – nákupné ceny</h2>
+  return `<div class="card nuc" id="nuCard"><h2>🌱 Výkup ${E(y)} – nová úroda</h2>
     <div class="s nus">FCA farma, bez DPH · ${a?`upravené pre teba ${a<0?"−":"+"}${N1(Math.abs(a))} €/t · `:""}aktualizované ${E(tk(v.at))}</div>
     <div class="nug">${rows}</div>
     <div class="s">${M?"Pokles ide hneď, zvýšenie nad 5 €/t zverejníš ty. Tím vidí iba naše ceny – bez odberateľov a výpočtu.":"Cena sa mení s burzou na novú úrodu – platí dnes, pred uzatvorením obchodu ju over."}</div>${cfg}</div>`}
 
-function paint(){if(!OKV()||typeof TAB==="undefined"||TAB!=="price")return;const app=document.getElementById("app");if(!app)return;
-  const h=html(),old=document.getElementById("nuCard");if(!h){if(old)old.remove();return}
+function paint(){if(!OKV()||typeof TAB==="undefined"||(TAB!=="price"&&TAB!=="nu"))return;const app=document.getElementById("app");if(!app)return;
+  const h=TAB==="nu"?(html()||empty()):html(),old=document.getElementById("nuCard");if(!h){if(old)old.remove();return}
   const d=document.createElement("div");d.innerHTML=h;const n=d.firstElementChild;
   if(old){if(old.dataset.h===n.innerHTML)return;n.dataset.h=n.innerHTML;const dt=[...old.querySelectorAll("details")].map(x=>x.open);n.querySelectorAll("details").forEach((x,i)=>{if(dt[i])x.open=true});old.replaceWith(n);return}
   n.dataset.h=n.innerHTML;const t=app.querySelector(".ds-ptiles"),f=t&&t.closest("form.card,div.card,form");
   if(f&&f.parentElement)f.after(n);else{const a=app.querySelector("#odbCard")||app.querySelector("#trhCard");if(a)a.before(n);else app.appendChild(n)}}
-function inject(){if(!OKV()||typeof TAB==="undefined"||TAB!=="price")return;if(!D.at||Date.now()-D.at>300e3)load(false);if(!document.getElementById("nuCard"))paint()}
+function inject(){if(!OKV()||typeof TAB==="undefined"||(TAB!=="price"&&TAB!=="nu"))return;if(!D.at||Date.now()-D.at>300e3)load(false);if(!document.getElementById("nuCard"))paint()}
 
 document.addEventListener("click",async e=>{const b=e.target.closest&&e.target.closest("[data-nuok],[data-nucfg]");if(!b||!MAIN())return;e.preventDefault();
   if(typeof busy==="function")busy(b,true);let r;
@@ -75,7 +75,11 @@ html[data-theme=light] .nuv{color:#15803d}html[data-theme=light] .nup .nuv{color
 
 let q=0;const sch=()=>{if(q)return;q=(window.ernteSoon||requestAnimationFrame)(()=>{q=0;try{inject()}catch(x){}})};
 function boot(){const app=document.getElementById("app");if(!app){setTimeout(boot,500);return}new MutationObserver(sch).observe(app,{childList:true});sch();
-  setInterval(()=>{if(!document.hidden&&OKV()&&typeof TAB!=="undefined"&&TAB==="price")load(true)},600e3)}
+  setInterval(()=>{if(!document.hidden&&OKV()&&typeof TAB!=="undefined"&&(TAB==="price"||TAB==="nu"))load(true)},600e3)}
 if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",boot);else boot();
 window.nuReload=()=>load(true);
+// 🌱 samostatná sekcia „Výkup 2027“ v lište (5. 11. 22:27 príkaz majiteľa „daj obchodníkom novú sekciu, aby to mali viditeľné“) – vidí, kto má Cenník
+function empty(){return `<div class="card nuc" id="nuCard"><h2>🌱 Výkup – nová úroda</h2><div class="s">${D.err?"⚠️ "+E(D.err):D.at?"Ceny na novú úrodu sa práve prepočítavajú – skús o chvíľu.":"Načítavam…"}</div></div>`}
+window.vNu=function(){if(!D.at||Date.now()-D.at>300e3)load(false);return html()||empty()};
+window.nuTabLabel=()=>{const L=(D.v&&D.v.items)||[];const y=L.reduce((m,x)=>Math.max(m,+x.y||0),0)||(()=>{const d=new Date();return d.getFullYear()+(d.getMonth()>=6?1:0)})();return "Výkup "+y};
 })();
