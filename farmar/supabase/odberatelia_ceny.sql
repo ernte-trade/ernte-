@@ -408,18 +408,27 @@ create or replace function public.odb_burza_at(p_sym text, p_d date) returns num
     and indikator='close' and platne<=p_d and platne>=p_d-5 order by platne desc limit 1 $$;
 revoke all on function public.odb_burza_at(text,date) from public, anon, authenticated;
 
+-- hodnota kontraktu RRRR-MM (napr. dnešného kontraktu market_px) v deň ponuky (± dni) – báza sa počíta voči tomu istému kontraktu ako dnes
+create or replace function public.odb_kontrakt_at(p_sym text, p_ym text, p_d date) returns numeric language sql stable security definer set search_path=public as $$
+  select hodnota from trh_data where zdroj=case when p_sym='soja_usc_bu' then 'cbot' else 'matif' end and komodita=case when p_sym='soja_usc_bu' then 'soja' else p_sym end
+    and indikator='kontrakt '||p_ym and platne between p_d-5 and p_d+1 order by abs(platne-p_d), platne desc limit 1 $$;
+revoke all on function public.odb_kontrakt_at(text,text,date) from public, anon, authenticated;
+
 create or replace function public.odb_models() returns jsonb language plpgsql stable security definer set search_path=public as $$
 declare k jsonb; res jsonb;
 begin
   select data->'items' into k from kalk_store where path='pricelist' and id='konk';
   with b as (select * from sell_buyers where active),
+  mp as (select sym, to_char(mk_term(contract),'YYYY-MM') ym from market_px where eur_t>0 and mk_term(contract) is not null),
   so as (select o.buyer bid, o.com, upper(o.del) del, coalesce(nullif(o.site,''),'') site, coalesce(o.period,'') per, o.d, o.price,
-           case when o.bz_val is not null then o.price-o.bz_val else o.price-odb_burza_at(odb_bz(o.com),o.d) end bas, coalesce(o.src,'rucne') src
+           coalesce(o.price-odb_kontrakt_at(odb_bz(o.com),(select ym from mp where mp.sym=odb_bz(o.com)),o.d),
+             case when o.bz_val is not null then o.price-o.bz_val else o.price-odb_burza_at(odb_bz(o.com),o.d) end) bas, coalesce(o.src,'rucne') src
          from sell_offers o join b on b.id=o.buyer where o.d>=current_date-180 and o.price>0),
   ko as (select b.id bid, i->>'com' com, upper(coalesce(nullif(i->>'del',''),'DAP')) del,
            coalesce(nullif(i->>'place',''),case when coalesce(i->>'who','') ~* 'hamburg|z[aá]pad' then 'Hamburg (západ)' else '' end) site,
            coalesce(i->>'term','') per, (i->>'d')::date d, (i->>'price')::numeric price,
-           coalesce(case when (i->>'b') ~ '^-?[0-9.]+$' then (i->>'b')::numeric end,
+           coalesce((i->>'price')::numeric-odb_kontrakt_at(odb_bz(i->>'com'),(select ym from mp where mp.sym=odb_bz(i->>'com')),(i->>'d')::date),
+             case when (i->>'b') ~ '^-?[0-9.]+$' then (i->>'b')::numeric end,
              case when (i->>'bz') ~ '^[0-9.]+$' and (i->>'bz')::numeric>0 then (i->>'price')::numeric-(i->>'bz')::numeric end,
              (i->>'price')::numeric-odb_burza_at(odb_bz(i->>'com'),(i->>'d')::date)) bas,
            'konk' src

@@ -38,7 +38,7 @@ function modelsHTML(M){const R=M.filter(m=>(m.g||[]).length||(m.chyba||[]).lengt
      <small>${g.b!=null&&g.px!=null?`${E(bz)}${g.kontrakt?" "+E(g.kontrakt):""} dnes ${n0(g.px)} ${g.b>=0?"+":"−"} báza ${n0(Math.abs(g.b))} = <b>${n0(g.dnes)} €/t</b>`:`báza voči burze sa nedá spočítať (chýba burza z dňa ponuky) – posledná ponuka ${n0(g.p_last)} €/t`}
       · ${g.n} ${g.n===1?"ponuka":g.n<5?"ponuky":"ponúk"}, posledná ${dk(g.d)}${g.b_prev!=null&&g.b!=null&&Math.abs(g.b-g.b_prev)>=1?` · báza ${g.b-g.b_prev>0?"stúpla":"klesla"} o ${n0(Math.abs(g.b-g.b_prev))}`:""}${old?` · <em class="obst">stará ${g.age} dní – vyžiadaj novú ponuku</em>`:""}</small></div>`};
   return `<details class="obmod" open><summary>📐 Model nákupnej ceny odberateľov – ich cena dnes</summary>
-   <div class="s">Z každej ponuky odberateľa sa spočíta báza voči burze (cena − burza v deň ponuky). Ich nákupná cena dnes = burza dnes + posledná báza. Bez ponúk na neskorší odber a nad 500 t.</div>
+   <div class="s">Z každej ponuky odberateľa sa spočíta báza voči burze – voči tomu istému kontraktu, z ktorého rátame dnes (cena − kontrakt v deň ponuky). Ich nákupná cena dnes = burza dnes + posledná báza; prepočíta sa sama pri každej zmene burzy. Bez ponúk na neskorší odber a nad 500 t.</div>
    ${R.map(m=>`<div class="obmb"><div class="obmn"><b>${E(m.name)}</b><small>${m.fb?"📈 ráta z burzy":m.par==="FCA"?"🚜 FCA u farmára":"📋 pevný cenník – báza len na porovnanie"}</small></div>
      ${(m.g||[]).map(ln).join("")}${(m.chyba||[]).length?`<small class="obmc">Bez ponuky (vykupujú): ${(m.chyba||[]).map(c=>E(nm(c))).join(", ")} – vlož ich ponuku, model sa spočíta sám.</small>`:""}</div>`).join("")}</details>`}
 
