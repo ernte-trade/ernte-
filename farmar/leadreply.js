@@ -1,4 +1,4 @@
-// ===== ERNTE · ODPOVEDE KLIENTOM (3. 11. 21:36 PRÍKAZ MAJITEĽA) – iba Martin a Jana =====
+// ===== ERNTE · 📥 POŠTA (5. 11. 06:51 PRÍKAZ MAJITEĽA: odosielanie vypnuté, iba príjem; odpoveď na kopírovanie, Martin odošle sám; 🤖 Napíš so mnou) – iba Martin a Jana =====
 // Odpovede od firiem, ktoré sme oslovili (erntespol@gmail.com → Gmail skript → lead_replies). Claude im odpíše sám;
 // keď nevie presne čo, nastaví „pomoc“ → červená výstražná bublina „🆘 Pomoc pri odpísaní klientovi“. Tu sa odpoveď upraví a odošle vo vlákne klienta.
 (function(){
@@ -6,10 +6,10 @@ const e=x=>String(x??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt
 const OK=()=>typeof ROLE!=="undefined"&&ROLE==="owner"&&!(typeof FARMER!=="undefined"&&FARMER)&&!window.ERNTE_VIEWAS&&!window.ERNTE_TEST&&typeof sb!=="undefined"&&sb;
 const R={items:[],at:0,busy:false,open:false};
 const hm=t=>{try{return new Date(t).toLocaleString("sk-SK",{day:"numeric",month:"numeric",hour:"2-digit",minute:"2-digit"})}catch(x){return ""}};
-const ST={nova:["⏳","Claude pripravuje odpoveď"],pomoc:["🆘","Treba tvoju pomoc"],odpovedane:["✅","Odpovedané"],ignor:["↷","Bez odpovede"]};
+const ST={hromadna:["📰","Hromadná pošta"],nova:["📩","Nová"],pomoc:["🆘","Treba tvoju pomoc"],odpovedane:["✅","Odpovedané"],ignor:["↷","Bez odpovede"]};
 async function load(force){if(!OK()||R.busy)return;if(!force&&Date.now()-R.at<170e3)return;R.busy=true;
-  try{const {data,error}=await sb.rpc("lead_reply_list");if(!error&&data&&!data.err){R.items=data.items||[];R.script=data.script;R.seen=data.reply_seen}R.at=Date.now()}catch(x){}
-  R.busy=false;draw()}
+  try{const {data,error}=await sb.rpc("lead_reply_list");if(!error&&data&&!data.err){R.items=data.items||[];R.off=!!data.off;R.script=data.script;R.seen=data.reply_seen}R.at=Date.now()}catch(x){}
+  R.busy=false;draw();homeTile()}
 function help(){return R.items.filter(x=>x.status==="pomoc")}
 function draw(){let b=document.getElementById("lrBub");const H=help();
   if(!OK()||!H.length){if(b)b.remove();return}
@@ -17,39 +17,60 @@ function draw(){let b=document.getElementById("lrBub");const H=help();
   const t=`<span class="lri" aria-hidden="true">🆘</span><span class="lrt"><b>Pomoc pri odpísaní klientovi</b><small>${H.length===1?e(H[0].from_name||H[0].from_addr):H.length+" klienti čakajú na odpoveď"}</small></span><span class="lrn">${H.length}</span>`;
   if(b.innerHTML!==t)b.innerHTML=t;
   if(R.open)openSheet(true)}
-function card(x){const s=ST[x.status]||["•",x.status],can=x.status==="pomoc"||x.status==="nova";
+const sj=x=>{const t=String(x.subject||"");return /^\s*(re|aw|sv|vá|fw|wg)\s*:/i.test(t)?t:"Re: "+t};
+function card(x){const s=ST[x.status]||["•",x.status],can=x.status==="pomoc"||x.status==="nova",wait=x.status==="pomoc"&&x.ask&&!x.draft;
   return `<div class="lrc lr-${e(x.status)}" data-lrid="${x.id}">
-   <div class="lrh"><b>${e(x.from_name||x.from_addr)}</b><span class="pill ${x.status==="pomoc"?"r":x.status==="nova"?"w":""}">${s[0]} ${s[1]}</span></div>
-   <div class="s">${e(x.from_addr)} · ${hm(x.received)} · ${e(x.subject||"")}</div>
-   ${x.fwd_by?`<div class="s">↪️ Preposlané z ${e(x.fwd_by)} – odpoveď pôjde priamo na ${e(x.from_addr)} (nie späť na ${e(x.fwd_by)}).</div>`:""}
+   <div class="lrh"><b>${e(x.from_name||x.from_addr)}</b><span class="pill ${x.status==="pomoc"?"r":x.status==="nova"?"w":""}">${wait?"✍️ Claude píše návrh":s[0]+" "+s[1]}</span></div>
+   <div class="s">${e(x.from_addr)} · ${hm(x.received)} · ${e(x.subject||"")}${x.known===false?" · <i>nový kontakt</i>":""}</div>
+   ${x.fwd_by?`<div class="s">↪️ Preposlané z ${e(x.fwd_by)} – odpoveď patrí priamo na ${e(x.from_addr)}.</div>`:""}
    ${x.note?`<div class="lrnote">🤖 ${e(x.note)}</div>`:""}
-   <details${x.status==="pomoc"?" open":""}><summary>📩 Čo napísal klient</summary><pre class="lrb">${e(String(x.body||"").split(/\n-{3,}\s*(Original|Ursprüngliche|Pôvodná|Eredeti)/i)[0].slice(0,4000))}</pre></details>
-   ${can?`<label class="lrl">Odpoveď (odíde z erntespol@gmail.com ${x.fwd_by?"priamo na "+e(x.from_addr):"priamo do jeho vlákna"})<textarea rows="8" data-lrtx="${x.id}">${e(x.draft||"")}</textarea></label>
-    <div class="btns"><button type="button" class="pri" data-lrsend="${x.id}">📤 Odoslať odpoveď</button><button type="button" data-lrign="${x.id}">↷ Netreba odpovedať</button></div>`
-    :x.draft?`<details><summary>📤 Naša odpoveď${x.job_st?` · ${x.job_st==="odoslany"?"odoslaná":e(x.job_st)}`:""}</summary><pre class="lrb">${e(x.draft)}</pre></details>`:""}
+   <details${can?" open":""}><summary>📩 Čo napísal</summary><pre class="lrb">${e(String(x.body||"").split(/\n-{3,}\s*(Original|Ursprüngliche|Pôvodná|Eredeti)/i)[0].slice(0,4000))}</pre></details>
+   ${can?`<div class="lrto"><span>Komu: <b>${e(x.from_addr)}</b></span><button type="button" class="lrmini" data-lrcp="to:${x.id}">📋</button></div>
+    <div class="lrto"><span>Predmet: <b>${e(sj(x))}</b></span><button type="button" class="lrmini" data-lrcp="sj:${x.id}">📋</button></div>
+    <label class="lrl">Odpoveď – uprav, skopíruj a pošli zo svojej schránky<textarea rows="9" data-lrtx="${x.id}" placeholder="${wait?"Claude pripravuje návrh – do hodiny je tu…":"Napíš odpoveď alebo nechaj Claude napísať návrh (nižšie)"}">${e(x.draft||"")}</textarea></label>
+    <div class="btns"><button type="button" class="pri" data-lrcp="tx:${x.id}">📋 Kopírovať odpoveď</button><button type="button" data-lrdone="${x.id}">✔️ Odoslal som</button><button type="button" data-lrign="${x.id}">↷ Netreba</button></div>
+    <details class="lrask"${x.draft?"":" open"}><summary>🤖 Napíš so mnou</summary><label class="lrl">Čo chceš odpísať (pár slov, jazyk sa prispôsobí klientovi)<textarea rows="3" data-lrask="${x.id}" placeholder="napr. poďakuj, cenu pošleme do piatku, spýtaj sa na množstvo">${e(x.ask||"")}</textarea></label>
+     <div class="btns"><button type="button" class="lime" data-lrgo="${x.id}">🤖 Pripraviť návrh</button></div></details>`
+    :x.draft?`<details><summary>📤 Naša odpoveď</summary><pre class="lrb">${e(x.draft)}</pre></details>`:""}
   </div>`}
 function openSheet(re){R.open=true;let o=document.getElementById("lrSheet");
   if(!o){o=document.createElement("div");o.id="lrSheet";o.className="lrov";o.addEventListener("click",ev=>{if(ev.target===o)close()});document.body.appendChild(o)}
   const keep={};o.querySelectorAll("[data-lrtx]").forEach(t=>keep[t.dataset.lrtx]=t.value);
   const I=R.items,A=I.filter(x=>x.status==="pomoc"),B=I.filter(x=>x.status==="nova"),C=I.filter(x=>x.status!=="pomoc"&&x.status!=="nova");
   const live=R.seen&&Date.now()-Date.parse(R.seen)<75*60e3;
-  o.innerHTML=`<div class="lrs" role="dialog" aria-label="Odpovede klientom"><div class="lrsh"><b>📨 Odpovede klientom</b><button type="button" class="lrx" data-lrclose aria-label="Zavrieť">✕</button></div>
-   <div class="s">Sledujem erntespol@gmail.com – kto z oslovených firiem odpíše, Claude mu odpovie priamo v jeho vlákne. Keď si nie je istý, je to tu so 🆘.
-    ${live?`🟢 Schránka naposledy skontrolovaná ${hm(R.seen)}.`:`<b class="lrw">⚠️ Gmail skript ešte nečíta doručenú poštu – vlož nový skript: Zúčtovanie → 📥 → ⚙️ Nastavenie Gmailu → 📋 Skript pre erntespol (hore funkcia setup → ▶).</b>`}</div>
-   ${A.length?A.map(card).join(""):`<div class="s">🆘 Teraz netreba nič – všetkým je odpísané.</div>`}
-   ${B.length?`<h3 class="lrsub">⏳ Claude pripravuje</h3>${B.map(card).join("")}`:""}
-   ${C.length?`<h3 class="lrsub">Posledných 7 dní</h3>${C.map(card).join("")}`:""}</div>`;
+  const H=I.filter(x=>x.status==="hromadna");const C2=C.filter(x=>x.status!=="hromadna");
+  o.innerHTML=`<div class="lrs" role="dialog" aria-label="Pošta"><div class="lrsh"><b>📥 Pošta</b><button type="button" class="lrx" data-lrclose aria-label="Zavrieť">✕</button></div>
+   <div class="s">Prijaté e-maily z erntespol@gmail.com. ${R.off?"<b>📵 Odosielanie z aplikácie je vypnuté</b> – odpoveď skopíruj (📋) a pošli zo svojej schránky, potom ťukni ✔️ Odoslal som.":""}
+    ${live?`🟢 Schránka naposledy skontrolovaná ${hm(R.seen)}.`:`<b class="lrw">⚠️ Gmail skript teraz nečíta doručenú poštu.</b>`}</div>
+   ${A.length?`<h3 class="lrsub">🆘 Treba odpísať (${A.length})</h3>${A.map(card).join("")}`:""}
+   ${B.length?`<h3 class="lrsub">📩 Nové (${B.length})</h3>${B.map(card).join("")}`:""}
+   ${!A.length&&!B.length?`<div class="s">✅ Všetko vybavené.</div>`:""}
+   ${C2.length?`<details><summary class="lrsub">Vybavené – posledných 60 dní (${C2.length})</summary>${C2.map(card).join("")}</details>`:""}
+   ${H.length?`<details><summary class="lrsub">📰 Hromadná pošta (${H.length})</summary>${H.map(card).join("")}</details>`:""}</div>`;
   o.querySelectorAll("[data-lrtx]").forEach(t=>{if(keep[t.dataset.lrtx]!=null)t.value=keep[t.dataset.lrtx]})}
 function close(){R.open=false;const o=document.getElementById("lrSheet");if(o)o.remove();if(location.hash==="#odpovede")try{history.replaceState(null,"",location.pathname+location.search)}catch(x){}}
-document.addEventListener("click",async ev=>{const t=ev.target.closest("[data-lrclose],[data-lrsend],[data-lrign]");if(!t)return;
+async function copy(t){try{await navigator.clipboard.writeText(t);return true}catch(x){const a=document.createElement("textarea");a.value=t;a.style.cssText="position:fixed;opacity:0";document.body.appendChild(a);a.select();let ok=false;try{ok=document.execCommand("copy")}catch(y){}a.remove();return ok}}
+const rpc=async(id,body,act)=>{const {error}=await sb.rpc("lead_reply_answer",{p_id:id,p_body:body,p_act:act});if(error)throw error};
+document.addEventListener("change",ev=>{const t=ev.target.closest&&ev.target.closest("[data-lrtx]");if(!t||!OK())return;rpc(+t.dataset.lrtx,t.value,"draft").catch(()=>{})});
+document.addEventListener("click",async ev=>{const t=ev.target.closest("[data-lrclose],[data-lrcp],[data-lrdone],[data-lrign],[data-lrgo],[data-lrhome]");if(!t)return;
   if(t.dataset.lrclose!=null)return close();
-  const id=+(t.dataset.lrsend||t.dataset.lrign),send=!!t.dataset.lrsend,tx=document.querySelector(`[data-lrtx="${id}"]`),body=tx?tx.value.trim():"";
-  if(send&&body.length<5){window.toast&&toast("Napíš odpoveď.");return}
-  if(send&&!confirm("Odoslať odpoveď klientovi?"))return;
-  t.disabled=true;try{const {error}=await sb.rpc("lead_reply_answer",{p_id:id,p_body:body,p_act:send?"send":"ignor"});
-    if(error)throw error;window.toast&&toast(send?"📤 Odpoveď odíde do pár minút":"↷ Označené");await load(true)}
+  if(t.dataset.lrhome!=null){load(true);return openSheet()}
+  if(t.dataset.lrcp){const [k,id]=t.dataset.lrcp.split(":"),x=R.items.find(y=>y.id==id);if(!x)return;const tx=document.querySelector(`[data-lrtx="${id}"]`);
+    const v=k==="to"?x.from_addr:k==="sj"?sj(x):(tx?tx.value.trim():"");if(!v){window.toast&&toast("Odpoveď je prázdna – napíš ju alebo ťukni 🤖 Pripraviť návrh.");return}
+    const ok=await copy(v);window.toast&&toast(ok?"📋 Skopírované":"⚠️ Nepodarilo sa skopírovať – označ text a skopíruj ručne");if(k==="tx"&&tx)rpc(+id,v,"draft").catch(()=>{});return}
+  const id=+(t.dataset.lrdone||t.dataset.lrign||t.dataset.lrgo);t.disabled=true;
+  try{if(t.dataset.lrgo){const a=document.querySelector(`[data-lrask="${id}"]`),v=a?a.value.trim():"";if(v.length<3){t.disabled=false;window.toast&&toast("Napíš pár slov, čo chceš odpísať.");return}
+      await rpc(id,v,"ask");window.toast&&toast("🤖 Claude pripraví návrh – ozve sa push, keď bude hotový")}
+    else{const tx=document.querySelector(`[data-lrtx="${id}"]`);await rpc(id,tx?tx.value:"",t.dataset.lrdone?"done":"ignor");window.toast&&toast(t.dataset.lrdone?"✔️ Označené ako odoslané":"↷ Označené")}
+    await load(true)}
   catch(x){t.disabled=false;window.toast&&toast("⚠️ "+(x.message||x))}});
-function hash(){if(location.hash==="#odpovede"&&OK()){load(true);openSheet()}}
+// 📥 dlaždica Pošta na Prehľade (iba majitelia)
+function homeTile(){if(!OK()||typeof TAB==="undefined"||TAB!=="home")return;const app=document.getElementById("app");if(!app)return;
+  const n=R.items.filter(x=>x.status==="nova"||x.status==="pomoc").length,h=`<button type="button" class="lrhome${n?" on":""}" data-lrhome><span>📥</span><b>Pošta</b><small>${n?n+" na vybavenie":"všetko vybavené"}</small></button>`;
+  let el=document.getElementById("lrHome");if(el){if(el.dataset.k!==h){el.dataset.k=h;el.innerHTML=h}if(app.contains(el))return}
+  const at=app.querySelector(".hero")||app.querySelector("nav.tabs");if(!at)return;el=document.createElement("div");el.id="lrHome";el.dataset.k=h;el.innerHTML=h;at.insertAdjacentElement("afterend",el)}
+new MutationObserver(()=>(window.ernteSoon||requestAnimationFrame)(homeTile)).observe(document.documentElement,{childList:true,subtree:true});
+function hash(){if(/^#(odpovede|posta)$/.test(location.hash)&&OK()){load(true);openSheet()}}
 window.addEventListener("hashchange",hash);
 document.addEventListener("visibilitychange",()=>{if(!document.hidden)load()});
 setInterval(()=>{if(!document.hidden)load()},180e3);
@@ -74,6 +95,7 @@ const st=document.createElement("style");st.textContent=`
 .lrnote{margin:8px 0;padding:8px 10px;border-radius:10px;background:rgba(255,193,99,.14);font-size:14px}
 .lrb{white-space:pre-wrap;word-break:break-word;font:inherit;font-size:13.5px;margin:6px 0;max-height:300px;overflow:auto}
 .lrl{display:block;margin-top:8px;font-size:13px}.lrl textarea{width:100%;box-sizing:border-box;margin-top:4px;font:inherit;font-size:14px}
-.lrsub{margin:16px 0 4px;font-size:15px}.lrw{color:#ffc163}
+.lrsub{margin:16px 0 4px;font-size:15px;cursor:pointer}.lrto{display:flex;align-items:center;justify-content:space-between;gap:8px;margin:6px 0;font-size:13px;min-width:0}.lrto span{min-width:0;overflow-wrap:anywhere}.lrmini{width:36px;height:36px;padding:0;border-radius:50%;flex:0 0 auto}.lrask{margin-top:8px}.lrask summary{cursor:pointer;font-weight:700}
+#lrHome{margin:10px 0}.lrhome{width:100%;display:flex;align-items:center;justify-content:center;gap:10px;padding:12px;border-radius:16px;flex-wrap:wrap}.lrhome span{font-size:22px}.lrhome small{opacity:.8}.lrhome.on{border-color:rgba(255,193,99,.8)!important;background:rgba(255,193,99,.14)!important}.lrw{color:#ffc163}
 `;document.head.appendChild(st);
 })();
