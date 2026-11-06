@@ -82,6 +82,9 @@ await Promise.all(ROLES.map(async r => { for (const w of WIDTHS) {
       if (ov > 2) { run.overflow.push(`f:${v} +${ov}px`); await fail(`stránka širšia ako displej o ${ov}px (dlaždica ${v})`); }
       await pg.evaluate(() => { const h = document.querySelector("[data-fvhome]"); h && h.click(); }); await pg.waitForTimeout(500);
     }
+    // 6. 11.: slučka v rozložení (moduly si prehadzujú pásy pod lištou → obrazovka skáče, nedá sa vyrolovať hore) – strážca v index.html
+    const lp = await pg.evaluate(() => window.ERNTE_LOOP || []).catch(() => []);
+    if (lp.length) await fail("slučka v rozložení (obrazovka skáče): " + lp.join(", "));
   } catch (e) { await fail("beh: " + String(e.message || e).slice(0, 200)); }
   if (run.errors.length) { R.ok = false; R.fails.push(`${r.id} ${w}px: chyba skriptu – ${run.errors[0]}`); }
   await ctx.close();

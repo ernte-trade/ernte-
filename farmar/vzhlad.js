@@ -106,7 +106,7 @@ function sub(){const app=document.getElementById("app");if(!app)return;let el=ap
   const h=`<b style="--ac:${a.c}">${E(a.t)}</b><div>${L.map(k=>`<button type="button" data-rdgo="${k}" class="${k===t?"on":""}">${ico(TI[k])}<span>${E(T[k].t)}</span>${T[k].n?`<i class="rdc">${T[k].n}</i>`:""}</button>`).join("")}<button type="button" data-rdmenu>${ico("grid")}<span>Všetky sekcie</span></button></div>`;
   if(!el){el=document.createElement("div");el.id="rdSub"}
   if(el.dataset.h!==h){el.innerHTML=h;el.dataset.h=h}
-  const anchor=app.querySelector(":scope>section.ehb")||app.querySelector(":scope>nav.tabs");if(anchor&&anchor.nextElementSibling!==el)anchor.after(el);
+  const anchor=app.querySelector(":scope>section.ehb")||app.querySelector(":scope>nav.tabs");if(anchor&&el.parentNode!==app)anchor.after(el);if(window.ernteTopOrder)window.ernteTopOrder();else if(anchor&&anchor.nextElementSibling!==el)anchor.after(el);
   const on=el.querySelector("button.on");if(on&&on.offsetLeft)el.querySelector("div").scrollLeft=Math.max(0,on.offsetLeft-60)}
 // ---- tlačidlá v hlavičke: Menu a Hľadať ----
 function head(){const h=document.querySelector("header.top");if(!h)return;let m=document.getElementById("rdHead");if(!OK()){if(m)m.remove();return}

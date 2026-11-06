@@ -35,7 +35,7 @@ function wrap(fn){const tk=setInterval(()=>{const o=window[fn];if(typeof o!=="fu
   Object.keys(o).forEach(k=>{if(!(k in w))w[k]=o[k]});w.__rok=1;window[fn]=w},600);setTimeout(()=>clearInterval(tk),60000)}
 wrap("renderStaff");wrap("renderFarmer");
 // lišta ostane vždy prvá (iné moduly vkladajú dlaždice tiež hneď za lištu sekcií)
-let kt=0;function keepTop(){kt=0;const app=document.getElementById("app"),b=app&&app.querySelector(":scope > .rokbar");if(!b)return;const nav=app.querySelector(":scope > nav.tabs:not(.trtabs)")||app.querySelector(":scope > .hero");
+let kt=0;function keepTop(){kt=0;const app=document.getElementById("app"),b=app&&app.querySelector(":scope > .rokbar");if(!b)return;if(window.ernteTopOrder){window.ernteTopOrder();return}const nav=app.querySelector(":scope > nav.tabs:not(.trtabs)")||app.querySelector(":scope > .hero");
   let pv=b.previousElementSibling;while(pv&&pv.classList&&pv.classList.contains("spatbar"))pv=pv.previousElementSibling;
   if(nav){if(pv!==nav){const sp=nav.nextElementSibling&&nav.nextElementSibling.classList.contains("spatbar")?nav.nextElementSibling:nav;sp.after(b)}}else if(pv)app.prepend(b)}
 (function boot(){const app=document.getElementById("app");if(!app){setTimeout(boot,500);return}new MutationObserver(()=>{if(!kt)kt=setTimeout(keepTop,0)}).observe(app,{childList:true})})();

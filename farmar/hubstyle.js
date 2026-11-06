@@ -36,7 +36,7 @@ function inject(){if(!OK())return;const app=document.getElementById("app");if(!a
   nav.insertAdjacentHTML("afterend",html());fix();document.body.classList.add("ehbon")}
 // iné moduly vkladajú svoje pásy tiež hneď pod lištu → hlavička sa vráti navrch a popis záložky sa presunie do nej (mikroúloha, bez skoku)
 function fix(){const app=document.getElementById("app");if(!app)return;const sec=app.querySelector(":scope>section.ehb"),nav=app.querySelector(":scope>nav.tabs");if(!sec||!nav)return;
-  if(nav.nextElementSibling!==sec)nav.after(sec);const fd=app.querySelector(":scope>.fdesc.ftab");if(fd){const k=sec.querySelector(".ehbk");sec.insertBefore(fd,k||null)}}
+  if(window.ernteTopOrder)window.ernteTopOrder();else if(nav.nextElementSibling!==sec)nav.after(sec);const fd=app.querySelector(":scope>.fdesc.ftab");if(fd){const k=sec.querySelector(".ehbk");sec.insertBefore(fd,k||null)}}
 const soon=f=>(window.ernteSoon||requestAnimationFrame)(f);
 function wrap(){const o=window.renderStaff;if(typeof o!=="function"||o.__ehb)return;const w=function(){const r=o.apply(this,arguments);soon(()=>{try{inject()}catch(x){}});return r};Object.keys(o).forEach(k=>{if(!(k in w))try{w[k]=o[k]}catch(x){}});w.__ehb=1;window.renderStaff=w;soon(()=>{try{inject()}catch(x){}})}
 const tk=setInterval(wrap,500);setTimeout(()=>clearInterval(tk),60000);wrap();

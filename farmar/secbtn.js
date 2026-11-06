@@ -48,7 +48,7 @@ function apply(){const app=document.getElementById("app");if(!app)return;
   if(!bar){bar=document.createElement("div");bar.className="secbar";bar.setAttribute("role","toolbar");bar.setAttribute("aria-label","Sekcie");}
   if(bar.dataset.h!==html+t){bar.innerHTML=html;bar.dataset.h=html+t}
   const top=[...app.children].filter(e=>e.matches("nav.tabs,.rokbar,.spatbar,.uvodb")&&!e.classList.contains("sbh")),anc=top.length?top[top.length-1]:null;
-  if(anc){if(bar.parentNode!==app||bar.previousElementSibling!==anc)anc.after(bar)}else{const f0=found[0][1],first=Array.isArray(f0)?f0[0]:f0;if(bar.nextElementSibling!==first||bar.parentNode!==app)app.insertBefore(bar,first)}}
+  if(anc){if(bar.parentNode!==app)anc.after(bar);if(window.ernteTopOrder)window.ernteTopOrder();else if(bar.previousElementSibling!==anc)anc.after(bar)}else{const f0=found[0][1],first=Array.isArray(f0)?f0[0]:f0;if(bar.nextElementSibling!==first||bar.parentNode!==app)app.insertBefore(bar,first)}}
 /* 2. 11. 18:46 „nereaguje Pridať“ – tlačidlo mimo sekcií (➕ Pridať zamestnanca …) otvára formulár v skrytej sekcii → ukáž všetko */
 window.addEventListener("click",e=>{const t=e.target;if(!t||!t.closest||t.closest(".secbar")||!LAST||typeof TAB==="undefined"||LAST.t!==TAB)return;
   const app=document.getElementById("app");if(!app||!app.contains(t)||!t.closest("button,a,[role=button]"))return;

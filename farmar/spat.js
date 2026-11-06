@@ -22,7 +22,7 @@ function bar(){const app=document.getElementById("app");if(!app||!ON()){const o=
   if(!b){b=document.createElement("div");b.id="spatBar";b.className="spatbar"}
   if(b.dataset.h!==html){b.innerHTML=html;b.dataset.h=html}
   const nav=app.querySelector(":scope > nav.tabs"),anchor=nav||app.querySelector(":scope > .hero");
-  if(anchor){if(anchor.nextElementSibling!==b)anchor.insertAdjacentElement("afterend",b)}else if(app.firstElementChild!==b)app.prepend(b)}
+  if(anchor){if(b.parentNode!==app)anchor.after(b);if(window.ernteTopOrder)window.ernteTopOrder();else if(anchor.nextElementSibling!==b)anchor.after(b)}else if(app.firstElementChild!==b)app.prepend(b)}
 function back(){const p=H.pop();if(!p)return;going=true;
   try{if(p.sec!=null)sessionStorage.setItem("ernte-sec-"+p.tab,p.sec);else sessionStorage.removeItem("ernte-sec-"+p.tab)}catch(x){}
   TAB=p.tab;if(p.tab==="fleet"&&p.fsec&&typeof fsecGo==="function"){try{fsecGo(p.fsec,p.fsub||undefined)}catch(x){}}

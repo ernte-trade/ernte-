@@ -3,6 +3,19 @@
 <head>
 <meta charset="utf-8">
 <script>/* 31. 10.: obrazovka neskáče – dlaždice a popisy, ktoré moduly vkladajú po prekreslení, sa vložia ešte pred vykreslením (mikroúloha), nie o pár snímok neskôr. Poistka: max 300 za úlohu, potom requestAnimationFrame. */(function(){var n=0,r=0;window.ernteSoon=function(cb){if(n>300)return requestAnimationFrame(cb);n++;if(!r){r=1;setTimeout(function(){n=0;r=0},0)}queueMicrotask(function(){try{cb(performance.now())}catch(e){setTimeout(function(){throw e})}});return 1}})();</script>
+<script>/* 6. 11. (príkaz majiteľa „nedá sa rolovať hore a skáče obraz – oprav raz a navždy“): poradie pásov pod lištou sekcií určuje IBA táto funkcia.
+Predtým hubstyle (hlavička), spat (← Späť), rok (📅 Úroda), vzhlad (podsekcie) a secbtn (tlačidlá sekcií) každý chcel byť „hneď za lištou“ → ~1 200 presunov za sekundu,
+obrazovka skákala a nedala sa vyrolovať celkom hore. Poradie: lišta/hero → hlavička → podsekcie → Späť → Úroda → sekcie. Nový pás pod lištou = pridať ho sem, nikdy nie „nav.after(...)“ s kontrolou v MutationObserveri. */
+(function(){var S=[":scope>section.ehb",":scope>#rdSub",":scope>.spatbar",":scope>.rokbar",":scope>.secbar"];
+window.ernteTopOrder=function(){var app=document.getElementById("app");if(!app)return;var prev=app.querySelector(":scope>nav.tabs:not(.trtabs)")||app.querySelector(":scope>.hero");if(!prev)return;
+  for(var i=0;i<S.length;i++){var el=app.querySelector(S[i]);if(!el)continue;if(prev.nextElementSibling!==el)prev.after(el);prev=el}};
+/* strážca slučiek: ten istý prvok vložený 40× za 2 s = moduly sa naťahujú → chyba do 🐞 Chyby aplikácie (errmon) + window.ERNTE_LOOP (kontroluje ho aj brána smoke.mjs) */
+var C=new Map(),t0=0,rep={};function boot(){var app=document.getElementById("app");if(!app){setTimeout(boot,400);return}
+  new MutationObserver(function(ms){var now=Date.now();if(now-t0>2000){C.clear();t0=now}
+    for(var i=0;i<ms.length;i++){var a=ms[i].addedNodes;for(var j=0;j<a.length;j++){var n=a[j];if(n.nodeType!==1)continue;var c=(C.get(n)||0)+1;C.set(n,c);
+      if(c===40){var k=n.tagName+(n.id?"#"+n.id:"")+(typeof n.className==="string"&&n.className?"."+n.className.split(" ")[0]:"");
+        if(!rep[k]){rep[k]=1;window.ERNTE_LOOP=(window.ERNTE_LOOP||[]).concat(k);setTimeout(function(m){throw new Error(m)},0,"Slučka v rozložení: "+k+" sa presúva stále dokola")}}}}}).observe(app,{childList:true})}
+if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",boot);else boot()})();</script>
 <script>/* 2. 11. príkaz majiteľa „GPS rýchlo a nesekať“: zmeny vo vnútri ERNTE Maps (#emap – dlaždice mapy, rýchlosť a vzdialenosť každú sekundu) nebudia sledovače celej aplikácie (preklad, kontrola vzhľadu, ochrana, kruhové tlačidlá…). Pridanie / odobratie #emap samotného prejde. */(function(){var MO=window.MutationObserver;if(!MO)return;function inMap(n){var t=n&&(n.nodeType===1?n:n.parentElement);return !!(t&&t.closest&&t.closest("#emap"))}try{window.MutationObserver=class extends MO{constructor(cb){super(function(ms,o){var f=[];for(var i=0;i<ms.length;i++)if(!inMap(ms[i].target))f.push(ms[i]);if(f.length)cb(f,o)})}}}catch(e){}})();</script>
 <script>/* Android/Chrome: zachytiť ponuku inštalácie hneď, aby tlačidlo „Pridať na plochu“ otvorilo systémové okno jedným ťuknutím */window.addEventListener("beforeinstallprompt",function(e){e.preventDefault();window.__bip=e});</script>
 <script>/* app.ernte.sk: vždy zabezpečené https (poloha, PIN, upozornenia fungujú iba cez https) */if(location.protocol==="http:"&&/(^|\.)ernte\.sk$/.test(location.hostname))location.replace("https://"+location.host+location.pathname+location.search+location.hash)</script>
@@ -3044,8 +3057,8 @@ document.addEventListener("click",e=>{const b=e.target.closest("[data-dfp]");if(
 <script src="regname.js?v=20261030-1250"></script>
 <script src="ppa.js?v=20261031-0850"></script>
 <script src="farmdup.js?v=20261031-0900"></script>
-<script src="secbtn.js?v=20261105-2100" defer></script>
-<script src="spat.js?v=20261031-0700" defer></script>
+<script src="secbtn.js?v=20261106-1330" defer></script>
+<script src="spat.js?v=20261106-1330" defer></script>
 <script src="testview.js?v=20261028-2255"></script>
 <script src="cal.js?v=20261031-0700"></script>
 <script src="iscc.js?v=20261104-0110"></script>
@@ -3091,7 +3104,7 @@ document.addEventListener("click",e=>{const b=e.target.closest("[data-dfp]");if(
 <script src="cancel.js?v=20261029-0130"></script>
 <script src="autocennik.js?v=20261106-1310"></script>
 <script src="kpitap.js?v=20261101-1730"></script>
-<script src="rok.js?v=20261102-1105"></script>
+<script src="rok.js?v=20261106-1330"></script>
 <script src="wxs.js?v=20261101-0850"></script>
 <script src="xround.js?v=20261029-0655"></script>
 <script src="navfix.js?v=20261031-1610"></script>
@@ -3123,7 +3136,7 @@ document.addEventListener("click",e=>{const b=e.target.closest("[data-dfp]");if(
 <script src="navrhy.js?v=20261101-1340"></script>
 <script src="aicredit.js?v=20261102-1110"></script>
 <script src="certs.js?v=20261103-1515"></script>
-<script src="hubstyle.js?v=20261106-0630"></script>
+<script src="hubstyle.js?v=20261106-1330"></script>
 <script src="leadreply.js?v=20261105-0800"></script>
 <script src="plan.js?v=20261101-1245"></script>
 <script src="voice.js?v=20261106-0630"></script>
@@ -3134,7 +3147,7 @@ document.addEventListener("click",e=>{const b=e.target.closest("[data-dfp]");if(
 <script src="farmpay.js?v=20261105-0841"></script>
 <script src="pushcenter.js?v=20261029-0010"></script>
 <script src="desktop.js?v=20261028-0900"></script>
-<script src="vzhlad.js?v=20261106-0800"></script>
+<script src="vzhlad.js?v=20261106-1330"></script>
 <script src="audit.js?v=20261106-0800"></script>
 <script src="autopush.js?v=20261106-0700"></script>
 <script src="domov.js?v=20261106-0800"></script>
