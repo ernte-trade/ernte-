@@ -40,11 +40,11 @@ function modelsHTML(M){const R=M.filter(m=>(m.g||[]).length||(m.chyba||[]).lengt
      <small>${fix?`cenník ${n0(g.p_last)} €/t${g.b!=null&&g.px!=null?` · báza voči ${E(bz)}${g.kontrakt?" "+E(g.kontrakt):""} ${g.b>=0?"+":"−"}${n0(Math.abs(g.b))} (iba na porovnanie)`:""}`
        :g.b!=null&&g.px!=null?`${E(bz)}${g.kontrakt?" "+E(g.kontrakt):""} dnes ${n0(g.px)} ${g.b>=0?"+":"−"} báza ${n0(Math.abs(g.b))} = <b>${n0(g.dnes)} €/t</b>`:`burza z dňa ponuky chýba – posledná ponuka ${n0(g.p_last)} €/t (vyžiadaj novú ponuku)`}
       · ${g.n} ${g.n===1?"ponuka":g.n<5?"ponuky":"ponúk"}, posledná ${dk(g.d)}${g.b_prev!=null&&g.b!=null&&Math.abs(g.b-g.b_prev)>=1?` · báza ${g.b-g.b_prev>0?"stúpla":"klesla"} o ${n0(Math.abs(g.b-g.b_prev))}`:""}${old?` · <em class="obst">stará ${g.age} dní – vyžiadaj novú ponuku</em>`:""}</small></div>`};
-  return `<details class="obmod" id="obmod"${OBX()?"":" open"}><summary><span>📐 Model nákupnej ceny odberateľov – ich cena dnes</span><button type="button" class="obx" data-obx aria-label="Zavrieť model">✕</button></summary>
-   <div class="obxs"><button type="button" data-obx>✕ Zavrieť model</button></div>
+  return `<details class="odmod" id="odmod"${OBX()?"":" open"}><summary><span>📐 Model nákupnej ceny odberateľov – ich cena dnes</span><button type="button" class="odmx" data-obx aria-label="Zavrieť model">✕</button></summary>
    <div class="s">Z každej ponuky odberateľa sa spočíta báza voči burze – voči tomu istému kontraktu, z ktorého rátame dnes (cena − kontrakt v deň ponuky). Ich nákupná cena dnes = burza dnes + posledná báza; prepočíta sa sama pri každej zmene burzy. Bez ponúk na neskorší odber a nad 500 t.</div>
    ${R.map(m=>`<div class="obmb"><div class="obmn"><b>${E(m.name)}</b><small>${m.fb?"📈 ráta z burzy":m.par==="FCA"?"🚜 FCA u farmára":"📋 pevný cenník – báza len na porovnanie"}</small></div>
-     ${(m.g||[]).map(g=>ln(g,m)).join("")}${(m.chyba||[]).length?`<small class="obmc">Bez ponuky (vykupujú): ${(m.chyba||[]).map(c=>E(nm(c))).join(", ")} – vlož ich ponuku, model sa spočíta sám.</small>`:""}</div>`).join("")}</details>`}
+     ${(m.g||[]).map(g=>ln(g,m)).join("")}${(m.chyba||[]).length?`<small class="obmc">Bez ponuky (vykupujú): ${(m.chyba||[]).map(c=>E(nm(c))).join(", ")} – vlož ich ponuku, model sa spočíta sám.</small>`:""}</div>`).join("")}
+   <div class="odmend"><button type="button" data-obx>✕ Zavrieť model</button></div></details>`}
 
 function html(){if(!D.v)return `<div class="card obcard" id="odbCard" data-nosec><h2>🏷️ Ceny odberateľov</h2><div class="s">${D.err?E(D.err):"Načítavam…"}</div></div>`;
   const v=D.v,I=v.items||[],N=v.navrhy||[],B=v.buyers||[],X=v.inbox||[],p=v.ping,live=p&&p.seen&&Date.now()-Date.parse(p.seen)<75*60e3;
@@ -66,12 +66,12 @@ function html(){if(!D.v)return `<div class="card obcard" id="odbCard" data-nosec
       <span class="obs2">${best?`${E(best.b)}<b class="${best.m_avg==null?"":best.m_avg>=8?"ps":best.m_avg<0?"ng":""}">${best.net==null?"?":n0(best.net)} €/t</b>`:""}</span></summary>${L.map(row).join("")}</details>`}
   h+=`<div class="btns"><button type="button" class="lime" data-sform="1">➕ Pridať cenu ručne</button><button type="button" data-obref>↻ Obnoviť</button><button type="button" data-obcfg>${D.cfg?"▲ Skryť":"⚙️ Zdroje cien (web, e-mail)"}</button></div>`;
   if(D.cfg)h+=`<div class="obcfg"><div class="s">🌐 <b>Cenník na webe</b> – ak odberateľ zverejňuje ceny na stránke, vlož adresu: v pracovné dni 6–18 h sa raz za hodinu stiahne a pri zmene AI vyčíta ceny. ✉️ <b>Domény e-mailov</b> – odkiaľ chodia ich ceny (napr. bunge.com), ak to nevie spoznať podľa mena.</div>
-    ${B.map(b=>`<form class="obf" data-obb="${E(b.id)}"><b>${E(b.name)}</b>${b.web&&b.web.ok_at?`<small>🌐 naposledy ${tk(b.web.ok_at)}</small>`:""}${b.web&&b.web.err?`<small class="ng">🌐 ${E(b.web.err)}</small>`:""}
+    ${B.map(b=>`<form class="odbf" data-obb="${E(b.id)}"><b>${E(b.name)}</b>${b.web&&b.web.ok_at?`<small>🌐 naposledy ${tk(b.web.ok_at)}</small>`:""}${b.web&&b.web.err?`<small class="ng">🌐 ${E(b.web.err)}</small>`:""}
       <label>Cenník na webe<input name="url" inputmode="url" placeholder="https://…" value="${E(b.url||"")}"></label>
       <label>Domény e-mailov<input name="dom" placeholder="napr. bunge.com" value="${E((b.dom||[]).join(", "))}"></label>
       <button class="pri" type="submit">Uložiť</button></form>`).join("")}</div>`;
-  if(X.length)h+=`<details class="obx"><summary>📥 Posledné prečítané e-maily a cenníky (${X.length})</summary>${X.map(x=>`<div class="obxr"><span>${x.kind==="web"?"🌐":"✉️"} <b>${E(x.b||x.from||"")}</b> <small>${tk(x.rc||x.at)}</small><br><small>${E(x.subj||"")}</small></span>
-     <small class="obxs ${x.status==="chyba"?"ng":""}">${x.status==="ok"?`✓ ${x.ok||0} zapísané${x.wait?` · ${x.wait} na ✓`:""}`:x.status==="ziadne"?"bez cien":x.status==="chyba"?"⚠️ "+E(x.err||"chyba"):"⏳ čítam"}</small></div>`).join("")}</details>`;
+  if(X.length)h+=`<details class="odin"><summary>📥 Posledné prečítané e-maily a cenníky (${X.length})</summary>${X.map(x=>`<div class="odinr"><span>${x.kind==="web"?"🌐":"✉️"} <b>${E(x.b||x.from||"")}</b> <small>${tk(x.rc||x.at)}</small><br><small>${E(x.subj||"")}</small></span>
+     <small class="odins ${x.status==="chyba"?"ng":""}">${x.status==="ok"?`✓ ${x.ok||0} zapísané${x.wait?` · ${x.wait} na ✓`:""}`:x.status==="ziadne"?"bez cien":x.status==="chyba"?"⚠️ "+E(x.err||"chyba"):"⏳ čítam"}</small></div>`).join("")}</details>`;
   return h+`</div>`}
 
 function paint(){if(!OK()||typeof TAB==="undefined"||TAB!=="price")return;const app=document.getElementById("app");if(!app)return;
@@ -81,10 +81,11 @@ function paint(){if(!OK()||typeof TAB==="undefined"||TAB!=="price")return;const 
   n.dataset.h=n.innerHTML;const a=app.querySelector("#trhCard")||app.querySelector(":scope > div.card.chcard");if(a)a.before(n);else app.appendChild(n)}
 function inject(){if(!OK()||typeof TAB==="undefined"||TAB!=="price")return;if(!D.v||Date.now()-D.at>180e3)load(false);if(!document.getElementById("odbCard"))paint()}
 
-/* ✕ Zavrieť model (6. 11. príkaz majiteľa „daj možnosť x“) – zapamätá sa; znova sa otvorí ťuknutím na nadpis */
-document.addEventListener("click",e=>{const x=e.target.closest&&e.target.closest("[data-obx]");if(!x)return;e.preventDefault();e.stopPropagation();const d=x.closest("details.obmod");if(!d)return;
+/* ✕ Zavrieť model (6. 11. príkaz majiteľa „daj možnosť x“) – zapamätá sa; znova sa otvorí ťuknutím na nadpis.
+   6. 11. 10:00 oprava: triedy odmod/odmx/odin/odbf (predtým .obmod/.obx/.obf = celoobrazovkové okno z outbox.js → model zamrzol rozmazaný cez celú obrazovku); bez plávajúceho tlačidla (prekrývalo ceny) – ✕ v nadpise + „✕ Zavrieť model“ na konci */
+document.addEventListener("click",e=>{const x=e.target.closest&&e.target.closest("[data-obx]");if(!x)return;e.preventDefault();e.stopPropagation();const d=x.closest("details.odmod");if(!d)return;
   d.open=false;try{localStorage.setItem("ernte-obmod-x","1")}catch(_){}const sm=d.querySelector("summary");if(sm){const r=sm.getBoundingClientRect();if(r.top<0||r.top>innerHeight)sm.scrollIntoView({block:"center"})}},true);
-document.addEventListener("toggle",e=>{const d=e.target;if(d&&d.classList&&d.classList.contains("obmod")&&d.open){try{localStorage.removeItem("ernte-obmod-x")}catch(_){}}},true);
+document.addEventListener("toggle",e=>{const d=e.target;if(d&&d.classList&&d.classList.contains("odmod")&&d.open){try{localStorage.removeItem("ernte-obmod-x")}catch(_){}}},true);
 document.addEventListener("click",async e=>{const t=e.target.closest&&e.target.closest("[data-obok],[data-obno],[data-obref],[data-obcfg],[data-obgs]");if(!t||!OK())return;e.preventDefault();
   if(t.dataset.obref!==undefined){load(true);return}
   if(t.dataset.obcfg!==undefined){D.cfg=!D.cfg;paint();return}
@@ -109,18 +110,19 @@ document.addEventListener("submit",async e=>{const f=e.target;if(!f.dataset||!f.
 .obg{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}.obg span{display:flex;flex-direction:column;min-width:0}.obg i{font-style:normal;font-size:.7rem;opacity:.65;line-height:1.15}.obg b{font-size:.9rem;overflow-wrap:anywhere}
 .obb{display:flex;flex-wrap:wrap;gap:4px}.obst,.obfw{font-style:normal;font-size:.72rem;font-weight:700;padding:2px 8px;border-radius:999px;background:rgba(251,191,36,.16);color:#fcd34d}.obfw{background:rgba(125,211,252,.16);color:#7dd3fc}
 .obn{opacity:.65!important}.ps{color:#86efac}.ng{color:#fca5a5}.obr .obg b.ps{color:#86efac}.obr .obg b.ng{color:#fca5a5}
-.obcfg{display:grid;gap:8px;margin:8px 0}.obf{display:grid;gap:6px;padding:10px;border-radius:14px;border:1px solid rgba(255,255,255,.1);background:rgba(255,255,255,.03)}.obf small{opacity:.75}
-.obmod{margin:8px 0;border-top:1px solid rgba(255,255,255,.08);padding-top:6px}.obmod>summary{cursor:pointer;font-weight:800;min-height:40px;display:flex;align-items:center}.obmod>summary{gap:10px;justify-content:space-between}.obmod>summary>span{flex:1;min-width:0}
-.obx{flex:none;width:44px;height:44px;min-width:44px;min-height:44px!important;padding:0!important;border-radius:50%!important;font-size:1.1rem;display:inline-grid;place-items:center}.obmod:not([open]) .obx{display:none}
-.obxs{position:sticky;top:calc(8px + env(safe-area-inset-top));z-index:5;display:flex;justify-content:flex-end;pointer-events:none;margin:-4px 0 4px}.obxs button{pointer-events:auto;min-height:44px;padding:0 16px;border-radius:999px;font-weight:800;box-shadow:0 6px 18px rgba(0,0,0,.45)}
+.obcfg{display:grid;gap:8px;margin:8px 0}.odbf{display:grid;gap:6px;padding:10px;border-radius:14px;border:1px solid rgba(255,255,255,.1);background:rgba(255,255,255,.03)}.odbf small{opacity:.75}
+.odmod{display:block!important;position:static!important;margin:8px 0;border-top:1px solid rgba(255,255,255,.08);padding-top:6px;min-width:0}.odmod>summary{cursor:pointer;font-weight:800;min-height:44px;display:flex;align-items:center;gap:10px;justify-content:space-between;list-style:none}.odmod>summary::-webkit-details-marker{display:none}.odmod>summary>span{flex:1;min-width:0;overflow-wrap:anywhere}
+.odmx{flex:none;width:44px;height:44px;min-width:44px;min-height:44px!important;padding:0!important;border-radius:50%!important;font-size:1.1rem;display:inline-grid;place-items:center}.odmod:not([open]) .odmx{display:none}
+.odmend{display:flex;justify-content:center;padding:10px 0 4px}.odmend button{min-height:44px;padding:0 18px;border-radius:999px;font-weight:800}
 .obmb{display:grid;gap:4px;padding:8px 0;border-top:1px solid rgba(255,255,255,.06)}.obmn{display:flex;justify-content:space-between;align-items:baseline;gap:8px;flex-wrap:wrap}.obmn small{opacity:.7;font-size:.74rem}
 .obm{display:grid;gap:2px;padding:7px 10px;border-radius:12px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);min-width:0}.obm.old{opacity:.75}
 .obmh{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:2px 8px;align-items:center}.obmh small{opacity:.75;font-size:.76rem;overflow-wrap:anywhere}.obmh span{display:flex;flex-direction:column;align-items:flex-end;text-align:right}
 .obmh span b{font-size:1rem;color:#7dd3fc}.obmh span i{font-style:normal;font-size:.66rem;opacity:.65}.obm>small{line-height:1.4;overflow-wrap:anywhere;opacity:.85}.obmc{opacity:.7}
 html[data-theme=light] .obmh span b{color:#0369a1}
-.obx{margin-top:8px}.obx>summary{cursor:pointer;font-weight:700;min-height:36px;display:flex;align-items:center}.obxr{display:flex;justify-content:space-between;gap:8px;padding:7px 0;border-top:1px solid rgba(255,255,255,.08);font-size:.84rem;line-height:1.35}
-.obxr>span{min-width:0;overflow-wrap:anywhere}.obxs{text-align:right;flex:0 0 auto;max-width:45%;overflow-wrap:anywhere}
+.odin{margin-top:8px}.odin>summary{cursor:pointer;font-weight:700;min-height:36px;display:flex;align-items:center}.odinr{display:flex;justify-content:space-between;gap:8px;padding:7px 0;border-top:1px solid rgba(255,255,255,.08);font-size:.84rem;line-height:1.35}
+.odinr>span{min-width:0;overflow-wrap:anywhere}.odins{text-align:right;flex:0 0 auto;max-width:45%;overflow-wrap:anywhere}
 html[data-theme=light] .ps,html[data-theme=light] .obr .obg b.ps{color:#15803d}html[data-theme=light] .ng,html[data-theme=light] .obr .obg b.ng{color:#b91c1c}html[data-theme=light] .obst{color:#92400e}html[data-theme=light] .obfw{color:#0369a1}
+@media(max-width:560px){.obmh{grid-template-columns:minmax(0,1fr) auto;row-gap:0}.obmh>b{grid-column:1;grid-row:1;min-width:0;overflow-wrap:anywhere}.obmh>small{grid-column:1;grid-row:2}.obmh>span{grid-column:2;grid-row:1/3}}
 @media(max-width:420px){.obg{grid-template-columns:1fr 1fr}.obg span:last-child{grid-column:1/-1}.obk{grid-template-columns:repeat(2,minmax(0,1fr))}}`;document.head.appendChild(s)}
 let q=0;const sch=()=>{if(q)return;q=(window.ernteSoon||requestAnimationFrame)(()=>{q=0;try{inject()}catch(x){}})};
 function boot(){const app=document.getElementById("app");if(!app){setTimeout(boot,500);return}new MutationObserver(sch).observe(app,{childList:true});sch();
