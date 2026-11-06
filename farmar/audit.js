@@ -126,7 +126,7 @@ function riskCard(){const d=R.d;const L=Array.isArray(d)?d:[];const hi=L.filter(
   if(d.err)return `<details class="card auc" id="auR" data-auo="R">${head}<p class="s">⚠️ ${E(d.err)}</p></details>`;
   const V2=R.all?L:L.filter(x=>x.lvl!=="nizke");
   return `<details class="card auc" id="auR" data-auo="R">${head}
-   <p class="s">0–100 bodov za posledných 18 mesiacov: nedodávky v uzavretých zmluvách nad toleranciu 5 % (do 35), zmluvy po termíne nedodané (do 16), nadodávky (do 8), vlhkosť a nečistoty nad normu (do 20), neuznané reklamácie (do 8), náhradné nákupy (do 15), chýbajúce IČO / IBAN / GDPR (do 8). 🔴 od 50, 🟠 od 25. Pomôcka pri novej zmluve – nie dôvod nikoho odmietnuť bez rozhovoru.</p>
+   <p class="s">0–100 bodov za posledných 18 mesiacov: nedodávky v uzavretých zmluvách nad toleranciu 5 % (do 35), zmluvy po termíne nedodané (do 16), nadodávky (do 6), vlhkosť nad normu (bez kukurice) a nečistoty nad 2 % (do 20), neuznané reklamácie (do 8), náhradné nákupy (do 15), chýbajúce IČO / IBAN / GDPR (do 8). 🔴 od 50, 🟠 od 25. Pomôcka pri novej zmluve – nie dôvod nikoho odmietnuť bez rozhovoru.</p>
    ${V2.length?`<div class="aus">${V2.map(x=>`<div class="aur ${E(x.lvl)}"><div class="aurs"><b>${E(x.score)}</b><small>${E((LV[x.lvl]||["",""])[0])} ${E((LV[x.lvl]||["",""])[1])}</small></div>
       <div><b>${E(x.name)}</b><small>Zmluvy ${E(x.zml.n)} · ${E(x.zml.t)} t · dodané ${E(x.zml.dod)} t${x.kval.n?` · lístky ${E(x.kval.n)}`:""}</small>${(x.why||[]).map(w=>`<small>• ${E(w)}</small>`).join("")}${x.zml.pod_no?`<small>Zmluvy: ${E(x.zml.pod_no)}</small>`:""}</div></div>`).join("")}</div>`
     :`<p class="s">✅ Žiadny farmár so stredným ani vysokým rizikom.</p>`}

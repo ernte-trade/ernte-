@@ -377,7 +377,7 @@ begin
              string_agg(no,', ') filter (where (status='odvezeny' or (tl<current_date-7 and status in ('podpisany','odvoz'))) and dt<tons*0.95) pod_no
            from d group by farmer_id),
     l as (select x.farmer_id, count(*) n, sum(x.net_kg)/1000 t,
-             sum(greatest(coalesce(x.moisture_pct,0)-ernte_vnorm(x.com),0)*x.net_kg)/nullif(sum(x.net_kg) filter (where x.moisture_pct is not null),0) vl,
+             sum(greatest(coalesce(x.moisture_pct,0)-ernte_vnorm(x.com),0)*x.net_kg) filter (where x.com<>'kukurica')/nullif(sum(x.net_kg) filter (where x.moisture_pct is not null and x.com<>'kukurica'),0) vl,
              sum(greatest(coalesce(x.impurity_pct,0)-2,0)*x.net_kg)/nullif(sum(x.net_kg) filter (where x.impurity_pct is not null),0) ne
            from deliveries x join f on f.id=x.farmer_id where x.day>current_date-365 and coalesce(x.net_kg,0)>0 group by x.farmer_id),
     rk as (select x.farmer_id, count(*) n, count(*) filter (where c.ok) ok, count(*) filter (where not coalesce(c.ok,false)) nok
@@ -392,8 +392,8 @@ begin
     p as (select s.*,
             least(35, round(case when coalesce(zt,0)>0 then pod_t/zt*150 else 0 end) + pod*5)::int p_pln,
             least(16, mes*8)::int p_mes,
-            least(8, nad*4)::int p_nad,
-            least(20, round(vl*4+ne*3))::int p_kv,
+            least(6, nad*3)::int p_nad,
+            least(20, round(vl*3+ne*3))::int p_kv,
             least(8, rknok*2)::int p_rk,
             least(15, rpn*8)::int p_rp,
             ((case when coalesce(ico,'')='' then 4 else 0 end)+(case when coalesce(iban,'')='' then 2 else 0 end)+(case when gdpr_at is null and active then 2 else 0 end))::int p_ud
@@ -410,7 +410,7 @@ begin
         case when p_pln>0 then 'uzavreté zmluvy s nedodávkou: '||pod||'× (chýba '||round(pod_t,1)||' t nad toleranciu 5 %)' end,
         case when p_mes>0 then 'po termíne a nedodané: '||mes||'× zmluva' end,
         case when p_nad>0 then 'nadodávky nad 5 %: '||nad||'×' end,
-        case when p_kv>0 then 'kvalita: vlhkosť nad normu priemerne '||round(vl,1)||' %, nečistoty nad 2 % priemerne '||round(ne,1)||' %' end,
+        case when p_kv>0 then 'kvalita: '||concat_ws(', ',case when vl>0 then 'vlhkosť nad normu priemerne '||round(vl,1)||' % (bez kukurice)' end,case when ne>0 then 'nečistoty nad 2 % priemerne '||round(ne,1)||' %' end) end,
         case when p_rk>0 then 'sporné lístky (reklamácia neuznaná): '||rknok end,
         case when p_rp>0 then 'náhradný nákup za nedodané: '||rpn||'× ('||round(rpt,1)||' t)' end,
         case when p_ud>0 then 'chýba '||concat_ws(', ',case when coalesce(ico,'')='' then 'IČO' end,case when coalesce(iban,'')='' then 'IBAN' end,case when gdpr_at is null and active then 'súhlas GDPR' end) end],null))) r
