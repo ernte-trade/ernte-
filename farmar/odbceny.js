@@ -32,15 +32,19 @@ function row(x){const s=SRC[x.src]||["✍️",x.src||"ručne"],bad=[];
 
 // 📐 model nákupnej ceny každého odberateľa: báza voči burze z ich ponúk → ICH nákupná cena dnes = burza dnes + báza
 const BZN={repka:"MATIF repka",psenica:"MATIF pšenica",kukurica:"MATIF kukurica",soja_usc_bu:"CBOT sója"};
+const OBX=()=>{try{return localStorage.getItem("ernte-obmod-x")==="1"}catch(x){return false}};
 function modelsHTML(M){const R=M.filter(m=>(m.g||[]).length||(m.chyba||[]).length);if(!R.length)return "";
-  const ln=g=>{const old=g.age>45,bz=BZN[g.sym]||"burza";
-    return `<div class="obm${old?" old":""}"><div class="obmh"><b>${E(nm(g.com))}</b><small>${E(g.del)}${g.site?" "+E(g.site):""}</small><span>${g.dnes!=null?`<b>${n0(g.dnes)} €/t</b><i>ich cena dnes</i>`:`<b>${n0(g.p_last)} €/t</b><i>posledná cena</i>`}</span></div>
-     <small>${g.b!=null&&g.px!=null?`${E(bz)}${g.kontrakt?" "+E(g.kontrakt):""} dnes ${n0(g.px)} ${g.b>=0?"+":"−"} báza ${n0(Math.abs(g.b))} = <b>${n0(g.dnes)} €/t</b>`:`báza voči burze sa nedá spočítať (chýba burza z dňa ponuky) – posledná ponuka ${n0(g.p_last)} €/t`}
+  const ln=(g,m)=>{const old=g.age>45,bz=BZN[g.sym]||"burza",fix=m&&!m.fb&&m.par!=="FCA"; /* pevný cenník: hlavná cena = ich posledná cena, báza iba na porovnanie */
+    const kde=g.del==="FCA"&&!g.site?"FCA u farmára":`${g.del}${g.site?" "+g.site:""}`;
+    return `<div class="obm${old?" old":""}"><div class="obmh"><b>${E(nm(g.com))}</b><small>${E(kde)}</small><span>${fix?`<b>${n0(g.p_last)} €/t</b><i>ich cenník</i>`:g.dnes!=null?`<b>${n0(g.dnes)} €/t</b><i>ich cena dnes</i>`:`<b>${n0(g.p_last)} €/t</b><i>posledná cena</i>`}</span></div>
+     <small>${fix?`cenník ${n0(g.p_last)} €/t${g.b!=null&&g.px!=null?` · báza voči ${E(bz)}${g.kontrakt?" "+E(g.kontrakt):""} ${g.b>=0?"+":"−"}${n0(Math.abs(g.b))} (iba na porovnanie)`:""}`
+       :g.b!=null&&g.px!=null?`${E(bz)}${g.kontrakt?" "+E(g.kontrakt):""} dnes ${n0(g.px)} ${g.b>=0?"+":"−"} báza ${n0(Math.abs(g.b))} = <b>${n0(g.dnes)} €/t</b>`:`burza z dňa ponuky chýba – posledná ponuka ${n0(g.p_last)} €/t (vyžiadaj novú ponuku)`}
       · ${g.n} ${g.n===1?"ponuka":g.n<5?"ponuky":"ponúk"}, posledná ${dk(g.d)}${g.b_prev!=null&&g.b!=null&&Math.abs(g.b-g.b_prev)>=1?` · báza ${g.b-g.b_prev>0?"stúpla":"klesla"} o ${n0(Math.abs(g.b-g.b_prev))}`:""}${old?` · <em class="obst">stará ${g.age} dní – vyžiadaj novú ponuku</em>`:""}</small></div>`};
-  return `<details class="obmod" open><summary>📐 Model nákupnej ceny odberateľov – ich cena dnes</summary>
+  return `<details class="obmod" id="obmod"${OBX()?"":" open"}><summary><span>📐 Model nákupnej ceny odberateľov – ich cena dnes</span><button type="button" class="obx" data-obx aria-label="Zavrieť model">✕</button></summary>
+   <div class="obxs"><button type="button" data-obx>✕ Zavrieť model</button></div>
    <div class="s">Z každej ponuky odberateľa sa spočíta báza voči burze – voči tomu istému kontraktu, z ktorého rátame dnes (cena − kontrakt v deň ponuky). Ich nákupná cena dnes = burza dnes + posledná báza; prepočíta sa sama pri každej zmene burzy. Bez ponúk na neskorší odber a nad 500 t.</div>
    ${R.map(m=>`<div class="obmb"><div class="obmn"><b>${E(m.name)}</b><small>${m.fb?"📈 ráta z burzy":m.par==="FCA"?"🚜 FCA u farmára":"📋 pevný cenník – báza len na porovnanie"}</small></div>
-     ${(m.g||[]).map(ln).join("")}${(m.chyba||[]).length?`<small class="obmc">Bez ponuky (vykupujú): ${(m.chyba||[]).map(c=>E(nm(c))).join(", ")} – vlož ich ponuku, model sa spočíta sám.</small>`:""}</div>`).join("")}</details>`}
+     ${(m.g||[]).map(g=>ln(g,m)).join("")}${(m.chyba||[]).length?`<small class="obmc">Bez ponuky (vykupujú): ${(m.chyba||[]).map(c=>E(nm(c))).join(", ")} – vlož ich ponuku, model sa spočíta sám.</small>`:""}</div>`).join("")}</details>`}
 
 function html(){if(!D.v)return `<div class="card obcard" id="odbCard" data-nosec><h2>🏷️ Ceny odberateľov</h2><div class="s">${D.err?E(D.err):"Načítavam…"}</div></div>`;
   const v=D.v,I=v.items||[],N=v.navrhy||[],B=v.buyers||[],X=v.inbox||[],p=v.ping,live=p&&p.seen&&Date.now()-Date.parse(p.seen)<75*60e3;
@@ -77,6 +81,10 @@ function paint(){if(!OK()||typeof TAB==="undefined"||TAB!=="price")return;const 
   n.dataset.h=n.innerHTML;const a=app.querySelector("#trhCard")||app.querySelector(":scope > div.card.chcard");if(a)a.before(n);else app.appendChild(n)}
 function inject(){if(!OK()||typeof TAB==="undefined"||TAB!=="price")return;if(!D.v||Date.now()-D.at>180e3)load(false);if(!document.getElementById("odbCard"))paint()}
 
+/* ✕ Zavrieť model (6. 11. príkaz majiteľa „daj možnosť x“) – zapamätá sa; znova sa otvorí ťuknutím na nadpis */
+document.addEventListener("click",e=>{const x=e.target.closest&&e.target.closest("[data-obx]");if(!x)return;e.preventDefault();e.stopPropagation();const d=x.closest("details.obmod");if(!d)return;
+  d.open=false;try{localStorage.setItem("ernte-obmod-x","1")}catch(_){}const sm=d.querySelector("summary");if(sm){const r=sm.getBoundingClientRect();if(r.top<0||r.top>innerHeight)sm.scrollIntoView({block:"center"})}},true);
+document.addEventListener("toggle",e=>{const d=e.target;if(d&&d.classList&&d.classList.contains("obmod")&&d.open){try{localStorage.removeItem("ernte-obmod-x")}catch(_){}}},true);
 document.addEventListener("click",async e=>{const t=e.target.closest&&e.target.closest("[data-obok],[data-obno],[data-obref],[data-obcfg],[data-obgs]");if(!t||!OK())return;e.preventDefault();
   if(t.dataset.obref!==undefined){load(true);return}
   if(t.dataset.obcfg!==undefined){D.cfg=!D.cfg;paint();return}
@@ -102,7 +110,9 @@ document.addEventListener("submit",async e=>{const f=e.target;if(!f.dataset||!f.
 .obb{display:flex;flex-wrap:wrap;gap:4px}.obst,.obfw{font-style:normal;font-size:.72rem;font-weight:700;padding:2px 8px;border-radius:999px;background:rgba(251,191,36,.16);color:#fcd34d}.obfw{background:rgba(125,211,252,.16);color:#7dd3fc}
 .obn{opacity:.65!important}.ps{color:#86efac}.ng{color:#fca5a5}.obr .obg b.ps{color:#86efac}.obr .obg b.ng{color:#fca5a5}
 .obcfg{display:grid;gap:8px;margin:8px 0}.obf{display:grid;gap:6px;padding:10px;border-radius:14px;border:1px solid rgba(255,255,255,.1);background:rgba(255,255,255,.03)}.obf small{opacity:.75}
-.obmod{margin:8px 0;border-top:1px solid rgba(255,255,255,.08);padding-top:6px}.obmod>summary{cursor:pointer;font-weight:800;min-height:40px;display:flex;align-items:center}
+.obmod{margin:8px 0;border-top:1px solid rgba(255,255,255,.08);padding-top:6px}.obmod>summary{cursor:pointer;font-weight:800;min-height:40px;display:flex;align-items:center}.obmod>summary{gap:10px;justify-content:space-between}.obmod>summary>span{flex:1;min-width:0}
+.obx{flex:none;width:44px;height:44px;min-width:44px;min-height:44px!important;padding:0!important;border-radius:50%!important;font-size:1.1rem;display:inline-grid;place-items:center}.obmod:not([open]) .obx{display:none}
+.obxs{position:sticky;top:calc(8px + env(safe-area-inset-top));z-index:5;display:flex;justify-content:flex-end;pointer-events:none;margin:-4px 0 4px}.obxs button{pointer-events:auto;min-height:44px;padding:0 16px;border-radius:999px;font-weight:800;box-shadow:0 6px 18px rgba(0,0,0,.45)}
 .obmb{display:grid;gap:4px;padding:8px 0;border-top:1px solid rgba(255,255,255,.06)}.obmn{display:flex;justify-content:space-between;align-items:baseline;gap:8px;flex-wrap:wrap}.obmn small{opacity:.7;font-size:.74rem}
 .obm{display:grid;gap:2px;padding:7px 10px;border-radius:12px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);min-width:0}.obm.old{opacity:.75}
 .obmh{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:2px 8px;align-items:center}.obmh small{opacity:.75;font-size:.76rem;overflow-wrap:anywhere}.obmh span{display:flex;flex-direction:column;align-items:flex-end;text-align:right}

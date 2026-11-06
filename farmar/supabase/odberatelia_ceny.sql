@@ -432,6 +432,12 @@ create or replace function public.odb_kontrakt_at(p_sym text, p_ym text, p_d dat
     and indikator='kontrakt '||p_ym and platne between p_d-5 and p_d+1 order by abs(platne-p_d), platne desc limit 1 $$;
 revoke all on function public.odb_kontrakt_at(text,text,date) from public, anon, authenticated;
 
+-- 6. 11. príkaz majiteľa „oprav to“: to isté miesto rôzne napísané (Bánovce / Bánovce n/O, „FCA farma“) = jedna skupina
+create or replace function public.odb_site_key(p_del text, p_site text) returns text language sql immutable as $$
+  select case when upper(coalesce(p_del,''))='FCA' and coalesce(p_site,'') ~* '^\s*(fca)?\s*(u\s+)?(farm\w*)?\s*$' then ''
+    else regexp_replace(regexp_replace(lower(translate(coalesce(p_site,''),'áäčďéíĺľňóôŕšťúýžőöűüÁÄČĎÉÍĹĽŇÓÔŔŠŤÚÝŽŐÖŰÜ','aacdeillnoorstuyzoouuAACDEILLNOORSTUYZOOUU')),
+      '\s*(n\s*/\s*o\.?|n\.\s*o\.|nad\s+ondavou)(\s|$)',' ','g'),'[^a-z0-9]+','','g') end $$;
+
 create or replace function public.odb_models() returns jsonb language plpgsql stable security definer set search_path=public as $$
 declare k jsonb; res jsonb;
 begin
@@ -454,17 +460,17 @@ begin
          where (i->>'price') ~ '^[0-9.]+$' and (i->>'d') ~ '^\d{4}-\d\d-\d\d$' and (i->>'d')::date>=current_date-180),
   a0 as (select * from so union all select * from ko),
   -- iba dnešný odber: bez „odber …“, „nad 500 t“ a dodávok v ďalšom roku / štvrťroku
-  a as (select distinct on (bid,com,del,site,d,price) * from a0
+  a as (select distinct on (bid,com,del,sk,d,price) * from (select a0.*, odb_site_key(a0.del,a0.site) sk from a0) z
         where com is not null and per !~* '(odber\s*[0-9]|nad\s*500|[1-4]\s*q|q\s*/|/\s*2[7-9]\M|202[7-9])'
-        order by bid,com,del,site,d,price,src),
-  g as (select a.bid, a.com, a.del, a.site, count(*) n, max(a.d) d_last,
+        order by bid,com,del,sk,d,price,src),
+  g as (select a.bid, a.com, a.del, a.sk, case when a.sk='' then '' else (array_agg(a.site order by a.d desc, length(a.site) desc))[1] end site, count(*) n, max(a.d) d_last,
           (array_agg(a.price order by a.d desc))[1] p_last,
           (array_agg(a.bas order by a.d desc) filter (where a.bas is not null))[1] b_last,
           (array_agg(a.d order by a.d desc) filter (where a.bas is not null))[1] b_d,
           (array_agg(a.bas order by a.d desc) filter (where a.bas is not null))[2] b_prev,
           round(avg(a.bas) filter (where a.bas is not null and a.d>=current_date-45),2) b_avg45,
           (array_agg(a.src order by a.d desc))[1] src
-        from a group by 1,2,3,4)
+        from a group by a.bid, a.com, a.del, a.sk)
   select coalesce(jsonb_agg(jsonb_build_object('id',b.id,'name',b.name,'fb',b.float_burza,'par',b.parita,'model',b.model,'basis',to_jsonb(b)->'basis',
       'g',(select coalesce(jsonb_agg(jsonb_build_object('com',g.com,'del',g.del,'site',g.site,'n',g.n,'d',g.d_last,'age',current_date-g.d_last,'p_last',g.p_last,
             'b',round(g.b_last,2),'b_d',g.b_d,'b_prev',round(g.b_prev,2),'b_avg45',g.b_avg45,'src',g.src,
