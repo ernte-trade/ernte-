@@ -262,7 +262,7 @@ create or replace function public.config_now() returns jsonb language sql stable
    'kalk',coalesce((select jsonb_object_agg(id,data) from kalk_store where path='pricelist' and id<>'log'),'{}'::jsonb),
    'set',coalesce((select jsonb_object_agg(key,value) from settings),'{}'::jsonb),
    'ai',coalesce((select jsonb_object_agg(key,value) from ai_state where key=any(config_keys())),'{}'::jsonb),
-   'odb',coalesce((select jsonb_object_agg(id,jsonb_build_object('name',name,'coms',to_jsonb(coms),'sites',sites,'float_burza',float_burza,'model',model,
+   'odb',coalesce((select jsonb_object_agg(id,jsonb_build_object('name',name,'coms',to_jsonb(coms),'sites',sites,'float_burza',float_burza,'float_coms',to_jsonb(float_coms),'model',model,
        'note',note,'active',active,'parita',parita,'basis',basis,'price_url',price_url)) from sell_buyers),'{}'::jsonb),
    'staff',coalesce((select jsonb_object_agg(lower(email),jsonb_build_object('name',name,'perms',perms,'price_adj',price_adj)) from staff),'{}'::jsonb),
    'ceny',coalesce((select jsonb_object_agg(com,price) from prices),'{}'::jsonb)) $$;
@@ -345,7 +345,7 @@ begin
       insert into ai_state(key,value,updated_at) values(k,v,now()) on conflict(key) do update set value=excluded.value, updated_at=now();
     elsif g='odb' then
       update sell_buyers set coms=case when jsonb_typeof(v->'coms')='array' then (select array_agg(e) from jsonb_array_elements_text(v->'coms') e) else coms end, sites=v->'sites',
-        float_burza=(v->>'float_burza')::boolean, model=v->>'model', note=v->>'note', active=coalesce((v->>'active')::boolean,active),
+        float_burza=(v->>'float_burza')::boolean, float_coms=case when jsonb_typeof(v->'float_coms')='array' then (select array_agg(e) from jsonb_array_elements_text(v->'float_coms') e) when v ? 'float_coms' then null else float_coms end, model=v->>'model', note=v->>'note', active=coalesce((v->>'active')::boolean,active),
         parita=v->>'parita', basis=v->'basis', price_url=v->>'price_url' where id=k;
       if not found then sk:=sk||to_jsonb(x); continue; end if;
     elsif g='staff' then

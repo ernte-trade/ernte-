@@ -34,7 +34,7 @@ function row(x){const s=SRC[x.src]||["✍️",x.src||"ručne"],bad=[];
 const BZN={repka:"MATIF repka",psenica:"MATIF pšenica",kukurica:"MATIF kukurica",soja_usc_bu:"CBOT sója"};
 const OBX=()=>{try{return localStorage.getItem("ernte-obmod-x")==="1"}catch(x){return false}};
 function modelsHTML(M){const R=M.filter(m=>(m.g||[]).length||(m.chyba||[]).length);if(!R.length)return "";
-  const ln=(g,m)=>{const old=g.age>45,bz=BZN[g.sym]||"burza",fix=m&&!m.fb&&m.par!=="FCA"; /* pevný cenník: hlavná cena = ich posledná cena, báza iba na porovnanie */
+  const ln=(g,m)=>{const old=g.age>45,bz=BZN[g.sym]||"burza",fix=m&&(!m.fb||(Array.isArray(m.fc)&&m.fc.length&&!m.fc.includes(g.com)))&&m.par!=="FCA"; /* pevný cenník: hlavná cena = ich posledná cena, báza iba na porovnanie */
     const kde=g.del==="FCA"&&!g.site?"FCA u farmára":`${g.del}${g.site?" "+g.site:""}`;
     return `<div class="obm${old?" old":""}"><div class="obmh"><b>${E(nm(g.com))}</b><small>${E(kde)}</small><span>${fix?`<b>${n0(g.p_last)} €/t</b><i>ich cenník</i>`:g.dnes!=null?`<b>${n0(g.dnes)} €/t</b><i>ich cena dnes</i>`:`<b>${n0(g.p_last)} €/t</b><i>posledná cena</i>`}</span></div>
      <small>${fix?`cenník ${n0(g.p_last)} €/t${g.b!=null&&g.px!=null?` · báza voči ${E(bz)}${g.kontrakt?" "+E(g.kontrakt):""} ${g.b>=0?"+":"−"}${n0(Math.abs(g.b))} (iba na porovnanie)`:""}`
@@ -42,7 +42,7 @@ function modelsHTML(M){const R=M.filter(m=>(m.g||[]).length||(m.chyba||[]).lengt
       · ${g.n} ${g.n===1?"ponuka":g.n<5?"ponuky":"ponúk"}, posledná ${dk(g.d)}${g.b_prev!=null&&g.b!=null&&Math.abs(g.b-g.b_prev)>=1?` · báza ${g.b-g.b_prev>0?"stúpla":"klesla"} o ${n0(Math.abs(g.b-g.b_prev))}`:""}${old?` · <em class="obst">stará ${g.age} dní – vyžiadaj novú ponuku</em>`:""}</small></div>`};
   return `<details class="odmod" id="odmod"${OBX()?"":" open"}><summary><span>📐 Model nákupnej ceny odberateľov – ich cena dnes</span><button type="button" class="odmx" data-obx aria-label="Zavrieť model">✕</button></summary>
    <div class="s">Z každej ponuky odberateľa sa spočíta báza voči burze – voči tomu istému kontraktu, z ktorého rátame dnes (cena − kontrakt v deň ponuky). Ich nákupná cena dnes = burza dnes + posledná báza; prepočíta sa sama pri každej zmene burzy. Bez ponúk na neskorší odber a nad 500 t.</div>
-   ${R.map(m=>`<div class="obmb"><div class="obmn"><b>${E(m.name)}</b><small>${m.fb?"📈 ráta z burzy":m.par==="FCA"?"🚜 FCA u farmára":"📋 pevný cenník – báza len na porovnanie"}</small></div>
+   ${R.map(m=>`<div class="obmb"><div class="obmn"><b>${E(m.name)}</b><small>${m.fb?"📈 ráta z burzy"+(Array.isArray(m.fc)&&m.fc.length?" ("+m.fc.map(c=>E(nm(c))).join(", ")+")":""):m.par==="FCA"?"🚜 FCA u farmára":"📋 pevný cenník – báza len na porovnanie"}</small></div>
      ${(m.g||[]).map(g=>ln(g,m)).join("")}${(m.chyba||[]).length?`<small class="obmc">Bez ponuky (vykupujú): ${(m.chyba||[]).map(c=>E(nm(c))).join(", ")} – vlož ich ponuku, model sa spočíta sám.</small>`:""}</div>`).join("")}
    <div class="odmend"><button type="button" data-obx>✕ Zavrieť model</button></div></details>`}
 

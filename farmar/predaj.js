@@ -15,6 +15,8 @@ const MAXAGE=21;
 const D={B:null,O:[],K:[],T:[],mk:null,at:0,busy:false,err:"",form:false};
 // burza pre komoditu (posun ponuky): repka, slnečnica → MATIF repka; obilniny → MATIF pšenica; kukurica → MATIF kukurica; sója → CBOT
 const BZ={repka:"repka",lo:"repka",ho:"repka",psenica_p:"psenica_p",psenica_k:"psenica_p",jacmen_k:"psenica_p",jacmen_s:"psenica_p",kukurica:"kukurica",soja:"soja"};
+// posun s burzou: iba keď odberateľ ráta z burzy; float_coms = len tieto komodity (6. 11.: Interagros kukurica + repka)
+const FL=(b,c)=>!!(b&&b.float_burza)&&(!Array.isArray(b.float_coms)||!b.float_coms.length||b.float_coms.includes(c));
 const MON={jan:0,feb:1,mar:2,apr:3,maj:4,máj:4,may:4,jun:5,jún:5,jul:6,júl:6,aug:7,sep:8,okt:9,oct:9,nov:10,dec:11};
 function bzNow(sym){const R=((D.mk&&D.mk.rows)||[]).filter(r=>r.kind==="burza"&&r.c===sym&&!/náhrada|cbo?t pšen|cbot kuku/i.test(r.market||"")&&(sym==="soja"||/euronext|matif/i.test(r.market||"")));
   if(!R.length)return null;const lim=Date.now()+20*864e5;
@@ -44,13 +46,13 @@ function options(com,buy){const out=[],B=D.B||[];
   // 1) ponuky odberateľov (posunuté s burzou, ak odberateľ ráta z burzy)
   const seen=new Set();
   for(const o of D.O){if(o.com!==com||FWD(o.period))continue;const k=o.buyer+"|"+(o.site||"")+"|"+o.del;if(seen.has(k))continue;seen.add(k);const b=B.find(x=>x.id===o.buyer);if(!b)continue;
-    let p=+o.price,bz=null;if(b.float_burza&&o.bz_val!=null){const n=bzNow(o.bz_sym||BZ[com]);if(n){bz={d:n.v-(+o.bz_val),n:n.n};p+=bz.d}}
+    let p=+o.price,bz=null;if(FL(b,com)&&o.bz_val!=null){const n=bzNow(o.bz_sym||BZ[com]);if(n){bz={d:n.v-(+o.bz_val),n:n.n};p+=bz.d}}
     push(b,o.site,siteOf(b,o.site)||((b.sites||[]).find(s=>s.n===o.site)),o.del,p,o.d,"ponuka odberateľa",{bz,term:o.period})}
   // 2) ponuky konkurencie (ich výkupná cena = za toľko by kúpili od nás); bez ponúk na neskorší odber (3. 11.: LO FCA 512 = odber 1.–3. 2027, nie dnešný predaj)
   const KK=D.K.filter(x=>x.com===com&&!x.sell&&+x.price>0&&age(x.d)<=MAXAGE&&!/nad\s*500/i.test(x.term||"")&&!/odber\s*[0-9]/i.test(x.term||"")&&!/hamburg|z[aá]pad/i.test((x.who||"")+" "+(x.place||""))).sort((a,b)=>String(b.d||"").localeCompare(String(a.d||""))||String(b.at||"").localeCompare(String(a.at||"")));
   for(const x of KK){const b=buyerOf(x.who);if(!b)continue;const del=String(x.del||"").toUpperCase()||"DAP",fca=del==="FCA"||del==="EXW",site=fca?{n:"FCA farma"}:siteOf(b,(x.place||"")+" "+(x.term||"")+" "+(x.who||""));
     const k=b.id+"|"+(site&&site.n||"")+"|"+del+"|"+(x.term||"");if(seen.has(k))continue;seen.add(k);
-    let p=+x.price,bz=null;if(b.float_burza&&x.b!=null){const n=bzNow(BZ[com]);if(n){const np=n.v+(+x.b);bz={d:np-p,n:n.n};p=np}}
+    let p=+x.price,bz=null;if(FL(b,com)&&x.b!=null){const n=bzNow(BZ[com]);if(n){const np=n.v+(+x.b);bz={d:np-p,n:n.n};p=np}}
     push(b,site&&site.n,site,del,p,x.d,"ponuka (Konkurenčné ceny)",{bz,term:/odber\s*[0-9]/i.test(x.term||"")?x.term:""})}
   // 3) skutočné predaje z vážnych lístkov (Zúčtovanie odberateľa)
   const last={};for(const t of D.T){if(t.k!==com||!(+t.s>0))continue;const bn=t.b||"Odberateľ";if(!last[bn]||String(t.d)>String(last[bn].d))last[bn]=t}
@@ -131,7 +133,7 @@ function dopBack(site){if(!site||!site.ke)return null;const f=D.mk&&D.mk.fuel,hu
   return Math.round(((one(site.ke)+one(site.po||site.ke))/2)*10)/10}
 function buyOffers(b){const L=[],seen=new Set();
   for(const o of D.O){if(o.buyer!==b.id||age(o.d)>45)continue;const k=o.com+"|"+(o.site||"")+"|"+o.del+"|"+(o.period||"");if(seen.has(k))continue;seen.add(k);
-    let p=+o.price,bz=null;const n=o.bz_val!=null?bzNow(o.bz_sym||BZ[o.com]):null;if(b.float_burza&&n){bz={d:n.v-(+o.bz_val),n:n.n};p+=bz.d}
+    let p=+o.price,bz=null;const n=o.bz_val!=null?bzNow(o.bz_sym||BZ[o.com]):null;if(FL(b,o.com)&&n){bz={d:n.v-(+o.bz_val),n:n.n};p+=bz.d}
     const fca=o.del==="FCA"||o.del==="EXW",site=fca?null:(siteOf(b,o.site)||(b.sites||[]).find(s=>s.n===o.site)||((b.sites||[]).length===1?b.sites[0]:null));
     const d0=fca?0:dop(site),d1=fca?0:dopBack(site),M=MARGIN(),basis=o.bz_val!=null?Math.round((+o.price-(+o.bz_val))*10)/10:null,mb=b.basis&&b.basis[o.com];
     L.push({o,com:o.com,p,bz,d0,d1,M,rec:d0==null?null:Math.floor(p-d0-M),recB:d1==null?null:Math.floor(p-d1-M),fwd:FWD(o.period),basis,mb:mb!=null?+(mb.b??mb):null,site})}
@@ -216,7 +218,7 @@ document.addEventListener("submit",async e=>{const f=e.target;if(f.id!=="sForm"|
       const q=await sb.from("sell_buyers").insert(nb);if(q.error)throw new Error(q.error.message);b=nb;(D.B=D.B||[]).push(nb)}
     const huf=(D.mk&&D.mk.fx&&D.mk.fx.huf)||null;
     const rows=R.map(r=>{let p=+String(r.price).replace(",",".").replace(/\s/g,""),note=r.note||null;if(r.cur==="HUF"){if(!huf)throw new Error("Chýba kurz HUF – zadaj cenu v €.");note=[note,"z "+Math.round(p)+" HUF/t"].filter(Boolean).join(" · ");p=Math.round(p/huf*100)/100}
-      const n=b.float_burza?bzNow(BZ[r.com]):null;return {buyer:b.id,com:r.com,site:String(r.site||"").trim()||null,del:r.del,price:p,period:String(r.period||"").trim()||null,d:F.d||null,note,bz_sym:n?BZ[r.com]:null,bz_val:n?n.v:null}});
+      const n=FL(b,r.com)?bzNow(BZ[r.com]):null;return {buyer:b.id,com:r.com,site:String(r.site||"").trim()||null,del:r.del,price:p,period:String(r.period||"").trim()||null,d:F.d||null,note,bz_sym:n?BZ[r.com]:null,bz_val:n?n.v:null}});
     const q=await sb.from("sell_offers").insert(rows);if(q.error)throw new Error(q.error.message);
     toast(`✓ Uložené ${rows.length} ${rows.length===1?"cena":rows.length<5?"ceny":"cien"} – prepočítavam.`,4000);D.form=false;D.at=0;load()}
   catch(x){toast("Nepodarilo sa uložiť: "+(x&&x.message||x),7000)}finally{if(typeof busy==="function")busy(btn,false)}},true);

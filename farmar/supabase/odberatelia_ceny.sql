@@ -62,7 +62,7 @@ create or replace function public.odb_list(p_dni int default 45) returns jsonb l
 declare ss jsonb; res jsonb;
 begin
   begin ss:=coalesce(odb_open(),'{}'::jsonb); exception when others then ss:='{}'::jsonb; end;
-  with o as (select distinct on (o.buyer,o.com,coalesce(o.site,''),o.del,coalesce(o.period,'')) o.*, b.name bname, b.sites bsites, b.float_burza fb, upper(coalesce(b.parita,'')) bpar
+  with o as (select distinct on (o.buyer,o.com,coalesce(o.site,''),o.del,coalesce(o.period,'')) o.*, b.name bname, b.sites bsites, (b.float_burza and (coalesce(cardinality(b.float_coms),0)=0 or o.com=any(b.float_coms))) fb, upper(coalesce(b.parita,'')) bpar
              from sell_offers o join sell_buyers b on b.id=o.buyer and b.active
              where o.d>=current_date-p_dni order by o.buyer,o.com,coalesce(o.site,''),o.del,coalesce(o.period,''),o.d desc,o.id desc),
        x as (select o.*, m.eur_t px_now,
@@ -471,7 +471,7 @@ begin
           round(avg(a.bas) filter (where a.bas is not null and a.d>=current_date-45),2) b_avg45,
           (array_agg(a.src order by a.d desc))[1] src
         from a group by a.bid, a.com, a.del, a.sk)
-  select coalesce(jsonb_agg(jsonb_build_object('id',b.id,'name',b.name,'fb',b.float_burza,'par',b.parita,'model',b.model,'basis',to_jsonb(b)->'basis',
+  select coalesce(jsonb_agg(jsonb_build_object('id',b.id,'name',b.name,'fb',b.float_burza,'fc',to_jsonb(b.float_coms),'par',b.parita,'model',b.model,'basis',to_jsonb(b)->'basis',
       'g',(select coalesce(jsonb_agg(jsonb_build_object('com',g.com,'del',g.del,'site',g.site,'n',g.n,'d',g.d_last,'age',current_date-g.d_last,'p_last',g.p_last,
             'b',round(g.b_last,2),'b_d',g.b_d,'b_prev',round(g.b_prev,2),'b_avg45',g.b_avg45,'src',g.src,
             'sym',odb_bz(g.com),'kontrakt',m.contract,'px',m.eur_t,'px_d',m.quote_date,
@@ -482,6 +482,9 @@ begin
   return res;
 end $$;
 revoke all on function public.odb_models() from public, anon, authenticated;
+
+-- 6. 11.: sell_buyers.float_coms – posun s burzou iba pre tieto komodity (Interagros: kukurica, repka); prázdne = všetky
+alter table public.sell_buyers add column if not exists float_coms text[];
 
 -- odb_ceny (Cenník → 🏷️ Ceny odberateľov) + modely
 create or replace function public.odb_ceny() returns jsonb language plpgsql stable security definer set search_path=public as $$
