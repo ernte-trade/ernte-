@@ -30,8 +30,15 @@ const tbl=(head,rows)=>rows.length?`<table><thead><tr>${head.map(h=>`<th>${h}</t
 const box=(t,n,c)=>`<div class="kp ${c||""}"><b>${n}</b><small>${t}</small></div>`;
 
 // ---------- 🚛 DOPRAVA A FLOTILA (VALKO) ----------
-async function bDoprava(W){const RKx=typeof RK!=="undefined"?RK:{};let ev=[],err="";
+// 6. 11. 11:49 PRÍKAZ MAJITEĽA: osobné (služobné) autá do súhrnu nedávať – IBA Renault ŠPZ …809 a Octavia ŠPZ …264
+const OSOB_OK=/809|264/;const pn=x=>String(x||"").toUpperCase().replace(/[^A-Z0-9]/g,"");
+async function skipSet(){const ids=new Set(),pl=new Set();let V=[];try{const r=await sb.from("cmd_vehicles").select("*").limit(2000);V=r.data||[]}catch(x){}
+  if(!V.length)V=(S().fleet&&(S().fleet.vehAll||S().fleet.veh))||[];
+  for(const v of V){const osob=v.fleet==="sluzobne"||v.vtype==="osobne_m1";if(osob&&!OSOB_OK.test(pn(v.plate))){ids.add(v.id);if(v.plate)pl.add(pn(v.plate))}}
+  return {ids,pl,out:e=>ids.has(e.vehicle_id)||(e.plate&&pl.has(pn(e.plate)))||(e.spz&&pl.has(pn(e.spz)))}}
+async function bDoprava(W){const RKx=typeof RK!=="undefined"?RK:{};let ev=[],err="";const SK=await skipSet();
   try{for(let off=0;off<10000;off+=1000){const r=await sb.from("fleet_events").select("*").in("kind",Object.keys(RKx)).gte("at",W.a.toISOString()).lt("at",W.b.toISOString()).order("at",{ascending:false}).range(off,off+999);if(r.error){err=r.error.message;break}ev.push(...(r.data||[]));if(!r.data||r.data.length<1000)break}}catch(x){err=String(x&&x.message||x)}
+  ev=ev.filter(e=>!SK.out(e));
   const loss=e=>typeof regLoss==="function"?regLoss(e):["fuel_drop","fuel_transfer","paid_not_tank"].includes(e.kind)&&!e.flag;
   let pb=1.6;try{const CO=Object.assign({diesel:1.952},(S().fleet&&S().fleet.cfg&&S().fleet.cfg.costs)||{});if(typeof pBez==="function")pb=pBez(CO)}catch(x){}
   const L=ev.filter(loss).reduce((a,e)=>a+(+e.liters||0),0),sp=ev.filter(e=>e.kind==="speed"||e.kind==="limiter").length,cab=ev.filter(e=>e.kind==="cabotage").length,ns=ev.filter(e=>e.kind==="no_signal"||e.kind==="data_gap").length;
@@ -40,16 +47,17 @@ async function bDoprava(W){const RKx=typeof RK!=="undefined"?RK:{};let ev=[],err
   // aktuálne alarmy flotily (to isté, čo Flotila → Alarmy)
   let al=[];try{if(!S().fleet&&typeof loadFleet==="function")await loadFleet();if(S().fleet&&typeof fleetAlerts==="function")al=fleetAlerts(S().fleet).filter(a=>a[0]==="r"||a[0]==="w")}catch(x){}
   let ast={};try{const r=await sb.from("alarm_st").select("key,status").limit(5000);for(const x of r.data||[])ast[x.key]=x.status}catch(x){}
-  al=al.filter(a=>!["vyriesene","falosny"].includes(ast[a[2]]));
+  al=al.filter(a=>!["vyriesene","falosny"].includes(ast[a[2]])&&!(a[3]&&SK.ids.has(a[3])));
   // výzvy a dokumenty vodičom za týždeň
   let docs=[];try{const r=await sb.from("ai_docs").select("kind,driver,title,status,created_at").gte("created_at",W.a.toISOString()).lt("created_at",W.b.toISOString()).order("created_at",{ascending:false}).limit(200);docs=r.data||[]}catch(x){}
   // jazdy (vývoz) za týždeň
-  let trips=[];try{const r=await sb.from("trips").select("day,status,spz").gte("day",W.key).lt("day",W.b.toISOString().slice(0,10)).limit(2000);trips=r.data||[]}catch(x){}
+  let trips=[];try{const r=await sb.from("trips").select("day,status,spz").gte("day",W.key).lt("day",W.b.toISOString().slice(0,10)).limit(2000);trips=(r.data||[]).filter(t=>!SK.out(t))}catch(x){}
   // právne termíny – doprava / VALKO / všetci, do 180 dní
   const now=Date.now(),DUE=(window.ERNTE_DUE||[]).filter(d=>{const t=new Date(d[0]+"T00:00:00").getTime();return t>=now-864e5&&t<=now+180*864e5&&/VALKO|mýt|eFTI|eCMR|doprav/i.test(d[2]+" "+d[3])});
   const RT=k=>(RKx[k]||["•",k])[0]+" "+(RKx[k]||["•",k])[1];
   return {sum:`${ev.length} porušení · nafta ${n0(L)} l ≈ ${n0(L*pb)} € · ${al.length} otvorených alarmov`,
    html:`<div class="kps">${box("porušení a upozornení",ev.length,ev.length?"r":"g")}${box("nafta – podozrivé poklesy",n0(L)+" l","r")}${box("≈ € bez DPH",n0(L*pb)+" €","r")}${box("rýchlosť / obmedzovač",sp,sp?"w":"g")}${box("možná kabotáž",cab,cab?"r":"g")}${box("bez signálu / výpadok dát",ns,"")}${box("otvorené alarmy",al.length,al.length?"r":"g")}${box("jazdy vývozu",trips.length,"")}</div>
+   <p class="zh">🚗 Osobné autá: v súhrne iba Renault (ŠPZ …809) a Octavia (ŠPZ …264), ostatné osobné autá sa nezapočítavajú.</p>
    ${err?`<p class="nic">⚠️ Register porušení sa nepodarilo načítať: ${E(err)}</p>`:""}
    <h2>1. Porušenia podľa typu</h2>${tbl(["Typ","Počet"],Object.entries(byK).sort((a,b)=>b[1]-a[1]).map(([k,n])=>[E(RT(k)),n]))}
    <h2>2. Porušenia podľa vodiča</h2>${tbl(["Vodič","Autá","Nafta (prípady)","Litre","≈ € bez DPH","Rýchlosť","Kabotáž","Spolu"],Object.entries(byD).sort((a,b)=>b[1].l-a[1].l||b[1].n-a[1].n).map(([k,o])=>[`<b>${E(k)}</b>`,E([...o.p].join(", ")),o.f,n0(o.l),n0(o.l*pb),o.s,o.c,o.n]))}
