@@ -64,7 +64,7 @@ let MR=null;
 const PRF={ernte:{t:"Zmluvy, zúčtovania a faktúry – ERNTE",host:"smtp.gmail.com",port:465,user:"erntevykup@gmail.com",name:"ERNTE spol. s r.o.",kind:"Gmail – zadaj <b>heslo aplikácie</b> (16 znakov): Google účet → Zabezpečenie → Dvojstupňové overenie → Heslá aplikácií"},
   ponuky:{t:"Ponuky a dopyty – ERNTE",host:"smtp.gmail.com",port:465,user:"erntespol@gmail.com",name:"ERNTE spol. s r.o.",kind:"Gmail – zadaj <b>heslo aplikácie</b> (16 znakov): Google účet → Zabezpečenie → Dvojstupňové overenie → Heslá aplikácií"},
   danube:{t:"Danube Trade – zmluvy",host:"smtp.gmail.com",port:465,user:"danube.commodities.kft@gmail.com",name:"Danube Commodities Kft.",kind:"Gmail – zadaj <b>heslo aplikácie</b>: Google účet → Zabezpečenie → Dvojstupňové overenie → Heslá aplikácií"},
-  valko:{t:"VALKO – doprava (CMR, jazdy)",host:"smtp.office365.com",port:587,user:"",ph:"…@valko-logistics.sk",name:"VALKO s.r.o.",kind:"schránka @valko-logistics.sk – server a port uprav podľa poskytovateľa"}};
+  valko:{t:"VALKO – doprava (CMR, jazdy, týždenné súhrny)",host:"smtp.office365.com",port:587,user:"valko@valko-logistics.sk",ph:"…@valko-logistics.sk",name:"VALKO s.r.o.",kind:"schránka @valko-logistics.sk – server a port uprav podľa poskytovateľa"}};
 const PF=k=>PRF[k]||PRF.ernte;window.ernteMailProfiles=PRF;
 async function mailReady(prof){try{const r=await sb.rpc("mail_ready",{p_prof:prof||"ernte"});MR=r.error?{ok:false}:r.data||{ok:false}}catch(x){MR={ok:false}}return MR}
 async function mailBox(){const M=V&&V.M;if(!M)return;const old=document.getElementById("pvMail");if(old)old.remove();const P=PF(M.prof),DN=M.prof==="danube";await mailReady(M.prof);
@@ -94,10 +94,13 @@ async function mailDirect(){const M=V&&V.M;const to=((document.getElementById("p
     for(let i=0;i<30;i++){await new Promise(z=>setTimeout(z,4000));const s=await sb.rpc("mail_status",{p_id:id});const st=s.data&&s.data.status;
       if(st==="odoslany"){tmsg("✅ Zmluva odoslaná na "+to,8000);return}if(st==="chyba"){tmsg("⚠️ E-mail sa neodoslal: "+((s.data&&s.data.err)||"chyba schránky")+" – skontroluj nastavenie (Martin).",10000);return}}
     tmsg("E-mail sa ešte odosiela – výsledok uvidíš o chvíľu.",6000)}
-  catch(e){tmsg("Nepodarilo sa: "+(e&&e.message||e),8000);if(b){b.disabled=false;b.textContent="📤 Odoslať"}}}
+  catch(e){const m=String(e&&e.message||e);
+    // 6. 11.: odosielanie z aplikácie je vypnuté (mail_off) → rovno cez telefón (Gmail / Outlook), adresa sa skopíruje
+    if(/vypnut/i.test(m)){const x=document.getElementById("pvMail");if(x)x.remove();tmsg("📵 Odosielanie z aplikácie je vypnuté – posielam cez telefón (vyber schránku a ťukni Odoslať).",8000);if(M){M.to=to;M.subj=subj;M.body=body}mailPdf();return}
+    tmsg("Nepodarilo sa: "+m,8000);if(b){b.disabled=false;b.textContent="📤 Odoslať"}}}
 // e-mail s PDF: na mobile zdieľanie (Gmail / Mail – adresa a text sú pripravené, adresa sa skopíruje), inak stiahnutie + e-mailový program
 async function mailPdf(){const M=V&&V.M;if(!M)return;try{const f=await makeFile();try{await navigator.clipboard.writeText(M.to)}catch(x){}
-  if(navigator.canShare&&navigator.canShare({files:[f]})){try{await navigator.share({files:[f],title:M.subj,text:"Pre: "+M.to+"\n\n"+M.body});tmsg("✓ Zmluva odoslaná na zdieľanie. Adresa "+M.to+" je skopírovaná – vlož ju do príjemcu.",8000);return}catch(e){if(e&&e.name==="AbortError")return}}
+  if(navigator.canShare&&navigator.canShare({files:[f]})){try{await navigator.share({files:[f],title:M.subj,text:"Pre: "+M.to+"\n\n"+M.body});tmsg("✓ Dokument odoslaný na zdieľanie. Adresa "+M.to+" je skopírovaná – vlož ju do príjemcu.",8000);return}catch(e){if(e&&e.name==="AbortError")return}}
   dl(f);setTimeout(()=>{location.href="mailto:"+encodeURIComponent(M.to)+"?subject="+encodeURIComponent(M.subj)+"&body="+encodeURIComponent(M.body+"\n\n(Zmluva v PDF je stiahnutá: "+f.name+" – priložte ju.)")},400)}
   catch(e){tmsg("PDF sa nepodarilo vytvoriť: "+(e&&e.message||e),8000)}}
 // prevzatie window.open("") – dokumenty písané cez document.write
