@@ -58,7 +58,7 @@ function auditCard(){const d=A.d;const head=`<summary>🧾 Nemenný záznam zmie
     <input type="search" data-auf="q" placeholder="Hľadať (číslo zmluvy, lístok, e-mail, IP)" value="${E(A.q)}">
     <label>od <input type="date" data-auf="od" value="${E(A.od)}"></label><label>do <input type="date" data-auf="do" value="${E(A.do)}"></label>
     <button type="button" data-aug="find">🔎 Hľadať</button></div>
-   <div class="aub"><button type="button" data-aug="verify"${A.vb?" disabled":""}>✔️ Overiť reťaz</button><button type="button" data-aug="csv">⬇️ Export pre kontrolu (CSV)</button></div>
+   <div class="aub"><button type="button" data-aug="auto" aria-pressed="${A.q==="systém"}">🤖 Denník automatických akcií (AI a systém)</button><button type="button" data-aug="verify"${A.vb?" disabled":""}>✔️ Overiť reťaz</button><button type="button" data-aug="csv">⬇️ Export pre kontrolu (CSV)</button></div>
    ${vr?`<div class="auv ${vr.ok?"ok":"bad"}">${vr.err?`⚠️ ${E(vr.err)}`:vr.ok?`✅ Reťaz neporušená · ${Number(vr.n).toLocaleString("sk-SK")} zapečatených záznamov${vr.open?` · ${vr.open} čaká na zapečatenie (do minúty)`:""}${vr.anchor_ok===true?" · denný odtlačok mimo databázy sedí":vr.anchor_ok===false?" · ⚠️ denný odtlačok NESEDÍ":""}<small>posledný odtlačok ${E(String(vr.head||"").slice(0,24))}…</small>`
       :`⛔ Reťaz porušená: ${(vr.bad||[]).map(b=>`#${E(b.seq)} ${E(b.why)}`).join(" · ")}`}</div>`:""}
    ${rows.length?`<div class="aul">${rows.map(a=>`<div class="aui op${E(a.op)}"><div class="auh"><b>${E(TL[a.tbl]||a.tbl)} · ${E(OP[a.op]||a.op)}</b><small>${E(dt(a.at))}</small></div>
@@ -171,6 +171,7 @@ document.addEventListener("click",e=>{const t=e.target;if(!t.closest)return;
   if(t.closest("#auDel")){e.preventDefault();if(IN())delModal();return}
   const g=t.closest("[data-aug]");if(g&&(MAIN()||(OWN()&&g.dataset.aug==="rall"))){e.preventDefault();const k=g.dataset.aug;
     if(k==="find"){const w=g.closest("#auA");if(w){w.querySelectorAll("[data-auf]").forEach(x=>{A[x.dataset.auf]=x.value})}A.ver=null;loadA(true)}
+    else if(k==="auto"){A.q=A.q==="systém"?"":"systém";A.ver=null;loadA(true)}
     else if(k==="verify")verify();else if(k==="csv")csv(g);else if(k==="snap")snapTake(g);else if(k==="restore")restore(g);else if(k==="rall"){R.all=!R.all;paint()}return}
   const sd=t.closest("[data-ausd]");if(sd&&MAIN()){e.preventDefault();snapDiff(+sd.dataset.ausd);return}
   const z=t.closest("[data-auz]");if(z&&MAIN()){e.preventDefault();delResolve(z);return}},true);

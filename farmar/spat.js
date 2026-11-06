@@ -39,5 +39,20 @@ if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",
 {const s=document.createElement("style");s.textContent=`.spatbar{display:flex;justify-content:center;margin:6px 0 10px}
 .spatbar button{display:inline-flex;align-items:center;gap:8px;min-height:44px;padding:6px 16px 6px 12px;border-radius:999px;font-weight:800;font-size:.95rem;max-width:100%;white-space:nowrap;overflow:hidden}
 .spatbar button span{font-size:1.15rem;line-height:1}.spatbar small{font-weight:500;opacity:.75;font-size:.8rem;overflow:hidden;text-overflow:ellipsis;min-width:0}`;document.head.appendChild(s)}
+// 7. 11. príkaz majiteľa (Master prompt 2.3 „trvalé tlačidlo ← Späť v hornom rohu“): keď lišta ← Späť odroluje z obrazovky,
+// vľavo hore sa ukáže okrúhle ← (rovnaký krok späť); pod pásmi „Bez signálu“ / „Nové údaje“, nikdy cez otvorené okno (z-index nižší ako okná).
+let fq=0;function fab(){fq=0;const b=document.getElementById("spatBar");let f=document.getElementById("spatFab");
+  if(!b||!ON()){if(f)f.remove();return}
+  if(!f){f=document.createElement("button");f.type="button";f.id="spatFab";f.dataset.spat="1";f.setAttribute("aria-label","Späť na predchádzajúcu obrazovku");f.innerHTML='<span aria-hidden="true">←</span>';document.body.appendChild(f)}
+  const r=b.getBoundingClientRect(),vis=r.bottom>8&&r.top<innerHeight-8;
+  let top=10;for(const id of ["dmStale","ernNew"]){const x=document.getElementById(id);if(x&&x.offsetParent!==null){const q=x.getBoundingClientRect();if(q.left<70)top=Math.max(top,q.bottom+8)}}
+  let cov=false;try{const st=document.elementsFromPoint(innerWidth/2,innerHeight/2)||[];for(const el of st){if(el===f||el===document.body||el===document.documentElement)continue;
+    for(let x=el;x&&x!==document.body;x=x.parentElement){const cs=getComputedStyle(x);if(cs.position==="fixed"){const z=parseInt(cs.zIndex)||0,q=x.getBoundingClientRect();if(z>=50&&q.width*q.height>=innerWidth*innerHeight*.4)cov=true;break}}break}}catch(x){}
+  f.style.top="calc("+top+"px + env(safe-area-inset-top,0px))";f.classList.toggle("on",!vis&&!cov)}
+const fsch=()=>{if(!fq)fq=requestAnimationFrame(fab)};
+window.addEventListener("scroll",fsch,{passive:true});window.addEventListener("resize",fsch);document.addEventListener("click",()=>setTimeout(fsch,120));setInterval(fsch,1500);
+{const s=document.createElement("style");s.textContent=`#spatFab{position:fixed;left:10px;z-index:900;width:48px;height:48px;border-radius:50%;display:none;align-items:center;justify-content:center;padding:0;
+ font-size:1.45rem;font-weight:800;line-height:1;background:rgba(11,15,25,.9);color:#b6ff3b;border:2px solid rgba(182,255,59,.75);box-shadow:0 6px 18px rgba(0,0,0,.45)}
+#spatFab.on{display:flex}#spatFab span{transform:translateY(-1px)}@media print{#spatFab{display:none!important}}`;document.head.appendChild(s)}
 window.ernteSpat={back,stack:H};
 })();

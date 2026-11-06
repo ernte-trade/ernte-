@@ -133,11 +133,13 @@ window.vTrus=function(){const D=T.d;if(!D){loadStaffT();return `<div class="card
   if(D.price)SEC.push(["fak","🧾","Fakturácia","podklady: Baromfi → ERNTE · VALKO → ERNTE · ERNTE → BPS"],["cen","💶","Cenník pre odberateľa","21 miest nakládky · trus + doprava €/t"]);
   if(D.own)SEC.splice(1,0,["pri","🔑","Prístupy firiem a jazyk","Baromfi a BPS · vytvoriť prístup · čo kto vidí · 🇸🇰 SK / 🇭🇺 HU"]);
   if(D.own)SEC.push(["eko","📊","Ekonomika trás","úplné náklady súpravy · zisk · stratové trasy"],["nas","⚙️","Nastavenia a partneri","ceny · km trás · prihlásenia Baromfi a BPS"]);
+  // 7. 11. príkaz majiteľa (Master prompt 4.3 a 5): živiny a dávka na ha, doklady HU → SK a zákazy jazdy (trusziv.js)
+  if(window.trusHuSkHTML)SEC.push(["hu","🇭🇺","Doklady HU → SK a zákaz jazdy","TRACES · EKÁER · kamionstop HU a SK"]);if(window.trusZivHTML)SEC.push(["ziv","🧪","Živiny a dávka na hektár","N · P · K · sušina · limit 170 kg N/ha"]);
   let h=`<div class="zt trz"><h2>🐔 Kurací trus ${T.sec?`<button type="button" class="ztb" data-trsec="">← späť</button>`:""}</h2>`;
   if(!T.sec)return h+liveHTML()+`<div class="trflow"><span>🇭🇺 Baromfi Kft<small>nahlási vývoz</small></span><i>→</i><span>🚛 VALKO<small>schváli · ŠPZ</small></span><i>→</i><span>🏭 BPS Kamenica<small>vidí termín, tony, cenu</small></span><i>→</i><span>🧾 ERNTE<small>fakturácia</small></span></div>
     <div class="zgrid">${SEC.map(s=>`<button type="button" class="zbtn" data-trsec="${s[0]}"><span>${s[1]}</span><b>${s[2]}${s[0]==="vyv"&&nw?` <em class="acnt">${nw} nové</em>`:""}</b><small>${e(s[3])}</small></button>`).join("")}</div>
     <div class="s">🔒 Baromfi vidí iba výkupnú cenu a svoje vývozy. BPS vidí iba predajnú cenu, dopravu a svoje dodávky – nie dodávateľa ani nákup. VALKO dispečing vidí autá a miesta, bez cien.</div></div>`;
-  if(T.sec==="vyv")h+=liveHTML()+ordersHTML(D);else if(T.sec==="fak"&&D.price)h+=fakHTML(D);else if(T.sec==="cen"&&D.price)h+=cenHTML(D);else if(T.sec==="eko"&&D.own)h+=ekoHTML(D);else if(T.sec==="nas"&&D.own)h+=nasHTML(D);else if(T.sec==="pri"&&D.own)h+=priHTML(D);
+  if(T.sec==="vyv")h+=liveHTML()+ordersHTML(D);else if(T.sec==="fak"&&D.price)h+=fakHTML(D);else if(T.sec==="cen"&&D.price)h+=cenHTML(D);else if(T.sec==="eko"&&D.own)h+=ekoHTML(D);else if(T.sec==="nas"&&D.own)h+=nasHTML(D);else if(T.sec==="pri"&&D.own)h+=priHTML(D);else if(T.sec==="hu"&&window.trusHuSkHTML)h+=trusHuSkHTML(D);else if(T.sec==="ziv"&&window.trusZivHTML)h+=trusZivHTML(D);
   return h+`</div>`};
 function ordersHTML(D){const O=D.orders||[],F={open:o=>OPEN.includes(o.status),nahlasene:o=>o.status==="nahlasene",dorucene:o=>o.status==="dorucene",all:()=>true},L=O.filter(F[T.flt]||F.open);
   const op=O.filter(F.open),tp=op.reduce((s,o)=>s+(+(o.sum&&o.sum.tons_plan)||0),0),tr=op.reduce((s,o)=>s+(+o.trucks_n||0),0);
@@ -153,7 +155,7 @@ function orderCard(o,D){const S=o.sum||{},U=o.unload,canAp=["nahlasene","schvale
    ${S.tons_load!=null?`<div><small>Naložené</small><b>${f2(S.tons_load,2)} t</b></div>`:""}${S.tons_unload!=null?`<div><small>Prevzaté BPS</small><b>${f2(S.tons_unload,2)} t</b></div>`:""}${S.loss_t?`<div class="${Math.abs(S.loss_t)>0.5?"wn":""}"><small>Rozdiel váženia</small><b>${f2(S.loss_t,2)} t</b></div>`:""}
    ${D.price&&S.sell!=null?`<div><small>Trus BPS</small><b>${f2(S.trus_sum,0)} €</b></div><div><small>Doprava</small><b>${f2(S.trans_sum,0)} €</b></div><div><small>Výkup Baromfi</small><b>${f2(S.buy_sum,0)} €</b></div>`:""}
    ${D.own&&S.cost_sum!=null?`<div class="ps"><small>Zisk zákazky (trus + doprava)</small><b>${f2((S.trus_sum-S.buy_sum)+(S.trans_sum-S.cost_sum),0)} €</b></div>`:""}</div>
-  <div class="s">📍 Nakládka: <b>${e(o.site)}</b>${o.site_addr?", "+e(o.site_addr):""}, Maďarsko</div>
+  ${window.trusBanBadge&&OPEN.includes(o.status)?trusBanBadge(o):""}<div class="s">📍 Nakládka: <b>${e(o.site)}</b>${o.site_addr?", "+e(o.site_addr):""}, Maďarsko</div>
   <div class="s">🏁 Vykládka: ${U?`<b>${e(U.name)}</b>${U.addr?", "+e(U.addr):""}${U.contact?" · "+e(U.contact):""}`:`<i>BPS ešte nezadalo – predvolene areál BPS Kamenica nad Cirochou</i>`}${o.unload_note?`<br>💬 BPS: ${e(o.unload_note)}`:""}</div>
   ${o.note?`<div class="s">💬 Baromfi: ${e(o.note)}</div>`:""}${o.reply?`<div class="s">↩️ ${e(o.reply)}</div>`:""}
   ${loadsHTML(o,"staff")}

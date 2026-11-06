@@ -1208,7 +1208,8 @@ trus:{t:"Kurací trus",i:"🐔",r:"Vývozy kuracieho trusu z fariem Baromfi (HU)
  ["Ako to ide","<b>1.</b> Baromfi v aplikácii nahlási vývoz: farma, dátum, čas, počet áut. Príde ti upozornenie. <b>2.</b> VALKO dispečing zaškrtne autá (ŠPZ) a schváli. <b>3.</b> BPS hneď vidí, kedy a koľko ton príde, ktoré autá a koľko zaplatí, a doplní miesto vykládky pre vodiča. <b>4.</b> Baromfi zadá netto pri nakládke, BPS pri prevzatí."],
  ["Ceny","Výkup, predaj a doprava €/km sa nastavujú v Nastaveniach. Pri schválení sa ceny vývozu zmrazia. Doprava sa platí za jazdu (km otočka × €/km), trus podľa váženia: Baromfi podľa nakládky, BPS podľa vykládky."],
  ["Kto čo vidí","Baromfi: iba výkupnú cenu a svoje vývozy, ako odberateľa vidí ERNTE. BPS: iba svoju cenu, dopravu a dodávky, nie dodávateľa ani nákup. VALKO dispečing: autá, miesta a tony bez cien. Zisk a ekonomiku trás vidíš iba ty."],
- ["Fakturácia","V časti Fakturácia vyber obdobie a vytlač podklady: Baromfi → ERNTE (bez DPH, dodanie z HU), VALKO → ERNTE (doprava), ERNTE → BPS (trus + doprava s DPH)."]]},
+ ["Fakturácia","V časti Fakturácia vyber obdobie a vytlač podklady: Baromfi → ERNTE (bez DPH, dodanie z HU), VALKO → ERNTE (doprava), ERNTE → BPS (trus + doprava s DPH)."],
+ ["🧪 Živiny a 🇭🇺 doklady","<b>🧪 Živiny a dávka na hektár</b>: sušina, N, P₂O₅, K₂O → t/ha, spolu ton a kamiónov; v zraniteľnej oblasti max. 170 kg N/ha za rok. <b>🇭🇺 Doklady HU → SK</b>: povolenie ŠVPS, obchodný doklad v TRACES, EKÁER (pri truse netreba) a zákazy jazdy v HU a SK na 14 dní; pri vývoze ⛔ ak nakládka padne do zákazu."]]},
 req:{t:"Požiadavky",i:"📥",r:"Všetko, čo ti farmári pošlú z aplikácie – na jednom mieste.",s:[
  ["Odkiaľ prichádzajú","Farmár v aplikácii ťukne <b>Predať</b> pri komodite (chce predať tony za cenu z cenníka), <b>Objednať odvoz</b>, <b>Súhlasím</b> pri obchode alebo pošle <b>Správu</b>. Nová požiadavka ti hneď zasvieti s číslom na záložke."],
  ["Čo s ňou spravíš","Pri „Chcem predať“ ťukni <b>Založiť obchod</b> – údaje sa predvyplnia do záložky Obchody. Pri odvoze naplánuj auto v Doprave. Potom požiadavku označ <b>Vybavené</b> alebo <b>Zamietnuť</b> a môžeš farmárovi napísať odpoveď – uvidí ju v aplikácii."],
@@ -1230,7 +1231,8 @@ price:{t:"Cenník",i:"💶",r:"Výkupné ceny, ktoré vidia všetci prihlásení
 trans:{t:"Doprava",i:"🚚",r:"Plánovanie odvozov od farmárov autami VALKO.",s:[
  ["Naplánovať jazdu","Vyber farmára (a obchod), deň, čas, auto a vodiča. Farmár vidí v aplikácii, kedy príde auto, ŠPZ a vodiča."],
  ["Stavy jazdy","Naplánovaná → auto na ceste → na nakládke → naložené → vyložené/zvážené. Farmár vidí polohu auta na mape <b>len do naloženia</b> – kam to vezieš, nevidí nikdy."],
- ["Prepojenie","Vyložené tony sa <b>samy pripočítajú</b> k obchodu (dodané t). Polohu áut berie z Commandera."]]},
+ ["Prepojenie","Vyložené tony sa <b>samy pripočítajú</b> k obchodu (dodané t). Polohu áut berie z Commandera."],
+ ["📦 Objednávky prepravy","Hore karta: ➕ Nová objednávka – firma na dokladoch (VALKO / ERNTE / DANUBE), odkiaľ → kam, tony, cena za tonu / km / paušál, nakládka a auto. 🧭 vypočíta km. Z objednávky vytlačíš <b>Objednávku prepravy</b> aj <b>CMR</b>. Zisk a maržu vidí iba Martin."]]},
 fleet:{t:"Flotila",i:"🚛",r:"Všetko o autách VALKO z Commandera – živo, každé 2 minúty.",s:[
  ["Dashboard","Prehľad: zisk/strata, alarmy, spotreba, autá na ceste, mzdy, posledný pohyb. Tlačidlá ťa presunú do sekcie."],
  ["Obdobie","Hore vyber Dnes / 7 dní / 30 dní / <b>Tento mesiac</b>. Zisk sa dá spočítať len za mesiac (mzdy sú mesačné)."],
@@ -3058,7 +3060,7 @@ document.addEventListener("click",e=>{const b=e.target.closest("[data-dfp]");if(
 <script src="ppa.js?v=20261031-0850"></script>
 <script src="farmdup.js?v=20261031-0900"></script>
 <script src="secbtn.js?v=20261106-1330" defer></script>
-<script src="spat.js?v=20261106-1330" defer></script>
+<script src="spat.js?v=20261107-0020" defer></script>
 <script src="testview.js?v=20261028-2255"></script>
 <script src="cal.js?v=20261031-0700"></script>
 <script src="iscc.js?v=20261104-0110"></script>
@@ -3074,7 +3076,9 @@ document.addEventListener("click",e=>{const b=e.target.closest("[data-dfp]");if(
 <script src="contract.js?v=20261102-2302"></script>
 <script src="agro.js?v=20261029-2150"></script>
 <script src="activity.js?v=20261029-2050"></script>
-<script src="trus.js?v=20261101-0945"></script>
+<script src="trusziv.js?v=20261107-0010"></script>
+<script src="trus.js?v=20261107-0010"></script>
+<script src="objdoprava.js?v=20261107-0010"></script>
 <script src="ev.js?v=20261029-2150"></script>
 <script src="sklad.js?v=20261027-0800"></script>
 <script src="sus.js?v=20261105-0841"></script>
@@ -3132,7 +3136,7 @@ document.addEventListener("click",e=>{const b=e.target.closest("[data-dfp]");if(
 <script src="kid.js?v=20261101-1050"></script>
 <script src="invest.js?v=20261031-1730"></script>
 <script src="kidhome.js?v=20261101-1045"></script>
-<script src="uiwatch.js?v=20261102-0850"></script>
+<script src="uiwatch.js?v=20261107-0020"></script>
 <script src="navrhy.js?v=20261101-1340"></script>
 <script src="aicredit.js?v=20261102-1110"></script>
 <script src="certs.js?v=20261103-1515"></script>
@@ -3148,7 +3152,7 @@ document.addEventListener("click",e=>{const b=e.target.closest("[data-dfp]");if(
 <script src="pushcenter.js?v=20261029-0010"></script>
 <script src="desktop.js?v=20261028-0900"></script>
 <script src="vzhlad.js?v=20261106-1330"></script>
-<script src="audit.js?v=20261106-0800"></script>
+<script src="audit.js?v=20261107-0020"></script>
 <script src="autopush.js?v=20261106-0700"></script>
 <script src="domov.js?v=20261106-0800"></script>
 <script src="formsave.js?v=20261106-0800"></script>

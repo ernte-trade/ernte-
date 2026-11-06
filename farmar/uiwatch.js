@@ -45,4 +45,8 @@ addEventListener("unhandledrejection",ev=>{try{const m=String(ev.reason&&(ev.rea
 function boot(){new MutationObserver(sch).observe(document.body,{childList:true,subtree:true});addEventListener("resize",sch);sch()}
 if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",boot);else boot();
 window.ernteUiCheck=()=>{SENT.clear();check();return Q.slice()};
+// 7. 11. (Master prompt 1.1 „plynulo 60–120 snímok, hlavné vlákno nikdy zablokované“): dlhé úlohy hlavného vlákna > 200 ms.
+// ≥ 5 za 10 s alebo jedna > 1,5 s → hlásenie „pomale“ (raz na obrazovku a reláciu; prvých 15 s po načítaní sa neráta – vtedy sa načítavajú skripty).
+try{let LT=[];new PerformanceObserver(list=>{for(const en of list.getEntries()){if(en.duration<200||performance.now()<15000||document.hidden)continue;const now=performance.now();LT=LT.filter(x=>now-x.t<10000);LT.push({t:now,d:en.duration});
+  if(en.duration>1500||LT.length>=5){const a=en.attribution&&en.attribution[0];addNow("pomale",null,(en.duration>1500?"jedna úloha "+Math.round(en.duration)+" ms":LT.length+" dlhých úloh za 10 s, najdlhšia "+Math.round(Math.max(...LT.map(x=>x.d)))+" ms")+(a&&(a.containerSrc||a.containerName)?" · "+(a.containerSrc||a.containerName):""));LT=[]}}}).observe({type:"longtask",buffered:false})}catch(x){}
 })();
