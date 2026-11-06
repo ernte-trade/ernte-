@@ -96,3 +96,20 @@ select '2026-11-06','🩺 Diagnostika: upozornenia ntfy v limite, jasnejšie chy
  'Bezplatná služba ntfy.sh má limit asi 250 správ za deň – dnes sa prekročil (chyba 429). Aplikácia si teraz stráži rozpočet: nad 150 správ za 24 h idú cez ntfy iba dôležité, nad 220 nič a po chybe 429 počká hodinu. Upozornenia v aplikácii (Web Push) chodia ďalej. V diagnostike sú chyby zoskupené podľa služby (GitHub, ntfy, počasie) a test GitHub tokenu sa obnoví sám. Commander „No item found“ (zmluvy, strediská) sa už neukazuje ako chyba – znamená iba, že tam nič nie je.'
 where not exists(select 1 from app_novinky where titul like '🩺 Diagnostika: upozornenia ntfy%');
 
+-- 6. 11. 2026: staré kontroly flotily (place_check, stop_check, no_signal_check, kabotáž, nafta, trus, na odoslanie…) posielali na ntfy.sh
+-- priamo cez net.http_post – mimo push centra, bez zápisu do push_log a bez limitu → 429 „daily message quota reached“.
+-- Teraz všetky idú cez ntfy_post(): ten istý rozpočet ako push_ntfy (push_ntfy_ok), zápis do push_log (src ntfy-priamo), po 429 hodinová pauza.
+create or replace function public.ntfy_post(url text, body jsonb default null, params jsonb default '{}'::jsonb, headers jsonb default '{"Content-Type":"application/json"}'::jsonb, timeout_milliseconds int default 5000)
+returns bigint language plpgsql security definer set search_path=public, net as $$
+declare pr int:=greatest(1,least(5,coalesce(nullif(body->>'priority','')::int,3))); rq bigint;
+begin
+  if not push_ntfy_ok(pr) then
+    begin insert into push_log(src,kind,prio,title,body,channel,err) values('ntfy-priamo','limit',pr,left(body->>'title',120),left(body->>'message',300),'ntfy-pauza','denný limit ntfy.sh – neodoslané'); exception when others then null; end;
+    return null;
+  end if;
+  rq:=net.http_post(url:=url, body:=body, params:=coalesce(params,'{}'::jsonb), headers:=coalesce(headers,'{"Content-Type":"application/json"}'::jsonb), timeout_milliseconds:=coalesce(timeout_milliseconds,5000));
+  begin insert into push_log(src,kind,prio,title,body,channel,req_id) values('ntfy-priamo',null,pr,left(body->>'title',120),left(body->>'message',300),'ntfy',rq); exception when others then null; end;
+  return rq;
+end $$;
+revoke all on function public.ntfy_post(text,jsonb,jsonb,jsonb,int) from public, anon, authenticated;
+
