@@ -15,7 +15,7 @@ const MAXAGE=21;
 const D={B:null,O:[],K:[],T:[],mk:null,at:0,busy:false,err:"",form:false};
 // burza pre komoditu (posun ponuky): repka, slnečnica → MATIF repka; obilniny → MATIF pšenica; kukurica → MATIF kukurica; sója → CBOT
 const BZ={repka:"repka",lo:"repka",ho:"repka",psenica_p:"psenica_p",psenica_k:"psenica_p",jacmen_k:"psenica_p",jacmen_s:"psenica_p",kukurica:"kukurica",soja:"soja"};
-// posun s burzou: iba keď odberateľ ráta z burzy; float_coms = len tieto komodity (6. 11.: Interagros kukurica + repka)
+// posun s burzou: iba keď odberateľ ráta z burzy; float_coms = len tieto komodity (prázdne = všetky)
 const FL=(b,c)=>!!(b&&b.float_burza)&&(!Array.isArray(b.float_coms)||!b.float_coms.length||b.float_coms.includes(c));
 const MON={jan:0,feb:1,mar:2,apr:3,maj:4,máj:4,may:4,jun:5,jún:5,jul:6,júl:6,aug:7,sep:8,okt:9,oct:9,nov:10,dec:11};
 function bzNow(sym){const R=((D.mk&&D.mk.rows)||[]).filter(r=>r.kind==="burza"&&r.c===sym&&!/náhrada|cbo?t pšen|cbot kuku/i.test(r.market||"")&&(sym==="soja"||/euronext|matif/i.test(r.market||"")));

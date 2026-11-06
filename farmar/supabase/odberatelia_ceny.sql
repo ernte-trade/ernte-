@@ -483,7 +483,7 @@ begin
 end $$;
 revoke all on function public.odb_models() from public, anon, authenticated;
 
--- 6. 11.: sell_buyers.float_coms – posun s burzou iba pre tieto komodity (Interagros: kukurica, repka); prázdne = všetky
+-- 6. 11.: sell_buyers.float_coms – posun s burzou iba pre tieto komodity; prázdne = všetky
 alter table public.sell_buyers add column if not exists float_coms text[];
 
 -- odb_ceny (Cenník → 🏷️ Ceny odberateľov) + modely
