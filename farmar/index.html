@@ -1049,11 +1049,15 @@ let SELL=null,ORDER=null;
 async function startFarmer(){$("refBtn").hidden=false;await loadFarmer();await loadPos();renderFarmer();setInterval(async()=>{if(document.hidden)return;await loadPos();if((STATE.pos||[]).length&&!document.querySelector("#app form :focus"))renderFarmer()},60000);loadWx().then(renderFarmer);
   sb.channel("f-"+FARMER.id).on("postgres_changes",{event:"*",schema:"public",table:"requests",filter:"farmer_id=eq."+FARMER.id},()=>loadFarmer().then(renderFarmer)).on("postgres_changes",{event:"*",schema:"public",table:"trips",filter:"farmer_id=eq."+FARMER.id},()=>loadFarmer().then(renderFarmer)).subscribe();
   document.addEventListener("visibilitychange",()=>{if(!document.hidden)loadFarmer().then(renderFarmer)})}
+/* 6. 11. príkaz majiteľa „žiadne chyby“: pri výpadku signálu sa načítané údaje NEZMAŽÚ – ostanú posledné a hore je „📡 Bez spojenia · Skúsiť znova“ (domov.js) */
+const NETERR=x=>!!(x&&x.error&&!x.data&&(/fetch|network|load failed|timeout|offline|ECONN/i.test(String(x.error.message||x.error))||navigator.onLine===false));
+function staleMark(bad){if(bad)window.ERNTE_STALE=window.ERNTE_STALE||Date.now();else{window.ERNTE_STALE=0;window.ERNTE_LOADED_AT=Date.now()}try{document.dispatchEvent(new Event("erntestale"))}catch(x){}}
 async function loadFarmer(){const [p,s,d,r]=await Promise.all([
   sb.from("prices").select("com,price,updated_at"),sb.from("settings").select("key,value"),
   sb.from("deals").select("*").order("created_at",{ascending:false}),
   sb.from("requests").select("*").order("created_at",{ascending:false}).limit(20)]);
-  try{const t=await sb.from("trips").select("id,deal_id,spz,driver_phone,day,time,status,netto,note").order("day",{ascending:true});STATE.trips=t.data||[]}catch(e){STATE.trips=[]}
+  try{const t=await sb.from("trips").select("id,deal_id,spz,driver_phone,day,time,status,netto,note").order("day",{ascending:true});if(!(NETERR(t)&&STATE.trips))STATE.trips=t.data||[]}catch(e){STATE.trips=STATE.trips||[]}
+  if([p,s,d,r].some(NETERR)&&STATE.deals!=null){staleMark(true);return}staleMark(false);
   STATE.prices=(p.data||[]).filter(x=>x.price!=null&&+x.price>0);STATE.settings=Object.fromEntries((s.data||[]).map(x=>[x.key,x.value]));STATE.deals=d.data||[];STATE.reqs=r.data||[]}
 function contact(){return (STATE.settings||{}).contact||{phone:"+421 918 449 991",email:"jana.valkova@ernte.sk"}}
 function miniMap(lat,lon,label){return lmapHTML([{lat,lon,label,mv:true}],"sm")}
@@ -1130,6 +1134,7 @@ async function loadStaff(){const [f,p,s,d,r,aj]=await Promise.all([sb.from("farm
   ROLE&&ROLE!=="owner"?sb.rpc("my_price_adj",{p_email:(window.ERNTE_VIEWAS&&ERNTE_VIEWAS.email)||null}).then(x=>x,()=>({})):Promise.resolve({})]);
   try{const [tk,tr]=await Promise.all([sb.from("trucks").select("*").order("no"),sb.from("trips").select("*").order("day",{ascending:false}).limit(300)]);STATE.trucks=tk.data||[];STATE.trips=tr.data||[];STATE.noTrans=!!tk.error}catch(e){STATE.trucks=[];STATE.trips=[];STATE.noTrans=true}
   try{const own=ROLE==="owner",q=[sb.from("trip_route").select("*").limit(3000)];if(own)q.push(sb.from("trip_fin").select("*").limit(3000),sb.from("deal_fin").select("*").limit(3000));const X=await Promise.all(q),M=(r,k)=>Object.fromEntries(((r&&r.data)||[]).map(x=>[x[k],x]));STATE.troute=M(X[0],"trip_id");STATE.tfin=own?M(X[1],"trip_id"):{};STATE.dfin=own?M(X[2],"deal_id"):{}}catch(e){STATE.troute={};STATE.tfin={};STATE.dfin={}}
+  if([f,p,s,d,r].some(NETERR)&&STATE.dealsAll!=null){staleMark(true);return}staleMark(false);
   STATE.farmers=f.data||[];STATE.prices=p.data||[];STATE.settings=Object.fromEntries((s.data||[]).map(x=>[x.key,x.value]));dealsSplit(d.data||[]);STATE.reqs=r.data||[];padjSet(aj)}
 // archivované obchody a obchody testovacích farmárov (TEST / 🧪) sa nerátajú do súčtov ani štatistík
 const isTestName=n=>/(^|[^\p{L}])test([^\p{L}]|$)/iu.test(String(n||""))||String(n||"").includes("🧪");
@@ -3132,6 +3137,7 @@ document.addEventListener("click",e=>{const b=e.target.closest("[data-dfp]");if(
 <script src="vzhlad.js?v=20261106-0630"></script>
 <script src="audit.js?v=20261106-0705"></script>
 <script src="autopush.js?v=20261106-0700"></script>
+<script src="domov.js?v=20261106-0730"></script>
 <script src="guard.js?v=20261031-0715"></script>
 <script src="scrollkeep.js?v=20261028-0100"></script>
 <script src="astro.js?v=20261027-2030"></script>
