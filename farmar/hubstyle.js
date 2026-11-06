@@ -11,7 +11,7 @@ const today=()=>new Date().toISOString().slice(0,10);
 const ACT=["podpisany","odvoz","odvezeny","fakturacia"],LIVE=d=>!d.archived&&d.status!=="zruseny";
 // [ikona, číslo, popis, tón (g zelená / b modrá / w oranžová / r červená), cieľ pre ťuk (slovo)]
 const K={
- home(){const D=(S().deals||[]).filter(LIVE),R=S().reqs||[],a=D.filter(d=>ACT.includes(d.status)),t=a.reduce((s,d)=>s+(+d.tons||0),0),dv=a.reduce((s,d)=>s+Math.min(+d.delivered_t||0,+d.tons||0),0);
+ home(){if(window.rdHomeK){const r=rdHomeK();if(r)return r}const D=(S().deals||[]).filter(LIVE),R=S().reqs||[],a=D.filter(d=>ACT.includes(d.status)),t=a.reduce((s,d)=>s+(+d.tons||0),0),dv=a.reduce((s,d)=>s+Math.min(+d.delivered_t||0,+d.tons||0),0);
   return [["🤝",nf(a.length),"aktívne zmluvy","b"],["⚖️",nf(t,0)+" t","v zmluvách · dodané "+(t?nf(dv/t*100,0):0)+" %","g"],["📥",nf(R.filter(r=>r.status==="nova").length),"nové požiadavky","w"],["✍️",nf(D.filter(d=>d.status==="navrh").length),"čaká na podpis","r"]]},
  deals(){const D=(S().deals||[]).filter(LIVE),a=D.filter(d=>ACT.includes(d.status)),t=a.reduce((s,d)=>s+(+d.tons||0),0),dv=a.reduce((s,d)=>s+Math.min(+d.delivered_t||0,+d.tons||0),0),val=a.reduce((s,d)=>s+Math.max(0,(+d.tons||0)-(+d.delivered_t||0))*(+d.price||0),0);
   return [["📄",nf(D.length),"zmlúv spolu","b"],["🟢",nf(a.length),"aktívne","g"],["⚖️",(t?nf(dv/t*100,0):0)+" %",nf(dv,0)+" z "+nf(t,0)+" t dodané","g"],["💶",eur(val),"hodnota nedodaného","w"]]},
@@ -27,10 +27,10 @@ const K={
 function tabsNow(){return [...document.querySelectorAll("#app nav.tabs [data-tab]")].map(b=>b.dataset.tab)}
 function title(t){const b=document.querySelector(`#app nav.tabs [data-tab="${t}"] .tl`);return b?b.textContent.trim():t}
 function html(){const t=TAB,L=tabsNow(),i=L.indexOf(t),n=String((i<0?0:i)+1).padStart(2,"0");let k=[];try{k=K[t]?K[t]():[]}catch(x){k=[]}
-  const ico=(typeof TICO!=="undefined"&&TICO[t])||"•";
+  const ico=(window.rdTabIco&&rdTabIco(t))||(typeof TICO!=="undefined"&&TICO[t])||"•";
   return `<section class="ehb" data-ehb="${e(t)}"><div class="ehbe"><span>— ${n}</span><i></i><span>${e(new Date().toLocaleDateString("sk-SK",{weekday:"long",day:"numeric",month:"numeric"}))}</span></div>
    <h1 class="ehbt"><span class="ehbi" aria-hidden="true">${ico}</span>${e(title(t))}</h1>
-   ${k.length?`<div class="ehbk">${k.map(x=>`<div class="ehbc t-${x[3]}"><div class="ehbs" aria-hidden="true">${x[0]}</div><b${String(x[1]).length>6?' class="ehbl"':""}>${e(x[1])}</b><small>${e(x[2])}</small></div>`).join("")}</div>`:""}</section>`}
+   ${k.length?`<div class="ehbk">${k.map(x=>`<div class="ehbc t-${x[3]}"${x[4]?` data-rdgo="${e(x[4])}" role="button" tabindex="0"`:""}><div class="ehbs" aria-hidden="true">${x[0]}</div><b${String(x[1]).length>6?' class="ehbl"':""}>${e(x[1])}</b><small>${e(x[2])}</small></div>`).join("")}</div>`:""}${t==="home"&&window.rdTools?rdTools():""}</section>`}
 function inject(){if(!OK())return;const app=document.getElementById("app");if(!app)return;const nav=app.querySelector("nav.tabs");if(!nav||typeof TAB==="undefined")return;
   const ex=app.querySelector("section.ehb");if(ex&&ex.dataset.ehb===TAB)return;if(ex)ex.remove();
   nav.insertAdjacentHTML("afterend",html());fix();document.body.classList.add("ehbon")}
