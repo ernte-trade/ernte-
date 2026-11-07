@@ -135,7 +135,7 @@ ${T.gmp===false?"":`  <div class="pg"></div><div class="hdr"><img src="${e(abs("
 `}
   <div class="ft">Verzia 2.0, od 30. septembra 2025 · © ISCC System GmbH<br>Zmluva č. ${e(d.no)} · vygenerované v aplikácii ERNTE Trade &amp; Logistic ${e(dmy())}</div>
   <div class="pb"><button onclick="print()" style="font-size:15px;padding:10px 18px">🖨️ Tlačiť / uložiť ako PDF</button></div></body></html>`}
-async function open(id){const d=(STATE.deals||[]).find(x=>x.id===id);if(!d){toast("Zmluva sa nenašla.");return}
+async function open(id){let d=(STATE.deals||[]).find(x=>x.id===id);if(!d){toast("Zmluva sa nenašla.");return}
   const F=(typeof FARMER!=="undefined"&&FARMER)?FARMER:((STATE.farmers||[]).find(f=>f.id===d.farmer_id)||{name:""});
   if(!(typeof FARMER!=="undefined"&&FARMER)){const me=(typeof ME!=="undefined"&&ME&&ME.staffName)||"ERNTE",cn=typeof comName==="function"?comName(d.com):d.com;
     window.__pvMail=window.__pvMail||{to:F.email||"",deal:d.id,subj:`Kúpna zmluva ${d.no||""} – ERNTE spol. s r.o.`,
