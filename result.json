@@ -1,0 +1,127 @@
+{
+ "at": "2026-11-07T17:40:51.588Z",
+ "sha": "f56878c0c6ce57d0f12e47a7287947f92f43b6e3",
+ "ok": true,
+ "fails": [],
+ "warns": [
+  "obchodna_firma 344px: načítanie 3,3 s (nad 3 s)",
+  "farmar 344px: načítanie 3,4 s (nad 3 s)",
+  "obchodnik 344px: načítanie 3,7 s (nad 3 s)",
+  "doprava 344px: načítanie 3,9 s (nad 3 s)",
+  "obchodna_firma 690px: načítanie 3,1 s (nad 3 s)",
+  "doprava 390px: načítanie 3,7 s (nad 3 s)",
+  "majitel 344px: konzola – Blocked call to navigator.vibrate because user hasn't tapped on the frame or any embedded frame yet: https://www.chromestatus.com/feature/5644273861001216.",
+  "majitel 344px: načítanie 22,4 s (nad 3 s)",
+  "majitel 390px: konzola – Blocked call to navigator.vibrate because user hasn't tapped on the frame or any embedded frame yet: https://www.chromestatus.com/feature/5644273861001216.",
+  "majitel 390px: načítanie 13,8 s (nad 3 s)",
+  "majitel 412px: načítanie 10,4 s (nad 3 s)",
+  "majitel 690px: načítanie 8,4 s (nad 3 s)",
+  "majitel 900px: načítanie 8,5 s (nad 3 s)",
+  "majitel 1440px: načítanie 9,5 s (nad 3 s)"
+ ],
+ "vis": [
+  {
+   "shot": "doprava-1440.png",
+   "pct": 9
+  },
+  {
+   "shot": "doprava-344.png",
+   "pct": 11.7
+  },
+  {
+   "shot": "doprava-390.png",
+   "pct": 10.7
+  },
+  {
+   "shot": "doprava-412.png",
+   "pct": 8.9
+  },
+  {
+   "shot": "doprava-690.png",
+   "pct": 8.2
+  },
+  {
+   "shot": "doprava-900.png",
+   "pct": 8.6
+  },
+  {
+   "shot": "farmar-900.png",
+   "pct": 4.5
+  },
+  {
+   "shot": "majitel-1440.png",
+   "pct": 24.4
+  },
+  {
+   "shot": "majitel-344.png",
+   "pct": 34
+  },
+  {
+   "shot": "majitel-390.png",
+   "pct": 32.9
+  },
+  {
+   "shot": "majitel-412.png",
+   "pct": 24.8
+  },
+  {
+   "shot": "majitel-690.png",
+   "pct": 24.2
+  },
+  {
+   "shot": "majitel-900.png",
+   "pct": 16.3
+  },
+  {
+   "shot": "obchodna_firma-344.png",
+   "pct": 19.4
+  },
+  {
+   "shot": "obchodna_firma-390.png",
+   "pct": 2.1
+  },
+  {
+   "shot": "obchodna_firma-690.png",
+   "pct": 18.3
+  },
+  {
+   "shot": "obchodna_firma-900.png",
+   "pct": 17.7
+  },
+  {
+   "shot": "obchodnik-1440.png",
+   "pct": 5.7
+  },
+  {
+   "shot": "obchodnik-344.png",
+   "pct": 12.2
+  },
+  {
+   "shot": "obchodnik-390.png",
+   "pct": 8.4
+  },
+  {
+   "shot": "obchodnik-412.png",
+   "pct": 8.4
+  },
+  {
+   "shot": "obchodnik-690.png",
+   "pct": 6.8
+  },
+  {
+   "shot": "obchodnik-900.png",
+   "pct": 5.9
+  }
+ ],
+ "load_avg": 4102,
+ "load_max": 22448,
+ "runs": 30,
+ "rate": {
+  "d1": 21,
+  "h0": 11,
+  "h1": 0
+ },
+ "stable_age_min": 2648,
+ "rollback": null,
+ "shots": []
+}
