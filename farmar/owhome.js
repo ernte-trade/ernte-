@@ -32,7 +32,7 @@ function pricesHTML(){const P=(STATE.prices||[]).filter(p=>p.price!=null&&+p.pri
   let anySell=false;
   const cards=P.map(p=>{let s=S[p.com];if(s&&(s.arx||s.ia))s=s.rg||null;/* náš NÁKUPNÝ model (ADM, Interagros, VSK) nie je predaj – iba Kalkulačka (región Bunge/Somotor) */const buy=+p.price,bst=window.sellBest?sellBest(p.com,+p.price):null;
     // jedno číslo všade: ak máme skutočné ponuky odberateľov, predaj a marža = najlepšia z nich (to isté ako 🏆 Kde predať)
-    if(bst&&bst.net!=null)s={dap:bst.price,dop:bst.dop||0,pl:bst.b.name+(bst.siteName?" "+bst.siteName:"")+" · "+bst.del};
+    if(bst&&bst.net!=null)s={dap:bst.price,dop:bst.dop||0,pl:bst.b.name+(bst.siteName?" "+bst.siteName:"")+" · "+bst.del+(/^\d{4}-\d\d-\d\d/.test(bst.d||"")?" · "+(+bst.d.slice(8,10))+". "+(+bst.d.slice(5,7))+".":"")};/* 7. 11.: dátum ceny – vidno, ktorá cena sa ráta */
     const dap=s&&Number.isFinite(+s.dap)?+s.dap:null,dop=s&&Number.isFinite(+s.dop)?+s.dop:0;
     const mg=dap!=null?Math.round((dap-dop-buy)*100)/100:null;if(dap!=null)anySell=true;
     const bs=typeof MKB!=="undefined"?MKB[p.com]:null,bx=bs&&M&&M[bs]&&M[bs].eur_t!=null?+M[bs].eur_t:null;
@@ -44,7 +44,7 @@ function pricesHTML(){const P=(STATE.prices||[]).filter(p=>p.price!=null&&+p.pri
       <span class="owpf"><span class="owpm ${mg==null?"":mg>=0?"ps":"ng"}">${mg==null?"marža –":`marža ${mg>0?"+":mg<0?"−":""}${F(Math.abs(mg),0)} €/t`}</span>${bx!=null?`<span class="owpb">${e(bs==="soja_usc_bu"?"CBOT":"MATIF")} ${F(bx,0)}</span>`:""}</span></button>`}).join("");
   if(!anySell)later();
   const valid=((STATE.settings||{}).pricelist||{}).valid;
-  return `<div class="owg owpg">${cards}</div>${window.sellRecHTML?sellRecHTML():""}<div class="owfoot">Nákup = naša výkupná cena FCA farma, ktorú vidia farmári. Predaj = najlepšia ponuka odberateľa (rovnaká ako v „🏆 Kde predať“), inak odhad Kalkulačky; marža = predaj − doprava − nákup.${valid?` Cenník platí do ${e(dSK(valid))}.`:""}</div>`}
+  return `<div class="owg owpg">${cards}</div>${window.sellAddHTML?sellAddHTML():""}${window.sellRecHTML?sellRecHTML():""}<div class="owfoot">Nákup = naša výkupná cena FCA farma, ktorú vidia farmári. Predaj = najlepšia ponuka odberateľa (rovnaká ako v „🏆 Kde predať“), inak odhad Kalkulačky; marža = predaj − doprava − nákup.${valid?` Cenník platí do ${e(dSK(valid))}.`:""}</div>`}
 
 // ---- 2. čo riešiť ----
 function todoHTML(){const R=STATE.reqs||[],nNew=R.filter(r=>r.status==="nova").length,auto=R.filter(r=>r.status==="nova"&&/^🎯 Automaticky/.test(r.note||"")).length,AL=[];

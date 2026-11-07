@@ -64,7 +64,7 @@ function html(){if(!D.v)return `<div class="card obcard" id="odbCard" data-nosec
   for(const c of coms){const L=G[c],best=L.find(x=>x.net!=null&&!x.stale&&!x.expired&&!x.fwd)||L[0];
     h+=`<details class="obc"${coms.length<=2?" open":""}><summary><span class="obs1"><b>${E(nm(c))}</b><small>${L.length} ${L.length===1?"cena":L.length<5?"ceny":"cien"}${best&&best.our!=null?" · cenník "+n0(best.our):""}</small></span>
       <span class="obs2">${best?`${E(best.b)}<b class="${best.m_avg==null?"":best.m_avg>=8?"ps":best.m_avg<0?"ng":""}">${best.net==null?"?":n0(best.net)} €/t</b>`:""}</span></summary>${L.map(row).join("")}</details>`}
-  h+=`<div class="btns"><button type="button" class="lime" data-sform="1">➕ Pridať cenu ručne</button><button type="button" data-obref>↻ Obnoviť</button><button type="button" data-obcfg>${D.cfg?"▲ Skryť":"⚙️ Zdroje cien (web, e-mail)"}</button></div>`;
+  h+=`<div class="btns"><button type="button" class="lime" data-ocn="go">🏷️ Pridať / opraviť / zmazať cenu</button><button type="button" data-obref>↻ Obnoviť</button><button type="button" data-obcfg>${D.cfg?"▲ Skryť":"⚙️ Zdroje cien (web, e-mail)"}</button></div>`;
   if(D.cfg)h+=`<div class="obcfg"><div class="s">🌐 <b>Cenník na webe</b> – ak odberateľ zverejňuje ceny na stránke, vlož adresu: v pracovné dni 6–18 h sa raz za hodinu stiahne a pri zmene AI vyčíta ceny. ✉️ <b>Domény e-mailov</b> – odkiaľ chodia ich ceny (napr. bunge.com), ak to nevie spoznať podľa mena.</div>
     ${B.map(b=>`<form class="odbf" data-obb="${E(b.id)}"><b>${E(b.name)}</b>${b.web&&b.web.ok_at?`<small>🌐 naposledy ${tk(b.web.ok_at)}</small>`:""}${b.web&&b.web.err?`<small class="ng">🌐 ${E(b.web.err)}</small>`:""}
       <label>Cenník na webe<input name="url" inputmode="url" placeholder="https://…" value="${E(b.url||"")}"></label>
@@ -126,6 +126,7 @@ html[data-theme=light] .ps,html[data-theme=light] .obr .obg b.ps{color:#15803d}h
 @media(max-width:420px){.obg{grid-template-columns:1fr 1fr}.obg span:last-child{grid-column:1/-1}.obk{grid-template-columns:repeat(2,minmax(0,1fr))}}`;document.head.appendChild(s)}
 let q=0;const sch=()=>{if(q)return;q=(window.ernteSoon||requestAnimationFrame)(()=>{q=0;try{inject()}catch(x){}})};
 function boot(){const app=document.getElementById("app");if(!app){setTimeout(boot,500);return}new MutationObserver(sch).observe(app,{childList:true});sch();
+  window.addEventListener("ernte-odb-changed",()=>{if(OK())load(true)}); /* 7. 11.: po uložení / zmazaní ceny v 🏷️ sekcii sa obnoví aj tento prehľad */
   setInterval(()=>{if(!document.hidden&&OK()&&typeof TAB!=="undefined"&&TAB==="price")load(true)},300e3)}
 if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",boot);else boot();
 })();

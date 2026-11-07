@@ -37,7 +37,9 @@ async function load(){if(!OWN()||D.busy)return;D.busy=true;D.err="";
     if(s.error){D.err=/sell_data/.test(s.error.message)?"Zapne sa po aktualizácii databázy (pár minút).":s.error.message;D.B=[]}else{D.B=s.data.buyers||[];D.O=s.data.offers||[]}
     D.mk=mk;D.K=(k&&k.data&&k.data.data&&k.data.data.items)||[];D.T=(t&&!t.error&&t.data)||[]}
   catch(x){D.err=String(x&&x.message||x);D.B=D.B||[]}
-  D.at=Date.now();D.busy=false;try{if(D.B&&D.B.length)await caps()}catch(x){}if(typeof TAB!=="undefined"&&(TAB==="home"||TAB==="pred")&&typeof renderStaff==="function")renderStaff()}
+  D.at=Date.now();D.busy=false;try{if(D.B&&D.B.length)await caps()}catch(x){}if(typeof TAB!=="undefined"&&(TAB==="home"||TAB==="pred"||TAB==="price")&&typeof renderStaff==="function")renderStaff()}
+// načítanie po uložení / zmazaní – počká na prebiehajúce načítanie (inak by sa nové údaje neukázali bez F5)
+async function reload(){for(let i=0;i<60&&D.busy;i++)await new Promise(r=>setTimeout(r,250));D.at=0;await load();try{window.dispatchEvent(new Event("ernte-odb-changed"))}catch(x){}}
 
 // všetky možnosti predaja pre komoditu
 function options(com,buy){const out=[],B=D.B||[];
@@ -57,7 +59,15 @@ function options(com,buy){const out=[],B=D.B||[];
   // 3) skutočné predaje z vážnych lístkov (Zúčtovanie odberateľa)
   const last={};for(const t of D.T){if(t.k!==com||!(+t.s>0))continue;const bn=t.b||"Odberateľ";if(!last[bn]||String(t.d)>String(last[bn].d))last[bn]=t}
   for(const bn in last){const t=last[bn],b=buyerOf(bn)||{id:"t:"+bn,name:bn,sites:[]},site=(b.sites||[])[0]||null,fca=String(b.parita||"").toUpperCase()==="FCA";push(b,fca?"FCA farma":site&&site.n,fca?{n:"FCA farma"}:site,fca?"FCA":"DAP",+t.s,t.d,"skutočný predaj (vážne lístky)",{})}
-  return out.filter(o=>o.age<=Math.max(MAXAGE,o.src.startsWith("skutočný")?45:MAXAGE)).sort((a,b)=>(b.profit??-1e9)-(a.profit??-1e9))}
+  // 7. 11. (príkaz majiteľa „prečo ukazuje Agro-Somotor 230, keď už má novú cenu 215 DDP“): platí iba NAJNOVŠIA cena odberateľa
+  // pre komoditu (pri odberateľovi s viacerými miestami najnovšia pre každé miesto); skutočný predaj z lístkov iba keď od odberateľa nemáme novšiu ponuku
+  const G={},Lo={},gk=o=>o.b.id+"|"+grp(o.b,o.del,o.siteName),tk=o=>/^skutočný/.test(o.src||"");
+  for(const o of out){if(tk(o))continue;const k=gk(o),d=String(o.d||"");if(!G[k]||d>G[k])G[k]=d;if(!Lo[o.b.id]||d>Lo[o.b.id])Lo[o.b.id]=d}
+  return out.filter(o=>tk(o)?!(Lo[o.b.id]&&Lo[o.b.id]>=String(o.d||"")):String(o.d||"")>=(G[gk(o)]||""))
+    .filter(o=>o.age<=Math.max(MAXAGE,tk(o)?45:MAXAGE)).sort((a,b)=>(b.profit??-1e9)-(a.profit??-1e9))}
+// skupina ceny (rovnako ako databáza sell_grp): odberateľ s ≥ 2 miestami + DAP/DDP na miesto → to miesto, inak jedna skupina (FCA, jedno miesto)
+const skey=s=>String(s||"").normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase().replace(/\s*(n\s*\/\s*o\.?|n\.\s*o\.|nad\s+ondavou)(\s|$)/g," ").replace(/[^a-z0-9]+/g,"");
+const grp=(b,del,site)=>{const t=String(site||"").trim();return ((b&&b.sites)||[]).length>=2&&!/^(FCA|EXW)$/i.test(del||"")&&t&&!/^fca\b/i.test(t)?"s:"+skey(t):"*"};
 // všetci odberatelia, ktorí komoditu vykupujú (sell_buyers.coms) – aj bez platnej ponuky: miesto + naša doprava (vzorec Kalkulačky)
 const FWD=t=>/^\s*odber/i.test(t||"");
 const MARGIN=()=>{try{return +(window.__sellcapM??10)}catch(x){return 10}};
@@ -123,7 +133,7 @@ window.sellRecHTML=function(){if(!OWN())return "";if(!D.B){if(!D.busy)load();ret
   h+=nakHTML();
   h+=`<details class="smod"><summary>📚 Modely odberateľov – podľa čoho rátajú</summary><div class="s">Ťuknutím na komoditu nastavíš, čo odberateľ vykupuje (zelené = vykupuje).</div>${(D.B||[]).map(b=>`<div class="srow"><b>${E(b.name)}</b>${(b.sites||[]).length?` <small>· ${(b.sites||[]).map(s=>E(s.n)+" ~"+f0(dop(s))+" €/t doprava").join(" · ")}</small>`:""}<small>${E(b.model||"")}</small>
      <span class="scoms">${(typeof MK!=="undefined"?MK:[]).map(m=>`<button type="button" class="scm${(b.coms||[]).includes(m[0])?" on":""}" data-scom="${E(b.id)}|${m[0]}">${E(m[1])}</button>`).join("")}</span></div>`).join("")}</details>`;
-  h+=D.form?formHTML():`<div class="btns"><button type="button" class="lime" data-sform="1">➕ Pridať odberateľské ceny</button><button type="button" data-sref>↻ Prepočítať</button></div>`;
+  h+=`<div class="btns"><button type="button" class="lime" data-ocn="go">🏷️ Pridať / opraviť ceny odberateľov</button><button type="button" data-sref>↻ Prepočítať</button></div>`;
   return h+`</div>`};
 // ===== 🛒 NÁKUP PRE ODBERATEĽA (5. 11. príkaz majiteľa): pri každom odberateľovi jeho aktuálne ceny (posunuté s burzou), naša doprava, marža
 // a odporúčaná NAŠA nákupná cena = cena odberateľa − doprava − marža; kontrola modelu (báza voči burze) pri každej novej ponuke; na konci vyjadrenie Claude.
@@ -205,7 +215,7 @@ async function scan(file){syncForm();D.form.scan="busy";renderStaff();
   catch(x){D.form.scan="⚠️ "+(x&&x.message||x)}renderStaff()}
 document.addEventListener("click",e=>{const t=e.target.closest&&e.target.closest("[data-sform],[data-sref],[data-sadd]");if(!t||!OWN())return;e.preventDefault();
   if(t.dataset.sref!==undefined){D.at=0;load();return}if(t.dataset.sadd!==undefined){syncForm();D.form.rows.push(newRow());renderStaff();return}
-  D.form=t.dataset.sform==="1"?{buyer:"",rows:[newRow()]}:false;if(D.form&&typeof TAB!=="undefined"&&TAB!=="home")TAB="home";renderStaff();
+  D.form=t.dataset.sform==="1"?{buyer:(D.B||[]).some(b=>b.id===Q.buyer)?(D.B.find(b=>b.id===Q.buyer)||{}).name:"",rows:[newRow(Q.com?{com:Q.com}:null)]}:false;if(D.form&&typeof TAB!=="undefined"&&TAB!=="home"&&TAB!=="price")TAB="home";renderStaff();
   if(D.form){let n=0;const sc=()=>{const f=document.getElementById("sForm");if(f){f.scrollIntoView({block:"start",behavior:"smooth"});return}if(++n<20)setTimeout(sc,150)};setTimeout(sc,60)}},true);
 document.addEventListener("change",e=>{const x=e.target;if(!x.dataset||!D.form)return;if(x.dataset.sscan!==undefined&&x.files&&x.files[0]){scan(x.files[0]);x.value="";return}
   if(x.dataset.sbuy!==undefined){const b=findBuyer(x.value),l=document.getElementById("sSites");if(l)l.innerHTML=(b&&b.sites||[]).map(s=>`<option value="${E(s.n)}">`).join("")}},true);
@@ -220,7 +230,7 @@ document.addEventListener("submit",async e=>{const f=e.target;if(f.id!=="sForm"|
     const rows=R.map(r=>{let p=+String(r.price).replace(",",".").replace(/\s/g,""),note=r.note||null;if(r.cur==="HUF"){if(!huf)throw new Error("Chýba kurz HUF – zadaj cenu v €.");note=[note,"z "+Math.round(p)+" HUF/t"].filter(Boolean).join(" · ");p=Math.round(p/huf*100)/100}
       const n=FL(b,r.com)?bzNow(BZ[r.com]):null;return {buyer:b.id,com:r.com,site:String(r.site||"").trim()||null,del:r.del,price:p,period:String(r.period||"").trim()||null,d:F.d||null,note,bz_sym:n?BZ[r.com]:null,bz_val:n?n.v:null}});
     const q=await sb.from("sell_offers").insert(rows);if(q.error)throw new Error(q.error.message);
-    toast(`✓ Uložené ${rows.length} ${rows.length===1?"cena":rows.length<5?"ceny":"cien"} – prepočítavam.`,4000);D.form=false;D.at=0;load()}
+    toast(`✓ Uložené ${rows.length} ${rows.length===1?"cena":rows.length<5?"ceny":"cien"} – staršie ceny tých istých odberateľov idú do archívu, prepočítavam.`,5000);Q.msg=`Uložené ${rows.length} ${rows.length===1?"cena":rows.length<5?"ceny":"cien"} od ${b.name}.`;Q.err="";D.form=false;reload()}
   catch(x){toast("Nepodarilo sa uložiť: "+(x&&x.message||x),7000)}finally{if(typeof busy==="function")busy(btn,false)}},true);
 
 // ===== 💰 UPOZORNENIE: KDE LEPŠIE PREDAŤ NAŠE NÁKUPY (3. 11. príkaz majiteľa) =====
@@ -244,7 +254,7 @@ function wHTML(){const A=wCalc();if(!A.length)return "";const nw=A.filter(x=>x.i
      <small>nakúpené ${x.n}× ⌀ ${f0(x.buy)} €/t → 🏆 ${wOpt(x.best)} · ${E(x.best.src)} ${dk(x.best.d)}${x.best.term?" · "+E(x.best.term):""}</small>
      ${x.next?`<small class="swn">2. možnosť: ${wOpt(x.next)} (${sg(x.next.net-x.best.net)} €/t)</small>`:""}
      ${p<0?`<small class="ng">⚠️ Všetky ponuky sú pod nákupom – zatiaľ nepredávať, pýtať vyššiu cenu.</small>`:""}</div>`}).join("")}
-   <div class="btns">${nw.length?`<button type="button" class="lime" data-swack>✓ Beriem na vedomie</button>`:""}<button type="button" data-sform="1">➕ Pridať odberateľské ceny</button></div></div>`}
+   <div class="btns">${nw.length?`<button type="button" class="lime" data-swack>✓ Beriem na vedomie</button>`:""}<button type="button" data-ocn="go">🏷️ Pridať ceny odberateľov</button></div></div>`}
 function wPaint(){if(!OWN()||typeof TAB==="undefined"||(TAB!=="home"&&TAB!=="deals"))return;const app=document.getElementById("app");if(!app)return;
   const h=wHTML(),old=document.getElementById("swAl");
   if(old){if(!h){old.remove();return}if(old.dataset.h===h)return;const d=document.createElement("div");d.innerHTML=h;d.firstElementChild.dataset.h=h;old.replaceWith(d.firstElementChild);}
@@ -258,12 +268,119 @@ window.sellAlertsHTML=wHTML;
 document.addEventListener("click",e=>{const t=e.target.closest&&e.target.closest("[data-swack]");if(!t||!OWN())return;e.preventDefault();const S=wSeen();
   for(const x of wCalc())S[x.com]={sig:x.sig,net:Math.round(x.best.net*10)/10,at:new Date().toISOString()};try{localStorage.setItem(WK,JSON.stringify(S))}catch(x){}
   toast("✓ Beriem na vedomie – ozve sa pri lepšej ponuke.",4000);const o=document.getElementById("swAl");if(o)o.remove();wPaint()},true);
-// Cenník (iba Martin): tlačidlo ➕ Pridať odberateľské ceny hore
-function pBtn(){if(!OWN()||typeof TAB==="undefined"||TAB!=="price")return;const app=document.getElementById("app");if(!app||document.getElementById("swAdd"))return;
-  const d=document.createElement("div");d.id="swAdd";d.className="btns swadd";d.dataset.nosec="";d.innerHTML=`<button type="button" class="lime" data-sform="1">➕ Pridať odberateľské ceny</button>`;
-  const a=app.querySelector(".hero")||app.querySelector("nav.tabs");if(a)a.after(d);else app.prepend(d)}
+// ===== 🏷️ CENY ODBERATEĽOV – PEVNÁ SEKCIA (7. 11. 06:57 PRÍKAZ MAJITEĽA „daj pevnú sekciu viditeľnú pridať odberateľské ceny“) =====
+// Prehľad (hneď pod Naše ceny · nákup a predaj) a Cenník (hore): ✍️ pridať · ✏️ opraviť · 🗑️ zmazať cenu odberateľa, 📋 čo platí teraz, 🗄️ archív (↩️ vrátiť).
+// Nová cena nahradí staršiu cenu toho istého odberateľa a komodity (pri viacerých miestach toho istého miesta) – databáza (trigger zz_sell_sup) ju dá do archívu sell_offers_old.
+// Po uložení sa hneď prepočíta Predaj v Naše ceny, 🏆 Kde predať, strop nákupných cien (sellcap) aj 🏷️ Ceny odberateľov v Cenníku – bez F5.
+const today=()=>{const d=new Date();return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0")};
+const Q={buyer:"",com:"",del:"DDP",site:"",price:"",cur:"EUR",d:"",edit:null,err:"",msg:"",busy:false,ask:null,weird:"",list:true,open:{},arch:null,archOpen:false,archBusy:false};
+const BY=id=>(D.B||[]).find(b=>b.id===id)||null;
+function offNet(o){const b=BY(o.buyer);if(!b)return {p:+o.price,d0:null,net:null};let p=+o.price,bz=null;
+  if(FL(b,o.com)&&o.bz_val!=null){const n=bzNow(o.bz_sym||BZ[o.com]);if(n){bz=n.v-(+o.bz_val);p+=bz}}
+  const fca=/^(FCA|EXW)$/i.test(o.del||""),st=fca?null:(siteOf(b,o.site)||(b.sites||[]).find(s=>s.n===o.site)||null),d0=fca?0:dop(st);
+  return {p,bz,d0,net:d0==null?null:p-d0}}
+function ocnForm(){const B=(D.B||[]).slice().sort((a,b)=>String(a.name).localeCompare(String(b.name),"sk")),b=BY(Q.buyer),S=b?(b.sites||[]):[];
+  const C=(typeof MK!=="undefined"&&MK.length?MK:COMS.map(c=>[c,c])),fca=Q.del==="FCA";
+  return `<form class="ocnf" id="ocnForm" autocomplete="off" novalidate>
+   ${Q.edit?`<div class="ocnw ocned">✏️ Opravuješ: <b>${E(Q.edit.t)}</b> – po uložení ide stará cena do archívu. <button type="button" data-ocn="cancel">✕ Zrušiť opravu</button></div>`:""}
+   <label class="ocnw">Odberateľ<select name="buyer" data-ocnk="buyer"><option value="">– vyber odberateľa –</option>${B.map(x=>`<option value="${E(x.id)}"${x.id===Q.buyer?" selected":""}>${E(x.name)}</option>`).join("")}</select></label>
+   <label>Komodita<select name="com" data-ocnk="com"><option value="">– vyber –</option>${C.map(m=>`<option value="${E(m[0])}"${m[0]===Q.com?" selected":""}>${E(m[1])}</option>`).join("")}</select></label>
+   <label>Parita<select name="del" data-ocnk="del">${[["DDP","DDP – k nim"],["DAP","DAP – k nim"],["FCA","FCA – od farmára"]].map(x=>`<option value="${x[0]}"${x[0]===Q.del?" selected":""}>${x[1]}</option>`).join("")}</select></label>
+   <label class="ocn2">Miesto dodania<input name="site" data-ocnk="site" list="ocnSites" value="${fca?"":E(Q.site)}" placeholder="${fca?"FCA – u farmára":S.length?E(S.map(s=>s.n).join(", ")):"napr. Somotor"}"${fca?" disabled":""}></label>
+   <datalist id="ocnSites">${S.map(s=>`<option value="${E(s.n)}">`).join("")}</datalist>
+   <label class="ocn2">Cena<span class="ocnp"><input name="price" data-ocnk="price" inputmode="decimal" value="${E(Q.price)}" placeholder="napr. 215"><select data-ocnk="cur" aria-label="Mena"><option value="EUR"${Q.cur!=="HUF"?" selected":""}>€/t</option><option value="HUF"${Q.cur==="HUF"?" selected":""}>Ft/t</option></select></span></label>
+   <label class="ocn2">Dátum ceny<input type="date" name="d" data-ocnk="d" value="${E(Q.d||today())}" max="${today()}"></label>
+   ${Q.err?`<div class="ocnw ocnerr" role="alert">⚠️ ${E(Q.err)}</div>`:""}${Q.msg?`<div class="ocnw ocnok" role="status">✅ ${E(Q.msg)}</div>`:""}
+   <div class="ocnw ocnb"><button class="pri" type="submit"${Q.busy?" disabled":""}>${Q.busy?"⏳ Ukladám…":Q.edit?"💾 Uložiť opravu":"💾 Uložiť cenu"}</button><button type="button" data-sform="1">📷 Z fotky / viac cien naraz</button></div>
+  </form>`}
+function ocnRow(o,best){const b=BY(o.buyer)||{name:o.buyer},x=offNet(o),old=age(o.d)>MAXAGE,ask=Q.ask===o.id;
+  return `<div class="ocnr${old?" old":""}${best?" best":""}" data-ocnid="${E(o.id)}">
+   <div class="ocnrh"><b>${E(b.name)}</b><span>${E(o.del)}${o.site?" "+E(o.site):""} <b>${f0(+o.price)} €/t</b></span></div>
+   <small>${dk(o.d)}${o.period?" · "+E(o.period):""}${x.bz!=null?` · s burzou dnes ${f0(x.p)} €/t`:""} · ${x.d0==null?"doprava ? (chýba miesto)":x.d0?`po našej doprave ${f0(x.net)} €/t`:"odvoz platia oni"}${old?` · <em>⏳ staršia ako ${MAXAGE} dní – nepočíta sa</em>`:best?" · <em class=\"ocnbest\">🏆 najvyššia po doprave</em>":""}${o.note?" · "+E(o.note):""}</small>
+   ${ask?`<div class="ocna"><span>Zmazať túto cenu? (pôjde do archívu)</span><button type="button" class="ocnyes" data-ocn="del" data-id="${E(o.id)}">🗑️ Áno, zmazať</button><button type="button" data-ocn="nodel">Nie</button></div>`
+     :`<div class="ocna"><button type="button" data-ocn="edit" data-id="${E(o.id)}">✏️ Opraviť</button><button type="button" data-ocn="ask" data-id="${E(o.id)}">🗑️ Zmazať</button></div>`}</div>`}
+function ocnList(){const A=(D.O||[]),O=A.filter(o=>!FWD(o.period)),F=A.filter(o=>FWD(o.period));if(!A.length)return `<div class="s">Zatiaľ žiadne ceny odberateľov – zadaj prvú vyššie.</div>`;
+  const by={};for(const o of O)(by[o.com]=by[o.com]||[]).push(o);const order=typeof MK!=="undefined"?MK.map(m=>m[0]):COMS;
+  let h=Object.keys(by).sort((a,b)=>order.indexOf(a)-order.indexOf(b)).map(c=>{const L=by[c].slice().sort((a,b)=>String(b.d).localeCompare(String(a.d))||(+b.price)-(+a.price));
+    let best=null,bn=-1e9;for(const o of L){if(age(o.d)>MAXAGE)continue;const n=offNet(o).net;if(n!=null&&n>bn){bn=n;best=o}}
+    const bb=best?BY(best.buyer):null;
+    return `<details class="ocnc" data-ocnc="${E(c)}"${Q.open[c]?" open":""}><summary><span><b>${E(nm(c))}</b><small>${L.length} ${L.length===1?"cena":L.length<5?"ceny":"cien"}</small></span><span class="ocns">${best?`🏆 ${E(bb?bb.name:best.buyer)} <b>${f0(bn)} €/t</b><small>po doprave</small>`:"<small>bez platnej ceny</small>"}</span></summary>${L.map(o=>ocnRow(o,o===best)).join("")}</details>`}).join("");
+  if(F.length)h+=`<details class="ocnc" data-ocnc="_fwd"${Q.open._fwd?" open":""}><summary><span><b>📅 Na neskorší odber</b><small>${F.length} ${F.length===1?"cena":F.length<5?"ceny":"cien"} – nerátajú sa do dnešného predaja</small></span></summary>${F.map(o=>ocnRow(o,false)).join("")}</details>`;
+  return h}
+function ocnArch(){if(Q.arch===null)return `<div class="s">${Q.archBusy?"⏳ Načítavam…":"Ťukni na nadpis, načíta sa."}</div>`;if(Q.arch.err)return `<div class="ocnerr">⚠️ ${E(Q.arch.err)}</div>`;
+  if(!Q.arch.length)return `<div class="s">Za posledných 30 dní nič nenahradené ani zmazané.</div>`;
+  return Q.arch.map(a=>`<div class="ocnr old"><div class="ocnrh"><b>${E(a.b||a.buyer)}</b><span>${E(nm(a.com))} · ${E(a.del)}${a.site?" "+E(a.site):""} <b>${f0(+a.price)} €/t</b></span></div>
+    <small>${dk(a.d)}${a.period?" · "+E(a.period):""} · ${E(a.why||"")}</small><div class="ocna"><button type="button" data-ocn="back" data-id="${E(a.id)}">↩️ Vrátiť späť</button></div></div>`).join("")}
+window.sellAddHTML=function(){if(!OWN())return "";
+  if(!D.B){if(!D.busy)load();return `<section class="card ocn" id="ocnSec" data-nosec><b class="ocnt">🏷️ Ceny odberateľov</b><div class="s">⏳ Načítavam odberateľov…</div></section>`}
+  return `<section class="card ocn" id="ocnSec" data-nosec><div class="ocnh"><b class="ocnt">🏷️ Ceny odberateľov – pridať · opraviť · zmazať</b>
+    <small>Nová cena nahradí staršiu cenu toho istého odberateľa pre tú komoditu (a to miesto). Predaj, 🏆 Kde predať aj strop našich nákupných cien sa prepočítajú hneď.</small></div>
+   ${D.err?`<div class="ocnerr">⚠️ ${E(D.err)}</div>`:""}${D.form?formHTML():ocnForm()}
+   <details class="ocnl" data-ocnd="list"${Q.list?" open":""}><summary>📋 Platné ceny odberateľov (${(D.O||[]).length})</summary>${ocnList()}</details>
+   <details class="ocnl" data-ocnd="arch"${Q.archOpen?" open":""}><summary>🗄️ Archív – nahradené a zmazané (30 dní)</summary>${ocnArch()}</details></section>`};
+// prekreslenie iba sekcie (formulár ostane, kde bol); na Prehľade aj celý Prehľad, keď sa zmenili ceny
+function ocnPaint(){const el=document.getElementById("ocnSec");if(!el)return;const d=document.createElement("div");d.innerHTML=window.sellAddHTML();const n=d.firstElementChild;if(n)el.replaceWith(n)}
+function ocnSync(f){f=f||document.getElementById("ocnForm");if(!f)return;f.querySelectorAll("[data-ocnk]").forEach(x=>{if(!x.disabled)Q[x.dataset.ocnk]=x.value})}
+async function ocnArchLoad(){Q.archBusy=true;ocnPaint();try{const r=await sb.rpc("sell_offers_old_list",{p_dni:30});Q.arch=r.error?{err:/sell_offers_old_list/.test(r.error.message)?"Archív sa zapne po aktualizácii databázy (pár minút).":r.error.message}:(r.data||[])}catch(x){Q.arch={err:String(x&&x.message||x)}}Q.archBusy=false;ocnPaint()}
+function ocnFail(m){Q.err=m;Q.msg="";Q.busy=false;ocnPaint();const f=document.querySelector("#ocnForm .ocnerr");if(f)f.scrollIntoView({block:"center",behavior:"smooth"});return false}
+async function ocnSave(){ocnSync();Q.err="";Q.msg="";const b=BY(Q.buyer);if(!b)return ocnFail("Vyber odberateľa.");if(!Q.com)return ocnFail("Vyber komoditu.");
+  let p=+String(Q.price).replace(/\s/g,"").replace(",",".");if(!(p>0))return ocnFail("Zadaj cenu – číslo, napr. 215.");
+  if(Q.cur==="HUF"){const huf=D.mk&&D.mk.fx&&D.mk.fx.huf;if(!huf)return ocnFail("Chýba kurz forintu – zadaj cenu v €/t.");p=Math.round(p/huf*100)/100}
+  if(!(p<5000))return ocnFail("Cena "+f0(p)+" €/t je príliš vysoká – skontroluj, či je to €/t.");
+  const d=Q.d||today();if(!/^\d{4}-\d\d-\d\d$/.test(d)||d>today())return ocnFail("Dátum ceny nemôže byť v budúcnosti.");
+  const del=Q.del==="FCA"?"FCA":Q.del==="DAP"?"DAP":"DDP";let site=del==="FCA"?null:String(Q.site||"").trim()||null;
+  if(del!=="FCA"&&!site){const S=b.sites||[];if(S.length===1)site=S[0].n;else if(S.length)return ocnFail("Vyber miesto dodania: "+S.map(s=>s.n).join(", ")+".");else return ocnFail("Zadaj miesto dodania (kam sa vezie) – bez neho sa nedá spočítať naša doprava.")}
+  const our=ourPrice(Q.com),wk=Q.com+"|"+p;if(our&&(p<our*0.6||p>our*1.7)&&Q.weird!==wk){Q.weird=wk;return ocnFail(`${f0(p)} €/t je ďaleko od našej nákupnej ceny ${nm(Q.com)} ${f0(our)} €/t – skontroluj komoditu a menu. Ak je to správne, ťukni Uložiť ešte raz.`)}
+  const n=FL(b,Q.com)?bzNow(BZ[Q.com]):null,g=grp(b,del,site),ed=Q.edit;
+  const rep=(D.O||[]).filter(o=>o.buyer===b.id&&o.com===Q.com&&!FWD(o.period)&&grp(b,o.del,o.site)===g&&String(o.d)<=d&&(!ed||o.id!==ed.id));
+  const row={buyer:b.id,com:Q.com,site,del,price:p,period:null,d,note:Q.cur==="HUF"?"z "+String(Q.price).trim()+" Ft/t":null,bz_sym:n?BZ[Q.com]:null,bz_val:n?n.v:null,src:"rucne"};
+  Q.busy=true;ocnPaint();
+  try{const r=await sb.from("sell_offers").insert(row);if(r.error)throw new Error(r.error.message);
+    if(ed){const x=await sb.rpc("sell_offer_off",{p_id:ed.id});if(x.error&&!/nenašla/.test(x.error.message||""))throw new Error("Nová cena uložená, staršiu sa nepodarilo dať do archívu: "+x.error.message)}
+    const txt=`${b.name} · ${nm(Q.com)} ${del}${site?" "+site:""} ${f0(p)} €/t (${dk(d)})`+(ed?` – oprava, pôvodná ${ed.t} je v archíve`:rep.length?` – nahradila ${rep.map(o=>o.del+(o.site?" "+o.site:"")+" "+f0(+o.price)+" ("+dk(o.d)+")").join(", ")}`:"");
+    Q.msg="Uložené: "+txt;Q.err="";Q.price="";Q.edit=null;Q.weird="";Q.busy=false;Q.open[Q.com]=true;Q.arch=null;if(typeof toast==="function")toast("✅ "+Q.msg,7000);
+    ocnPaint();await reload()}
+  catch(x){Q.busy=false;ocnFail("Neuložené: "+(x&&x.message||x)+" – skontroluj signál a skús znova.")}}
+document.addEventListener("submit",e=>{const f=e.target;if(!f||f.id!=="ocnForm"||!OWN())return;e.preventDefault();e.stopPropagation();if(!Q.busy)ocnSave()},true);
+document.addEventListener("change",e=>{const x=e.target;if(!x||!x.dataset||x.dataset.ocnk===undefined||!OWN())return;ocnSync();
+  if(x.dataset.ocnk==="buyer"){const b=BY(Q.buyer);Q.site="";if(b){const S=b.sites||[];if(S.length===1)Q.site=S[0].n;if(!Q.com||!(b.coms||[]).includes(Q.com))Q.com=(b.coms||[]).length===1?b.coms[0]:Q.com}Q.err="";Q.msg="";ocnPaint();const n=document.querySelector('#ocnForm [data-ocnk="'+(Q.com?"price":"com")+'"]');if(n)n.focus()}
+  else if(x.dataset.ocnk==="del"){if(Q.del!=="FCA"&&!Q.site){const b=BY(Q.buyer);if(b&&(b.sites||[]).length===1)Q.site=b.sites[0].n}ocnPaint()}},true);
+document.addEventListener("input",e=>{const x=e.target;if(x&&x.dataset&&x.dataset.ocnk!==undefined)Q[x.dataset.ocnk]=x.value},true);
+document.addEventListener("toggle",e=>{const d=e.target;if(!d||!d.dataset)return;if(d.dataset.ocnc){Q.open[d.dataset.ocnc]=d.open;return}
+  if(d.dataset.ocnd==="list")Q.list=d.open;else if(d.dataset.ocnd==="arch"){Q.archOpen=d.open;if(d.open&&Q.arch===null&&!Q.archBusy)ocnArchLoad()}},true);
+document.addEventListener("click",async e=>{const t=e.target.closest&&e.target.closest("[data-ocn]");if(!t||!OWN())return;e.preventDefault();e.stopPropagation();const a=t.dataset.ocn,id=+t.dataset.id;
+  if(a==="go"){D.form=false;const go=()=>{const s=document.getElementById("ocnSec");if(!s)return false;s.scrollIntoView({block:"start",behavior:"smooth"});const f=s.querySelector('[data-ocnk="buyer"]');if(f)setTimeout(()=>{try{f.focus({preventScroll:true})}catch(x){}},400);return true};
+    if(!go()){if(typeof TAB!=="undefined"&&TAB!=="home"&&TAB!=="price"){TAB="home";renderStaff()}let n=0;const w=()=>{if(go()||++n>25)return;setTimeout(w,150)};setTimeout(w,80)}return}
+  if(a==="cancel"){Q.edit=null;Q.price="";Q.err="";ocnPaint();return}
+  if(a==="ask"){Q.ask=id;ocnPaint();return}if(a==="nodel"){Q.ask=null;ocnPaint();return}
+  if(a==="edit"){const o=(D.O||[]).find(x=>+x.id===id);if(!o)return;Q.buyer=o.buyer;Q.com=o.com;Q.del=o.del==="FCA"||o.del==="EXW"?"FCA":o.del==="DAP"?"DAP":"DDP";Q.site=o.site||"";Q.price=String(o.price).replace(".",",");Q.cur="EUR";Q.d=today();
+    Q.edit={id:o.id,t:`${(BY(o.buyer)||{name:o.buyer}).name} · ${nm(o.com)} ${o.del}${o.site?" "+o.site:""} ${f0(+o.price)} €/t (${dk(o.d)})`};Q.err="";Q.msg="";ocnPaint();
+    const s=document.getElementById("ocnForm");if(s){s.scrollIntoView({block:"start",behavior:"smooth"});const p=s.querySelector('[data-ocnk="price"]');if(p)setTimeout(()=>{try{p.focus({preventScroll:true});p.select()}catch(x){}},400)}return}
+  if(a==="del"||a==="back"){t.disabled=true;t.textContent="⏳ Chvíľu…";
+    try{const r=await sb.rpc(a==="del"?"sell_offer_off":"sell_offer_back",{p_id:id});if(r.error)throw new Error(r.error.message);if(r.data&&r.data.ok===false)throw new Error(r.data.err||"Nepodarilo sa.");
+      Q.ask=null;Q.arch=null;Q.msg=a==="del"?"Cena zmazaná (je v archíve, dá sa vrátiť).":"Cena vrátená späť z archívu.";Q.err="";if(typeof toast==="function")toast("✅ "+Q.msg,4500);if(a==="back"&&Q.archOpen)ocnArchLoad();ocnPaint();await reload()}
+    catch(x){t.disabled=false;t.textContent=a==="del"?"🗑️ Áno, zmazať":"↩️ Vrátiť späť";Q.err=(a==="del"?"Nezmazané: ":"Nevrátené: ")+(x&&x.message||x);Q.msg="";ocnPaint()}}},true);
+// Cenník (iba Martin): sekcia hore (namiesto samotného tlačidla) – vloží sa raz, ak chýba; poradie pásov pod lištou rieši ernteTopOrder
+function pBtn(){if(!OWN()||typeof TAB==="undefined"||TAB!=="price")return;const app=document.getElementById("app");if(!app||document.getElementById("ocnSec"))return;
+  const d=document.createElement("div");d.innerHTML=window.sellAddHTML();const n=d.firstElementChild;if(!n)return;
+  const a=app.querySelector(".hero")||app.querySelector("nav.tabs");if(a)a.after(n);else app.prepend(n)}
 (function wBoot(){const app=document.getElementById("app");if(!app){setTimeout(wBoot,500);return}new MutationObserver(()=>{wSch();(window.ernteSoon||requestAnimationFrame)(()=>{try{pBtn()}catch(x){}})}).observe(app,{childList:true});wSch()})();
 setInterval(()=>{if(OWN())wLoad()},10*60e3);
+{const s=document.createElement("style");s.textContent=`.ocn{display:grid;gap:10px;min-width:0;border:1px solid rgba(94,234,212,.45)!important}.ocnh{display:grid;gap:4px;min-width:0}.ocnt{font-size:1.06rem;line-height:1.3}.ocnh small{opacity:.8;line-height:1.4;overflow-wrap:anywhere}
+.ocnf{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px 10px;min-width:0;margin:0}.ocnf label{display:grid;gap:4px;font-size:.8rem;font-weight:700;min-width:0}.ocnf .ocnw{grid-column:1/-1}
+.ocnf select,.ocnf input{width:100%;min-width:0;min-height:46px;box-sizing:border-box}.ocnp{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:6px;min-width:0}.ocnp select{width:auto;min-width:72px}
+.ocnb{display:flex;flex-wrap:wrap;gap:8px}.ocnb button{flex:1 1 150px;min-height:48px;white-space:normal}
+.ocnerr,.ocnok,.ocned{padding:10px 12px;border-radius:12px;line-height:1.4;overflow-wrap:anywhere;font-weight:700;font-size:.86rem}.ocnerr{background:rgba(255,107,129,.12);border:1px solid rgba(255,107,129,.65);color:#fecdd3}
+.ocnok{background:rgba(94,234,212,.12);border:1px solid rgba(94,234,212,.6);color:#99f6e4}.ocned{background:rgba(255,207,90,.12);border:1px solid rgba(255,207,90,.6);color:#fde68a;display:flex;flex-wrap:wrap;gap:8px;align-items:center}.ocned button{min-height:40px}
+.ocnl{border-top:1px solid rgba(255,255,255,.08);padding-top:4px;min-width:0}.ocnl>summary{cursor:pointer;font-weight:800;min-height:44px;display:flex;align-items:center;list-style:none}.ocnl>summary::-webkit-details-marker{display:none}
+.ocnc{border-top:1px solid rgba(255,255,255,.06);min-width:0}.ocnc>summary{display:flex;justify-content:space-between;align-items:center;gap:10px;cursor:pointer;list-style:none;min-height:46px;padding:4px 0}.ocnc>summary::-webkit-details-marker{display:none}
+.ocnc>summary>span{display:grid;min-width:0}.ocnc>summary small{opacity:.7;font-size:.74rem;overflow-wrap:anywhere}.ocns{text-align:right;font-size:.84rem;overflow-wrap:anywhere}.ocns b{display:block;font-size:1.02rem;color:#5eead4}
+.ocnr{display:grid;gap:4px;padding:9px 11px;margin:6px 0;border-radius:14px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.1);min-width:0}.ocnr.best{border:2px solid rgba(94,234,212,.7);background:rgba(94,234,212,.07)}.ocnr.old{opacity:.66}
+.ocnrh{display:flex;justify-content:space-between;align-items:flex-start;gap:8px;flex-wrap:wrap}.ocnrh>b,.ocnrh>span{min-width:0;overflow-wrap:anywhere}.ocnr small{line-height:1.4;overflow-wrap:anywhere;opacity:.85}.ocnr em{font-style:normal;color:#ffcf5a}.ocnr em.ocnbest{color:#5eead4}
+.ocna{display:flex;flex-wrap:wrap;gap:6px;align-items:center}.ocna>span{flex:1 1 100%;font-size:.84rem;font-weight:700}.ocna button{flex:1 1 120px;min-height:44px}.ocna .ocnyes{border-color:rgba(255,107,129,.7)!important;color:#fecdd3}
+html[data-theme=light] .ocnerr{color:#9f1239}html[data-theme=light] .ocnok{color:#0f766e}html[data-theme=light] .ocned{color:#92400e}html[data-theme=light] .ocns b,html[data-theme=light] .ocnr em.ocnbest{color:#0f766e}
+.ocn,#ocnForm,#sForm{scroll-margin-top:96px}.ocnf select{padding-right:22px;text-overflow:ellipsis}
+@media(max-width:520px){.ocnf .ocn2{grid-column:1/-1}}@media(max-width:330px){.ocnf{grid-template-columns:minmax(0,1fr)}}`;document.head.appendChild(s)}
 {const s=document.createElement("style");s.textContent=`.swal.al{border-color:rgba(134,239,172,.6)!important;box-shadow:0 0 0 1px rgba(134,239,172,.35)}.swal .cnt{color:#86efac}.swr{padding:8px 0;border-top:1px solid rgba(255,255,255,.08);display:grid;gap:3px}
 .swr .srh{display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap}.swr small{overflow-wrap:anywhere;line-height:1.4}.swr .ps{color:#86efac}.swr .ng{color:#fca5a5}.swr.nw{background:rgba(134,239,172,.06);border-radius:12px;padding:8px}.swn{opacity:.7}.swadd{margin:8px 0}
 html[data-theme=light] .swr .ps,html[data-theme=light] .swal .cnt{color:#15803d}html[data-theme=light] .swr .ng{color:#b91c1c}
