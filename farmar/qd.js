@@ -102,6 +102,10 @@ async function scan(mode,img,text,thumb){Q.busy=mode==="peciatka"?"Čítam peči
       if(s.status==="err")throw new Error(s.err||"Nepodarilo sa prečítať.")}
     throw new Error("Trvá to príliš dlho – skús znova.")}
   catch(x){Q.busy="";tst("⚠️ "+(x.message||x),7000);rr()}}
+/* 7. 11. „zjednoduš appku“: príkaz jednou vetou (🔎 Hľadať) a 📥 Vhoď sem → Uzatvoriť obchod sa vyplní sám, nič sa neuloží bez ťuknutia */
+function goQd(fn){try{const b=document.querySelector('#app>nav.tabs [data-tab="qd"]');if(b)b.click();else{TAB="qd";renderStaff()}scrollTo({top:0})}catch(x){}setTimeout(fn,350)}
+window.qdFromText=function(tx){tx=String(tx||"").trim();if(!OK()||tx.length<4)return false;goQd(()=>{Q.note=tx;scan("hlas",null,tx)});return true};
+window.qdPhoto=function(f,mode){if(!OK()||!f)return false;goQd(async()=>{try{const img=await shrink(f,1600,.82),th=await shrink(f,240,.6);scan(mode==="peciatka"?"peciatka":"papier",img,null,th)}catch(x){tst(x.message||String(x),6000)}});return true};
 function shrink(file,max,q){return new Promise((ok,no)=>{const u=URL.createObjectURL(file),im=new Image();im.onload=()=>{const s=Math.min(1,max/Math.max(im.width,im.height)),c=document.createElement("canvas");c.width=Math.round(im.width*s);c.height=Math.round(im.height*s);c.getContext("2d").drawImage(im,0,0,c.width,c.height);URL.revokeObjectURL(u);ok(c.toDataURL("image/jpeg",q).split(",")[1])};im.onerror=()=>no(new Error("Fotku sa nepodarilo načítať."));im.src=u})}
 // ---------- mikrofón (rozpoznávanie reči v prehliadači, slovenčina) ----------
 // Spoľahlivé zastavenie: ťuknutie vždy ukončí (aj keď prehliadač neohlási koniec), strážca 9 s bez zvuku,

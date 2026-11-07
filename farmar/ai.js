@@ -405,6 +405,7 @@ window.aiOpenDocs=function(drv){if(typeof ROLE==="undefined"||ROLE!=="owner")ret
 // otvorí chat s predvyplneným textom (neodošle)
 window.aiPrefill=function(q){if(typeof ROLE==="undefined"||ROLE!=="owner")return;openAI().then(()=>{A.tab="chat";view();setTimeout(()=>{const ta=document.querySelector("#aiSheet .aiin textarea");if(ta){ta.value=q;ta.style.height="auto";ta.style.height=Math.min(140,ta.scrollHeight)+"px";ta.focus()}},120)})};
 window.aiAskWith=function(q,imgs){if(typeof ROLE==="undefined"||ROLE!=="owner")return;for(const im of imgs||[])PEND.push(im);openAI();setTimeout(()=>{pendView();ask(q)},350)};
+window.aiReadFile=readFile; /* 7. 11.: 📥 Vhoď sem posiela súbor do ERNTE AI */
 window.aiInit=function(){const b=$("aiBtn");if(!b)return;b.hidden=ROLE!=="owner";if(ROLE==="owner")load()};
 try{if(typeof ROLE!=="undefined"&&ROLE)window.aiInit()}catch(e){}
 })();

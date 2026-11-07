@@ -213,6 +213,18 @@ async function scan(file){syncForm();D.form.scan="busy";renderStaff();
       price:String(x.cena).replace(".",","),cur:String(x.mena||"EUR").toUpperCase()==="HUF"?"HUF":"EUR",period:x.obdobie||"",note:[x.pozn,R.burza].filter(Boolean).join(" · ")}));
     D.form.scan=`✓ Načítaných ${D.form.rows.length} cien – skontroluj a ulož.`}
   catch(x){D.form.scan="⚠️ "+(x&&x.message||x)}renderStaff()}
+/* 📥 Vhoď sem (7. 11.): cenník / ponuka odberateľa z fotky alebo PDF → formulár „viac cien naraz“, prečíta ho Claude; nič sa neuloží bez Uložiť */
+window.sellScanFile=function(file){if(!OWN()||!file)return false;D.form={buyer:"",rows:[newRow()]};Q.mf=true;
+  if(typeof TAB==="undefined"||(TAB!=="home"&&TAB!=="price")){try{const b=document.querySelector('#app>nav.tabs [data-tab="home"]');if(b)b.click();else{TAB="home";renderStaff()}}catch(x){}}else renderStaff();
+  let n=0;const w=()=>{if(document.getElementById("sForm")){scan(file);setTimeout(()=>{const f=document.getElementById("sForm");if(f)f.scrollIntoView({block:"start",behavior:"smooth"})},200);return}if(++n<30)setTimeout(w,150)};setTimeout(w,120);return true};
+/* 🗣️ „Agro-Somotor kúpi kukuricu po 215 DDP“ (Hľadať) → predvyplnený formulár, uloží až Martin */
+window.sellAddPrefill=function(o){if(!OWN()||!o)return false;const b=o.buyer?findBuyer(o.buyer):null;Q.edit=null;Q.err="";Q.msg="";Q.mf=true;D.form=false;
+  if(b){Q.buyer=b.id;const S=b.sites||[];Q.site=o.site||(S.length===1?S[0].n:"")}else{Q.buyer="";Q.site=o.site||""}if(o.com)Q.com=o.com;if(o.del)Q.del=o.del;if(o.price)Q.price=String(o.price).replace(".",",");if(o.cur)Q.cur=o.cur;Q.d=today();
+  if(!b&&o.buyer)Q.err=`Odberateľa „${o.buyer}“ nepoznám – vyber ho zo zoznamu (alebo ho založ cez 📷 Z fotky / viac cien).`;
+  if(typeof TAB==="undefined"||(TAB!=="home"&&TAB!=="price")){try{const x=document.querySelector('#app>nav.tabs [data-tab="home"]');if(x)x.click();else{TAB="home";renderStaff()}}catch(x){}}else ocnPaint();
+  let n=0;const w=()=>{const f=document.getElementById("ocnForm");if(f){ocnPaint();const g=document.getElementById("ocnForm");g.scrollIntoView({block:"center",behavior:"smooth"});const p=g.querySelector(Q.buyer?'[data-ocnk="price"]':'[data-ocnk="buyer"]');if(p)setTimeout(()=>{try{p.focus({preventScroll:true})}catch(x){}},350);return}
+    const s=document.getElementById("ocnSec");if(s&&s.dataset.mini==="1")ocnPaint();if(++n<30)setTimeout(w,150)};setTimeout(w,120);return true};
+window.sellBuyers=()=>(D.B||[]).map(b=>({id:b.id,name:b.name,rx:b.rx||""}));
 document.addEventListener("click",e=>{const t=e.target.closest&&e.target.closest("[data-sform],[data-sref],[data-sadd]");if(!t||!OWN())return;e.preventDefault();
   if(t.dataset.sref!==undefined){D.at=0;load();return}if(t.dataset.sadd!==undefined){syncForm();D.form.rows.push(newRow());renderStaff();return}
   D.form=t.dataset.sform==="1"?{buyer:(D.B||[]).some(b=>b.id===Q.buyer)?(D.B.find(b=>b.id===Q.buyer)||{}).name:"",rows:[newRow(Q.com?{com:Q.com}:null)]}:false;if(D.form&&typeof TAB!=="undefined"&&TAB!=="home"&&TAB!=="price")TAB="home";renderStaff();
@@ -311,15 +323,24 @@ function ocnArch(){if(Q.arch===null)return `<div class="s">${Q.archBusy?"⏳ Na�
   if(!Q.arch.length)return `<div class="s">Za posledných 30 dní nič nenahradené ani zmazané.</div>`;
   return Q.arch.map(a=>`<div class="ocnr old"><div class="ocnrh"><b>${E(a.b||a.buyer)}</b><span>${E(nm(a.com))} · ${E(a.del)}${a.site?" "+E(a.site):""} <b>${f0(+a.price)} €/t</b></span></div>
     <small>${dk(a.d)}${a.period?" · "+E(a.period):""} · ${E(a.why||"")}</small><div class="ocna"><button type="button" data-ocn="back" data-id="${E(a.id)}">↩️ Vrátiť späť</button></div></div>`).join("")}
-window.sellAddHTML=function(){if(!OWN())return "";
-  if(!D.B){if(!D.busy)load();return `<section class="card ocn" id="ocnSec" data-nosec><b class="ocnt">🏷️ Ceny odberateľov</b><div class="s">⏳ Načítavam odberateľov…</div></section>`}
+/* 7. 11. 17:49 „zjednoduš“ (bod 5 – Trh): na Prehľade iba riadok ➕ Pridať cenu odberateľa (formulár sa rozbalí na mieste) + 📈 Trh;
+   celý zoznam, archív, 🏷️ Ceny odberateľov a Konkurenčné ceny sú v Cenníku → 📈 Trh (secbtn) */
+function ocnMini(){const A=(D.O||[]).filter(o=>!FWD(o.period)&&age(o.d)<=MAXAGE);let best=null,bn=-1e9;for(const o of A){const n=offNet(o).net;if(n!=null&&n>bn){bn=n;best=o}}
+  return `<section class="card ocn ocnmini" id="ocnSec" data-nosec data-mini="1"><div class="ocnmh"><b class="ocnt">🏷️ Ceny odberateľov</b><small>${A.length} platných${best?` · 🏆 ${E(nm(best.com))} ${E((BY(best.buyer)||{name:best.buyer}).name)} ${f0(bn)} €/t po doprave`:""}</small></div>
+   ${Q.msg?`<div class="ocnok" role="status">✅ ${E(Q.msg)}</div>`:""}<div class="ocnmb"><button type="button" class="pri" data-ocn="mf">➕ Pridať cenu odberateľa</button><button type="button" data-ocn="trh">📈 Trh – všetky ceny ›</button></div></section>`}
+window.ernteTrh=function(){try{sessionStorage.setItem("ernte-sec-price","trh")}catch(x){}const b=document.querySelector('#app>nav.tabs [data-tab="price"]');if(b)b.click();else{try{TAB="price";renderStaff()}catch(x){}}
+  let n=0;const w=()=>{const s=document.querySelector("#app>#ocnSec");if(s){s.scrollIntoView({block:"start"});return}if(++n<25)setTimeout(w,150)};setTimeout(w,120)};
+window.sellAddHTML=function(o){if(!OWN())return "";const mini=o&&o.mini;if(mini&&D.B&&!Q.mf&&!D.form&&!Q.edit)return ocnMini();
+  if(!D.B){if(!D.busy)load();return `<section class="card ocn" id="ocnSec" data-nosec${mini?' data-mini="1"':""}><b class="ocnt">🏷️ Ceny odberateľov</b><div class="s">⏳ Načítavam odberateľov…</div></section>`}
+  if(mini)return `<section class="card ocn" id="ocnSec" data-nosec data-mini="1"><div class="ocnh"><b class="ocnt">🏷️ Pridať cenu odberateľa</b><small>Nová cena nahradí staršiu cenu toho istého odberateľa pre tú komoditu. Predaj, 🏆 Kde predať aj strop nákupných cien sa prepočítajú hneď.</small></div>
+   ${D.err?`<div class="ocnerr">⚠️ ${E(D.err)}</div>`:""}${D.form?formHTML():ocnForm()}<div class="ocnmb"><button type="button" data-ocn="mfx">✕ Zavrieť</button><button type="button" data-ocn="trh">📈 Trh – všetky ceny ›</button></div></section>`;
   return `<section class="card ocn" id="ocnSec" data-nosec><div class="ocnh"><b class="ocnt">🏷️ Ceny odberateľov – pridať · opraviť · zmazať</b>
     <small>Nová cena nahradí staršiu cenu toho istého odberateľa pre tú komoditu (a to miesto). Predaj, 🏆 Kde predať aj strop našich nákupných cien sa prepočítajú hneď.</small></div>
    ${D.err?`<div class="ocnerr">⚠️ ${E(D.err)}</div>`:""}${D.form?formHTML():ocnForm()}
    <details class="ocnl" data-ocnd="list"${Q.list?" open":""}><summary>📋 Platné ceny odberateľov (${(D.O||[]).length})</summary>${ocnList()}</details>
    <details class="ocnl" data-ocnd="arch"${Q.archOpen?" open":""}><summary>🗄️ Archív – nahradené a zmazané (30 dní)</summary>${ocnArch()}</details></section>`};
 // prekreslenie iba sekcie (formulár ostane, kde bol); na Prehľade aj celý Prehľad, keď sa zmenili ceny
-function ocnPaint(){const el=document.getElementById("ocnSec");if(!el)return;const d=document.createElement("div");d.innerHTML=window.sellAddHTML();const n=d.firstElementChild;if(n)el.replaceWith(n)}
+function ocnPaint(){const el=document.getElementById("ocnSec");if(!el)return;const d=document.createElement("div");d.innerHTML=window.sellAddHTML({mini:el.dataset.mini==="1"});const n=d.firstElementChild;if(n)el.replaceWith(n)}
 function ocnSync(f){f=f||document.getElementById("ocnForm");if(!f)return;f.querySelectorAll("[data-ocnk]").forEach(x=>{if(!x.disabled)Q[x.dataset.ocnk]=x.value})}
 async function ocnArchLoad(){Q.archBusy=true;ocnPaint();try{const r=await sb.rpc("sell_offers_old_list",{p_dni:30});Q.arch=r.error?{err:/sell_offers_old_list/.test(r.error.message)?"Archív sa zapne po aktualizácii databázy (pár minút).":r.error.message}:(r.data||[])}catch(x){Q.arch={err:String(x&&x.message||x)}}Q.archBusy=false;ocnPaint()}
 function ocnFail(m){Q.err=m;Q.msg="";Q.busy=false;ocnPaint();const f=document.querySelector("#ocnForm .ocnerr");if(f)f.scrollIntoView({block:"center",behavior:"smooth"});return false}
@@ -349,7 +370,10 @@ document.addEventListener("input",e=>{const x=e.target;if(x&&x.dataset&&x.datase
 document.addEventListener("toggle",e=>{const d=e.target;if(!d||!d.dataset)return;if(d.dataset.ocnc){Q.open[d.dataset.ocnc]=d.open;return}
   if(d.dataset.ocnd==="list")Q.list=d.open;else if(d.dataset.ocnd==="arch"){Q.archOpen=d.open;if(d.open&&Q.arch===null&&!Q.archBusy)ocnArchLoad()}},true);
 document.addEventListener("click",async e=>{const t=e.target.closest&&e.target.closest("[data-ocn]");if(!t||!OWN())return;e.preventDefault();e.stopPropagation();const a=t.dataset.ocn,id=+t.dataset.id;
-  if(a==="go"){D.form=false;const go=()=>{const s=document.getElementById("ocnSec");if(!s)return false;s.scrollIntoView({block:"start",behavior:"smooth"});const f=s.querySelector('[data-ocnk="buyer"]');if(f)setTimeout(()=>{try{f.focus({preventScroll:true})}catch(x){}},400);return true};
+  if(a==="mf"){Q.mf=true;Q.msg="";Q.err="";ocnPaint();const f=document.querySelector('#ocnForm [data-ocnk="buyer"]');if(f)setTimeout(()=>{try{f.focus({preventScroll:true});f.closest("#ocnSec").scrollIntoView({block:"start",behavior:"smooth"})}catch(x){}},120);return}
+  if(a==="mfx"){Q.mf=false;Q.edit=null;Q.err="";if(D.form)D.form=false;ocnPaint();if(typeof renderStaff==="function")renderStaff();return}
+  if(a==="trh"){window.ernteTrh();return}
+  if(a==="go"){D.form=false;Q.mf=true;const go=()=>{let s=document.getElementById("ocnSec");if(!s)return false;if(s.dataset.mini==="1"&&s.classList.contains("ocnmini")){ocnPaint();s=document.getElementById("ocnSec")}s.scrollIntoView({block:"start",behavior:"smooth"});const f=s.querySelector('[data-ocnk="buyer"]');if(f)setTimeout(()=>{try{f.focus({preventScroll:true})}catch(x){}},400);return true};
     if(!go()){if(typeof TAB!=="undefined"&&TAB!=="home"&&TAB!=="price"){TAB="home";renderStaff()}let n=0;const w=()=>{if(go()||++n>25)return;setTimeout(w,150)};setTimeout(w,80)}return}
   if(a==="cancel"){Q.edit=null;Q.price="";Q.err="";ocnPaint();return}
   if(a==="ask"){Q.ask=id;ocnPaint();return}if(a==="nodel"){Q.ask=null;ocnPaint();return}
@@ -366,7 +390,8 @@ function pBtn(){if(!OWN()||typeof TAB==="undefined"||TAB!=="price")return;const 
   const a=app.querySelector(".hero")||app.querySelector("nav.tabs");if(a)a.after(n);else app.prepend(n)}
 (function wBoot(){const app=document.getElementById("app");if(!app){setTimeout(wBoot,500);return}new MutationObserver(()=>{wSch();(window.ernteSoon||requestAnimationFrame)(()=>{try{pBtn()}catch(x){}})}).observe(app,{childList:true});wSch()})();
 setInterval(()=>{if(OWN())wLoad()},10*60e3);
-{const s=document.createElement("style");s.textContent=`.ocn{display:grid;gap:10px;min-width:0;border:1px solid rgba(94,234,212,.45)!important}.ocnh{display:grid;gap:4px;min-width:0}.ocnt{font-size:1.06rem;line-height:1.3}.ocnh small{opacity:.8;line-height:1.4;overflow-wrap:anywhere}
+{const s=document.createElement("style");s.textContent=`.ocnmh{display:grid;gap:3px;min-width:0}.ocnmh small{opacity:.8;line-height:1.35;overflow-wrap:anywhere}.ocnmb{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px}.ocnmb button{min-height:48px;font-weight:700;white-space:normal;line-height:1.2}
+.ocn{display:grid;gap:10px;min-width:0;border:1px solid rgba(94,234,212,.45)!important}.ocnh{display:grid;gap:4px;min-width:0}.ocnt{font-size:1.06rem;line-height:1.3}.ocnh small{opacity:.8;line-height:1.4;overflow-wrap:anywhere}
 .ocnf{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px 10px;min-width:0;margin:0}.ocnf label{display:grid;gap:4px;font-size:.8rem;font-weight:700;min-width:0}.ocnf .ocnw{grid-column:1/-1}
 .ocnf select,.ocnf input{width:100%;min-width:0;min-height:46px;box-sizing:border-box}.ocnp{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:6px;min-width:0}.ocnp select{width:auto;min-width:72px}
 .ocnb{display:flex;flex-wrap:wrap;gap:8px}.ocnb button{flex:1 1 150px;min-height:48px;white-space:normal}

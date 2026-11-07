@@ -74,6 +74,14 @@ const BAR=[
  {k:"spr",t:"Správy",i:"msg",tabs:["req","nov","cal"]}];
 window.rdTabIco=t=>OK()?ico(TI[t]||"dot"):null;
 const DESC=k=>{try{return (window.TABD||{})[k]||""}catch(x){return ""}};
+/* 7. 11. 17:49 „zjednoduš“ (bod 4): sekcie, ktoré si 30 dní neotvoril, idú do „Menej používané“ (nič sa nezmaže, Hľadať ich nájde);
+   najpoužívanejšie sú v každej oblasti prvé. Kým nie sú údaje o používaní (ownertabs.js / tab_use), ukáže sa všetko ako doteraz. */
+function useT(){try{return window.ernteTabUse?window.ernteTabUse():null}catch(x){return null}}
+function used(k,T){if(!T||k==="home"||k===cur())return true;const A=T.U||{},B=T.DB||{};
+  const hasL=Object.values(B).some(x=>x&&x.l)||Object.values(A).some(x=>x&&x.l);if(!hasL)return true;
+  const l=Math.max(Date.parse((B[k]||{}).l||"")||0,(A[k]||{}).l||0);return l>Date.now()-30*864e5}
+function uScore(k,T){if(!T)return 0;return Math.max(((T.U||{})[k]||{}).n||0,((T.DB||{})[k]||{}).n||0)}
+function split(ks,TT){const T=useT();const on=[],off=[];for(const k of ks){if(used(k,T)||((TT||{})[k]||{}).n)on.push(k);else off.push(k)}on.sort((a,b)=>uScore(b,T)-uScore(a,T));return {on,off}}
 
 // dostupné sekcie (z pôvodnej lišty)
 function tabs(){const m={};document.querySelectorAll("#app>nav.tabs [data-tab]").forEach(b=>{const k=b.dataset.tab;const l=b.querySelector(".tl"),c=b.querySelector(".cnt");
@@ -96,12 +104,13 @@ function side(){let s=document.getElementById("rdSide");if(!OK()||!PC()){if(s)s.
   if(!s){s=document.createElement("nav");s.id="rdSide";s.setAttribute("aria-label","Sekcie");document.body.appendChild(s)}
   const it=k=>T[k]?`<button type="button" data-rdgo="${k}" class="${k===t?"on":""}">${ico(TI[k])}<span>${E(T[k].t)}</span>${T[k].n?`<i class="rdc">${T[k].n}</i>`:""}</button>`:"";
   const h=`<button type="button" class="rdsf" data-rdfind>${ico("search")}<span>Hľadať…</span><kbd>${/Mac/.test(navigator.platform)?"⌘":"Ctrl"} K</kbd></button>${it("home")}`+
-   AREAS.map(a=>{const L=a.tabs.filter(k=>k!=="home"&&T[k]);if(!L.length)return "";return `<div class="rdsa"><b style="--ac:${a.c}">${E(a.t)}</b>${L.map(it).join("")}</div>`}).join("")+
-   (()=>{const used=new Set(AREAS.flatMap(a=>a.tabs));const o=Object.keys(T).filter(k=>!used.has(k));return o.length?`<div class="rdsa"><b>Ďalšie</b>${o.map(it).join("")}</div>`:""})();
+   (()=>{const OFF=[];const h=AREAS.map(a=>{const sp=split(a.tabs.filter(k=>k!=="home"&&T[k]),T);OFF.push(...sp.off);if(!sp.on.length)return "";return `<div class="rdsa"><b style="--ac:${a.c}">${E(a.t)}</b>${sp.on.map(it).join("")}</div>`}).join("");
+     const usedA=new Set(AREAS.flatMap(a=>a.tabs));const sp=split(Object.keys(T).filter(k=>!usedA.has(k)),T);OFF.push(...sp.off);
+     return h+(sp.on.length?`<div class="rdsa"><b>Ďalšie</b>${sp.on.map(it).join("")}</div>`:"")+(OFF.length?`<details class="rdsa rdless"><summary><b>Menej používané (${OFF.length})</b></summary>${OFF.map(it).join("")}</details>`:"")})();
   if(s.dataset.h!==h){s.innerHTML=h;s.dataset.h=h;const a=s.querySelector("button.on");if(a)a.scrollIntoView({block:"nearest"})}}
 // ---- podsekcie oblasti hore (mobil, tablet) ----
 function sub(){const app=document.getElementById("app");if(!app)return;let el=app.querySelector(":scope>#rdSub");if(!OK()||PC()){if(el)el.remove();return}
-  const T=tabs(),t=cur(),a=AREAS.find(x=>x.tabs.includes(t)&&t!=="home");const L=a?a.tabs.filter(k=>k!=="home"&&T[k]):[];
+  const T=tabs(),t=cur(),a=AREAS.find(x=>x.tabs.includes(t)&&t!=="home");const L=a?split(a.tabs.filter(k=>k!=="home"&&T[k]),T).on:[];
   if(L.length<2){if(el)el.remove();return}
   const h=`<b style="--ac:${a.c}">${E(a.t)}</b><div>${L.map(k=>`<button type="button" data-rdgo="${k}" class="${k===t?"on":""}">${ico(TI[k])}<span>${E(T[k].t)}</span>${T[k].n?`<i class="rdc">${T[k].n}</i>`:""}</button>`).join("")}<button type="button" data-rdmenu>${ico("grid")}<span>Všetky sekcie</span></button></div>`;
   if(!el){el=document.createElement("div");el.id="rdSub"}
@@ -122,15 +131,17 @@ function openMenu(find){if(!OK())return;let m=document.getElementById("rdMenu");
 function closeMenu(){const m=document.getElementById("rdMenu");if(m){m.hidden=true;m.innerHTML=""}document.body.classList.remove("rdmo")}
 function areas(){const L=document.getElementById("rdML");if(!L)return;const T=tabs(),t=cur();RES=[];
   const tile=k=>T[k]?`<button type="button" class="rdmt${k===t?" on":""}" data-rdgo="${k}">${ico(TI[k])}<span><b>${E(T[k].t)}</b>${DESC(k)?`<small>${E(DESC(k).split(/[.–]/)[0])}</small>`:""}</span>${T[k].n?`<i class="rdc">${T[k].n}</i>`:""}</button>`:"";
-  const used=new Set(AREAS.flatMap(a=>a.tabs)),rest=Object.keys(T).filter(k=>!used.has(k));
+  const usedA=new Set(AREAS.flatMap(a=>a.tabs)),RS=split(Object.keys(T).filter(k=>!usedA.has(k)),T),rest=RS.on,OFF=RS.off.slice();
+  const AS=AREAS.map(a=>{const sp=split(a.tabs.filter(k=>k!=="home"&&T[k]),T);OFF.push(...sp.off);return [a,sp.on]});
   L.innerHTML=`<div class="rdma rdm0"><div class="rdmg">${tile("home")}${document.querySelector("#app>nav.tabs [data-uvod]")?`<button type="button" class="rdmt" data-rduvod>${ico("sun")}<span><b>Úvod LIVE</b><small>burza, počasie, ceny</small></span></button>`:""}</div></div>`+
-   AREAS.map(a=>{const ks=a.tabs.filter(k=>k!=="home"&&T[k]);return ks.length?`<div class="rdma"><h3 style="--ac:${a.c}">${E(a.t)}</h3><div class="rdmg">${ks.map(tile).join("")}</div></div>`:""}).join("")+
-   (rest.length?`<div class="rdma"><h3>Ďalšie</h3><div class="rdmg">${rest.map(tile).join("")}</div></div>`:"")}
+   AS.map(([a,ks])=>ks.length?`<div class="rdma"><h3 style="--ac:${a.c}">${E(a.t)}</h3><div class="rdmg">${ks.map(tile).join("")}</div></div>`:"").join("")+
+   (rest.length?`<div class="rdma"><h3>Ďalšie</h3><div class="rdmg">${rest.map(tile).join("")}</div></div>`:"")+
+   (OFF.length?`<details class="rdma rdless"><summary><h3>Menej používané (${OFF.length}) – 30 dní si ich neotvoril</h3></summary><div class="rdmg">${OFF.map(tile).join("")}</div></details>`:"")}
 async function loadVeh(){if(VEH||typeof sb==="undefined"||!sb)return;VEH=[];try{const r=await sb.from("cmd_vehicles").select("*");VEH=(r.data||[]).map(v=>({id:v.id,p:v.plate||"",n:v.name||"",r:v.region||""}))}catch(x){}}
 function index(){const S=typeof STATE!=="undefined"&&STATE?STATE:{},F={};(S.farmers||[]).forEach(f=>F[f.id]=f);
   const D=[...(S.deals||[]),...(S.dealsArch||[])];return {D,F:S.farmers||[],FM:F}}
 function find2(q){const L=document.getElementById("rdML");if(!L)return;const n=N(q).trim();if(!n){areas();return}if(window.ernteFindUI&&window.ernteFindUI(q,L,R=>{RES=R;SEL=0}))return; /* 7. 11.: hľadá všetko – hladat.js */
-  if(!window.ernteFindUI&&!window.__hlLoad){window.__hlLoad=1;const s=document.createElement("script");s.src="hladat.js?v=20261107-1500";s.onload=()=>{const i=document.getElementById("rdQ");if(i&&i.value.trim())find2(i.value)};document.head.appendChild(s)} /* 7. 11. 14:47: hľadanie sa nenačítalo → načítať a hľadať znova */const I=index(),T=tabs(),R=[],nd=n.replace(/\s/g,"");
+  if(!window.ernteFindUI&&!window.__hlLoad){window.__hlLoad=1;const s=document.createElement("script");s.src="hladat.js?v=20261107-1830";s.onload=()=>{const i=document.getElementById("rdQ");if(i&&i.value.trim())find2(i.value)};document.head.appendChild(s)} /* 7. 11. 14:47: hľadanie sa nenačítalo → načítať a hľadať znova */const I=index(),T=tabs(),R=[],nd=n.replace(/\s/g,"");
   Object.values(T).forEach(t=>{if(N(t.t).includes(n))R.push({g:"Sekcie",i:TI[t.k]||"dot",t:t.t,s:"otvoriť sekciu",a:()=>go(t.k)})});
   let c=0;for(const d of I.D){if(c>=8)break;const f=I.FM[d.farmer_id]||{},hay=N([d.no,f.name,d.com,d.term].join(" "));
     if(hay.includes(n)||(nd&&N(d.no||"").replace(/\s/g,"").includes(nd))){c++;R.push({g:"Zmluvy",i:"file",t:(d.no||"bez čísla")+" · "+(f.name||""),s:[typeof comName==="function"?comName(d.com):d.com,d.tons?nf(d.tons,1)+" t":"",d.status].filter(Boolean).join(" · "),a:()=>openDeal(d)})}}

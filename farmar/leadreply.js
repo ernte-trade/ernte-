@@ -46,7 +46,11 @@ function openSheet(re){R.open=true;let o=document.getElementById("lrSheet");
   const I=R.items,A=I.filter(x=>x.status==="pomoc"),B=I.filter(x=>x.status==="nova"),C=I.filter(x=>x.status!=="pomoc"&&x.status!=="nova");
   const live=R.seen&&Date.now()-Date.parse(R.seen)<75*60e3;
   const H=I.filter(x=>x.status==="hromadna");const C2=C.filter(x=>x.status!=="hromadna");
-  o.innerHTML=`<div class="lrs" role="dialog" aria-label="Pošta"><div class="lrsh"><b>📥 Pošta</b><button type="button" class="lrbx" data-mbxopen>📂 Prijaté a odoslané</button><button type="button" class="lrx" data-lrclose aria-label="Zavrieť">✕</button></div>
+  /* 7. 11. „zjednoduš“ (bod 5): jedna Pošta – 📥 Na vybavenie · 📂 Všetko prijaté a odoslané (ERNTE / VALKO / DANUBE) v tom istom okne */
+  const tabs=`<div class="lrtabs" role="tablist"><button type="button" role="tab" data-lrtab="v" aria-pressed="${R.tab!=="a"}">📥 Na vybavenie${A.length+B.length?` (${A.length+B.length})`:""}</button><button type="button" role="tab" data-lrtab="a" aria-pressed="${R.tab==="a"}">📂 Prijaté a odoslané</button></div>`;
+  if(R.tab==="a"&&window.ernteMailboxLoad){o.innerHTML=`<div class="lrs" role="dialog" aria-label="Pošta"><div class="lrsh"><b>📥 Pošta</b><button type="button" class="lrx" data-lrclose aria-label="Zavrieť">✕</button></div>${tabs}
+   <div class="mbxn">Všetko, čo sme poslali alebo prijali – podľa firmy ERNTE, VALKO, DANUBE.</div><div id="mbxBox" class="mbxemb"><div class="mbxin"></div></div></div>`;window.ernteMailboxLoad(!R.mbxAt||Date.now()-R.mbxAt>60e3);R.mbxAt=Date.now();return}
+  o.innerHTML=`<div class="lrs" role="dialog" aria-label="Pošta"><div class="lrsh"><b>📥 Pošta</b><button type="button" class="lrx" data-lrclose aria-label="Zavrieť">✕</button></div>${tabs}
    <div class="s">Prijaté e-maily z erntespol@gmail.com. ${R.off?"<b>📵 Odosielanie z aplikácie je vypnuté</b> – odpoveď skopíruj (📋) a pošli zo svojej schránky, potom ťukni ✔️ Odoslal som.":""}
     ${live?`🟢 Schránka naposledy skontrolovaná ${hm(R.seen)}.`:`<b class="lrw">⚠️ Gmail skript teraz nečíta doručenú poštu.</b>`}</div>
    ${A.length?`<h3 class="lrsub">🆘 Treba odpísať (${A.length})</h3>${A.map(card).join("")}`:""}
@@ -98,7 +102,8 @@ function loginPop(){if(!OK())return;let seen=null;try{seen=sessionStorage.getIte
 document.addEventListener("click",ev=>{const t=ev.target.closest&&ev.target.closest("[data-lrreply],#lrPop [data-lrhome]");if(!t)return;const p=document.getElementById("lrPop");if(p)p.remove();
   if(t.dataset.lrreply){openSheet();setTimeout(()=>{const c=document.querySelector(`#lrSheet [data-lrid="${t.dataset.lrreply}"]`);if(c){c.scrollIntoView({block:"start",behavior:"smooth"});const tx=c.querySelector("textarea");if(tx)tx.focus({preventScroll:true})}},80)}},true);
 const tk=setInterval(()=>{if(OK()){clearInterval(tk);load(true).then(()=>{hash();loginPop()})}},1500);setTimeout(()=>clearInterval(tk),120e3);
-window.leadReplies=()=>{load(true);openSheet()};
+window.leadReplies=t=>{R.tab=t==="a"?"a":"v";load(true);openSheet()};
+document.addEventListener("click",ev=>{const t=ev.target.closest&&ev.target.closest("#lrSheet [data-lrtab]");if(!t)return;ev.preventDefault();R.tab=t.dataset.lrtab;openSheet();const s=document.querySelector("#lrSheet .lrs");if(s)s.scrollTop=0},true);
 const st=document.createElement("style");st.textContent=`
 #lrBub{position:fixed;z-index:9000;left:50%;transform:translateX(-50%);bottom:calc(env(safe-area-inset-bottom,0px) + 178px);display:flex;align-items:center;gap:10px;
  max-width:min(92vw,420px);padding:10px 14px 10px 10px;border-radius:999px;border:1px solid rgba(255,140,140,.9);color:#fff;text-align:left;cursor:pointer;
@@ -106,6 +111,7 @@ const st=document.createElement("style");st.textContent=`
 #lrBub .lri{font-size:22px;flex:0 0 auto}#lrBub .lrt{min-width:0;display:flex;flex-direction:column}
 #lrBub .lrt b{font-size:14px;line-height:1.2}#lrBub .lrt small{font-size:12px;opacity:.9;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 #lrBub .lrn{flex:0 0 auto;min-width:26px;height:26px;border-radius:50%;display:grid;place-items:center;background:#fff;color:#c1121f;font-weight:800;font-size:13px}
+.lrtabs{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:4px 0 10px}.lrtabs button{min-height:46px;border-radius:14px;font-weight:700;white-space:normal;line-height:1.2;padding:4px 8px}.lrtabs button[aria-pressed="true"]{background:linear-gradient(135deg,#b6ff3b,#5eead4)!important;color:#05210f!important;border-color:transparent!important}
 .lrbx{min-height:40px;padding:4px 10px;margin-left:auto;margin-right:6px;white-space:nowrap}.lrov{position:fixed;inset:0;z-index:9500;background:rgba(0,0,0,.55);display:flex;align-items:flex-end;justify-content:center}
 .lrs{width:min(100%,720px);max-height:92vh;overflow:auto;padding:16px 14px calc(env(safe-area-inset-bottom,0px) + 18px);border-radius:22px 22px 0 0;
  background:linear-gradient(160deg,rgba(30,36,52,.98),rgba(16,20,30,.98));border:1px solid rgba(255,255,255,.16);color:#fff;text-align:left}

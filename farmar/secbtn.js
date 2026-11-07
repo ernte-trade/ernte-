@@ -4,8 +4,10 @@
 (function(){
 const OWN=()=>typeof ROLE!=="undefined"&&ROLE==="owner"&&!(typeof FARMER!=="undefined"&&FARMER);
 const CFG={
-  price:{def:"cen",S:[["bzc",":scope > .card.bzc","📈 Burza"],["trh",":scope > .card.trhcard","🔮 Trh a predpoveď"],["kkg",":scope > .card.kkg","🛡️ Kontrola cien"],["acn",":scope > .card.acn-card","🤖 Automatický cenník"],
-    ["cen",":scope > form.card.f:not(.chcard), :scope > .card.nuc","💶 Výkupné ceny",1],["his",":scope > div.card.chcard","📜 História cien"],["upz",":scope > form.card.chcard","🔔 Upozornenie na zmenu"],["kk",":scope > .card.kkcard","🏷️ Konkurenčné ceny"]]},
+  price:{def:"cen",S:[["bzc",":scope > .card.bzc","📈 Burza"],["kkg",":scope > .card.kkg","🛡️ Kontrola cien"],["acn",":scope > .card.acn-card","🤖 Automatický cenník"],
+    ["cen",":scope > form.card.f:not(.chcard), :scope > .card.nuc","💶 Výkupné ceny",1],["his",":scope > div.card.chcard","📜 História cien"],["upz",":scope > form.card.chcard","🔔 Upozornenie na zmenu"],
+    /* 7. 11. „zjednoduš“: jedna obrazovka 📈 Trh = ceny odberateľov (pridať · opraviť · zmazať), 🏷️ ich modely, konkurenčné ceny a predpoveď */
+    ["trh",":scope > #ocnSec, :scope > #odbCard, :scope > .card.kkcard, :scope > .card.trhcard","📈 Trh · odberatelia · konkurencia",1]]},
   deals:{def:"",S:[["dw",":scope > .card.dwcard","📊 Stráženie nákupov"],["new",":scope > form.card.f","➕ Nový obchod"],["lis",":scope > details.card.hsec","⚖️ Vážne lístky"]]},
   farm:{def:"",S:[["reg",":scope > .card.fsall","🔎 Údaje z registra"],["ppa",":scope > .card.ppa","🌾 Pôda z PPA"],["fpc",":scope > details.card.fpc","👁️ Čo vidia farmári"]]}
 };
@@ -16,7 +18,7 @@ const setSel=(t,v)=>{try{sessionStorage.setItem(KEY(t),v)}catch(x){}};
 /* 2. 11. 11:11 PRÍKAZ MAJITEĽA: „každú dlaždicu daj hore do tlačidla, hneď z hora si vyberiem – v každej sekcii“ → aj ostatné záložky:
    každá hlavná karta (s nadpisom) = tlačidlo v lište hore; „📋 Všetko“ ukáže všetko (predvolené). */
 const SKIPT={fleet:1,wx:1};
-const NOC=".secbar,.rokbar,.spatbar,.hero,.zfh,.plwarn,[class*=inst],[data-nosec],.fdesc,nav,.hrow,script,style";
+const NOC=".secbar,.rokbar,.spatbar,#rdSub,section.ehb,#hlFoc,#ckCard,.hero,.zfh,.plwarn,[class*=inst],[data-nosec],.fdesc,nav,.hrow,script,style";
 const lab=el=>{const h=el.matches("h2,h3")?el:el.querySelector("h2,h3,summary,.row .t,.t,b.sth,legend")||el.querySelector(":scope > b, :scope > strong, :scope > div > b, :scope > .row > b");
   let x="";if(h){const c=h.cloneNode(true);c.querySelectorAll("small,.s,.sub,.muted,.fdesc,button,svg,img").forEach(z=>z.remove());x=String(c.textContent||"").replace(/\s+/g," ").trim()}if(!x)return "";x=x.replace(/›$/,"").split(" · ")[0].trim();return x.length>30?x.slice(0,29).trim()+"…":x};
 const CARD=".card,section.card,details.card,form.card";

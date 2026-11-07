@@ -44,7 +44,7 @@ function pricesHTML(){const P=(STATE.prices||[]).filter(p=>p.price!=null&&+p.pri
       <span class="owpf"><span class="owpm ${mg==null?"":mg>=0?"ps":"ng"}">${mg==null?"marža –":`marža ${mg>0?"+":mg<0?"−":""}${F(Math.abs(mg),0)} €/t`}</span>${bx!=null?`<span class="owpb">${e(bs==="soja_usc_bu"?"CBOT":"MATIF")} ${F(bx,0)}</span>`:""}</span></button>`}).join("");
   if(!anySell)later();
   const valid=((STATE.settings||{}).pricelist||{}).valid;
-  return `<div class="owg owpg">${cards}</div>${window.sellAddHTML?sellAddHTML():""}${window.sellRecHTML?sellRecHTML():""}<div class="owfoot">Nákup = naša výkupná cena FCA farma, ktorú vidia farmári. Predaj = najlepšia ponuka odberateľa (rovnaká ako v „🏆 Kde predať“), inak odhad Kalkulačky; marža = predaj − doprava − nákup.${valid?` Cenník platí do ${e(dSK(valid))}.`:""}</div>`}
+  return `<div class="owg owpg">${cards}</div>${window.sellAddHTML?sellAddHTML({mini:true}):""}${window.sellRecHTML?sellRecHTML():""}<div class="owfoot">Nákup = naša výkupná cena FCA farma, ktorú vidia farmári. Predaj = najlepšia ponuka odberateľa (rovnaká ako v „🏆 Kde predať“), inak odhad Kalkulačky; marža = predaj − doprava − nákup.${valid?` Cenník platí do ${e(dSK(valid))}.`:""}</div>`}
 
 // ---- 2. čo riešiť ----
 function todoHTML(){const R=STATE.reqs||[],nNew=R.filter(r=>r.status==="nova").length,auto=R.filter(r=>r.status==="nova"&&/^🎯 Automaticky/.test(r.note||"")).length,AL=[];

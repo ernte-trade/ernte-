@@ -48,7 +48,9 @@ function paintBox(){const o=document.getElementById("mbxBox");if(!o)return;const
    ${L.length?L.map((x,i)=>`<div class="mbxm${B.open===x.k?" on":""}"><button type="button" class="mbxmh" data-mbxop="${E(x.k)}"><span class="mbxf">${E(FIRMA[x.firma]||x.firma)}</span><b>${E(x.predmet||"(bez predmetu)")}</b><small>${x.smer==="prijate"?"od "+E(x.od||""):"pre "+E(x.komu||"")} · ${E(dT(x.at))}${x.stav==="zdielane"?" · 📤 zdieľané z telefónu":x.stav==="otvorene"?" · otvorené v pošte":""}${x.prilohy&&x.prilohy.length?" · 📎 "+E(x.prilohy.join(", ")):""}</small></button>
      ${B.open===x.k?`<div class="mbxmb"><div class="mbxmeta">Od: ${E(x.od||"")}<br>Komu: ${E(x.komu||"")}</div><pre>${E(x.text||"")}</pre><div class="mbxb"><button type="button" data-mbxcpm="${E(x.k)}">📋 Kopírovať text</button></div></div>`:""}</div>`).join("")
      :(none||B.busy?"":`<div class="mbxn">Prázdne.</div>`)}`}
-window.ernteMailbox=function(){if(!MAIN())return;let o=document.getElementById("mbxBox");if(o)o.remove();o=document.createElement("div");o.id="mbxBox";o.className="mbxov";
+/* 7. 11.: priečinky sú v tej istej Pošte (záložka 📂) – žiadne druhé okno */
+window.ernteMailboxLoad=function(fresh){paintBox();if(fresh||!B.D)loadBox()};
+window.ernteMailbox=function(){if(!MAIN())return;if(window.leadReplies){window.leadReplies("a");return}let o=document.getElementById("mbxBox");if(o)o.remove();o=document.createElement("div");o.id="mbxBox";o.className="mbxov";
   o.addEventListener("click",ev=>{if(ev.target===o)o.remove()});
   o.innerHTML=`<div class="mbxs" role="dialog" aria-label="Pošta – priečinky"><div class="mbxh"><b>📬 Pošta – prijaté a odoslané</b><button type="button" class="mbxx" data-mbxbx aria-label="Zavrieť">✕</button></div>
    <div class="mbxn">Všetko, čo sme poslali alebo prijali – podľa firmy ERNTE, VALKO, DANUBE. Odoslané = e-maily pripravené v aplikácii (✔️ Odoslal som), zdieľané dokumenty a staršie e-maily z aplikácie.</div><div class="mbxin"></div></div>`;

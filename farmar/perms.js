@@ -22,6 +22,7 @@ const PCAT=[
  ["trus_price","Kurací trus – ceny a podklady k faktúram","Obchod","bez zisku"],
  ["trans","Doprava – jazdy a objednávky odvozu","Vývoz",""],
  ["trus","Kurací trus – vývozy, autá, váženie","Vývoz","bez cien"],
+ ["trus_full","Kurací trus komplet – predajné ceny, doprava, fakturácia BPS a VALKO","Vývoz","bez nákupnej ceny a marže (7. 11. Meričko, Tóth)"],
  ["assign","Prideľovať autá farmárom na vývoz","Vývoz",""],
  ["farmer_gps","Zapínať farmárovi GPS polohu auta","Vývoz","len cestou na nakládku"],
  ["remain","Zostatok nevyvezenej komodity","Vývoz",""],
@@ -81,7 +82,7 @@ window.canAny=(...k)=>k.some(x=>can(x));
 function fDefs(){const g=((STATE.settings||{}).farmer_perms)||{};return g}
 window.fcan=k=>{if(typeof FARMER==="undefined"||!FARMER)return true;const v=(FARMER.perms||{})[k];if(v===true||v===false)return v;const g=fDefs()[k];if(g===true||g===false)return g;return FDEF.includes(k)};
 // hlavné záložky
-const TABP={req:["req","trans","assign"],price:["price_view","price_edit","market"],nu:["price_view","price_edit","market"],trans:["trans","assign"],fleet:["fleet"],deals:["deals","deals_qty","remain","notes"],farm:["farm"],wx:["wx"],calc:["calc"],team:["team"],agro:["agro"],trus:["trus","trus_price"],evid:["ev","ev_doch","sklad","praca","ev_mzdy"],danube:["danube"],nov:["nov"],qd:["deals"],klient:["klient"],pred:["pred_owner_only"],iscc:["pred_owner_only"]};
+const TABP={req:["req","trans","assign"],price:["price_view","price_edit","market"],nu:["price_view","price_edit","market"],trans:["trans","assign"],fleet:["fleet"],deals:["deals","deals_qty","remain","notes"],farm:["farm"],wx:["wx"],calc:["calc"],team:["team"],agro:["agro"],trus:["trus","trus_price","trus_full"],evid:["ev","ev_doch","sklad","praca","ev_mzdy"],danube:["danube"],nov:["nov"],qd:["deals"],klient:["klient"],pred:["pred_owner_only"],iscc:["pred_owner_only"]};
 window.tabOK=k=>ROLE==="owner"||(k!=="nov"&&(TABP[k]?TABP[k].some(can):true)); // Novinky vidia iba majitelia
 // sekcie flotily
 const FSP={dash:["fleet"],fuel:["diesel","yard","cams"],alarm:["alarms"],money:["fleet_cost"],drv:["drivers"],veh:["drivers"],map:["fleet"],set:["fleet_set"]};

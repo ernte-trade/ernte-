@@ -23,7 +23,7 @@ const CNT=(h,tk)=>tk.reduce((s,t)=>s+(ALT(t).some(a=>h.includes(a))?1:0),0);
 // slová, ktorými ľudia hľadajú konkrétne časti (pridajú sa k nadpisu časti – 🎯 presná zhoda aj keď nadpis znie inak)
 const KW=[[/spoluprac/,"návrhy zmlúv odberateľov, predajné návrhy zmlúv, podmienky spolupráce, nový návrh spolupráce, vzor zmluvy pre farmárov, kam to pôjde"],
   [/predaj.{0,6}predajn|predajne zmluv/,"zmluvy s odberateľmi, predajné zmluvy odberateľov, kontrakty s odberateľmi"],[/obchodne navrhy/,"ponuky a dopyty firmám, návrhy e-mailov, oslovenie odberateľov"],
-  [/ceny odberatel/,"pridať cenu odberateľa, ponuky odberateľov, nová cena odberateľa"],[/zuctovanie farmar/,"vyúčtovanie farmára, výpočet platby"],[/kontrola cien/,"čakajúce ceny, schválenie ceny"]];
+  [/ceny odberatel/,"pridať cenu odberateľa, ponuky odberateľov, nová cena odberateľa"],[/zuctovanie farmar/,"vyúčtovanie farmára, výpočet platby"],[/kontrola cien/,"čakajúce ceny, schválenie ceny"],[/caka na teba/,"na schválenie, čo mám urobiť, úlohy, schváliť, čakajúce"],[/vhod sem/,"nahrať súbor, fotka, pdf, excel, odfotiť dokument"],[/pravidla, ktore robim/,"automaticky, sám, pravidlá"]];
 const KWA=t=>{const n=N(t);return KW.filter(k=>k[0].test(n)).map(k=>k[1]).join(", ")};
 const isF=()=>typeof FARMER!=="undefined"&&!!FARMER;
 let MAP=null,MAPB=false,RQ=0,LASTQ="";
@@ -70,10 +70,10 @@ document.addEventListener("click",e=>{if(e.target.closest&&e.target.closest("[da
   if(FOC&&e.target.closest&&e.target.closest("#app>nav.tabs [data-tab],#rdBar button,#rdSide [data-rdgo],[data-rdgo]"))unfocus()},true);
 function after(fn,n=28){let i=0;const t=setInterval(()=>{i++;let ok=false;try{ok=fn()}catch(x){}if(ok||i>=n)clearInterval(t)},250)}
 function goTab(k){if(!k||isF())return;const b=document.querySelector(`#app>nav.tabs [data-tab="${k}"]`);if(b){b.click();scrollTo({top:0})}else{try{TAB=k;renderStaff();scrollTo({top:0})}catch(x){}}}
-function byText(txt,sel){const n=N(txt).slice(0,40);if(!n)return null;const L=[...document.querySelectorAll(sel||"#app .secbar button,#app h2,#app h3,#app summary,#app .owsh span,#app .srt,#app .ocnt,#app .card>b,#app section h2")];
+function byText(txt,sel){const n=N(txt).slice(0,40);if(!n)return null;const L=[...document.querySelectorAll(sel||"#app .secbar button,#app h2,#app h3,#app summary,#app .owsh span,#app .srt,#app .ocnt,#app .ckhd,#app .ckvh,#app .card>b,#app section h2")];
   return L.find(el=>el.offsetParent!==null&&N(el.textContent).startsWith(n))||L.find(el=>el.offsetParent!==null&&N(el.textContent).includes(n))}
 function findCard(txt){const n=N(txt);if(!n)return null;return [...document.querySelectorAll("#app .card,#app .ds-card,#app section,#app .osr,#app .ocnr")].reverse().find(x=>x.offsetParent!==null&&N(x.textContent).includes(n))}
-function openSec(r){unfocus();goTab(r.tab);after(()=>{const el=byText(r.find||r.t,"#app h2,#app h3,#app summary,#app .owsh span,#app .srt,#app .ocnt,#app .card>b,#app section h2");if(el)return focusOn(el,r.t);const sb=byText(r.find||r.t,"#app .secbar button");if(sb){sb.click();return true}return false})}
+function openSec(r){unfocus();try{if(r.tab)sessionStorage.setItem("ernte-sec-"+r.tab,"*")}catch(x){}goTab(r.tab);after(()=>{const el=byText(r.find||r.t,"#app h2,#app h3,#app summary,#app .owsh span,#app .srt,#app .ocnt,#app .ckhd,#app .ckvh,#app .card>b,#app section h2");if(el)return focusOn(el,r.t);const sb=byText(r.find||r.t,"#app .secbar button");if(sb){sb.click();return true}return false})}
 function toastS(r){if(typeof toast==="function")toast((ICO[r.k]||"")+" "+r.t+(r.s?" · "+r.s:""),7000)}
 function act(r){closeUI();unfocus();const k=r.k;const F=(el,lab)=>el?focusOn(el,lab||r.t):false;
   if(k==="tab"){goTab(r.tab);return}
@@ -85,27 +85,49 @@ function act(r){closeUI();unfocus();const k=r.k;const F=(el,lab)=>el?focusOn(el,
     try{if(d&&window.rokOk&&!rokOk(d)&&window.rokSet)rokSet("")}catch(x){}goTab(r.tab||"deals");const no=String(r.t).split(" · ")[0];
     after(()=>{const el=document.querySelector(`#app [data-cpdf="${CSS.escape(String(r.id))}"]`)||document.querySelector(`#app [data-deal="${CSS.escape(String(r.id))}"]`);if(el)return F(el,no);return F(findCard(no),no)});return}
   if(k==="farmer"){try{FQ=String(r.t||"")}catch(x){}goTab("farm");after(()=>F(findCard(r.t)));return}
-  if(k==="buyer"){goTab("home");after(()=>{const s=document.getElementById("ocnSec");if(!s)return false;const d=s.querySelector('[data-ocnd="list"]');if(d)d.open=true;return F(s,"🏷️ Ceny odberateľov")});return}
+  if(k==="buyer"){if(window.ernteTrh)window.ernteTrh();else goTab("home");after(()=>{const s=document.getElementById("ocnSec");if(!s)return false;const d=s.querySelector('[data-ocnd="list"]');if(d)d.open=true;return F(s,"🏷️ Ceny odberateľov")});return}
   if(k==="spol"){goTab("deals");after(()=>{const b=document.querySelector(`[data-osp="open"][data-id="${CSS.escape(String(r.id))}"]`);if(b){F(b.closest(".osr")||b);setTimeout(()=>b.click(),700);return true}return F(document.getElementById("osplCard"),"🤝 Spolupráca s odberateľmi")});return}
   if(k==="veh"){goTab("fleet");after(()=>{try{const b=document.createElement("button");b.hidden=true;b.dataset.aveh=r.id;document.body.appendChild(b);b.click();b.remove();return true}catch(x){return false}},20);return}
   if(r.tab)goTab(r.tab);const key=String(r.t).split(" · ")[0];after(()=>F(findCard(key),key),16);toastS(r)}
 // ---------- výsledky ----------
 let RES=[],SEL=0,TMR=0;
 let MORE=false,LASTR=null;
-const row=(r,i)=>`<button type="button" class="hlr rdmr${i===SEL?" sel":""}" data-rdres="${i}" data-hlres="${i}"><span class="hli" aria-hidden="true">${ICO[r.k]||"•"}</span><span class="hlt"><b>${E(r.t)}</b><small>${E(r.g)}${r.s?" · "+E(r.s):""}</small></span></button>`;
-function html(R,q,busy){if(!R.length)return `<div class="hlnone">${busy?"⏳ Hľadám…":`Nič sa nenašlo pre „${E(q)}“. Skús kratšie slovo, meno, číslo zmluvy, ŠPZ alebo IČO.`}</div>`;
-  const nT=R.filter(r=>r.tm).length;let h="";
-  if(nT){h+=`<h3 class="hlg">🎯 Presne to, čo hľadáš</h3>`;R.forEach((r,i)=>{if(r.tm)h+=row(r,i)});
-    const nO=R.length-nT;if(nO)h+=MORE?`<h3 class="hlg">Súvisiace</h3>`+R.map((r,i)=>r.tm?"":row(r,i)).join(""):`<button type="button" class="hlmore" data-hlmore>＋ Súvisiace výsledky (${nO})</button>`}
-  else{const nF=R.filter(r=>!r.part).length;if(nF){h+=`<h3 class="hlg">Nájdené</h3>`;R.forEach((r,i)=>{if(!r.part)h+=row(r,i)})}
-    if(R.length>nF){h+=`<h3 class="hlg">${nF?"Podobné":"Všetky slová naraz nie sú nikde – najbližšie výsledky"}</h3>`;R.forEach((r,i)=>{if(r.part)h+=row(r,i)})}}
+const row=(r,i)=>`<button type="button" class="hlr rdmr${r.do?" hldo":""}${i===SEL?" sel":""}" data-rdres="${i}" data-hlres="${i}"><span class="hli" aria-hidden="true">${r.ic||ICO[r.k]||"•"}</span><span class="hlt"><b>${E(r.t)}</b><small>${E(r.g)}${r.s?" · "+E(r.s):""}</small></span></button>`;
+function html(R,q,busy){const D0=R.filter(r=>r.do),RR=R.filter(r=>!r.do);let h="";
+  if(D0.length){h+=`<h3 class="hlg">⚡ Urobiť jednou vetou</h3>`;R.forEach((r,i)=>{if(r.do)h+=row(r,i)})}
+  if(!RR.length)return h+`<div class="hlnone">${busy?"⏳ Hľadám…":D0.length?`Inak sa pre „${E(q)}“ nič nenašlo.`:`Nič sa nenašlo pre „${E(q)}“. Skús kratšie slovo, meno, číslo zmluvy, ŠPZ alebo IČO.`}</div>`;
+  const nT=RR.filter(r=>r.tm).length;
+  if(nT){h+=`<h3 class="hlg">🎯 Presne to, čo hľadáš</h3>`;R.forEach((r,i)=>{if(!r.do&&r.tm)h+=row(r,i)});
+    const nO=RR.length-nT;if(nO)h+=MORE?`<h3 class="hlg">Súvisiace</h3>`+R.map((r,i)=>r.tm||r.do?"":row(r,i)).join(""):`<button type="button" class="hlmore" data-hlmore>＋ Súvisiace výsledky (${nO})</button>`}
+  else{const nF=RR.filter(r=>!r.part).length;if(nF){h+=`<h3 class="hlg">Nájdené</h3>`;R.forEach((r,i)=>{if(!r.do&&!r.part)h+=row(r,i)})}
+    if(RR.length>nF){h+=`<h3 class="hlg">${nF?"Podobné":"Všetky slová naraz nie sú nikde – najbližšie výsledky"}</h3>`;R.forEach((r,i)=>{if(!r.do&&r.part)h+=row(r,i)})}}
   return h+(busy?`<div class="hlnone">⏳ Hľadám aj v údajoch…</div>`:"")}
+/* 🗣️ 7. 11. 17:49 „zjednoduš“ (bod 2): otázka → ERNTE AI z tvojich údajov; príkaz → predvyplnený formulár. Nič sa neuloží ani neodošle samo. */
+const OWNR=()=>typeof ROLE!=="undefined"&&ROLE==="owner"&&!isF()&&!window.ERNTE_VIEWAS&&!window.ERNTE_TEST;
+const QW=/^(kolko|kde|kedy|aka|aky|ake|ako|preco|co |kto|ktor|mam |mame |je |su |oplati|porovnaj|vypocitaj|spocitaj|zhrn|povedz|daj mi|ukaz mi|aky je|aka je|odporuc|mal by som|mam predat|kedy predat)/;
+const CW=[["repka",/repk|repka|rapeseed|repce/],["kukurica",/kukur|corn|maize|kukoric/],["soja",/soj|szoja|soy/],["psenica_k",/psenic\w* krmn|krmn\w* psenic/],["psenica_p",/psenic|wheat|buza/],["jacmen_k",/jacmen|arpa|barley/],["ho",/\bho\b|high oleic|vysokoolej/],["lo",/slnecn|napraforgo|sunflower|\blo\b/]];
+function intents(q){const n=N(q),out=[],num=n.match(/\b\d{2,4}(?:[.,]\d{1,2})?\b/g)||[];
+  if(n.length<4)return out;
+  // 🤝 obchod jednou vetou → Uzatvoriť obchod (aj obchodník s prístupom k obchodom)
+  if(window.qdFromText&&/\b(uzavri|uzavriet|uzavrieme|novy obchod|nakup|kup |kupim|kupujem|kupujeme|zober|beriem|zmluva s|zmluvu s|obchod s)\b/.test(n+" ")&&num.length)
+    out.push({do:1,k:"do",ic:"🤝",t:`Pripraviť obchod: „${q.trim()}“`,g:"Uzatvoriť obchod",s:"vyplním formulár – skontroluješ a ťukneš Uzatvoriť",a:()=>{closeUI();window.qdFromText(q)}});
+  // 🏷️ cena odberateľa jednou vetou → predvyplnená cena (iba Martin)
+  if(OWNR()&&window.sellAddPrefill&&window.sellBuyers&&num.length){const B=window.sellBuyers();const b=B.find(x=>{const nn=N(x.name).split(" ").filter(w=>w.length>=4&&!/^(s\.?r\.?o|spol|kft|zrt|agro|group)$/.test(w));return nn.some(w=>n.includes(w))||(x.rx&&(()=>{try{return new RegExp(x.rx,"i").test(q)}catch(e){return false}})())});
+    const c=(CW.find(x=>x[1].test(n))||[])[0];if(b&&c&&/(kupi|vykup|berie|ponuk|ponuka|cena|cenu|plati|dava|za |po |ddp|dap|fca)/.test(n+" ")){const del=/\bfca\b|u farmara|od farmara/.test(n)?"FCA":/\bdap\b/.test(n)?"DAP":"DDP";const pr=num.map(x=>+x.replace(",", ".")).find(x=>x>=50&&x<=2500);
+      if(pr)out.push({do:1,k:"do",ic:"🏷️",t:`Zapísať cenu odberateľa: ${b.name} · ${c.replace("_"," ")} ${pr} €/t ${del}`,g:"Ceny odberateľov",s:"vyplním formulár – skontroluješ a ťukneš Uložiť cenu",a:()=>{closeUI();window.sellAddPrefill({buyer:b.name,com:c,price:pr,del})}})}}
+  // 🤖 otázka → ERNTE AI (iba majitelia; míňa kredit až po ťuknutí)
+  if(OWNR()&&window.aiAskWith&&(QW.test(n+" ")||/\?\s*$/.test(q)))out.push({do:1,k:"do",ic:"🤖",t:`Spýtať sa ERNTE AI: „${q.trim()}“`,g:"ERNTE AI",s:"odpovie z tvojich údajov (≈ 15 centov kreditu)",a:()=>{closeUI();window.aiAskWith(q.trim())}});
+  return out}
 const GORD=["Sekcie aplikácie","Časti sekcií a návody","Časti aplikácie","Funkcie – kde to nájdeš","Zmluvy s farmármi","Predajné zmluvy s odberateľmi","Spolupráca s odberateľmi","Odberatelia","Farmári a dodávatelia","Tím a používatelia","Vážne lístky","Požiadavky","Vozidlá"];
 async function run(q,L,cb){const my=++RQ;LASTQ=q;await map();if(my!==RQ)return;const T=tabs(),loc=local(T,q).map(o=>Object.assign(o,{a:()=>act(o)}));
-  const KO={tab:0,sec:1,help:2,fn:3,spol:4,sale:5,deal:6,buyer:7,farmer:8,staff:9,ticket:10,req:11,veh:12,truck:12};const put=(R,busy)=>{R.sort((a,b)=>(b.tm-a.tm)||((a.part?1:0)-(b.part?1:0))||(b.sc-a.sc)||((KO[a.k]??20)-(KO[b.k]??20)));const top=R.filter(r=>r.tm);RES=top.concat(R.filter(r=>!r.tm));SEL=0;LASTR={R:RES,q,busy,L};L.innerHTML=html(RES,q,busy);if(cb)cb(RES)};MORE=false;
+  const KO={tab:0,sec:1,help:2,fn:3,spol:4,sale:5,deal:6,buyer:7,farmer:8,staff:9,ticket:10,req:11,veh:12,truck:12};const DO=intents(q);const put=(R,busy)=>{R.sort((a,b)=>(b.tm-a.tm)||((a.part?1:0)-(b.part?1:0))||(b.sc-a.sc)||((KO[a.k]??20)-(KO[b.k]??20)));const top=R.filter(r=>r.tm);RES=DO.concat(top,R.filter(r=>!r.tm));
+    if(!busy&&!R.length&&!DO.length&&OWNR()&&window.aiAskWith&&N(q).split(" ").length>=2)RES.push({do:1,k:"do",ic:"🤖",t:`Spýtať sa ERNTE AI: „${q.trim()}“`,g:"ERNTE AI",s:"v aplikácii sa nič nenašlo – odpovie z tvojich údajov",a:()=>{closeUI();window.aiAskWith(q.trim())}});SEL=0;LASTR={R:RES,q,busy,L};L.innerHTML=html(RES,q,busy);if(cb)cb(RES)};MORE=false;
   put(loc.slice(),true);clearTimeout(TMR);
   TMR=setTimeout(async()=>{let rem=[];try{const r=await sb.rpc("hladaj",{p_q:q});if(!r.error&&Array.isArray(r.data))rem=r.data}catch(x){}if(my!==RQ)return;
     const tk=TOK(q);const R=loc.concat(rem.map(o=>{const x=Object.assign({},o);const tt=N((x.g||"")+" "+(x.t||"")+" "+(x.s||""));x.tm=!x.part&&HIT(tt,tk);x.sc=(x.tm?90:0)+(x.part?0:20)+tk.reduce((s,t)=>s+(tt.includes(t)?3:0),0);x.a=()=>act(x);return x}));put(R,false)},220)}
+/* ↗️ otvoriť konkrétnu časť a ukázať IBA ju (Čaká na teba, Vhoď sem …) */
+window.ernteGo=function(tab,sel,label){unfocus();if(tab){try{sessionStorage.setItem("ernte-sec-"+tab,"*")}catch(x){}goTab(tab)}
+  after(()=>{const el=typeof sel==="function"?sel():sel?document.querySelector(sel):null;if(!el)return false;if(el.tagName==="DETAILS")el.open=true;return focusOn(el,label||"")||(el.scrollIntoView({block:"start",behavior:"smooth"}),true)})};
 window.ernteFindUI=function(q,L,cb){if(!String(q||"").trim()){return false}run(q,L,cb);return true};
 window.ernteFind=async q=>{await map();return local(tabs(),q)};
 // ---------- okno pre tím a farmárov (majitelia majú Menu → Hľadať) ----------
@@ -139,7 +161,7 @@ html[data-theme=light] .hlin{background:#fff;color:#0f172a}
 .hlr.sel{border-color:rgba(94,234,212,.7)!important}.hli{flex:none;width:30px;text-align:center;font-size:1.1rem}.hlt{display:grid;min-width:0}.hlt b{overflow-wrap:anywhere}.hlt small{opacity:.75;font-size:.78rem;line-height:1.35;overflow-wrap:anywhere}
 .hlnone{padding:14px 6px;opacity:.8;line-height:1.45}.hlbtn{min-height:44px;padding:0 14px;border-radius:999px;white-space:nowrap}
 .hlflash{outline:3px solid #5eead4!important;outline-offset:3px;border-radius:12px;transition:outline-color .4s}
-#rdML .hlr{background:transparent}
+#rdML .hlr{background:transparent}.hlr.hldo{border:1px solid rgba(182,255,59,.5)!important;background:rgba(182,255,59,.08)!important}
 [data-hlhide]{display:none!important}.hlfoc{position:fixed;left:50%;transform:translateX(-50%);top:calc(env(safe-area-inset-top,0px) + 8px);z-index:70;display:flex;align-items:center;gap:8px;max-width:calc(100vw - 16px);padding:6px 6px 6px 14px;border-radius:999px;background:#0B0F19;border:1px solid rgba(94,234,212,.7);box-shadow:0 8px 24px rgba(0,0,0,.45);font-size:.84rem}.hlfoc span{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.hlfoc button{min-height:40px;padding:0 12px;border-radius:999px;white-space:nowrap;flex:none}html[data-theme=light] .hlfoc{background:#fff}
 body.hlfocusing #spatFab{display:none!important}
 .hlmore{width:100%;min-height:46px;margin:8px 0;border-radius:12px}`;document.head.appendChild(s)}

@@ -14,7 +14,9 @@ function score(k){const a=U[k]||{},b=DB[k]||{};const n=Math.max(a.n||0,b.n||0),s
   const i=SEED.indexOf(k);return n*1+s/60*.5+(i<0?0:(SEED.length-i)*.05)}
 function close(){if(!cur||!t0)return;const s=Math.round(Math.min(1800,(Date.now()-t0)/1000));const k=cur;cur=null;t0=0;if(s<2)return;
   (U[k]||(U[k]={n:0,s:0})).s+=s;saveL();try{sb.rpc("tab_use_add",{p_tab:k,p_s:s}).then(()=>{},()=>{})}catch(e){}}
-function open(k){if(k===cur)return;close();cur=k;t0=Date.now();(U[k]||(U[k]={n:0,s:0})).n++;saveL()}
+function open(k){if(k===cur)return;close();cur=k;t0=Date.now();(U[k]||(U[k]={n:0,s:0})).n++;U[k].l=Date.now();saveL()}
+/* 7. 11. „zjednoduš“ (bod 4): vzhlad.js skryje sekcie neotvorené 30 dní do „Menej používané“ */
+window.ernteTabUse=()=>({U,DB});
 document.addEventListener("visibilitychange",()=>{if(!OK())return;if(document.hidden)close();else if(typeof TAB!=="undefined"){cur=null;open(TAB);(U[TAB].n)--}});
 addEventListener("pagehide",close);
 let loaded=0;async function load(){if(loaded)return;loaded=1;try{const r=await sb.rpc("tab_use_get");if(!r.error&&r.data){DB=r.data;
