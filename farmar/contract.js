@@ -26,7 +26,13 @@ const abs=p=>{try{return new URL(p,location.href).href}catch(x){return p}};
 const dots=(v,n=60)=>v?e(v):".".repeat(n);
 const term=(t,y)=>{if(!t)return `31/12/${y}`;const m=String(t).match(/(\d{1,2})\.\s*(\d{1,2})\.\s*(\d{4})/);return m?`${m[1].padStart(2,"0")}/${m[2].padStart(2,"0")}/${m[3]}`:e(t)};
 function html(d,F,R,ST,FS){const S=(typeof SPEC!=="undefined"&&SPEC[d.com])||[14,2],y=new Date(d.created_at||Date.now()).getFullYear(),q=Q[d.com]||[S[0],S[1],"–","–","–","–"];
-  const signDate=dmy(d.created_at),clean=nf(R.clean??2.5),dry=nf(R.dry??3.5),X=XTRA[d.com]||[];
+  // 7. 11.: podmienky podľa schváleného vzoru odberateľa (deal_vzor / odb_vzor) – BEZ mena odberateľa; vlhkosť, nečistoty a zrážky ostávajú podľa zúčtovania
+  const T=d.__t&&typeof d.__t==="object"?d.__t:{},TN=(v,def,lo,hi)=>{const n=+v;return Number.isFinite(n)&&n>=lo&&n<=hi?String(n).replace(".",","):def},
+    TT=(v,def)=>typeof v==="string"&&v.trim()?e(v.trim()):def,tPl=TN(T.platba,"14",1,120),tTol=TN(T.tol,"5",0,20),tVy=TN(T.vyzva,"10",1,60),tPk=TN(T.pokuta,"20",0,50),
+    OS=Array.isArray(T.osobitne)?T.osobitne.map(x=>String(x||"").trim()).filter(Boolean):[];
+  const X0=XTRA[d.com]||[],TX=(T.x&&Array.isArray(T.x[d.com]))?T.x[d.com].filter(r=>Array.isArray(r)&&r[0]&&r[1]):[];
+  const X=X0.filter(r=>!TX.some(t=>String(t[0]).toLowerCase()===String(r[0]).toLowerCase())).concat(TX);
+  const signDate=dmy(d.created_at),clean=nf(R.clean??2.5),dry=nf(R.dry??3.5);
   return `<!doctype html><html lang="sk"><head><meta charset="utf-8"><title>Kúpna zmluva ${e(d.no)} – ${e(F.name)}</title><style>
   @page{size:A4;margin:14mm 16mm 16mm}*{box-sizing:border-box}body{font:10.5pt/1.45 "Times New Roman",Georgia,serif;color:#111;margin:0;max-width:178mm;margin:0 auto;padding:8px}
   .hdr{display:flex;align-items:center;justify-content:space-between;border-bottom:1.5px solid #6a9a1f;padding-bottom:6px;margin-bottom:12px;font:9pt Arial,sans-serif;color:#444}.hdr img{height:34px}
@@ -49,32 +55,33 @@ function html(d,F,R,ST,FS){const S=(typeof SPEC!=="undefined"&&SPEC[d.com])||[14
   <h2>II. PREDMET ZMLUVY A MNOŽSTVO</h2>
   <ol><li class="b">Zmluvné strany sa dohodli, že Dodávateľ v roku ${y} vypestuje / dodá ${tons(d.tons)} t ${e(GEN[d.com]||d.com)}${GMO[d.com]?" (Non-GMO)":""} a predá pre ${USE[d.com]||"kŕmne"} účely pre Odberateľa.</li></ol>${d.note?`<p>Pozn. ${e(d.note)}</p>`:""}
   <h2>III. TERMÍN A MIESTO PLNENIA</h2>
-  <ol><li class="b">Miestom plnenia sú : FCA sklady Dodávateľa</li><li class="b">Konečný termín plnenia je do : ${term(d.term,y)}</li>
-  <li>Odovzdanie a prevzatie predmetu zmluvy, vrátane určenia množstva a kvality, sa uskutoční v mieste skladových priestorov Odberateľa. Rozhodujúce sú merania a kontrola vykonané u Odberateľa.</li>
-  <li>Dodávateľ zabezpečí odovzdanie predmetu zmluvy do nákladných vozidiel zabezpečených Odberateľom, pričom preprava predmetu zmluvy do sídla (skladových priestorov) Odberateľa je zabezpečená Odberateľom.</li>
+  <ol><li class="b">Miestom plnenia sú : ${TT(T.miesto,"FCA sklady Dodávateľa")}</li><li class="b">Konečný termín plnenia je do : ${term(d.term,y)}</li>
+  <li>${TT(T.vazenie,"Odovzdanie a prevzatie predmetu zmluvy, vrátane určenia množstva a kvality, sa uskutoční v mieste skladových priestorov Odberateľa. Rozhodujúce sú merania a kontrola vykonané u Odberateľa.")}</li>
+  <li>${TT(T.preprava,"Dodávateľ zabezpečí odovzdanie predmetu zmluvy do nákladných vozidiel zabezpečených Odberateľom, pričom preprava predmetu zmluvy do sídla (skladových priestorov) Odberateľa je zabezpečená Odberateľom.")}</li>
   <li>Zmluvné strany sa dohodli, že v prípade, ak sa po dodaní komodity preukáže jej nekvalita, ktorú nie je možné odstrániť, upraviť ani kompenzovať dostupnými technologickými alebo výrobnými postupmi odberateľa, považuje sa takáto komodita za technologicky nespracovateľnú. V takomto prípade znáša dodávateľ všetky náklady vzniknuté odberateľovi, najmä náklady na dopravu vrátane spätného odvozu, ako aj akékoľvek ďalšie preukázateľné náklady súvisiace s touto nekvalitou. Odberateľ nie je povinný takúto komoditu spracovať ani prevziať a je oprávnený ju na náklady dodávateľa odmietnuť, vrátiť alebo zabezpečiť jej likvidáciu. Týmto ustanovením nie sú dotknuté práva odberateľa na náhradu škody ani právo odstúpiť od zmluvy podľa príslušných ustanovení Obchodného zákonníka.</li>
   <li>Kvalita, množstvo a hmotnosť dodaného predmetu zmluvy sa zisťujú a overujú u Odberateľa pri jeho prevzatí. Zistená kvalita zmluvy bude akceptovaná obidvoma zmluvnými stranami a po prevzatí ju nie je možné dodatočne spochybňovať.</li>
-  <li>V prípade rozdielnych názorov zmluvných strán na kvalitu predmetu zmluvy sa odoberie reprezentatívna vzorka, ktorá sa zapečatí za účasti oboch zmluvných strán a odošle sa na odborný rozbor na SGS Slovakia spol. s r. o. Košice.</li>
+  <li>V prípade rozdielnych názorov zmluvných strán na kvalitu predmetu zmluvy sa odoberie reprezentatívna vzorka, ktorá sa zapečatí za účasti oboch zmluvných strán a odošle sa na odborný rozbor na ${TT(T.lab,"SGS Slovakia spol. s r. o. Košice")}.</li>
   <li>Náklady na vykonanie rozboru znáša tá zmluvná strana, ktorej tvrdenie o kvalite predmetu zmluvy sa podľa výsledkov rozboru preukáže ako nepravdivé.</li></ol>
   <h2>IV. KVALITA, VZORKOVANIE a ZRÁŽKY</h2>
   <!-- 2. 11. príkaz majiteľa: nový vzorec zúčtovania – M_fyz, Z = M_fyz × P − C − S (náklady iba raz) -->
   <ol><li>Kúpna cena je stanovená pre normovanú kvalitu podľa prílohy č. 1 tejto zmluvy. Predmet zmluvy, ktorý nebude zodpovedať kvalitatívnym kritériám, nie je Odberateľ povinný kúpiť.</li><li>Ak vlhkosť alebo nečistoty prekročia prípustné hodnoty podľa prílohy č. 1, Odberateľ zabezpečí čistenie a sušenie. Pri zúčtovaní sa odstránia všetky nečistoty a hmotnosť sa prepočíta na normu vlhkosti podľa prílohy č. 1. Náklady na čistenie a sušenie sa Dodávateľovi nefakturujú – prepočítajú sa na hmotnosť a odpočítajú z fakturačnej hmotnosti, a to iba raz.</li><li>Fyzická hmotnosť M<sub>fyz</sub> = M × (1 − N / 100) × (100 − V) / (100 − V<sub>c</sub>), kde M je hmotnosť (netto) zistená u Odberateľa v kg, N nečistoty v %, V zistená vlhkosť v % a V<sub>c</sub> norma vlhkosti podľa prílohy č. 1 v %. Ak je V nižšia alebo rovná V<sub>c</sub>, faktor sušenia je 1 (hmotnosť sa nezvyšuje).</li><li>Fakturačná hmotnosť M<sub>fakt</sub> = M<sub>fyz</sub> − (C + S) / P × 1000, kde P je cena podľa bodu V.1, C náklad na čistenie (${clean} € / t netto hmotnosti, ak tovar obsahuje nečistoty) a S náklad na sušenie (${dry} € / t hmotnosti po čistení za každé % vlhkosti nad normu). Kúpna cena (suma na úhradu) Z = M<sub>fakt</sub> / 1000 × P (= M<sub>fyz</sub> / 1000 × P − C − S). Počíta sa bez priebežného zaokrúhľovania; suma za každý vážny lístok sa zaokrúhľuje na 2 desatinné miesta.</li><li>Kvalitu, nečistoty a vlhkosť zisťuje Odberateľ pri prevzatí podľa článku III metódami podľa príslušných STN EN ISO.</li></ol>
   <h2>V. CENA A PLATOBNÉ PODMIENKY</h2>
-  <ol><li class="b">Zmluvné strany sa dohodli na cene: ${price(d.price)} eur/ t bez DPH.</li><li>Odberateľ sa zaväzuje, že po odovzdaní a prevzatí predmetu zmluvy a po prevzatí faktúry do 14 dní od doručenia zaplatí dodávateľovi dohodnutú kúpnu cenu.</li></ol>
+  <ol><li class="b">Zmluvné strany sa dohodli na cene: ${price(d.price)} eur/ t bez DPH.</li><li>Odberateľ sa zaväzuje, že po odovzdaní a prevzatí predmetu zmluvy a po prevzatí faktúry do ${tPl} dní od doručenia zaplatí dodávateľovi dohodnutú kúpnu cenu.</li></ol>
   <h2>VI. POVINNOSŤ DODAŤ, PEVNÁ CENA A ZMLUVNÉ SANKCIE</h2>
   <ol><li class="b">Kúpna cena podľa bodu V.1 je pevná a nemenná počas celej doby trvania zmluvy. Zmena trhových alebo burzových cien (napr. MATIF, CBOT, ponuky iných odberateľov) po uzavretí zmluvy nie je dôvodom na zmenu kúpnej ceny, na odmietnutie alebo odklad dodávky, ani na odstúpenie od zmluvy. Riziko zmeny trhových cien znáša každá zmluvná strana sama; zmluvné strany sa vzdávajú práva domáhať sa zmeny zmluvy pre podstatnú zmenu okolností.</li>
   <li>Dodávateľ vyhlasuje, že dohodnuté množstvo predmetu zmluvy nie je predmetom inej zmluvy, nie je zaťažené právami tretích osôb a do splnenia tejto zmluvy ho nepredá ani neprisľúbi tretej osobe.</li>
-  <li>Dodávateľ je povinný sprístupniť predmet zmluvy na nakládku najneskôr do 10 dní od výzvy Odberateľa, najneskôr však v termíne podľa bodu III.2. Výzvu môže Odberateľ urobiť aj prostredníctvom aplikácie ERNTE, e-mailom, SMS alebo telefonicky; výzva sa považuje za doručenú dňom jej odoslania.</li>
-  <li>Dodané množstvo sa považuje za splnené pri odchýlke najviac ± 5 % od dohodnutého množstva. Nedodané množstvo nad túto toleranciu je omeškaním Dodávateľa.</li>
+  <li>Dodávateľ je povinný sprístupniť predmet zmluvy na nakládku najneskôr do ${tVy} dní od výzvy Odberateľa, najneskôr však v termíne podľa bodu III.2. Výzvu môže Odberateľ urobiť aj prostredníctvom aplikácie ERNTE, e-mailom, SMS alebo telefonicky; výzva sa považuje za doručenú dňom jej odoslania.</li>
+  <li>Dodané množstvo sa považuje za splnené pri odchýlke najviac ± ${tTol} % od dohodnutého množstva. Nedodané množstvo nad túto toleranciu je omeškaním Dodávateľa.</li>
   <li class="b">Ak Dodávateľ nedodá predmet zmluvy riadne a včas, najmä ak odmietne dodávku, je Odberateľ oprávnený zabezpečiť náhradný nákup u tretej osoby a Dodávateľ je povinný uhradiť Odberateľovi rozdiel medzi cenou náhradného nákupu a kúpnou cenou podľa tejto zmluvy, ako aj náklady spojené s náhradným nákupom a dopravou (§ 470 Obchodného zákonníka).</li>
-  <li class="b">Za každú nedodanú tonu nad toleranciu podľa bodu VI.4 je Dodávateľ povinný zaplatiť Odberateľovi zmluvnú pokutu vo výške 20 % z kúpnej ceny nedodaného množstva. Zaplatením zmluvnej pokuty nie je dotknutý nárok Odberateľa na náhradu škody v plnej výške, ani povinnosť Dodávateľa dodať predmet zmluvy.</li>
+  <li class="b">Za každú nedodanú tonu nad toleranciu podľa bodu VI.4 je Dodávateľ povinný zaplatiť Odberateľovi zmluvnú pokutu vo výške ${tPk} % z kúpnej ceny nedodaného množstva. Zaplatením zmluvnej pokuty nie je dotknutý nárok Odberateľa na náhradu škody v plnej výške, ani povinnosť Dodávateľa dodať predmet zmluvy.</li>
   <li>Za okolnosť vylučujúcu zodpovednosť sa nepovažuje zmena trhových cien ani nižšia než očakávaná úroda. Ak Dodávateľ nemôže dodať pre živelnú pohromu, je povinný to Odberateľovi písomne oznámiť do 7 dní od jej vzniku a preukázať ju dokladom (napr. potvrdením poisťovne alebo príslušného orgánu); v takom prípade sa dodávané množstvo primerane zníži.</li>
   <li>Odberateľ je oprávnený započítať svoje pohľadávky zo zmluvnej pokuty, náhrady škody a kvalitatívnych zrážok voči pohľadávke Dodávateľa na zaplatenie kúpnej ceny.</li></ol>
   <h2>VII. INFORMAČNÁ POVINNOSŤ</h2>
   <ol><li>Zmluvné strany sú povinné informovať sa navzájom o takých skutočnostiach ktoré majú vplyv na plnenie práv a povinnosti vyplývajúcich z tejto zmluvy.</li></ol>
-  <h2>VIII. ZÁVEREČNÉ USTANOVENIA</h2>
+  ${OS.length?`<h2>VIII. OSOBITNÉ USTANOVENIA</h2><ol>${OS.map(x=>`<li>${e(x)}</li>`).join("")}</ol>`:""}
+  <h2>${OS.length?"IX":"VIII"}. ZÁVEREČNÉ USTANOVENIA</h2>
   <ol><li>Zmluvné strany sa dohodli, že od tejto zmluvy nemôže žiadna zmluvná strana jednostranne odstúpiť alebo vypovedať. Táto zmluva môže byť skončená iba dohodou zmluvných strán.</li>
-  <li>V prípade porušenia povinností uvedených v tejto zmluve, vypovedania alebo odstúpenia od tejto zmluvy, je zmluvná strana, ktorá odstúpila alebo vypovedala zmluvu, povinná zaplatiť zmluvnú pokutu. Výška zmluvnej pokuty je 20 % z celkovej kúpnej ceny určenej podľa bodu V.1 tejto zmluvy a dohodnutého množstva.</li>
+  <li>V prípade porušenia povinností uvedených v tejto zmluve, vypovedania alebo odstúpenia od tejto zmluvy, je zmluvná strana, ktorá odstúpila alebo vypovedala zmluvu, povinná zaplatiť zmluvnú pokutu. Výška zmluvnej pokuty je ${tPk} % z celkovej kúpnej ceny určenej podľa bodu V.1 tejto zmluvy a dohodnutého množstva.</li>
   <li>Zmluvné strany súhlasia, že zmluvu možno uzavrieť aj elektronicky podpisom v aplikácii ERNTE; takýto podpis má rovnaké účinky ako vlastnoručný podpis. Zmluva je vyhotovená v dvoch rovnopisoch, každá zmluvná strana dostane jeden.</li>
   <li>Prípadné spory vyplývajúce z tejto zmluvy je oprávnený bez ohľadu na výšku predmetu plnenia vyplývajúcu z tejto zmluvy riešiť Okresný súd Michalovce. Na práva a povinností vyplývajúce z tejto zmluvy sa vzťahujú ustanovenia Obchodného zákonníka.</li></ol>
   <p>V Zbudzi, dňa ${e(signDate)}</p>
@@ -93,7 +100,7 @@ function html(d,F,R,ST,FS){const S=(typeof SPEC!=="undefined"&&SPEC[d.com])||[14
   <p>V produkte sa nenachádzajú zbytky chemikálií, ťažké kovy, toxíny, dioxíny, rádioaktivita, semená burín, a hranice fungicídnych ochorení sú v rozmedzí EU noriem a nariadení, takisto vyhovuje všetkým EU nariadeniam a smerniciam týkajúcim sa zdravia rastlín a živočíchov.</p>
   <p class="b" style="margin-top:10px">Príloha č. 1. je neoddeliteľnou súčasťou zmluvy.</p>
 
-  <div class="pg"></div><div class="hdr"><img src="${e(abs("logo.png"))}" alt="ERNTE"><span>Ernte spol. s r. o. ● GMP+ ● ISCC-EU ● QS</span></div>
+${T.gmp===false?"":`  <div class="pg"></div><div class="hdr"><img src="${e(abs("logo.png"))}" alt="ERNTE"><span>Ernte spol. s r. o. ● GMP+ ● ISCC-EU ● QS</span></div>
   <p class="at">Príloha číslo 2</p><p class="b c">ERNTE, spol. s r.o. 072 23 Zbudza 141</p>
   <p class="b c">Súhlas na poľnohospodárske produkty medzi<br>GMP + certifikovaným odberateľom a farmárom</p><br>
   <p class="b">Prehlásenie bezpečnosti dodaného produktu farmára</p><p class="b">Meno : ${dots(F.name)}</p><p class="b">Adresa : ${dots(F.addr)}</p><br><p class="b">Prehlasuje:</p>
@@ -103,7 +110,7 @@ function html(d,F,R,ST,FS){const S=(typeof SPEC!=="undefined"&&SPEC[d.com])||[14
   <li><b>Agrokomodity sú prepravované v hygienicky nezávadnými dopravnými prostriedkami</b></li><li><b>Ak agrokomodita nespĺňa niektoré z horeuvedených požiadaviek – bude informovaný</b> odberateľ</li><li><b>Ostatné stanovené požiadavky GMP+ zákazníka berieme na vedomie.</b></li></ol><br>
   <div class="sg"><div><div class="ln">Miesto a dátum<small>${FS?`aplikácia ERNTE, ${e(dmy(FS.at))}`:""}</small></div></div><div>${FS?`<img class="stp fsg" src="${e(FS.img)}" alt="Podpis">`:""}<div class="ln">Podpis<small>${e(F.name)}</small></div></div></div>
 
-  <div class="pg"></div><img class="isl" src="${e(abs("img/iscc.jpg"))}" alt="ISCC">
+`}${T.iscc===false?"":`  <div class="pg"></div><img class="isl" src="${e(abs("img/iscc.jpg"))}" alt="ISCC">
   <p class="at">Príloha číslo 3</p><p class="b">Čestné vyhlásenie / samohodnotenie ISCC EÚ<br>Farma/plantáž EÚ (krížový súlad)</p>
   <table class="iscc"><tbody>${[["Meno pestovateľa",F.name],["Obchodný názov farmy/názov lokality",F.name],["Adresa",F.addr],["PSČ, mesto, krajina",""],["Plodiny (odchádzajúci materiál)",NAM[d.com]||d.com],["Celková rozloha farmy (v ha)",""],["Geosúradnice farmy, vrátane prenajatých fariem (zemepisná šírka, zemepisná dĺžka) – v desatinných stupňoch, napr. (-)XX.YYYYYY, (-)XX.YYYYYY",""],["Región NUTS II (ak existuje)",""],["Maximálna odhadovaná kapacita za rok (v mt)",""],["Maximálna odhadovaná udržateľná kapacita za rok (v mt)",""]].map(r=>`<tr><td style="width:48%">${e(r[0])}</td><td>${e(r[1]||"")}</td></tr>`).join("")}</tbody></table>
   <p class="b">Označte príslušnú kolónku:</p>
@@ -125,6 +132,7 @@ function html(d,F,R,ST,FS){const S=(typeof SPEC!=="undefined"&&SPEC[d.com])||[14
   <p>V prípade akéhokoľvek rozporu medzi anglickou jazykovou verziou a preloženou verziou tohto dokumentu platí anglická jazyková verzia a je záväzná pre strany zúčastnené v tomto čestnom vyhlásení.</p>
   <div class="sg"><div><div class="ln">Miesto, dátum<small>${FS?`aplikácia ERNTE, ${e(dmy(FS.at))}`:""}</small></div></div><div>${FS?`<img class="stp fsg" src="${e(FS.img)}" alt="Podpis pestovateľa">`:""}<div class="ln">Podpis (pestovateľ)<small>${e(F.name)}</small></div></div></div>
   <p style="font-size:8.5pt;margin-top:10px">* Požiadavky ISCC a systémové dokumenty sú k dispozícii na webovej stránke ISCC (www.iscc-system.org).</p>
+`}
   <div class="ft">Verzia 2.0, od 30. septembra 2025 · © ISCC System GmbH<br>Zmluva č. ${e(d.no)} · vygenerované v aplikácii ERNTE Trade &amp; Logistic ${e(dmy())}</div>
   <div class="pb"><button onclick="print()" style="font-size:15px;padding:10px 18px">🖨️ Tlačiť / uložiť ako PDF</button></div></body></html>`}
 async function open(id){const d=(STATE.deals||[]).find(x=>x.id===id);if(!d){toast("Zmluva sa nenašla.");return}
@@ -134,10 +142,16 @@ async function open(id){const d=(STATE.deals||[]).find(x=>x.id===id);if(!d){toas
       body:`Dobrý deň,\n\nv prílohe Vám posielam kúpnu zmluvu ${d.no||""}: ${String(cn).toLowerCase()} ${d.tons} t za ${d.price} €/t${d.term?", vývoz "+d.term:""}.\nProsím o podpis a vrátenie. Zmluvu môžete podpísať aj v aplikácii ERNTE (Podpísať teraz).\n\nĎakujem\n${me} · ERNTE spol. s r.o.\n\n👉 ERNTE Trade & Logistic: ${typeof APP_URL!=="undefined"?APP_URL:location.href.split("#")[0]}`}}
   const w=window.open("","_blank");if(!w){toast("Povoľ vyskakovacie okná pre zmluvu.");return}w.document.write("<p style='font:16px sans-serif;padding:20px'>Pripravujem zmluvu…</p>");
   const R=await rules();const okI=v=>typeof v==="string"&&/^data:image\/(png|jpeg);base64,[A-Za-z0-9+/=]+$/.test(v)?v:null;let ST=null,FS=null;
+  d=await withT(d);
   try{const r=await sb.rpc("contract_sigs",{p_deal:d.id});if(!r.error&&r.data){ST=okI(r.data.ernte);if(okI(r.data.farmer))FS={img:okI(r.data.farmer),name:r.data.name,at:r.data.signed_at}}
     else{const q=await sb.rpc("contract_stamp",{p_deal:d.id});if(!q.error)ST=okI(q.data)}}catch(x){}
   let H=html(d,F,R,ST,FS);if(window.contractBi){try{H=await window.contractBi(H,d,F,w)}catch(x){}}w.document.open();w.document.write(H);w.document.close();setTimeout(()=>{try{w.focus();w.print()}catch(x){}},900)}
-window.contractPdf=open;window.contractHTML=html;
+// podmienky zmluvy podľa vzoru odberateľa (7. 11.) – farmár dostane iba podmienky svojej zmluvy, nikdy meno odberateľa
+async function withT(d){try{const r=await sb.rpc("deal_zmluva_t",{p_deal:d.id});if(!r.error&&r.data&&typeof r.data==="object")return Object.assign({},d,{__t:r.data})}catch(x){}return d}
+// 👁️ náhľad vzoru zmluvy (Spolupráca s odberateľmi) – vymyslený vzorový farmár, nič sa neukladá
+async function preview(d,F){const w=window.open("","_blank");if(!w){toast("Povoľ vyskakovacie okná pre zmluvu.");return}w.document.write("<p style='font:16px sans-serif;padding:20px'>Pripravujem vzor zmluvy…</p>");
+  const R=await rules();w.document.open();w.document.write(html(d,F||{name:"Vzorový farmár s.r.o.",addr:"Hlavná 1, 000 00 Obec"},R,null,null));w.document.close()}
+window.contractPdf=open;window.contractHTML=html;window.contractPreview=preview;
 // ---------- ARCHÍV ZMLÚV: podľa farmára a komodity, všetky zmluvy aj spätne ----------
 const STN={navrh:"čaká na podpis",podpisany:"podpísaná",odvoz:"odvoz beží",odvezeny:"odvezená",fakturacia:"fakturácia",zaplateny:"zaplatená",zruseny:"zrušená"};
 let AQ="";
@@ -154,7 +168,7 @@ function archOpen(){let m=document.getElementById("caMod");if(!m){m=document.cre
 async function openAll(fid){const L=(STATE.deals||[]).filter(d=>d.farmer_id===fid&&d.status!=="zruseny");if(!L.length)return;const F=(STATE.farmers||[]).find(f=>f.id===fid)||{name:""};
   const w=window.open("","_blank");if(!w){toast("Povoľ vyskakovacie okná.");return}w.document.write("<p style='font:16px sans-serif;padding:20px'>Pripravujem zmluvy…</p>");
   const R=await rules();const okI=v=>typeof v==="string"&&/^data:image\/(png|jpeg);base64,[A-Za-z0-9+/=]+$/.test(v)?v:null;let head="",body="";
-  for(const d of L){let ST=null,FS=null;try{const r=await sb.rpc("contract_sigs",{p_deal:d.id});if(!r.error&&r.data){ST=okI(r.data.ernte);if(okI(r.data.farmer))FS={img:okI(r.data.farmer),name:r.data.name,at:r.data.signed_at}}}catch(x){}
+  for(let d of L){let ST=null,FS=null;d=await withT(d);try{const r=await sb.rpc("contract_sigs",{p_deal:d.id});if(!r.error&&r.data){ST=okI(r.data.ernte);if(okI(r.data.farmer))FS={img:okI(r.data.farmer),name:r.data.name,at:r.data.signed_at}}}catch(x){}
     const h=html(d,F,R,ST,FS);if(!head)head=h.slice(0,h.indexOf("<body>"));let b=h.slice(h.indexOf("<body>")+6,h.lastIndexOf("</body>"));b=b.replace(/<div class="pb">[\s\S]*?<\/div>/,"");body+=(body?'<div class="pg"></div>':"")+b}
   w.document.open();w.document.write(head.replace(/<title>[^<]*<\/title>/,`<title>Zmluvy – ${e(F.name)}</title>`)+"<body>"+body+'<div class="pb"><button onclick="print()" style="font-size:15px;padding:10px 18px">🖨️ Tlačiť / uložiť ako PDF</button></div></body></html>');w.document.close();setTimeout(()=>{try{w.focus();w.print()}catch(x){}},1200)}
 {const st=document.createElement("style");st.textContent=`.camod2{position:fixed;inset:0;z-index:10000;background:rgba(0,0,0,.72);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);display:flex;align-items:flex-end;justify-content:center;padding:10px}@media(min-width:700px){.camod2{align-items:center}}
