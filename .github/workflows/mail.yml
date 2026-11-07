@@ -1,0 +1,47 @@
+# E-maily z aplikácie ERNTE (zmluva v PDF farmárovi…). Spúšťa ich databáza (mail_send → repository_dispatch ernte-mail s náhodným ID).
+# Obsah aj prístup k schránke si skript vyzdvihne jednorazovo z databázy (mail_job_take). Nič sa nevypisuje do logu.
+name: ernte-mail
+on:
+  repository_dispatch:
+    types: [ernte-mail]
+  # databáza (token bez práva na dispatch) → komentár „ernte-mail <ID>“ v #51; heslo schránky až po overení kódu zverejneného ako github-actions[bot]
+  issue_comment:
+    types: [created]
+permissions:
+  contents: read
+  issues: write
+jobs:
+  send:
+    if: >-
+      github.event_name == 'repository_dispatch' ||
+      (github.event.issue.number == 51 && github.event.comment.user.login == 'ernte-trade' && startsWith(github.event.comment.body, 'ernte-mail'))
+    runs-on: ubuntu-latest
+    timeout-minutes: 4
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            .github/mail
+            farmar/config.js
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: npm i --no-save --silent nodemailer@6.9.16 || (sleep 5 && npm i --no-save --silent nodemailer@6.9.16)
+        working-directory: .github/mail
+      - if: github.event_name == 'repository_dispatch'
+        run: node send.mjs | sed 's/^/::notice::/'
+        working-directory: .github/mail
+        env:
+          JOB_ID: ${{ github.event.client_payload.id }}
+      - if: github.event_name == 'issue_comment'
+        run: node send.mjs | sed 's/^/::notice::/'
+        working-directory: .github/mail
+        env:
+          MODE: comment
+          JOB_ID: ${{ github.event.comment.body }}
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+      - if: always() && github.event_name == 'issue_comment'
+        run: gh api -X DELETE repos/${{ github.repository }}/issues/comments/${{ github.event.comment.id }} --silent || true
+        env:
+          GH_TOKEN: ${{ github.token }}

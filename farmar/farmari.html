@@ -1,0 +1,12 @@
+<!doctype html><html lang="sk"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="color-scheme" content="light only">
+<title>ERNTE – prenos farmárov</title>
+<style>body{margin:0;background:#f3f5ee;color:#14201a;font:16px/1.5 -apple-system,system-ui,sans-serif;padding:20px}.w{max-width:600px;margin:0 auto;display:grid;gap:16px}
+button,a.b{display:flex;align-items:center;justify-content:center;font:700 1.1rem system-ui;min-height:64px;border-radius:14px;border:0;background:#173b22;color:#fff;text-decoration:none}
+button.ok{background:#9cc72a;color:#173b22}a.b{background:#fff;color:#173b22;border:2px solid #173b22}ol{margin:0;padding-left:22px}</style></head>
+<body><div class="w"><h1 style="margin:0">Prenos farmárov</h1>
+<button id="c">1. Kopírovať farmárov</button>
+<a class="b" href="https://supabase.com/dashboard/project/cflliscddsgleyeykzje/sql/new">2. Otvoriť SQL Editor</a>
+<ol><li>V SQL Editore ťukni do prázdneho poľa, podrž prst → <b>Vložiť</b>.</li><li>Ťukni <b>Run</b>. Má sa ukázať „Success“.</li></ol>
+<a class="b" href="index.html">3. Otvoriť aplikáciu</a></div>
+<script>let T="";fetch("supabase/farmers.sql?"+Date.now()).then(r=>r.text()).then(t=>T=t);
+c.onclick=()=>{if(!T){alert("Ešte sa načítava, skús o sekundu.");return}navigator.clipboard.writeText(T).then(()=>{c.textContent="Skopírované ✓";c.className="ok"}).catch(e=>alert("Nevyšlo: "+e.message))}</script></body></html>

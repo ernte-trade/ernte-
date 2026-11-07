@@ -1,0 +1,49 @@
+# 📚 Znalostná báza trhu – verejné údaje bez API kľúčov (ECB, CFTC COT, USDA WASDE + Export Sales, EK Agri-food, EIA Brent,
+#   Open-Meteo, MATIF/CBOT/gasoil z bota „Trhové ceny“). Výsledok: vetva trh-data / trh.json; databáza ho číta (trh_tick každých 15 min).
+#   Časy v UTC (zimný čas SEČ = UTC+1): každú hodinu počasie a čo je na rade; presne po zverejnení zdroja ho stiahne hneď.
+name: trh
+on:
+  schedule:
+    - cron: "7 * * * *"        # každú hodinu – Open-Meteo, ostatné podľa frekvencie
+    - cron: "30 15 * * 1-5"    # ECB EUR/USD 16:30 SEČ
+    - cron: "45 17 * * 1-5"    # MATIF uzávierka 18:45 SEČ
+    - cron: "5 17 * * 1-5"     # WASDE 18:05 SEČ v deň zverejnenia (skript stiahne CSV aktuálneho mesiaca)
+    - cron: "30 21 * * 1-5"    # CBOT (oneskorené) 22:30 SEČ
+    - cron: "45 13 * * 4"      # USDA Export Sales štvrtok 14:45 SEČ
+    - cron: "45 20 * * 5"      # CFTC COT piatok 21:45 SEČ
+    - cron: "20 6 * * 1"       # EK Agri-food týždenné ceny (pondelok)
+  workflow_dispatch:
+  repository_dispatch:
+    types: [ernte-trh]
+permissions:
+  contents: write
+concurrency:
+  group: trh-data
+  cancel-in-progress: false
+jobs:
+  t:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          sparse-checkout: |
+            .github/trh
+            farmar/market.json
+          sparse-checkout-cone-mode: false
+      - name: Zber verejných údajov trhu
+        env:
+          FORCE: ${{ github.event_name != 'schedule' && '1' || '' }}
+          FORCE_SRC: ${{ github.event.schedule == '30 15 * * 1-5' && 'ecb' || github.event.schedule == '5 17 * * 1-5' && 'wasde' || github.event.schedule == '45 13 * * 4' && 'fas_es' || github.event.schedule == '45 20 * * 5' && 'cot' || github.event.schedule == '20 6 * * 1' && 'ec_agri' || '' }}
+          OPENMETEO_APIKEY: ${{ secrets.OPENMETEO_APIKEY }}
+        run: |
+          pip install -q --user --break-system-packages xlrd || true
+          git fetch -q --depth=1 origin trh-data && git show FETCH_HEAD:trh.json > prev.json || echo "{}" > prev.json
+          python3 .github/trh/collect.py prev.json farmar/market.json trh.json
+          test -s trh.json
+          mkdir -p o && mv trh.json o/ && cd o
+          git init -q; git checkout -q -b trh-data
+          git config user.name bot; git config user.email bot@users.noreply.github.com
+          git add trh.json; git commit -qm "trh $(date -u +%FT%H:%M)"
+          git push -fq "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git" trh-data

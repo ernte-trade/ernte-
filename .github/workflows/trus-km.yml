@@ -1,0 +1,27 @@
+name: trus-km
+on:
+  workflow_dispatch:
+    inputs:
+      sites: {description: "miesta nakládky (čiarkou)", required: true}
+      dest: {description: "vykládka", required: false, default: "Kamenica nad Cirochou"}
+      via: {description: "prejazdový bod lat,lon (napr. hraničný priechod)", required: false, default: ""}
+      via_e: {description: "bod pre farmy na východe", required: false, default: ""}
+      ignore: {description: "1 = povolenie (ignorovať zákazy pre kamióny)", required: false, default: "0"}
+      tag: {description: "názov variantu", required: false, default: "eu"}
+permissions:
+  contents: write
+jobs:
+  km:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - name: Kamiónové trasy (Valhalla truck 40 t)
+        env: {SITES: "${{ inputs.sites }}", DEST: "${{ inputs.dest }}", VIA: "${{ inputs.via }}", VIA_E: "${{ inputs.via_e }}", IGNORE: "${{ inputs.ignore }}"}
+        run: python3 .github/trus/km.py > log.txt 2>&1; echo done
+      - name: Zašifrovať a uložiť (vetva trus-km)
+        run: |
+          gpg --batch --yes --trust-model always --recipient-file .github/e2e/results.pub.asc -o trus_km.gpg -e trus_km.json
+          gpg --batch --yes --trust-model always --recipient-file .github/e2e/results.pub.asc -o log.gpg -e log.txt
+          git config user.name bot; git config user.email bot@users.noreply.github.com
+          T="${{ inputs.tag }}"; mv trus_km.gpg "km-$T.gpg"; mv log.gpg "log-$T.gpg"; git fetch -q origin trus-km && git checkout -q -B trus-km origin/trus-km || git checkout -q --orphan trus-km; date -u > t.txt; git add -f "km-$T.gpg" "log-$T.gpg" t.txt; git commit -qm "trus-km $T"; git push -q origin trus-km

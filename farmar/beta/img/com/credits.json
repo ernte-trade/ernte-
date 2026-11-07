@@ -1,0 +1,72 @@
+{
+ "repka": {
+  "file": "Rapsfeld Rapeseed Brassica napus.jpg",
+  "author": "Richard Bartz, Munich aka Makro Freak",
+  "license": "CC BY-SA 2.5",
+  "license_url": "https://creativecommons.org/licenses/by-sa/2.5",
+  "source": "https://commons.wikimedia.org/wiki/File:Rapsfeld_Rapeseed_Brassica_napus.jpg"
+ },
+ "lo": {
+  "file": "Sunflower (Helianthus annuus) seeds.jpg",
+  "author": "Salil Kumar Mukherjee",
+  "license": "CC BY-SA 4.0",
+  "license_url": "https://creativecommons.org/licenses/by-sa/4.0",
+  "source": "https://commons.wikimedia.org/wiki/File:Sunflower_(Helianthus_annuus)_seeds.jpg"
+ },
+ "ho": {
+  "file": "Sonnenblumenkerne sunflower seeds.jpg",
+  "author": "Darkone (talk · contribs)",
+  "license": "CC BY-SA 2.5",
+  "license_url": "https://creativecommons.org/licenses/by-sa/2.5",
+  "source": "https://commons.wikimedia.org/wiki/File:Sonnenblumenkerne_sunflower_seeds.jpg"
+ },
+ "soja": {
+  "file": "Soybeans.jpg",
+  "author": "",
+  "license": "Public domain",
+  "license_url": "",
+  "source": "https://commons.wikimedia.org/wiki/File:Soybeans.jpg"
+ },
+ "psenica_p": {
+  "file": "Wheat close-up.JPG",
+  "author": "User:Bluemoose",
+  "license": "CC BY-SA 3.0",
+  "license_url": "http://creativecommons.org/licenses/by-sa/3.0/",
+  "source": "https://commons.wikimedia.org/wiki/File:Wheat_close-up.JPG"
+ },
+ "psenica_k": {
+  "file": "Wheat grain.jpg",
+  "author": "Denis Bastianelli, CIRAD",
+  "license": "CC BY 3.0",
+  "license_url": "https://creativecommons.org/licenses/by/3.0",
+  "source": "https://commons.wikimedia.org/wiki/File:Wheat_grain.jpg"
+ },
+ "jacmen_k": {
+  "file": "Barley grains.jpg",
+  "author": "국립국어원",
+  "license": "CC BY-SA 2.0 kr",
+  "license_url": "https://creativecommons.org/licenses/by-sa/2.0/kr/deed.en",
+  "source": "https://commons.wikimedia.org/wiki/File:Barley_grains.jpg"
+ },
+ "jacmen_s": {
+  "file": "Barley.jpg",
+  "author": "",
+  "license": "Public domain",
+  "license_url": "",
+  "source": "https://commons.wikimedia.org/wiki/File:Barley.jpg"
+ },
+ "kukurica": {
+  "file": "Maize Corn.jpg",
+  "author": "Joel Penner from Winnipeg, Canada",
+  "license": "CC BY 2.0",
+  "license_url": "https://creativecommons.org/licenses/by/2.0",
+  "source": "https://commons.wikimedia.org/wiki/File:Maize_Corn.jpg"
+ },
+ "cirok": {
+  "file": "Sorghum.jpg",
+  "author": "Larry Rana, USDA",
+  "license": "Public domain",
+  "license_url": "",
+  "source": "https://commons.wikimedia.org/wiki/File:Sorghum.jpg"
+ }
+}

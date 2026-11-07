@@ -1,0 +1,39 @@
+<!doctype html><html lang="sk"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>ERNTE – nastavenie</title>
+<style>
+:root{--g:#173b22;--l:#9cc72a;--bg:#f3f5ee;--line:#dbe2d4}
+body{margin:0;background:var(--bg);color:#14201a;font:15px/1.5 -apple-system,system-ui,sans-serif;padding:16px}
+.w{max-width:680px;margin:0 auto;display:grid;gap:14px}
+.c{background:#fff;border:1px solid var(--line);border-radius:16px;padding:16px;display:grid;gap:10px}
+h1{font-size:1.3rem;margin:4px 0}h2{font-size:1rem;margin:0;color:var(--g)}
+button{font:600 1rem system-ui;min-height:52px;border-radius:12px;border:0;background:var(--g);color:#fff}
+button.ok{background:var(--l);color:var(--g)}
+code{background:#eef6dc;padding:2px 6px;border-radius:6px;word-break:break-all}
+ol{margin:0;padding-left:20px;display:grid;gap:4px}
+</style></head><body><div class="w">
+<a href="index.html" style="display:flex;align-items:center;justify-content:center;min-height:60px;border-radius:14px;background:#9cc72a;color:#173b22;font-weight:700;font-size:1.1rem;text-decoration:none">➜ Otvoriť aplikáciu ERNTE Farmár</a>
+<h1>ERNTE Farmár – nastavenie databázy</h1>
+<div class="c"><h2>1. Databáza</h2>
+<button data-f="supabase/schema.sql">Kopírovať SQL</button>
+<ol><li>V Supabase vľavo otvor <b>SQL Editor</b> (ikona &gt;_).</li><li>Ťukni do prázdneho poľa, podrž prst → <b>Vložiť</b>.</li><li>Ťukni na zelené <b>Run</b>. Má sa ukázať „Success“.</li></ol></div>
+<div class="c"><h2>1b. Farmári (156)</h2>
+<button data-f2="supabase/farmers.sql">Kopírovať farmárov</button>
+<ol><li>V Supabase otvor <b>SQL Editor</b>, ťukni na <b>+</b> (nová prázdna karta).</li><li>Vlož a ťukni <b>Run</b>.</li></ol></div>
+<div class="c"><h2>2. E-mail s kódom</h2>
+<button data-t="code">Kopírovať text e-mailu</button>
+<ol><li>V Supabase: <b>Authentication → Emails</b> (Email Templates).</li><li>Otvor <b>Magic Link</b>, zmaž obsah poľa <b>Body</b> a vlož. Subject: <code>ERNTE – prihlasovací kód</code>. <b>Save</b>.</li><li>To isté sprav v <b>Confirm signup</b>.</li></ol></div>
+<div class="c"><h2>3. Adresa aplikácie</h2>
+<button data-t="url">Kopírovať adresu</button>
+<ol><li>V Supabase: <b>Authentication → URL Configuration</b>.</li><li>Do <b>Site URL</b> vlož adresu a ťukni <b>Save</b>.</li></ol></div>
+</div>
+<script>
+const T={code:`<h2>ERNTE – prihlásenie</h2>
+<p>Váš prihlasovací kód do aplikácie ERNTE Farmár:</p>
+<p style="font-size:28px;font-weight:700;letter-spacing:6px">{{ .Token }}</p>
+<p>Kód opíšte v aplikácii. Platí 1 hodinu. Ak ste o kód nežiadali, e-mail ignorujte.</p>
+<p>ERNTE spol. s r. o., Zbudza 141 · +421 918 449 991</p>`,url:location.href.replace(/setup\.html.*$/,"")};
+let SQL="",FSQL="";fetch("supabase/schema.sql",{cache:"no-store"}).then(r=>r.text()).then(t=>SQL=t);fetch("supabase/farmers.sql",{cache:"no-store"}).then(r=>r.text()).then(t=>FSQL=t);
+document.addEventListener("click",e=>{const b=e.target.closest("button");if(!b)return;
+ const txt=b.dataset.f?SQL:b.dataset.f2?FSQL:T[b.dataset.t];if(!txt){alert("Ešte sa načítava, skús o sekundu.");return}
+ navigator.clipboard.writeText(txt).then(()=>{b.textContent="Skopírované ✓";b.classList.add("ok")}).catch(x=>alert("Kopírovanie nevyšlo: "+x.message))});
+</script></body></html>
