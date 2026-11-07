@@ -93,7 +93,7 @@ async function run(q,L,cb){const my=++RQ;LASTQ=q;await map();if(my!==RQ)return;c
   const KO={tab:0,sec:1,help:2,fn:3,spol:4,sale:5,deal:6,buyer:7,farmer:8,staff:9,ticket:10,req:11,veh:12,truck:12};const put=(R,busy)=>{R.sort((a,b)=>(b.tm-a.tm)||(b.sc-a.sc)||((KO[a.k]??20)-(KO[b.k]??20)));const top=R.filter(r=>r.tm);RES=top.concat(R.filter(r=>!r.tm));SEL=0;LASTR={R:RES,q,busy,L};L.innerHTML=html(RES,q,busy);if(cb)cb(RES)};MORE=false;
   put(loc.slice(),true);clearTimeout(TMR);
   TMR=setTimeout(async()=>{let rem=[];try{const r=await sb.rpc("hladaj",{p_q:q});if(!r.error&&Array.isArray(r.data))rem=r.data}catch(x){}if(my!==RQ)return;
-    const tk=TOK(q);const R=loc.concat(rem.map(o=>{const x=Object.assign({},o);const tt=N((x.t||"")+" "+(x.s||""));x.tm=HIT(tt,tk);x.sc=(x.tm?90:0)+tk.reduce((s,t)=>s+(tt.includes(t)?3:0),0);x.a=()=>act(x);return x}));put(R,false)},220)}
+    const tk=TOK(q);const R=loc.concat(rem.map(o=>{const x=Object.assign({},o);const tt=N((x.g||"")+" "+(x.t||"")+" "+(x.s||""));x.tm=HIT(tt,tk);x.sc=(x.tm?90:0)+tk.reduce((s,t)=>s+(tt.includes(t)?3:0),0);x.a=()=>act(x);return x}));put(R,false)},220)}
 window.ernteFindUI=function(q,L,cb){if(!String(q||"").trim()){return false}run(q,L,cb);return true};
 window.ernteFind=async q=>{await map();return local(tabs(),q)};
 // ---------- okno pre tím a farmárov (majitelia majú Menu → Hľadať) ----------
