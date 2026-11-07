@@ -63,7 +63,8 @@ begin
          from sell_offers o left join b on b.id=o.buyer
          where o.d>=current_date-21 and o.price>0 and coalesce(nullif(o.cur,''),'EUR')='EUR' and o.buyer is distinct from 'mastergood'
            and (o.valid_to is null or o.valid_to>=current_date)),
-  ko as (select case when coalesce(i->>'sell','')='true' then 'odberateľ' else 'konkurencia' end src, coalesce(i->>'who','?') who, i->>'com' com,
+  ko as (select case when coalesce(i->>'sell','')='true' then 'odberateľ' else 'konkurencia' end src,
+           coalesce((select bb.name from b bb where coalesce(bb.rx,'')<>'' and coalesce(i->>'who','') ~* odb_rx(bb.rx) limit 1),i->>'who','?') who, i->>'com' com,
            upper(coalesce(nullif(trim(i->>'del'),''),'DAP')) del, nullif(trim(i->>'place'),'') site, trim(coalesce(i->>'term','')||' '||coalesce(i->>'per','')) per,
            (i->>'d')::date d, (i->>'price')::numeric price, case when (i->>'bz') ~ '^[0-9]+(\.[0-9]+)?$' then (i->>'bz')::numeric end bz,
            coalesce((select bb.float_burza and (bb.float_coms is null or cardinality(bb.float_coms)=0 or (i->>'com')=any(bb.float_coms))
@@ -72,14 +73,17 @@ begin
          where (i->>'price') ~ '^[0-9]+(\.[0-9]+)?$' and (i->>'d') ~ '^\d{4}-\d\d-\d\d$' and (i->>'d')::date>=current_date-14
            and coalesce(i->>'who','') !~* 'master\s*good'),
   a as (select * from so union all select * from ko),
+  -- iba dnešný odber, suchá, bez západu; z každého odberateľa | komodity | parity | miesta iba POSLEDNÁ ponuka (staršia je nahradená)
+  a1 as (select a.*, odb_site_key(a.del,coalesce(a.site,'')) sk from a
+         where a.com is not null and (p_com is null or a.com=p_com)
+           and a.per !~* '(odber\s*[0-9]|nad\s*500|[1-4]\s*q|q\s*/|/\s*2[7-9]\M|202[7-9])'
+           and not (a.per ~* 'mokr' and a.per !~* 'such')
+           and coalesce(a.site,'')||' '||a.who !~* 'hamburg|z[aá]pad'),
+  a2 as (select distinct on (lower(a1.who),a1.com,a1.del,a1.sk) a1.* from a1 order by lower(a1.who),a1.com,a1.del,a1.sk,a1.d desc,a1.price desc),
   f as (select a.*, m.px, m.contract kon,
           case when a.fl and m.px is not null then
             round(m.px+(a.price-coalesce(odb_kontrakt_at(odb_bz(a.com),m.ym,a.d),a.bz,odb_burza_at(odb_bz(a.com),a.d))),2) end shifted
-        from a left join mp m on m.sym=odb_bz(a.com)
-        where a.com is not null and (p_com is null or a.com=p_com)
-          and a.per !~* '(odber\s*[0-9]|nad\s*500|[1-4]\s*q|q\s*/|/\s*2[7-9]\M|202[7-9])'
-          and not (a.per ~* 'mokr' and a.per !~* 'such')
-          and coalesce(a.site,'')||' '||a.who !~* 'hamburg|z[aá]pad'),
+        from a2 a left join mp m on m.sym=odb_bz(a.com)),
   g as (select f.*, coalesce(f.shifted,f.price) pnow, gg.la, gg.lo, gg.cc from f left join lateral mg_geo(f.site) gg on true),
   h as (select g.*, (g.del in ('FCA','EXW') or g.del like 'FCA %' or coalesce(g.site,'') ~* '^\s*fca|farm') loco from g),
   x as (select h.*, case when loco then 0 when la is null then null else mg_km(ola,olo,la,lo) end air from h),
@@ -190,11 +194,12 @@ begin
     begin select * into sc from sale_contracts where id=p_ref::uuid; exception when others then return null; end;
     if not found then return null; end if;
     fl:=mg_bench_sys(sc.com)->'com'->sc.com;
-    return jsonb_build_object('title','Kúpna zmluva '||coalesce(sc.no,'')||' · Master Good','suma',round(coalesce(sc.tons,0)*coalesce(sc.price,0),2),'price',sc.price,'floor',fl->'floor',
+    wp:=sc.price-case when sc.parity='DAP' then coalesce(sc.dop,0) else 0 end;  -- cena tovaru bez dopravy (DAP − naša doprava)
+    return jsonb_build_object('title','Kúpna zmluva '||coalesce(sc.no,'')||' · Master Good','suma',round(coalesce(sc.tons,0)*coalesce(sc.price,0),2),'price',wp,'floor',fl->'floor',
       'bench',fl,
       'data',jsonb_build_object('sc',to_jsonb(sc)-'created_by','vc',mg_vnorm(sc.com),'tolw',tolw,'ekm',ekm,'cfg',c-'geo',
-        'parita_fca',coalesce(sc.parity,'') ~* 'fca|somotor' or coalesce(sc.parity,'')='',
-        'floor',fl->'floor','floor_ok',case when fl->>'floor' is null or sc.price is null then null else sc.price>=(fl->>'floor')::numeric end));
+        'dap',sc.parity='DAP','pf',wp,
+        'floor',fl->'floor','floor_ok',case when fl->>'floor' is null or wp is null then null else wp>=(fl->>'floor')::numeric end));
   end if;
   if p_kind not in ('faktura','doprava','audit') then raise exception 'Neznámy druh dokladu.'; end if;
   if p_ref !~ '^\d{4}-W\d{2}$' then raise exception 'Týždeň v tvare 2026-W45.'; end if;
@@ -203,7 +208,8 @@ begin
       't',coalesce(m.t_mg,m.t_load),'moist',m.moist,'impur',m.impur,'ded_kg',m.ded_kg,'km',m.km,'km_src',m.km_src,
       'eur',case when m.km is not null then round(m.km*ekm,2) end,
       'eur_t',case when m.km is not null and coalesce(m.t_mg,m.t_load)>0 then round(m.km*ekm/coalesce(m.t_mg,m.t_load),2) end,
-      'price',coalesce(m.price,s2.price),'sc',m.sc_id,'sc_no',s2.no,'fa',m.fa_id) order by m.d,m.id),'[]'::jsonb) into s
+      'price',coalesce(m.price,s2.price),'sc',m.sc_id,'sc_no',s2.no,'par',case when m.price is null then s2.parity end,'sdop',case when m.price is null and s2.parity='DAP' then s2.dop end,
+      'fa',m.fa_id) order by m.d,m.id),'[]'::jsonb) into s
     from mg_ship m left join sale_contracts s2 on s2.id=m.sc_id
     where m.d between od and dd and coalesce(m.t_mg,m.t_load) is not null and (p_kind<>'faktura' or m.fa_id is null);
   if p_kind='faktura' then
@@ -246,23 +252,27 @@ begin
   end if;
 
   -- faktúra: fakturačná váha = prevzaté netto − fyzický úbytok vody (týždenný vážený priemer vlhkosti), cena tovaru FCA Agro-Somotor + doprava z GPS
-  with x as (select x->>'com' com, (x->>'t')::numeric t, (x->>'moist')::numeric v, (x->>'price')::numeric p, nullif(x->>'sc','')::uuid sc, x->>'sc_no' scno
+  -- DAP zmluva: cena je vrátane dopravy (bez riadku dopravy), na porovnanie s benchmarkom cena − naša doprava zo zmluvy
+  with x as (select x->>'com' com, (x->>'t')::numeric t, (x->>'moist')::numeric v, (x->>'price')::numeric p, nullif(x->>'sc','')::uuid sc, x->>'sc_no' scno,
+               coalesce(x->>'par','')='DAP' dap, coalesce((x->>'sdop')::numeric,0) sdop
              from jsonb_array_elements(s) x),
   w as (select com, sum(t*v) filter (where v is not null)/nullif(sum(t) filter (where v is not null),0) vw from x group by com),
-  l as (select x.com, x.p, x.sc, max(x.scno) scno, count(*) n, sum(x.t) t, coalesce(sum(x.t) filter (where x.v is not null),0) tv, w.vw, mg_vnorm(x.com) vc
-        from x join w using(com) group by x.com, x.p, x.sc, w.vw),
-  l2 as (select l.*, case when vw is null or vw<=vc then 0 else round(tv*1000*(vw-vc)/(100-vc),0) end loss from l),
+  l as (select x.com, x.p, x.sc, x.dap, x.sdop, max(x.scno) scno, count(*) n, sum(x.t) t, coalesce(sum(x.t) filter (where x.v is not null),0) tv, w.vw, mg_vnorm(x.com) vc
+        from x join w using(com) group by x.com, x.p, x.sc, x.dap, x.sdop, w.vw),
+  l2 as (select l.*, case when vw is null or vw<=vc then 0 else round(tv*1000*(vw-vc)/(100-vc),0) end loss, p-case when dap then sdop else 0 end pf from l),
   l3 as (select l2.*, round(t-loss/1000,3) qty, mg_floor_sys(com,sc) fj from l2)
-  select jsonb_agg(jsonb_build_object('com',com,'p',p,'sc',sc,'sc_no',scno,'n',n,'t',round(t,3),'vw',round(vw,2),'vc',vc,'loss_kg',loss,'qty',qty,'eur',round(qty*p,2),
-      'floor',(fj->>'floor')::numeric,'floor_src',fj->>'src','floor_ok',case when fj->>'floor' is null then null else p>=(fj->>'floor')::numeric end) order by com,p),
+  select jsonb_agg(jsonb_build_object('com',com,'p',p,'pf',pf,'dap',dap,'sc',sc,'sc_no',scno,'n',n,'t',round(t,3),'vw',round(vw,2),'vc',vc,'loss_kg',loss,'qty',qty,'eur',round(qty*p,2),
+      'floor',(fj->>'floor')::numeric,'floor_src',fj->>'src','floor_ok',case when fj->>'floor' is null then null else pf>=(fj->>'floor')::numeric end) order by com,p),
     jsonb_object_agg(com||'|'||p||'|'||coalesce(sc::text,''),fj->'best')
     into lines, ben from l3;
   select jsonb_build_object('km',coalesce(sum((x->>'km')::numeric),0),'eur',round(coalesce(sum((x->>'km')::numeric),0)*ekm,2),
-      't',sum((x->>'t')::numeric) filter (where x->>'km' is not null),'bez_km',count(*) filter (where x->>'km' is null)) into t from jsonb_array_elements(s) x;
+      't',sum((x->>'t')::numeric) filter (where x->>'km' is not null),'bez_km',count(*) filter (where x->>'km' is null),
+      'dap_n',(select count(*) from jsonb_array_elements(s) y where coalesce(y->>'par','')='DAP')) into t
+    from jsonb_array_elements(s) x where coalesce(x->>'par','')<>'DAP';
   t:=t||jsonb_build_object('eur_t',case when (t->>'t')::numeric>0 then round((t->>'eur')::numeric/(t->>'t')::numeric,2) end);
   select round(sum((l->>'eur')::numeric),2), bool_and((l->>'floor_ok')::boolean) filter (where l->>'floor_ok' is not null) into goods, fok from jsonb_array_elements(lines) l;
-  select (l->>'p')::numeric, (l->>'floor')::numeric into wp, wf from jsonb_array_elements(lines) l
-    order by case when l->>'floor' is null then 1e9 else (l->>'p')::numeric-(l->>'floor')::numeric end limit 1;
+  select (l->>'pf')::numeric, (l->>'floor')::numeric into wp, wf from jsonb_array_elements(lines) l
+    order by case when l->>'floor' is null then 1e9 else (l->>'pf')::numeric-(l->>'floor')::numeric end limit 1;
   return jsonb_build_object('title','Faktúra Master Good · '||p_ref,'od',od,'do',dd,'suma',round(goods+(t->>'eur')::numeric,2),'price',wp,'floor',wf,'bench',ben,
     'data',jsonb_build_object('ships',s,'lines',lines,'frt',t,'goods',goods,'total',round(goods+(t->>'eur')::numeric,2),'ekm',ekm,'miss',miss,'floor_ok',fok,'cfg',c-'geo'));
 end $function$;
@@ -299,7 +309,7 @@ begin
   if not found then raise exception 'Doklad neexistuje.'; end if;
   if rd.stav<>'caka' then raise exception 'Doklad už nie je na schválenie (%).', rd.stav; end if;
   if p_ok and rd.kind in ('zmluva','faktura') and (rd.data->>'floor_ok')='false' then
-    raise exception '⛔ Zákaz fakturácie pod benchmarkom: cena % €/t je nižšia ako % €/t (najvyššia cena v okruhu 200 km + prémia GMP+/ISCC/QS).', rd.price, rd.floor; end if;
+    raise exception '⛔ Zákaz fakturácie pod benchmarkom: cena tovaru % €/t (bez dopravy) je nižšia ako % €/t (najvyššia cena v okruhu 200 km + prémia GMP+/ISCC/QS).', rd.price, rd.floor; end if;
   vno:=rd.no;
   if p_ok then
     if rd.kind='faktura' then
@@ -354,7 +364,7 @@ begin
     'ship',(select coalesce(jsonb_agg(to_jsonb(m) order by m.d desc, m.id desc),'[]'::jsonb) from mg_ship m where m.d>=current_date-p_days or m.fa_id is null),
     'docs',(select coalesce(jsonb_agg(case when main then to_jsonb(d) else to_jsonb(d)-'bench'-'floor' end order by d.created_at desc),'[]'::jsonb)
             from mg_docs d where d.stav<>'nahradene' and (d.created_at>=now()-make_interval(days=>p_days) or d.stav='caka')),
-    'sc',(select coalesce(jsonb_agg(jsonb_build_object('id',s.id,'no',s.no,'com',s.com,'tons',s.tons,'price',s.price,'parity',s.parity,'term',s.term,'status',s.status,
+    'sc',(select coalesce(jsonb_agg(jsonb_build_object('id',s.id,'no',s.no,'com',s.com,'tons',s.tons,'price',s.price,'parity',s.parity,'dop',s.dop,'term',s.term,'status',s.status,
             'delivered_t',s.delivered_t) order by s.created_at desc),'[]'::jsonb)
           from sale_contracts s where (s.buyer_id='mastergood' or coalesce(s.buyer,'') ~* 'master\s*good') and not coalesce(s.archived,false)),
     'bench',case when main then mg_bench_sys(null) end);
