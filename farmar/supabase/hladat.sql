@@ -3,14 +3,24 @@
 -- Slová sa hľadajú bez diakritiky a so skrátenou koncovkou (zmluva → zmluv…, odberateľa → odberate…), všetky slová musia sedieť.
 create or replace function public.hl_n(p text) returns text language sql immutable as $$
   select lower(translate(coalesce(p,''),'áäčďéěíĺľňóôöőŕřšťúůüűýžÁÄČĎÉĚÍĹĽŇÓÔÖŐŔŘŠŤÚŮÜŰÝŽ','aacdeeillnoooorrstuuuuyzAACDEEILLNOOOORRSTUUUUYZ')) $$;
+-- koreň slova bez slovenskej koncovky (ako hladat.js STEM): odberateľské → odberatel, zmluvy → zmluv
+create or replace function public.hl_stem(w text) returns text language plpgsql immutable as $$
+declare x text;
+begin
+  if length(w)<=4 or w ~ '[0-9]' then return w; end if;
+  foreach x in array array['ovskeho','ovskych','skeho','skych','skymi','skom','ovia','ami','ach','ych','ymi','ich','imi','ove','ova','ovi','sky','ska','ske','ski','eho','emu','ej','om','ov','mi','ia','ie','ou','ym','y','a','e','i','u','o'] loop
+    if right(w,length(x))=x and length(w)-length(x)>=4 then return left(w,length(w)-length(x)); end if;
+  end loop;
+  return w;
+end $$;
 create or replace function public.hl_tok(p text) returns text[] language sql immutable as $$
-  select coalesce(array_agg(case when length(w)<=3 then w when length(w)<=5 then left(w,length(w)-1) else left(w,length(w)-2) end),'{}')
+  select coalesce(array_agg(hl_stem(w)),'{}')
   from regexp_split_to_table(regexp_replace(hl_n(p),'[^a-z0-9@.+/-]+',' ','g'),'\s+') w where length(w)>=2 $$;
 -- rovnaký význam, iné slovo (ako hladat.js SYN)
 create or replace function public.hl_alt(p_t text) returns text[] language sql immutable as $$
   select array(select distinct x from (select p_t x union all
-    select unnest(g) from (values (array['cenn','ceny','vykup']),(array['zuct','vyuct']),(array['list','vazn','vaze']),(array['zmlu','obchod','kontrakt','dohod']),
-      (array['auto','vozid','kamion','spz','flotil']),(array['farm','dodavat','pestovat','klient']),(array['odber','kupuj']),(array['ponuk','predaj']),(array['dopr','prevoz','odvoz','jazd']),
+    select unnest(g) from (values (array['cenn','ceny','vykup']),(array['zuct','vyuct']),(array['vazn','vaze']),(array['listk','listok']),(array['zmlu','obchod','kontrakt','dohod']),
+      (array['auto','vozid','kamion','spz','flotil']),(array['farm','dodavat','pestovat','klient']),(array['odberat','predajn','kupuj']),(array['ponuk','predaj']),(array['dopr','prevoz','odvoz','jazd']),
       (array['tim','zamestn','ludi','pouzivat','pristup']),(array['fakt','doklad']),(array['mzd','vyplat'])) v(g)
     where exists(select 1 from unnest(g) y where p_t like y||'%' or y like p_t||'%')) q) $$;
 create or replace function public.hl_ok(p_hay text, p_t text[]) returns boolean language sql immutable as $$
