@@ -48,7 +48,8 @@ begin
             begin perform push_app('apptest','rollback',at0::text,'↩️ Nová verzia automaticky vrátená','Po zverejnení stúpli chyby u používateľov ('||(j->>'rollback')||' za hodinu) – všetci majú znova predošlú verziu. Chyby: Diagnostika → 🐞 Chyby aplikácie.',5,
               'https://ernte-trade.github.io/ernte-/farmar/#flotila/set/diag',array['rewind'],null,null,false); exception when others then null; end;
           end if;
-          if jsonb_array_length(coalesce(j->'vis','[]'))>0 and not exists(select 1 from push_log where src='app' and kind='app_vis' and obj=left(j->>'sha',12)) then
+          -- 7. 11. (príkaz majiteľa „ČO TO JE???“): bez upozornenia do mobilu – rozdiel vo vzhľade nie je chyba, je iba v Diagnostike → 🧪
+          if false and jsonb_array_length(coalesce(j->'vis','[]'))>0 and not exists(select 1 from push_log where src='app' and kind='app_vis' and obj=left(j->>'sha',12)) then
             begin perform push_app('apptest','app_vis',left(j->>'sha',12),'🎨 Nová verzia vyzerá inak ako schválená',jsonb_array_length(j->'vis')||' obrazoviek sa líši o viac ako 2 % – pozri pred zverejnením (Diagnostika → 🧪 Automatické testy).',3,
               'https://ernte-trade.github.io/ernte-/farmar/#flotila/set/diag',array['art'],null,null,false); exception when others then null; end;
           end if;

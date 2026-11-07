@@ -7,7 +7,9 @@
 Predtým hubstyle (hlavička), spat (← Späť), rok (📅 Úroda), vzhlad (podsekcie) a secbtn (tlačidlá sekcií) každý chcel byť „hneď za lištou“ → ~1 200 presunov za sekundu,
 obrazovka skákala a nedala sa vyrolovať celkom hore. Poradie: lišta/hero → hlavička → podsekcie → Späť → Úroda → sekcie. Nový pás pod lištou = pridať ho sem, nikdy nie „nav.after(...)“ s kontrolou v MutationObserveri. */
 (function(){var S=[":scope>section.ehb",":scope>#rdSub",":scope>.spatbar",":scope>.rokbar",":scope>.secbar"];
-window.ernteTopOrder=function(){var app=document.getElementById("app");if(!app)return;var prev=app.querySelector(":scope>nav.tabs:not(.trtabs)")||app.querySelector(":scope>.hero");if(!prev)return;
+window.ernteTopOrder=function(){var app=document.getElementById("app");if(!app)return;var nav=app.querySelector(":scope>nav.tabs:not(.trtabs)"),prev=nav||app.querySelector(":scope>.hero");if(!prev)return;
+  // farmár (bez lišty sekcií): hneď pod menom sú dlaždice / späť (farmapp.js, farmtiles.js) – lišta roka ide až za ne, inak sa presúvali navzájom donekonečna (7. 11.)
+  if(!nav){var n=prev.nextElementSibling;while(n&&n.matches&&n.matches(".fvbar,.ftiles,h2.ftl-h,.ftl")){prev=n;n=n.nextElementSibling}}
   for(var i=0;i<S.length;i++){var el=app.querySelector(S[i]);if(!el)continue;if(prev.nextElementSibling!==el)prev.after(el);prev=el}};
 /* strážca slučiek: ten istý prvok vložený 40× za 2 s = moduly sa naťahujú → chyba do 🐞 Chyby aplikácie (errmon) + window.ERNTE_LOOP (kontroluje ho aj brána smoke.mjs) */
 var C=new Map(),t0=0,rep={};function boot(){var app=document.getElementById("app");if(!app){setTimeout(boot,400);return}
@@ -958,10 +960,17 @@ document.addEventListener("submit",async e=>{const f=e.target;
 document.addEventListener("click",e=>{if(e.target.id==="backEmail"){LOGIN.sent=false;showLogin()}if(e.target.closest&&e.target.closest("#outBtn")){const go=()=>sb.auth.signOut();Promise.race([Promise.resolve(window.ernteBeforeLogout&&window.ernteBeforeLogout()),new Promise(r=>setTimeout(r,2500))]).catch(()=>{}).then(go,go)}});
 
 // ================= kto som =================
+// 7. 11. (farmár videl „Váš e-mail ešte nemá prístup“, keď sa jeho údaje práve nenačítali): pri sieťovej / serverovej chybe ponúkni Skúsiť znova
+let ENTER_TRY=0;
+function enterFail(user,err){const m=String(err&&(err.message||err.code)||"");if(!/fetch|load failed|network|timeout|offline|50\d|stack depth|JWT|connection/i.test(m+" "+(err&&err.status||"")))return false;
+  ENTER_TRY++;$("app").innerHTML=`<div class="card"><div class="t">📡 Účet sa nepodarilo načítať</div><div class="s">Spojenie so serverom práve vypadlo. Skúšam znova…</div><div class="btns"><button type="button" class="pri" id="enterRetry">↻ Skúsiť znova</button></div></div>`;
+  const b=$("enterRetry");if(b)b.onclick=()=>enter(user);if(ENTER_TRY<6)setTimeout(()=>{if(document.getElementById("enterRetry"))enter(user)},4000*ENTER_TRY);return true}
 async function enter(user){ME=user;$("outBtn").hidden=false;
   const st=await sb.from("staff").select("email,name,role").eq("email",String(user.email).toLowerCase()).maybeSingle();
+  if(st.error&&!st.data&&enterFail(user,st.error))return; // 7. 11.: výpadok spojenia ≠ „nemáte prístup“
   if(st.data){ROLE=st.data.role;ME.staffName=st.data.name;$("hS").textContent=st.data.name+" · ERNTE";$("hT").textContent="ERNTE Trade & Logistic";document.title="ERNTE Trade & Logistic";startStaff();return}
   const fr=await sb.from("farmers").select("*").limit(1).maybeSingle();
+  if(fr.error&&!fr.data&&enterFail(user,fr.error))return;
   if(fr.data){FARMER=fr.data;$("hS").textContent=fr.data.name;startFarmer();return}
   if(window.startBuyer){const bu=await sb.from("odb_buyers").select("*").limit(1).maybeSingle();if(bu.data){window.BUYER=bu.data;$("hS").textContent=bu.data.name;$("hT").textContent="ERNTE Trade & Logistic";startBuyer();return}}
   if(window.kidEnter&&await kidEnter())return; // 🧒 ERNTE Junior – škola biznisu (kid.js)
@@ -3122,7 +3131,7 @@ document.addEventListener("click",e=>{const b=e.target.closest("[data-dfp]");if(
 <script src="nu.js?v=20261105-2240"></script>
 <script src="trhpred.js?v=20261102-0141"></script>
 <script src="mailgraph.js?v=20261103-1000"></script>
-<script src="apptest.js?v=20261102-0200"></script>
+<script src="apptest.js?v=20261107-0640"></script>
 <script src="domena.js?v=20261031-0700"></script>
 <script src="cmdreq.js?v=20261101-1420"></script>
 <script src="konk.js?v=20261103-0810"></script>
