@@ -144,7 +144,7 @@ revoke all on function public.ospl_new(text) from public, anon; grant execute on
 create or replace function public.ospl_save(p_id bigint, p_nazov text, p jsonb, p_text text) returns jsonb language plpgsql security definer set search_path=public as $$
 begin
   if not price_main() then raise exception 'Iba Martin.'; end if;
-  update odb_spolupraca set nazov=coalesce(nullif(btrim(p_nazov),''),nazov), p=coalesce(p,odb_spolupraca.p), text=p_text, updated_at=now() where id=p_id;
+  update odb_spolupraca set nazov=coalesce(nullif(btrim(p_nazov),''),nazov), p=coalesce(ospl_save.p,odb_spolupraca.p), text=p_text, updated_at=now() where id=p_id;
   if not found then raise exception 'Návrh sa nenašiel – obnov zoznam.'; end if;
   return jsonb_build_object('ok',true);
 end $$;

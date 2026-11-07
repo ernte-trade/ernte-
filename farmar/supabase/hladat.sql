@@ -13,21 +13,25 @@ begin
   end loop;
   return w;
 end $$;
+-- výplňové slová sa nehľadajú (ako hladat.js STOP): „kde nájdem predajné návrhy zmlúv“ = predajné návrhy zmlúv
+create or replace function public.hl_stop() returns text[] language sql immutable as $$
+  select string_to_array('kde najdem najst najdes je su mam mame ukaz ukazat zobraz otvor chcem chcel potrebujem prosim mi ma moje moj moja nase nas vsetky vsetko vsetkych daj kto co ako aj alebo ten ta to tie tych ktore ktory ktora sa si s so a na do od pre pri za v vo z zo k ku o po u',' ') $$;
 create or replace function public.hl_tok(p text) returns text[] language sql immutable as $$
   select coalesce(array_agg(hl_stem(w)),'{}')
-  from regexp_split_to_table(regexp_replace(hl_n(p),'[^a-z0-9@.+/-]+',' ','g'),'\s+') w where length(w)>=2 $$;
+  from regexp_split_to_table(regexp_replace(hl_n(p),'[^a-z0-9@.+/-]+',' ','g'),'\s+') w where length(w)>=2
+    and (not (w = any(hl_stop())) or not exists(select 1 from regexp_split_to_table(regexp_replace(hl_n(p),'[^a-z0-9@.+/-]+',' ','g'),'\s+') w2 where length(w2)>=2 and not (w2 = any(hl_stop())))) $$;
 -- rovnaký význam, iné slovo (ako hladat.js SYN)
 create or replace function public.hl_alt(p_t text) returns text[] language sql immutable as $$
   select array(select distinct x from (select p_t x union all
     select unnest(g) from (values (array['cenn','ceny','vykup']),(array['zuct','vyuct']),(array['vazn','vaze']),(array['listk','listok']),(array['zmlu','obchod','kontrakt','dohod']),
       (array['auto','vozid','kamion','spz','flotil']),(array['farm','dodavat','pestovat','klient']),(array['odberat','predajn','kupuj']),(array['ponuk','predaj']),(array['dopr','prevoz','odvoz','jazd']),
-      (array['tim','zamestn','ludi','pouzivat','pristup']),(array['fakt','doklad']),(array['mzd','vyplat'])) v(g)
+      (array['tim','zamestn','ludi','pouzivat','pristup']),(array['fakt','doklad']),(array['mzd','vyplat']),(array['navrh','koncept','predlo']),(array['spoluprac','partner'])) v(g)
     where exists(select 1 from unnest(g) y where p_t like y||'%' or y like p_t||'%')) q) $$;
 create or replace function public.hl_ok(p_hay text, p_t text[]) returns boolean language sql immutable as $$
   select not exists(select 1 from unnest(p_t) t where not exists(select 1 from unnest(hl_alt(t)) a where position(a in p_hay)>0)) $$;
 
-create or replace function public.hladaj(p_q text) returns jsonb language plpgsql stable set search_path=public as $$
-declare t text[]:=hl_tok(p_q); r jsonb:='[]'::jsonb; x jsonb; nd text:=regexp_replace(hl_n(p_q),'[\s-]','','g');
+create or replace function public.hladaj_t(t text[], nd text) returns jsonb language plpgsql stable set search_path=public as $$
+declare r jsonb:='[]'::jsonb; x jsonb;
 begin
   if coalesce(array_length(t,1),0)=0 then return r; end if;
   -- zmluvy s farmármi (kúpne)
@@ -73,6 +77,26 @@ begin
   -- funkcie aplikácie (novinky – kde to nájsť)
   begin select coalesce(jsonb_agg(z),'[]') into x from (select jsonb_build_object('g','Funkcie – kde to nájdeš','k','fn','id',n.id,'tab',null,'t',n.titul,'s',n.kde) z
     from app_novinky n where hl_ok(hl_n(concat_ws(' ',n.titul,n.kde,n.popis)),t) order by n.d desc, n.id desc limit 12) q; r:=r||x; exception when others then null; end;
+  return r;
+end $$;
+revoke all on function public.hladaj_t(text[],text) from public, anon; grant execute on function public.hladaj_t(text[],text) to authenticated;
+-- hladaj(q): všetky slová; keď nič – pri 2+ slovách výsledky so všetkými slovami okrem jedného (označené part:true = „podobné“)
+create or replace function public.hladaj(p_q text) returns jsonb language plpgsql stable set search_path=public as $$
+declare t text[]:=hl_tok(p_q); n int; r jsonb; x jsonb; e jsonb; i int; seen text[]:='{}'; nd text:=regexp_replace(hl_n(p_q),'[\s-]','','g');
+begin
+  n:=coalesce(array_length(t,1),0);
+  if n=0 then return '[]'::jsonb; end if;
+  r:=hladaj_t(t,nd);
+  if jsonb_array_length(r)>0 or n<2 then return r; end if;
+  r:='[]'::jsonb;
+  for i in 1..n loop
+    x:=hladaj_t(t[1:i-1]||t[i+1:n],'');
+    for e in select * from jsonb_array_elements(x) loop
+      if not ((e->>'k')||'|'||(e->>'id'))=any(seen) and jsonb_array_length(r)<30 then
+        seen:=seen||((e->>'k')||'|'||(e->>'id')); r:=r||jsonb_build_array(e||jsonb_build_object('part',true));
+      end if;
+    end loop;
+  end loop;
   return r;
 end $$;
 revoke all on function public.hladaj(text) from public, anon; grant execute on function public.hladaj(text) to authenticated;

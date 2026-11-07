@@ -129,7 +129,8 @@ function areas(){const L=document.getElementById("rdML");if(!L)return;const T=ta
 async function loadVeh(){if(VEH||typeof sb==="undefined"||!sb)return;VEH=[];try{const r=await sb.from("cmd_vehicles").select("*");VEH=(r.data||[]).map(v=>({id:v.id,p:v.plate||"",n:v.name||"",r:v.region||""}))}catch(x){}}
 function index(){const S=typeof STATE!=="undefined"&&STATE?STATE:{},F={};(S.farmers||[]).forEach(f=>F[f.id]=f);
   const D=[...(S.deals||[]),...(S.dealsArch||[])];return {D,F:S.farmers||[],FM:F}}
-function find2(q){const L=document.getElementById("rdML");if(!L)return;const n=N(q).trim();if(!n){areas();return}if(window.ernteFindUI&&window.ernteFindUI(q,L,R=>{RES=R;SEL=0}))return; /* 7. 11.: hľadá všetko – hladat.js */const I=index(),T=tabs(),R=[],nd=n.replace(/\s/g,"");
+function find2(q){const L=document.getElementById("rdML");if(!L)return;const n=N(q).trim();if(!n){areas();return}if(window.ernteFindUI&&window.ernteFindUI(q,L,R=>{RES=R;SEL=0}))return; /* 7. 11.: hľadá všetko – hladat.js */
+  if(!window.ernteFindUI&&!window.__hlLoad){window.__hlLoad=1;const s=document.createElement("script");s.src="hladat.js?v=20261107-1500";s.onload=()=>{const i=document.getElementById("rdQ");if(i&&i.value.trim())find2(i.value)};document.head.appendChild(s)} /* 7. 11. 14:47: hľadanie sa nenačítalo → načítať a hľadať znova */const I=index(),T=tabs(),R=[],nd=n.replace(/\s/g,"");
   Object.values(T).forEach(t=>{if(N(t.t).includes(n))R.push({g:"Sekcie",i:TI[t.k]||"dot",t:t.t,s:"otvoriť sekciu",a:()=>go(t.k)})});
   let c=0;for(const d of I.D){if(c>=8)break;const f=I.FM[d.farmer_id]||{},hay=N([d.no,f.name,d.com,d.term].join(" "));
     if(hay.includes(n)||(nd&&N(d.no||"").replace(/\s/g,"").includes(nd))){c++;R.push({g:"Zmluvy",i:"file",t:(d.no||"bez čísla")+" · "+(f.name||""),s:[typeof comName==="function"?comName(d.com):d.com,d.tons?nf(d.tons,1)+" t":"",d.status].filter(Boolean).join(" · "),a:()=>openDeal(d)})}}

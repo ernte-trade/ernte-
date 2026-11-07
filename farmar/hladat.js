@@ -11,12 +11,20 @@ const N=s=>String(s||"").toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g,"").r
 // koreň slova bez slovenskej koncovky (odberateľské → odberatel, zmluvy → zmluv, predajné → predajn, lístky → listk)
 const SUF=["ovskeho","ovskych","skeho","skych","skymi","skom","ovia","ami","ach","ych","ymi","ich","imi","ove","ova","ovi","sky","ska","ske","ski","eho","emu","ej","om","ov","mi","ia","ie","ou","ym","y","a","e","i","u","o"];
 const STEM=w=>{if(w.length<=4||/\d/.test(w))return w;for(const x of SUF)if(w.endsWith(x)&&w.length-x.length>=4)return w.slice(0,-x.length);return w};
-const TOK=q=>N(q).split(" ").filter(w=>w.length>=2).map(STEM);
+// výplňové slová sa nehľadajú („kde nájdem predajné návrhy zmlúv“ = predajné návrhy zmlúv)
+const STOP=new Set("kde najdem najst najdes je su mam mame ukaz ukazat zobraz otvor chcem chcel potrebujem prosim mi ma moje moj moja nase nas vsetky vsetko vsetkych daj kto co ako aj alebo ten ta to tie tych ktore ktory ktora sa si s so a na do od pre pri za v vo z zo k ku o po u".split(" "));
+const TOK=q=>{const w=N(q).split(" ").filter(w=>w.length>=2),k=w.filter(x=>!STOP.has(x));return (k.length?k:w).map(STEM)};
 // rovnaký význam, iné slovo (cenník = ceny = výkup, zúčtovanie = vyúčtovanie, lístok = váženie, zmluva = obchod = kontrakt…)
 const SYN=[["cenn","ceny","vykup"],["zuct","vyuct"],["vazn","vaze"],["listk","listok"],["zmlu","obchod","kontrakt","dohod"],["auto","vozid","kamion","spz","flotil"],["farm","dodavat","pestovat","klient"],
-  ["odberat","predajn","kupuj"],["ponuk","predaj","ponuk"],["dopr","prevoz","odvoz","jazd"],["pocas","prepoved"],["burz","matif","cbot","trh"],["tim","zamestn","ludi","pouzivat","pristup"],["nastav","konfig"],["fakt","doklad"],["mzd","vyplat"]];
+  ["odberat","predajn","kupuj"],["ponuk","predaj","ponuk"],["dopr","prevoz","odvoz","jazd"],["pocas","prepoved"],["burz","matif","cbot","trh"],["tim","zamestn","ludi","pouzivat","pristup"],["nastav","konfig"],["fakt","doklad"],["mzd","vyplat"],["navrh","koncept","predlo"],["spoluprac","partner"]];
 const ALT=t=>{const r=[t];for(const g of SYN)if(g.some(x=>t.startsWith(x)||x.startsWith(t)))r.push(...g);return [...new Set(r)]};
 const HIT=(h,tk)=>tk.every(t=>ALT(t).some(a=>h.includes(a)));
+const CNT=(h,tk)=>tk.reduce((s,t)=>s+(ALT(t).some(a=>h.includes(a))?1:0),0);
+// slová, ktorými ľudia hľadajú konkrétne časti (pridajú sa k nadpisu časti – 🎯 presná zhoda aj keď nadpis znie inak)
+const KW=[[/spoluprac/,"návrhy zmlúv odberateľov, predajné návrhy zmlúv, podmienky spolupráce, nový návrh spolupráce, vzor zmluvy pre farmárov, kam to pôjde"],
+  [/predaj.{0,6}predajn|predajne zmluv/,"zmluvy s odberateľmi, predajné zmluvy odberateľov, kontrakty s odberateľmi"],[/obchodne navrhy/,"ponuky a dopyty firmám, návrhy e-mailov, oslovenie odberateľov"],
+  [/ceny odberatel/,"pridať cenu odberateľa, ponuky odberateľov, nová cena odberateľa"],[/zuctovanie farmar/,"vyúčtovanie farmára, výpočet platby"],[/kontrola cien/,"čakajúce ceny, schválenie ceny"]];
+const KWA=t=>{const n=N(t);return KW.filter(k=>k[0].test(n)).map(k=>k[1]).join(", ")};
 const isF=()=>typeof FARMER!=="undefined"&&!!FARMER;
 let MAP=null,MAPB=false,RQ=0,LASTQ="";
 async function map(){if(MAP||MAPB)return MAP;MAPB=true;try{const r=await fetch("hladat-mapa.json?v=20261107-0900",{cache:"no-store"});MAP=r.ok?await r.json():{}}catch(x){MAP={}}MAPB=false;return MAP}
@@ -28,13 +36,16 @@ const TA={deals:"zmluvy s farmármi, dodávateľské a kúpne zmluvy, nákup",qd
 const ICO={tab:"📂",sec:"📌",help:"📖",fn:"✨",deal:"📄",sale:"💼",farmer:"👨‍🌾",buyer:"🏭",spol:"🤝",staff:"👤",ticket:"⚖️",req:"📨",veh:"🚛",truck:"🚛"};
 // ---------- miestne položky (sekcie, časti sekcií, návody) ----------
 function local(T,q){const tk=TOK(q);if(!tk.length)return [];const D=window.ERNTE_DESC||{},TD=D.TABD||{},H=typeof HELP!=="undefined"?HELP:{},MM=MAP||{},M=(MM.owner?((typeof window.MAIN_OK==="function"&&MAIN_OK())?MM.owner:MM.staff):MM)||{},FM=(MM.farmer&&MM.farmer._farmer)||MM._farmer||[],R=[],seen=new Set();
-  const add=(o,hay)=>{const h=N(hay);if(!HIT(h,tk))return;const key=o.k+"|"+o.tab+"|"+N(o.t);if(seen.has(key))return;seen.add(key);const tt=N(o.t+" "+(o.al||""));o.tm=HIT(tt,tk);o.sc=(o.tm?100:0)+tk.reduce((s,t)=>s+(tt.includes(t)?3:ALT(t).some(a=>tt.includes(a))?2:0),0)+(o.k==="tab"?2:o.k==="sec"?1:0)+(tt.startsWith(tk[0])?2:0);R.push(o)};
+  // všetky slová = výsledok; pri 2+ slovách stačí aj všetky okrem jedného (podobné – nižšie); nič nezahodiť, čo sa dá nájsť
+  const add=(o,hay)=>{if(o.k!=="tab"&&!o.al)o.al=KWA(o.t);const h=N(hay+" "+(o.al||"")),c=CNT(h,tk);if(!c)return;const full=c===tk.length;if(!full&&tk.length<2)return;const key=o.k+"|"+o.tab+"|"+N(o.t);if(seen.has(key))return;seen.add(key);const tt=N(o.t+" "+(o.al||""));o.tm=full&&HIT(tt,tk);o.part=!full;o.hc=c;o.sc=(o.tm?100:0)+(full?20:0)+c*4+tk.reduce((s,t)=>s+(tt.includes(t)?3:ALT(t).some(a=>tt.includes(a))?2:0),0)+(o.k==="tab"?2:o.k==="sec"?1:0)+(tt.startsWith(tk[0])?2:0);R.push(o)};
   for(const k in T){add({k:"tab",g:"Sekcie aplikácie",t:T[k],al:TA[k]||"",s:(TA[k]?TA[k]+" · ":"")+(TD[k]||"").slice(0,90),tab:k},T[k]+" "+(TD[k]||"")+" "+(H[k]?(H[k].t||"")+" "+(H[k].r||""):""));
     const h=H[k];if(h&&Array.isArray(h.s))for(const x of h.s)add({k:"help",g:"Časti sekcií a návody",t:String(x[0]||"").replace(/<[^>]+>/g,""),s:T[k]+" · "+String(x[1]||"").replace(/<[^>]+>/g,"").slice(0,90),tab:k,find:x[0]},x[0]+" "+x[1]+" "+T[k]);
     const ML=(M[k]||[]).filter((x,i,a)=>!a.some((y,j)=>j!==i&&y.length<x.length&&N(x).startsWith(N(y))));
     for(const x of ML)add({k:"sec",g:"Časti sekcií a návody",t:x,s:"v sekcii "+T[k],tab:k,find:x},x+" "+T[k])}
   if(isF())for(const x of FM)add({k:"sec",g:"Časti aplikácie",t:x,s:"na hlavnej obrazovke",tab:null,find:x},x);
-  return R.sort((a,b)=>b.sc-a.sc).slice(0,40)}
+  // čiastočné: iba tie s najväčším počtom slov (pri 3 slovách aspoň 2), aby nezaplavili zoznam
+  const mx=Math.max(0,...R.filter(o=>o.part).map(o=>o.hc)),R2=R.filter(o=>!o.part||(o.hc===mx&&o.hc>=Math.ceil(tk.length/2)));
+  return R2.sort((a,b)=>b.sc-a.sc).slice(0,40)}
 // ---------- presun na miesto ----------
 function flash(el){if(!el)return false;try{if(el.tagName==="SUMMARY"&&el.parentElement&&!el.parentElement.open)el.parentElement.open=true;const d=el.closest("details");if(d&&!d.open)d.open=true}catch(x){}
   el.scrollIntoView({block:"center",behavior:"smooth"});el.classList.add("hlflash");setTimeout(()=>el.classList.remove("hlflash"),2800);return true}
@@ -86,14 +97,15 @@ function html(R,q,busy){if(!R.length)return `<div class="hlnone">${busy?"⏳ Hľ
   const nT=R.filter(r=>r.tm).length;let h="";
   if(nT){h+=`<h3 class="hlg">🎯 Presne to, čo hľadáš</h3>`;R.forEach((r,i)=>{if(r.tm)h+=row(r,i)});
     const nO=R.length-nT;if(nO)h+=MORE?`<h3 class="hlg">Súvisiace</h3>`+R.map((r,i)=>r.tm?"":row(r,i)).join(""):`<button type="button" class="hlmore" data-hlmore>＋ Súvisiace výsledky (${nO})</button>`}
-  else{h+=`<h3 class="hlg">Presná zhoda nie je – podobné</h3>`;R.forEach((r,i)=>{h+=row(r,i)})}
+  else{const nF=R.filter(r=>!r.part).length;if(nF){h+=`<h3 class="hlg">Nájdené</h3>`;R.forEach((r,i)=>{if(!r.part)h+=row(r,i)})}
+    if(R.length>nF){h+=`<h3 class="hlg">${nF?"Podobné":"Všetky slová naraz nie sú nikde – najbližšie výsledky"}</h3>`;R.forEach((r,i)=>{if(r.part)h+=row(r,i)})}}
   return h+(busy?`<div class="hlnone">⏳ Hľadám aj v údajoch…</div>`:"")}
 const GORD=["Sekcie aplikácie","Časti sekcií a návody","Časti aplikácie","Funkcie – kde to nájdeš","Zmluvy s farmármi","Predajné zmluvy s odberateľmi","Spolupráca s odberateľmi","Odberatelia","Farmári a dodávatelia","Tím a používatelia","Vážne lístky","Požiadavky","Vozidlá"];
 async function run(q,L,cb){const my=++RQ;LASTQ=q;await map();if(my!==RQ)return;const T=tabs(),loc=local(T,q).map(o=>Object.assign(o,{a:()=>act(o)}));
-  const KO={tab:0,sec:1,help:2,fn:3,spol:4,sale:5,deal:6,buyer:7,farmer:8,staff:9,ticket:10,req:11,veh:12,truck:12};const put=(R,busy)=>{R.sort((a,b)=>(b.tm-a.tm)||(b.sc-a.sc)||((KO[a.k]??20)-(KO[b.k]??20)));const top=R.filter(r=>r.tm);RES=top.concat(R.filter(r=>!r.tm));SEL=0;LASTR={R:RES,q,busy,L};L.innerHTML=html(RES,q,busy);if(cb)cb(RES)};MORE=false;
+  const KO={tab:0,sec:1,help:2,fn:3,spol:4,sale:5,deal:6,buyer:7,farmer:8,staff:9,ticket:10,req:11,veh:12,truck:12};const put=(R,busy)=>{R.sort((a,b)=>(b.tm-a.tm)||((a.part?1:0)-(b.part?1:0))||(b.sc-a.sc)||((KO[a.k]??20)-(KO[b.k]??20)));const top=R.filter(r=>r.tm);RES=top.concat(R.filter(r=>!r.tm));SEL=0;LASTR={R:RES,q,busy,L};L.innerHTML=html(RES,q,busy);if(cb)cb(RES)};MORE=false;
   put(loc.slice(),true);clearTimeout(TMR);
   TMR=setTimeout(async()=>{let rem=[];try{const r=await sb.rpc("hladaj",{p_q:q});if(!r.error&&Array.isArray(r.data))rem=r.data}catch(x){}if(my!==RQ)return;
-    const tk=TOK(q);const R=loc.concat(rem.map(o=>{const x=Object.assign({},o);const tt=N((x.g||"")+" "+(x.t||"")+" "+(x.s||""));x.tm=HIT(tt,tk);x.sc=(x.tm?90:0)+tk.reduce((s,t)=>s+(tt.includes(t)?3:0),0);x.a=()=>act(x);return x}));put(R,false)},220)}
+    const tk=TOK(q);const R=loc.concat(rem.map(o=>{const x=Object.assign({},o);const tt=N((x.g||"")+" "+(x.t||"")+" "+(x.s||""));x.tm=!x.part&&HIT(tt,tk);x.sc=(x.tm?90:0)+(x.part?0:20)+tk.reduce((s,t)=>s+(tt.includes(t)?3:0),0);x.a=()=>act(x);return x}));put(R,false)},220)}
 window.ernteFindUI=function(q,L,cb){if(!String(q||"").trim()){return false}run(q,L,cb);return true};
 window.ernteFind=async q=>{await map();return local(tabs(),q)};
 // ---------- okno pre tím a farmárov (majitelia majú Menu → Hľadať) ----------
