@@ -10,7 +10,7 @@ const E=s=>String(s==null?"":s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;","
 const N=s=>String(s||"").toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g,"").replace(/[^a-z0-9@.+/\s-]+/g," ").replace(/\s+/g," ").trim();
 const TOK=q=>N(q).split(" ").filter(w=>w.length>=2).map(w=>w.length<=3?w:w.length<=5?w.slice(0,-1):w.slice(0,-2));
 // rovnaký význam, iné slovo (cenník = ceny = výkup, zúčtovanie = vyúčtovanie, lístok = váženie, zmluva = obchod = kontrakt…)
-const SYN=[["cenn","cen","vykup"],["zuct","vyuct"],["list","vazn","vaze"],["zmlu","obchod","kontrakt","dohod"],["auto","vozid","kamion","spz","flotil"],["farm","dodavat","pestovat","klient"],
+const SYN=[["cenn","ceny","vykup"],["zuct","vyuct"],["list","vazn","vaze"],["zmlu","obchod","kontrakt","dohod"],["auto","vozid","kamion","spz","flotil"],["farm","dodavat","pestovat","klient"],
   ["odber","kupuj"],["ponuk","predaj","ponuk"],["dopr","prevoz","odvoz","jazd"],["pocas","prepoved"],["burz","matif","cbot","trh"],["tim","zamestn","ludi","pouzivat","pristup"],["nastav","konfig"],["fakt","doklad"],["mzd","vyplat"]];
 const ALT=t=>{const r=[t];for(const g of SYN)if(g.some(x=>t.startsWith(x)||x.startsWith(t)))r.push(...g);return [...new Set(r)]};
 const HIT=(h,tk)=>tk.every(t=>ALT(t).some(a=>h.includes(a)));

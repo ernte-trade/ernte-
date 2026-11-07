@@ -9,7 +9,7 @@ create or replace function public.hl_tok(p text) returns text[] language sql imm
 -- rovnaký význam, iné slovo (ako hladat.js SYN)
 create or replace function public.hl_alt(p_t text) returns text[] language sql immutable as $$
   select array(select distinct x from (select p_t x union all
-    select unnest(g) from (values (array['cenn','cen','vykup']),(array['zuct','vyuct']),(array['list','vazn','vaze']),(array['zmlu','obchod','kontrakt','dohod']),
+    select unnest(g) from (values (array['cenn','ceny','vykup']),(array['zuct','vyuct']),(array['list','vazn','vaze']),(array['zmlu','obchod','kontrakt','dohod']),
       (array['auto','vozid','kamion','spz','flotil']),(array['farm','dodavat','pestovat','klient']),(array['odber','kupuj']),(array['ponuk','predaj']),(array['dopr','prevoz','odvoz','jazd']),
       (array['tim','zamestn','ludi','pouzivat','pristup']),(array['fakt','doklad']),(array['mzd','vyplat'])) v(g)
     where exists(select 1 from unnest(g) y where p_t like y||'%' or y like p_t||'%')) q) $$;
