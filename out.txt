@@ -1,0 +1,15 @@
+pages: 200 0.594849s http://app.ernte.sk/farmar/
+sw: ernte-v1468  200 
+auth health: 200 0.608590s
+rest prices: 200 0.462841s
+rest root: 401 0.074201s
+pages: 200 0.212979s http://app.ernte.sk/farmar/
+sw: ernte-v1468  200 
+auth health: 200 0.500617s
+rest prices: 200 0.467148s
+rest root: 401 0.074323s
+pages: 200 0.139786s http://app.ernte.sk/farmar/
+sw: ernte-v1468  200 
+auth health: 200 0.223946s
+rest prices: 200 1.556421s
+rest root: 401 0.056658s
