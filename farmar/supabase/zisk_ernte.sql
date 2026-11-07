@@ -1,7 +1,8 @@
 -- 💰 ZISK ERNTE (5. 11. 2026 príkaz majiteľa): zisk = obchod (zúčtovanie odberateľa − zúčtovanie farmára, po lístkoch)
 --   − doprava obilia (GPS jazda × 2 × €/km) + flotila VALKO (fleet_month) + kurací trus + agro služby,
 --   podrobný rozpis (komodity, odberatelia, farmári, mesiace, úniky) a odporúčania – iba legálne, transparentné, podľa zmlúv.
--- Iba Martin (price_main). Oprava: buyer_dry_kg je ZRÁŽKA za sušenie u odberateľa (kg), nie váha – váha odberateľa = čistá váha − zrážka.
+-- Iba Martin (price_main). buyer_dry_kg = zrážka za sušenie u odberateľa (kg); 7. 11. overené na lístkoch Agro-Somotora: net_kg je UŽ po tejto zrážke
+-- (net = hrubá × (1 − nečistoty) − zrážka; buyer_value = net × cena pri všetkých 464 lístkoch) → váha odberateľa = net_kg (predtým sa zrážka odrátala druhýkrát).
 
 create or replace function public.zk_fmt(x numeric, d int default 0) returns text language sql immutable set search_path=public as $$
   select case when x is null then '–' else
@@ -23,7 +24,7 @@ begin
   t as (
     select s.ticket, s.day, s.com, v.farmer_id, coalesce(f.name,v.farmer_name,'?') farmer, coalesce(nullif(trim(v.buyer),''),'(bez odberateľa)') buyer,
       s.invoice_kg fkg, s.invoice_eur fe, s.price bp, coalesce(s.dry_loss_kg,0) fdry,
-      coalesce(v.net_kg, s.clean_kg) - coalesce(v.buyer_dry_kg,0) bkg, coalesce(v.buyer_dry_kg,0) dkg, nullif(v.sell_price,0) sp,
+      coalesce(v.net_kg, s.clean_kg) bkg, coalesce(v.buyer_dry_kg,0) dkg, nullif(v.sell_price,0) sp,
       v.ride_id is not null own,
       (select r.distance from rides r where r.ride_id=v.ride_id limit 1) km
     from s join deliveries v on v.ticket=s.ticket left join farmers f on f.id=v.farmer_id
