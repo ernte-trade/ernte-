@@ -46,7 +46,7 @@ function openSheet(re){R.open=true;let o=document.getElementById("lrSheet");
   const I=R.items,A=I.filter(x=>x.status==="pomoc"),B=I.filter(x=>x.status==="nova"),C=I.filter(x=>x.status!=="pomoc"&&x.status!=="nova");
   const live=R.seen&&Date.now()-Date.parse(R.seen)<75*60e3;
   const H=I.filter(x=>x.status==="hromadna");const C2=C.filter(x=>x.status!=="hromadna");
-  o.innerHTML=`<div class="lrs" role="dialog" aria-label="Pošta"><div class="lrsh"><b>📥 Pošta</b><button type="button" class="lrx" data-lrclose aria-label="Zavrieť">✕</button></div>
+  o.innerHTML=`<div class="lrs" role="dialog" aria-label="Pošta"><div class="lrsh"><b>📥 Pošta</b><button type="button" class="lrbx" data-mbxopen>📂 Prijaté a odoslané</button><button type="button" class="lrx" data-lrclose aria-label="Zavrieť">✕</button></div>
    <div class="s">Prijaté e-maily z erntespol@gmail.com. ${R.off?"<b>📵 Odosielanie z aplikácie je vypnuté</b> – odpoveď skopíruj (📋) a pošli zo svojej schránky, potom ťukni ✔️ Odoslal som.":""}
     ${live?`🟢 Schránka naposledy skontrolovaná ${hm(R.seen)}.`:`<b class="lrw">⚠️ Gmail skript teraz nečíta doručenú poštu.</b>`}</div>
    ${A.length?`<h3 class="lrsub">🆘 Treba odpísať (${A.length})</h3>${A.map(card).join("")}`:""}
@@ -106,7 +106,7 @@ const st=document.createElement("style");st.textContent=`
 #lrBub .lri{font-size:22px;flex:0 0 auto}#lrBub .lrt{min-width:0;display:flex;flex-direction:column}
 #lrBub .lrt b{font-size:14px;line-height:1.2}#lrBub .lrt small{font-size:12px;opacity:.9;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 #lrBub .lrn{flex:0 0 auto;min-width:26px;height:26px;border-radius:50%;display:grid;place-items:center;background:#fff;color:#c1121f;font-weight:800;font-size:13px}
-.lrov{position:fixed;inset:0;z-index:9500;background:rgba(0,0,0,.55);display:flex;align-items:flex-end;justify-content:center}
+.lrbx{min-height:40px;padding:4px 10px;margin-left:auto;margin-right:6px;white-space:nowrap}.lrov{position:fixed;inset:0;z-index:9500;background:rgba(0,0,0,.55);display:flex;align-items:flex-end;justify-content:center}
 .lrs{width:min(100%,720px);max-height:92vh;overflow:auto;padding:16px 14px calc(env(safe-area-inset-bottom,0px) + 18px);border-radius:22px 22px 0 0;
  background:linear-gradient(160deg,rgba(30,36,52,.98),rgba(16,20,30,.98));border:1px solid rgba(255,255,255,.16);color:#fff;text-align:left}
 [data-theme=light] .lrs{background:#fff;color:#111}

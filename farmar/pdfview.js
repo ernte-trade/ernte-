@@ -100,7 +100,9 @@ async function mailDirect(){const M=V&&V.M;const to=((document.getElementById("p
     tmsg("Nepodarilo sa: "+m,8000);if(b){b.disabled=false;b.textContent="📤 Odoslať"}}}
 // e-mail s PDF: na mobile zdieľanie (Gmail / Mail – adresa a text sú pripravené, adresa sa skopíruje), inak stiahnutie + e-mailový program
 async function mailPdf(){const M=V&&V.M;if(!M)return;try{const f=await makeFile();try{await navigator.clipboard.writeText(M.to)}catch(x){}
-  if(navigator.canShare&&navigator.canShare({files:[f]})){try{await navigator.share({files:[f],title:M.subj,text:"Pre: "+M.to+"\n\n"+M.body});tmsg("✓ Dokument odoslaný na zdieľanie. Adresa "+M.to+" je skopírovaná – vlož ju do príjemcu.",8000);return}catch(e){if(e&&e.name==="AbortError")return}}
+  if(navigator.canShare&&navigator.canShare({files:[f]})){try{await navigator.share({files:[f],title:M.subj,text:"Pre: "+M.to+"\n\n"+M.body});tmsg("✓ Dokument odoslaný na zdieľanie. Adresa "+M.to+" je skopírovaná – vlož ju do príjemcu.",8000);
+      if(window.ernteMailLog)window.ernteMailLog({prof:M.prof||"ernte",komu:M.to,predmet:M.subj,text:M.body,prilohy:[f.name],stav:"zdielane",zdroj:"dokument"});return}catch(e){if(e&&e.name==="AbortError")return}}
+  if(window.ernteMailLog)window.ernteMailLog({prof:M.prof||"ernte",komu:M.to,predmet:M.subj,text:M.body,prilohy:[f.name],stav:"otvorene",zdroj:"dokument"});
   dl(f);setTimeout(()=>{location.href="mailto:"+encodeURIComponent(M.to)+"?subject="+encodeURIComponent(M.subj)+"&body="+encodeURIComponent(M.body+"\n\n(Zmluva v PDF je stiahnutá: "+f.name+" – priložte ju.)")},400)}
   catch(e){tmsg("PDF sa nepodarilo vytvoriť: "+(e&&e.message||e),8000)}}
 // prevzatie window.open("") – dokumenty písané cez document.write

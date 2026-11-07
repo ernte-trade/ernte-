@@ -147,7 +147,8 @@ window.ernteTyzdenPop=()=>pop(true);
 document.addEventListener("click",e=>{const t=e.target.closest&&e.target.closest("[data-tyzopen],[data-tyzdone],[data-tyzx]");if(!t)return;e.preventDefault();
   if(t.dataset.tyzx!=null){const p=document.getElementById("tyzPop");if(p)p.remove();return}
   if(t.dataset.tyzopen){const p=document.getElementById("tyzPop");if(p)p.remove();open(t.dataset.tyzopen);return}
-  if(t.dataset.tyzdone){const C=cfg(),o=C[t.dataset.tyzdone],W=week();if(o.done[W.key])delete o.done[W.key];else o.done[W.key]=Date.now();save(C);const c=document.getElementById("tyzCard");if(c)c.remove();paint();say(o.done[W.key]?"✅ Označené ako odoslané":"Označenie zrušené",3000)}},true);
+  if(t.dataset.tyzdone){const C=cfg(),o=C[t.dataset.tyzdone],W=week();if(o.done[W.key])delete o.done[W.key];else{o.done[W.key]=Date.now();
+      const s=SEC.find(x=>x.k===t.dataset.tyzdone);if(s&&window.ernteMailLog)window.ernteMailLog({firma:s.firm,komu:o.to||"",predmet:`Týždenný súhrn – ${s.t} – ${W.txt}`,text:`Týždenný súhrn ${s.t} za ${W.txt} (PDF).`,zdroj:"tyzden",ref:s.k+":"+W.key,prilohy:[`Týždenný súhrn ${s.t} ${W.txt}.pdf`]})}save(C);const c=document.getElementById("tyzCard");if(c)c.remove();paint();say(o.done[W.key]?"✅ Označené ako odoslané":"Označenie zrušené",3000)}},true);
 document.addEventListener("change",e=>{const t=e.target;if(!t||!t.dataset)return;
   if(t.dataset.tyzto){const C=cfg();C[t.dataset.tyzto].to=t.value.trim();save(C);say("✓ Príjemca uložený",2500)}
   else if(t.dataset.tyzon){const C=cfg();C[t.dataset.tyzon].on=t.checked;save(C)}},true);

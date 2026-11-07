@@ -58,10 +58,11 @@ function lead(x){const ed=D.ed[x.id],ln=LN[x.lang]||("v jazyku "+(x.lang||"kraji
     <div class="s">Po uložení AI text znova preloží ${E(ln)}. Potom ho odošleš.</div>
     <div class="btns"><button type="button" class="lime" data-ldsave="${E(x.id)}">💾 Uložiť a preložiť</button><button type="button" class="ghost" data-ldcancel="${E(x.id)}">Zrušiť úpravu</button></div></div>`;
   const M=MAIN(),can=x.status==="navrh"||x.status==="chyba"||(M&&x.status==="schvalit"),sure=D.sure===x.id;
-  const go=M?`<button type="button" class="${sure?"warn":"lime"}" data-ldsend="${E(x.id)}" ${x.email?"":"disabled"}>${sure?"Naozaj odoslať? Ťukni znova":"✅ Skontrolované – odoslať "+E(ln)}</button>${x.status==="schvalit"?`<button type="button" class="ghost" data-ldret="${E(x.id)}">↩️ Vrátiť na úpravu</button>`:""}`
+  // 7. 11. 06:29 PRÍKAZ MAJITEĽA: aplikácia neodosiela – e-mail sa pripraví (od ernte@ernte.sk, príjemca z návrhu), Martin ho prečíta a odošle sám
+  const go=M?`<button type="button" class="lime" data-ldprep="${E(x.id)}" ${x.email?"":"disabled"}>📧 Pripraviť na odoslanie ${E(ln)}</button>${x.status==="schvalit"?`<button type="button" class="ghost" data-ldret="${E(x.id)}">↩️ Vrátiť na úpravu</button>`:""}`
     :`<button type="button" class="lime" data-ldsub="${E(x.id)}" ${x.email?"":"disabled"}>📨 Poslať Martinovi na schválenie</button>`;
   return `<div class="ldr" data-lid="${E(x.id)}">${head}
-   <div class="ldto">✉️ Komu: <b>${x.email?E(x.email):"— chýba e-mail, doplň v úprave"}</b><small>odpovede prídu na ${E((D.ld&&D.ld.reply_to)||"ernte@ernte.sk")}</small></div>
+   <div class="ldto">✉️ Komu: <b>${x.email?E(x.email):"— chýba e-mail, doplň v úprave"}</b><small>${MAIN()?"odosielateľ ernte@ernte.sk – odpovede prídu tam":"odpovede prídu na "+E((D.ld&&D.ld.reply_to)||"ernte@ernte.sk")}</small></div>
    <div class="ldsub">📝 ${E(x.subj_sk||"")}</div><div class="ldb">${E(x.body_sk||"")}</div>
    <details class="ldloc"><summary>${FL[x.country]||"🌍"} Text, ktorý odíde ${E(ln)}</summary><div class="ldsub">${E(x.subj_loc||"")}</div><div class="ldb">${E(x.body_loc||"")}</div></details>
    ${st}
@@ -93,7 +94,7 @@ function paint(){if(typeof TAB==="undefined")return;
 // ---------- tlačidlá ----------
 function edOf(el){const r=el.closest("[data-lid]");return r?D.ed[r.dataset.lid]:null}
 document.addEventListener("input",e=>{const t=e.target;if(!t.dataset||!t.dataset.lde)return;const ed=edOf(t);if(ed)ed[t.dataset.lde]=t.value},true);
-document.addEventListener("click",async e=>{const b=e.target.closest&&e.target.closest("[data-tnx],[data-tanow],[data-ldsend],[data-lded],[data-ldcancel],[data-ldsave],[data-ldrej],[data-ldnow],[data-ldopt],[data-ldsub],[data-ldret]");if(!b)return;
+document.addEventListener("click",async e=>{const b=e.target.closest&&e.target.closest("[data-tnx],[data-tanow],[data-ldsend],[data-ldprep],[data-lded],[data-ldcancel],[data-ldsave],[data-ldrej],[data-ldnow],[data-ldopt],[data-ldsub],[data-ldret]");if(!b)return;
   e.preventDefault();e.stopPropagation();const ds=b.dataset;
   if(ds.tnx){const el=document.getElementById("tnBub");if(el){el.classList.add("out");setTimeout(()=>el.remove(),220)}D.nud=(D.nud||[]).filter(x=>String(x.id)!==ds.tnx);
     try{await sb.rpc("team_nudge_close",{p_id:+ds.tnx})}catch(x){}setTimeout(paintNud,260);return}
@@ -102,7 +103,12 @@ document.addEventListener("click",async e=>{const b=e.target.closest&&e.target.c
     tst(r.data==="čerstvé"?"Tím bol skontrolovaný pred chvíľou – report je hore.":r.data==="chýba kľúč"?"Chýba kľúč ERNTE AI (Podpora → nastavenie).":"⏳ AI kontroluje tím – report príde o pár minút.",5000);D.rAt=0;loadRep();return}
   if("ldnow" in ds){b.disabled=true;const r=await sb.rpc("sales_ai_now");if(r.error){b.disabled=false;tst("Nepodarilo sa: "+r.error.message,6000);return}
     tst(r.data==="čerstvé"?"AI hľadala firmy pred menej ako 2 hodinami – skús neskôr.":r.data==="chýba kľúč"?"Chýba kľúč ERNTE AI.":"🔎 AI hľadá firmy a píše e-maily – o pár minút sú tu.",5000);D.lAt=0;loadLd();return}
-  const L=(D.ld&&D.ld.L)||[],x=L.find(z=>String(z.id)===String(ds.ldsend||ds.lded||ds.ldcancel||ds.ldsave||ds.ldrej||ds.ldsub||ds.ldret));if(!x)return;
+  const L=(D.ld&&D.ld.L)||[],x=L.find(z=>String(z.id)===String(ds.ldsend||ds.ldprep||ds.lded||ds.ldcancel||ds.ldsave||ds.ldrej||ds.ldsub||ds.ldret));if(!x)return;
+  if(ds.ldprep){if(!window.ernteCompose){tst("Okno na odoslanie sa ešte načítava – skús o chvíľu.");return}b.disabled=true;
+    try{const r=await sb.rpc("sales_lead_draft",{p_id:x.id});if(r.error)throw r.error;const m=r.data||{};
+      window.ernteCompose({firma:"ernte",od:m.od||"ernte@ernte.sk",komu:m.komu,predmet:m.predmet,text:m.text,zdroj:"navrh_ai",ref:String(x.id),
+        onSent:async v=>{const q=await sb.rpc("sales_lead_sent_manual",{p_id:x.id,p_od:v.od,p_komu:v.komu,p_predmet:v.predmet,p_text:v.text});if(q.error)throw q.error;loadLd()}})}
+    catch(e){tst("Nepodarilo sa pripraviť: "+(e&&e.message||e),7000)}finally{b.disabled=false}return}
   if(ds.ldsub){const n=prompt(`Poslať ${x.kind==="dopyt"?"dopyt":"ponuku"} pre ${x.company} Martinovi na schválenie.\nPoznámka pre Martina (nepovinné):`,"");if(n===null)return;b.disabled=true;
     const r=await sb.rpc("sales_lead_submit",{p_id:x.id,p_note:n||null});if(r.error){b.disabled=false;tst("Nepodarilo sa: "+r.error.message,6000);return}tst("📨 Poslané Martinovi na schválenie – odošle ho on.",4000);loadLd();return}
   if(ds.ldret){const n=prompt(`Vrátiť návrh pre ${x.company} na úpravu – čo zmeniť?`,"");if(n===null)return;b.disabled=true;
