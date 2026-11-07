@@ -116,7 +116,7 @@ function head(){const h=document.querySelector("header.top");if(!h)return;let m=
 // ---- menu podľa oblastí + hľadanie (jedno okno) ----
 let IDX=null,VEH=null,SEL=0,RES=[];
 function openMenu(find){if(!OK())return;let m=document.getElementById("rdMenu");if(!m){m=document.createElement("div");m.id="rdMenu";m.setAttribute("role","dialog");m.setAttribute("aria-modal","true");m.setAttribute("aria-label","Menu a hľadanie");document.body.appendChild(m)}
-  m.innerHTML=`<div class="rdmb"><div class="rdmh"><label class="rdmq">${ico("search")}<input type="search" id="rdQ" placeholder="Hľadať zmluvu, ŠPZ, farmára alebo sekciu" autocomplete="off" enterkeyhint="search"></label><button type="button" class="rdmx" data-rdclose aria-label="Zavrieť">${ico("x")}</button></div><div class="rdml" id="rdML"></div></div>`;
+  m.innerHTML=`<div class="rdmb"><div class="rdmh"><label class="rdmq">${ico("search")}<input type="search" id="rdQ" placeholder="Hľadať čokoľvek – sekciu, zmluvu, farmára, odberateľa, ŠPZ, lístok…" autocomplete="off" enterkeyhint="search"></label><button type="button" class="rdmx" data-rdclose aria-label="Zavrieť">${ico("x")}</button></div><div class="rdml" id="rdML"></div></div>`;
   m.hidden=false;document.body.classList.add("rdmo");areas();const q=m.querySelector("#rdQ");q.addEventListener("input",()=>find2(q.value));q.addEventListener("keydown",keys);
   if(find||matchMedia("(hover:hover) and (pointer:fine)").matches)setTimeout(()=>q.focus(),30);loadVeh()}
 function closeMenu(){const m=document.getElementById("rdMenu");if(m){m.hidden=true;m.innerHTML=""}document.body.classList.remove("rdmo")}
@@ -129,7 +129,7 @@ function areas(){const L=document.getElementById("rdML");if(!L)return;const T=ta
 async function loadVeh(){if(VEH||typeof sb==="undefined"||!sb)return;VEH=[];try{const r=await sb.from("cmd_vehicles").select("*");VEH=(r.data||[]).map(v=>({id:v.id,p:v.plate||"",n:v.name||"",r:v.region||""}))}catch(x){}}
 function index(){const S=typeof STATE!=="undefined"&&STATE?STATE:{},F={};(S.farmers||[]).forEach(f=>F[f.id]=f);
   const D=[...(S.deals||[]),...(S.dealsArch||[])];return {D,F:S.farmers||[],FM:F}}
-function find2(q){const L=document.getElementById("rdML");if(!L)return;const n=N(q).trim();if(!n){areas();return}const I=index(),T=tabs(),R=[],nd=n.replace(/\s/g,"");
+function find2(q){const L=document.getElementById("rdML");if(!L)return;const n=N(q).trim();if(!n){areas();return}if(window.ernteFindUI&&window.ernteFindUI(q,L,R=>{RES=R;SEL=0}))return; /* 7. 11.: hľadá všetko – hladat.js */const I=index(),T=tabs(),R=[],nd=n.replace(/\s/g,"");
   Object.values(T).forEach(t=>{if(N(t.t).includes(n))R.push({g:"Sekcie",i:TI[t.k]||"dot",t:t.t,s:"otvoriť sekciu",a:()=>go(t.k)})});
   let c=0;for(const d of I.D){if(c>=8)break;const f=I.FM[d.farmer_id]||{},hay=N([d.no,f.name,d.com,d.term].join(" "));
     if(hay.includes(n)||(nd&&N(d.no||"").replace(/\s/g,"").includes(nd))){c++;R.push({g:"Zmluvy",i:"file",t:(d.no||"bez čísla")+" · "+(f.name||""),s:[typeof comName==="function"?comName(d.com):d.com,d.tons?nf(d.tons,1)+" t":"",d.status].filter(Boolean).join(" · "),a:()=>openDeal(d)})}}

@@ -118,6 +118,7 @@ const H2=[
  ["Kurací trus","Vývozy kuracieho trusu – termíny, autá, tony a ceny."]];
 const norm=s=>String(s||"").replace(/[\u{1F000}-\u{1FAFF}☀-➿️]/gu,"").replace(/\s+/g," ").trim().toLowerCase();
 const H2N=H2.map(x=>[norm(x[0]),x[1]]);
+window.ERNTE_DESC={TABD,SECD,H2}; // 7. 11.: pre 🔎 Hľadať (hladat.js)
 let SEC={};   // posledná otvorená sekcia v záložke
 
 function strip(cls,txt,more){return `<div class="fdesc ${cls}" data-fd="1"><span aria-hidden="true">ℹ️</span><p>${txt}${more?` <button type="button" class="fdmore" data-help="${more}">Viac</button>`:""}</p></div>`}

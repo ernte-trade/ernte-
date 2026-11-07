@@ -18,7 +18,7 @@ const SPS={navrh:["📝","návrh – čaká na teba"],schvalena:["✅","dohodnut
 const VZS={navrh:["📝","vzor – na prečítanie a schválenie"],schvaleny:["✅","vzor schválený – používa sa pri zmluvách"],archiv:["🗄️","archív"]};
 async function load(force){if(!MAIN()||ST.busy||typeof sb==="undefined")return;if(!force&&ST.L&&Date.now()-ST.at<120e3)return;ST.busy=true;
   try{const r=await sb.rpc("ospl_list");if(r.error)ST.err=/ospl_list/.test(r.error.message)?"Zapne sa po aktualizácii databázy (pár minút).":r.error.message;else{ST.L=r.data||{};ST.err=""}}
-  catch(x){ST.err=String(x&&x.message||x)}ST.at=Date.now();ST.busy=false;paint()}
+  catch(x){ST.err=String(x&&x.message||x)}ST.at=Date.now();ST.busy=false;paint();homeLink()}
 async function loadV(force){if(!TEAM()||ST.vbusy||typeof sb==="undefined")return;if(!force&&ST.V&&Date.now()-ST.vat<120e3)return;ST.vbusy=true;
   try{const [a,b]=await Promise.all([sb.rpc("ospl_vzory"),sb.rpc("deal_vzor_map")]);if(!a.error)ST.V=a.data||[];if(!b.error)ST.M=b.data||{}}catch(x){}
   ST.vat=Date.now();ST.vbusy=false;sch()}
@@ -160,6 +160,7 @@ document.addEventListener("click",async e=>{const t=e.target.closest&&e.target.c
     ST.keep=true;sheet(spolHTML(ST.sh.s));return}
   const a=t.dataset.osp,id=t.dataset.id;e.preventDefault();e.stopPropagation();
   if(a==="close"){close();return}
+  if(a==="go"){if(typeof TAB!=="undefined"){TAB="deals";if(typeof renderStaff==="function")renderStaff()}let k=0;const f=()=>{const c=document.getElementById("osplCard");if(c){c.scrollIntoView({block:"start",behavior:"smooth"});return}if(++k<30)setTimeout(f,150)};setTimeout(f,100);return}
   const run=async(fn,okm,after)=>{const old=t.textContent;t.disabled=true;t.textContent="⏳ Chvíľu…";try{const r=await fn();if(r&&r.error)throw new Error(r.error.message);if(r&&r.data&&r.data.ok===false)throw new Error(r.data.err||"Nepodarilo sa.");
       if(okm)tst("✅ "+okm,4500);await load(true);await loadV(true);if(after)after(r&&r.data)}catch(x){t.disabled=false;t.textContent=old;msg(String(x&&x.message||x).replace(/^.*?:\s(?=[A-ZÁČĎÉÍĽĹŇÓÔŔŠŤÚÝŽ])/,""))}};
   if(a==="new"){if(!MAIN())return;await run(()=>sb.rpc("ospl_new",{p_buyer:t.dataset.b}),"Návrh spolupráce pripravený – skontroluj a uprav.",d=>{if(d&&d.id)openSpol(d.id)});return}
@@ -195,7 +196,13 @@ function decorate(){if(!TEAM())return;const app=document.getElementById("app");i
   for(const fid of ["fDeal","fQd"]){const f=document.getElementById(fid);if(!f||f.querySelector(".osnew"))continue;const V=ST.V||[];if(!V.length)continue;
     const l=document.createElement("label");l.className="w osnew";l.innerHTML=`🏭 Kam to pôjde – vidíš iba ty a obchodník<select data-osnew><option value="">— štandardná zmluva ERNTE</option>${V.map(x=>`<option value="${E(x.id)}" data-coms="${E((x.coms||[]).join(","))}">${E(x.name)}${(x.coms||[]).length?" · "+E((x.coms||[]).map(nm).join(", ")):""}</option>`).join("")}</select><small>Zmluva sa prispôsobí podmienkam odberateľa; po uložení ich upravíš v 🏭 pri zmluve.</small>`;
     const btn=f.querySelector(".btns,.qdgo");if(btn&&btn.parentElement===f)f.insertBefore(l,btn);else if(btn)btn.parentElement.insertBefore(l,btn);else f.appendChild(l)}}
-let q=0;function sch(){if(q)return;q=(window.ernteSoon||requestAnimationFrame)(()=>{q=0;try{decorate();if(MAIN()&&typeof TAB!=="undefined"&&TAB==="deals"){if(!ST.L&&!ST.busy)load(false);if(!document.getElementById("osplCard"))paint()}}catch(x){}})}
+// Prehľad (Martin): skratka hneď pod 🏷️ Ceny odberateľov – kde sú návrhy spolupráce (7. 11. 07:41 „predajné návrhy zmluvy kde nájdem“)
+function homeLink(){if(!MAIN()||typeof TAB==="undefined"||TAB!=="home")return;const app=document.getElementById("app");if(!app)return;if(!ST.L&&!ST.busy){load(false);return}if(!ST.L)return;
+  const S=ST.L.spol||[],V=ST.L.vzory||[],n=S.filter(x=>x.status==="navrh").length,v=V.filter(x=>x.status==="navrh").length,ok=S.filter(x=>x.status==="schvalena").length;
+  const h=`<button type="button" class="osgo${n||v?" w":""}" data-osp="go" id="osplHome"><b>🤝 Návrhy spolupráce a zmlúv s odberateľmi</b><small>${n?`📝 ${n} ${n===1?"návrh čaká":n<5?"návrhy čakajú":"návrhov čaká"} na teba`:"bez čakajúcich návrhov"}${v?` · 📄 ${v} ${v===1?"vzor zmluvy":"vzory zmlúv"} na schválenie`:""}${ok?` · ✅ ${ok} ${ok===1?"dohodnutá":"dohodnuté"}`:""} · Zmluvy → Obchody → 🤝</small></button>`;
+  const old=document.getElementById("osplHome");if(old){if(old.outerHTML!==h){const d=document.createElement("div");d.innerHTML=h;old.replaceWith(d.firstElementChild)}return}
+  const a=document.getElementById("ocnSec");if(!a)return;const d=document.createElement("div");d.innerHTML=h;a.after(d.firstElementChild)}
+let q=0;function sch(){if(q)return;q=(window.ernteSoon||requestAnimationFrame)(()=>{q=0;try{decorate();homeLink();if(MAIN()&&typeof TAB!=="undefined"&&TAB==="deals"){if(!ST.L&&!ST.busy)load(false);if(!document.getElementById("osplCard"))paint()}}catch(x){}})}
 // pri uložení novej zmluvy: zapamätať výber a po vzniku zmluvy ho priradiť (Nový obchod aj 🤝 Uzatvoriť obchod)
 document.addEventListener("submit",e=>{const f=e.target;if(!f||(f.id!=="fDeal"&&f.id!=="fQd")||!TEAM())return;const s=f.querySelector("[data-osnew]");if(!s||!s.value)return;
   const num=v=>{const n=parseFloat(String(v||"").replace(/\s/g,"").replace(",","."));return Number.isFinite(n)?n:null};
@@ -224,6 +231,7 @@ addEventListener("hashchange",()=>{if(location.hash==="#spolupraca"&&MAIN()&&typ
 .osc.s-zamietnuta,.osc.s-ukoncena{opacity:.7}
 .osa{display:flex;flex-wrap:wrap;gap:6px}.osa button{flex:1 1 150px;min-height:44px;white-space:normal}
 .osdb{min-height:44px}
+.osgo{display:grid;gap:3px;width:100%;text-align:left;margin:10px 0;padding:12px 14px;border-radius:16px;min-height:56px;white-space:normal}.osgo small{font-weight:600;opacity:.85;line-height:1.35;overflow-wrap:anywhere}.osgo.w{border-color:rgba(255,207,90,.7)!important;background:rgba(255,207,90,.1)!important}#osplCard{scroll-margin-top:96px}
 .ospsh{position:fixed;inset:0;z-index:9500;background:rgba(2,6,15,.78);display:flex;align-items:flex-end;justify-content:center;padding:8px}@media(min-width:700px){.ospsh{align-items:center}}
 .ospbox{width:min(760px,100%);max-height:94vh;overflow:auto;display:grid;gap:10px;padding:14px 14px 18px;border-radius:22px;background:#0B0F19;border:1px solid rgba(34,211,238,.45);color:#eef2f7;box-sizing:border-box;overscroll-behavior:contain}
 html[data-theme=light] .ospbox{background:#fff;color:#0f172a}
